@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { groupMenu, type MenuSection } from "@/lib/menu";
+import { isValidSlug } from "@/lib/slug";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
 export type PublicMenu = {
@@ -8,8 +9,6 @@ export type PublicMenu = {
   sections: MenuSection[];
 };
 
-const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-
 /**
  * Carta pública de una sucursal. Devuelve `null` si la organización o la sucursal no existen
  * o no son publicables (RLS las oculta). Está envuelta en `cache` para que `generateMetadata`
@@ -17,7 +16,7 @@ const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
  */
 export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): Promise<PublicMenu | null> => {
   // Descarta slugs imposibles sin ir a la base.
-  if (orgSlug.length > 64 || branchSlug.length > 64 || !SLUG.test(orgSlug) || !SLUG.test(branchSlug)) {
+  if (!isValidSlug(orgSlug) || !isValidSlug(branchSlug)) {
     return null;
   }
 

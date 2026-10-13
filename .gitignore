@@ -35,3 +35,8 @@ next-env.d.ts
 /coverage
 /test-results/
 /playwright-report/
+
+# Skill de terceros con binarios sin auditar (no versionar; ver agile/herramientas-aprobadas.md)
+.agents/skills/impeccable/
+.claude/skills/impeccable/
+.claude/agents/impeccable-*.md
