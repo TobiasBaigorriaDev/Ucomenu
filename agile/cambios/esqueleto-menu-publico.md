@@ -1,12 +1,12 @@
 # Cambio: Esqueleto caminante — bootstrap + menú público de solo lectura
-Estado: verificado (pendiente de revisión con `agile-revisar` y de integración)
+Estado: verificado (pendiente de revisión con `agile-revisar` y de integración a `master`)
 Nivel: M
 
 ## Objetivo
 Dejar el proyecto ejecutable de punta a punta con la rebanada vertical más fina posible: un comensal abre el link de una sucursal y ve su carta (categorías y platos con precio), leída desde la base real con aislamiento por organización. De paso quedan fijados el stack, los comandos del proyecto y la forma de probar.
 
 ## Comportamiento y aceptación
-- [ ] Dado el repo recién clonado, cuando se ejecutan los comandos de instalar, lint, typecheck, tests y build documentados en `AGENTS.md`, entonces todos terminan sin error.
+- [x] Dado el repo recién clonado, cuando se ejecutan los comandos de instalar, lint, typecheck, tests y build documentados en `AGENTS.md`, entonces todos terminan sin error.
 - [x] Dada una organización semilla con una sucursal, 2 categorías y 3 platos activos, cuando se abre `/m/{org}/{sucursal}` en un viewport de 390 px, entonces se ven las categorías en orden y cada plato con nombre, descripción y precio en formato ARS, sin scroll horizontal.
 - [x] Dado un slug de organización o sucursal inexistente, cuando se abre la ruta, entonces responde 404.
 - [x] Dado un plato inactivo o una categoría inactiva, cuando se abre la carta, entonces no aparecen.
@@ -32,8 +32,9 @@ Ejecutadas el 2026-10-13 sobre una base recién reseteada (`pnpm db:reset`):
 - **Prueba de mutación de RLS:** con RLS desactivado y `INSERT` concedido a `anon` en las 4 tablas, 12 de 24 pruebas fallan (incluidas las 4 de inserción); restaurado con `db:reset`, vuelven a pasar 24/24. Detectó un defecto de las propias pruebas (inserciones con filas inválidas que fallaban por otro motivo), corregido.
 - Revisión visual con capturas a 390 y 1280 px.
 
+- **Clon limpio** (criterio 1, commit `1d0400f`): `pnpm install --frozen-lockfile`, `typecheck`, `lint`, `test` y `build` terminan sin error. Un primer intento falló en `pnpm test` solo porque el clon estaba en una ruta de 291 caracteres (límite de 260 de Windows); repetido en una ruta de 173, pasa. El clon no incluye `.env*`, así que `build` no necesita variables de entorno.
+
 Pendientes:
-- Criterio 1 (clon limpio): se verifica tras el commit.
 - Revisión independiente con `agile-revisar`.
 - No probado: dispositivos reales, Safari/iOS, lector de pantalla, rendimiento (LCP) y modo oscuro.
 
@@ -43,4 +44,5 @@ Pendientes:
 - Privilegios: se hace `revoke all` y se concede solo `SELECT` a `anon` y `authenticated`; las escrituras se abrirán explícitamente en «Núcleo multi-tenant».
 - El CLI de Supabase solo imprime las claves locales si Auth está levantado, por eso `db:start` incluye Auth (se usará en «Acceso del personal»).
 - Un servidor `next start` viejo sirve HTML de un build anterior apuntando a CSS que ya no existe: siempre `pnpm build` antes de `test:e2e`.
+- **Windows y rutas largas:** `node_modules/.pnpm` genera rutas muy largas; si el repo se clona en un directorio muy profundo (≈ más de 260 caracteres en total) Vitest falla con `ERR_PACKAGE_IMPORT_NOT_DEFINED`. Clonar cerca de la raíz del disco.
 - Las claves locales van a `.env.local` (públicas) y `.env.test.local` (clave de servicio, solo pruebas); ambos ignorados por Git.

@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Esqueleto caminante: bootstrap + menú público de solo lectura — verificado con 10 unitarias, 24 RLS y 11 E2E; falta clon limpio y `agile-revisar` → ficha: agile/cambios/esqueleto-menu-publico.md
+- [M] Esqueleto caminante: bootstrap + menú público de solo lectura — verificado con 10 unitarias, 24 RLS y 11 E2E; clon limpio OK; falta `agile-revisar` → ficha: agile/cambios/esqueleto-menu-publico.md
 
 ## Bloqueado
 - (vacío)

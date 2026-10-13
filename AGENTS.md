@@ -46,6 +46,7 @@ Gestor: **pnpm** (Node 24). Antes de las pruebas de base y E2E: Docker encendido
 - Migraciones: `pnpm exec supabase migration new <nombre>`; se aplican en local con `pnpm db:reset`. **Nada contra proyectos remotos sin aprobación.**
 
 > Al cambiar el esquema: nueva migración + actualizar `supabase/seed.sql` y las pruebas que dependan de él + `pnpm db:types`.
+> Windows: clonar en una ruta corta; con rutas de más de ~260 caracteres `pnpm test` falla con `ERR_PACKAGE_IMPORT_NOT_DEFINED`.
 > `pnpm test:e2e` usa `next start`: ejecutá `pnpm build` antes, o un servidor viejo/un build desactualizado sirve CSS inexistente.
 
 ## Límites de autonomía
