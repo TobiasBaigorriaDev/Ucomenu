@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/*
+ * Tokens de diseño de la carta. Se definen como variables para que la identidad visual
+ * por organización (logo y colores, ítem posterior) pueda sobrescribirlos sin tocar los componentes.
+ */
+:root {
+  --porcelain: #f1f4f0;
+  --ink: #1b2a28;
+  --muted: #566562;
+  --cobalt: #2646c4;
+  --tile: #d6dff3;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-porcelain: var(--porcelain);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-cobalt: var(--cobalt);
+  --color-tile: var(--tile);
+  --font-display: var(--font-young-serif), Georgia, serif;
+  --font-sans: var(--font-hanken), system-ui, sans-serif;
+}
+
+html {
+  background: var(--porcelain);
+  color: var(--ink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+:focus-visible {
+  outline: 3px solid var(--cobalt);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+/* Reticulado de azulejos en diagonal: el único gesto decorativo de la pantalla. */
+.tile-band {
+  background-color: var(--cobalt);
+  background-image:
+    repeating-linear-gradient(45deg, transparent 0 26px, rgb(255 255 255 / 0.2) 26px 27.5px),
+    repeating-linear-gradient(-45deg, transparent 0 26px, rgb(255 255 255 / 0.2) 26px 27.5px);
+}
+
+/* Puntos guía entre el plato y su precio, como en una carta impresa. */
+.leader {
+  flex: 1 1 auto;
+  min-width: 1.5rem;
+  align-self: baseline;
+  border-bottom: 2px dotted rgb(27 42 40 / 0.4);
+  transform: translateY(-0.3em);
+}

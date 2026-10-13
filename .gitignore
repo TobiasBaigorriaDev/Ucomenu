@@ -23,3 +23,15 @@ Thumbs.db
 
 # Estado local de agentes (no versionar)
 .claude/settings.local.json
+
+# Next.js
+/.next/
+/out/
+*.tsbuildinfo
+next-env.d.ts
+.vercel
+
+# Pruebas
+/coverage
+/test-results/
+/playwright-report/

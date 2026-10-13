@@ -11,6 +11,17 @@ Proyecto creado con la plantilla **Agile SDD 1.1.1**: desarrollo guiado por espe
 4. Revisá según el nivel de riesgo (`agile-revisar`).
 5. Cerrá cada sesión actualizando `agile/ahora.md`.
 
+## Desarrollo local
+Requisitos: Node 24, pnpm y Docker encendido.
+```powershell
+pnpm install --frozen-lockfile
+pnpm db:start        # Supabase local (primera vez: descarga imágenes de Docker)
+pnpm db:reset        # aplica migraciones + datos semilla ficticios
+# Copiá .env.example a .env.local y completá la clave con: pnpm exec supabase status -o env
+pnpm dev             # http://localhost:3000/m/cafe-ejemplo/centro
+```
+Pruebas, lint y demás comandos: sección **Comandos del proyecto** de `AGENTS.md`.
+
 ## Estructura
 | Ruta | Para qué sirve |
 | --- | --- |

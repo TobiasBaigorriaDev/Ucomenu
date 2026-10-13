@@ -3,13 +3,14 @@
 > Diseño **acordado pero todavía no implementado**: el repo no tiene código de aplicación. Cuando exista, contrastar este documento con la implementación y registrar las desviaciones. Los motivos de cada decisión están en `docs/decisiones/`.
 
 ## Stack acordado
-- **Lenguaje / framework:** TypeScript + Next.js (App Router, Server Components) + Tailwind CSS. Versiones exactas se fijan en el bootstrap. → ADR 0001
+- **Lenguaje / framework:** TypeScript + Next.js (App Router, Server Components) + Tailwind CSS. → ADR 0001. Implementado (2026-10-13): Next 16.4.0, React 19.3.0, Tailwind 4.3.3, TypeScript 5.9.3; versiones exactas en `pnpm-lock.yaml`.
+  - **Desviación consciente:** `cacheComponents` está **desactivado** (el scaffold lo trae activo). Con él, un 404 real exige prerender por slug y cachear por un slug arbitrario de una ruta pública es riesgoso; sin él, la carta se renderiza por pedido. El caché se diseñará en el ítem «Rendimiento de la carta pública» (ver `agile/cambios/esqueleto-menu-publico.md`).
 - **Base de datos:** PostgreSQL gestionado por Supabase, con Row Level Security (RLS) como mecanismo de aislamiento. → ADR 0004
 - **Tiempo real:** Supabase Realtime (solo para el panel de sala).
 - **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo.
 - **Archivos:** Supabase Storage (fotos de platos, logos, modelos 3D).
 - **Hosting / despliegue:** Vercel (aplicación) + Supabase Cloud (datos). Desplegar requiere aprobación explícita.
-- **Pruebas (propuesto, se confirma en el bootstrap):** unitarias e integración con Vitest, E2E con Playwright, pruebas de RLS contra una base local.
+- **Pruebas (implementado):** unitarias y de RLS con Vitest (RLS contra Supabase local), E2E con Playwright a 390 px contra el build. Comandos en `AGENTS.md`.
 - **Entorno verificado (2026-10-13):** Node 24, pnpm 11, Docker 29, Git, Python 3.12. La CLI de Supabase no estaba instalada; su instalación quedó aprobada por el usuario (ver `agile/herramientas-aprobadas.md`).
 
 Convención (confirmada): identificadores de código y base en inglés; interfaz y documentación en español (es-AR).

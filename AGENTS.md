@@ -33,14 +33,20 @@ Reglas compartidas para Codex CLI y Claude Code. Mantené este archivo **corto**
 - `agile-revisar` — revisar diff, pruebas y riesgos con evidencia.
 - `agile-descubrir-skills` — evaluar si hace falta una skill externa (solo ante una brecha real).
 
-## Comandos del proyecto (COMPLETAR por proyecto)
-- Instalar dependencias: `TODO`
-- Tests: `TODO`
-- Lint / typecheck: `TODO`
-- Build: `TODO`
-- Migraciones: `TODO`
+## Comandos del proyecto
+Gestor: **pnpm** (Node 24). Antes de las pruebas de base y E2E: Docker encendido, `pnpm db:start`, `pnpm db:reset` y `.env.local` / `.env.test.local` (ver `.env.example`).
+- Instalar dependencias: `pnpm install --frozen-lockfile`
+- Tests unitarios (sin base): `pnpm test`
+- Tests de RLS (Supabase local): `pnpm test:rls`
+- Tests E2E (Playwright, contra el build): `pnpm build` y `pnpm test:e2e` (o `pnpm test:e2e:full`)
+- Lint / typecheck: `pnpm lint` · `pnpm typecheck`
+- Build: `pnpm build`
+- Desarrollo: `pnpm dev`
+- Supabase local: `pnpm db:start` · `pnpm db:stop` · `pnpm db:reset` (aplica migraciones + `supabase/seed.sql`) · `pnpm db:types` (regenera `src/lib/supabase/database.types.ts`)
+- Migraciones: `pnpm exec supabase migration new <nombre>`; se aplican en local con `pnpm db:reset`. **Nada contra proyectos remotos sin aprobación.**
 
-> Mientras estén en `TODO`, no inventes comandos: inspeccioná el repo y preguntá o proponé.
+> Al cambiar el esquema: nueva migración + actualizar `supabase/seed.sql` y las pruebas que dependan de él + `pnpm db:types`.
+> `pnpm test:e2e` usa `next start`: ejecutá `pnpm build` antes, o un servidor viejo/un build desactualizado sirve CSS inexistente.
 
 ## Límites de autonomía
 **Podés sin pedir permiso:** editar archivos locales del proyecto, ejecutar tests/lint/build, crear ramas y commits locales, actualizar fichas y `agile/ahora.md`.
