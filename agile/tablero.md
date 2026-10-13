@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Esqueleto caminante: bootstrap + menú público de solo lectura — verificado con 10 unitarias, 24 RLS y 11 E2E; clon limpio OK; falta `agile-revisar` → ficha: agile/cambios/esqueleto-menu-publico.md
+- (vacío)
 
 ## Bloqueado
 - (vacío)
@@ -22,7 +22,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
 ### Fase 0 — Cimientos
-- [C] Núcleo multi-tenant: membresías, roles y políticas RLS de escritura con pruebas de aislamiento entre organizaciones (bloqueado por: esqueleto caminante)
+- [C] Núcleo multi-tenant: membresías, roles y políticas RLS de escritura con pruebas de aislamiento entre organizaciones
 - [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol (bloqueado por: núcleo multi-tenant)
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
@@ -43,7 +43,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] Planes y entitlements: catálogo `plans` parametrizable, `subscriptions`, add-ons, `has_feature`, límites y estado de mora derivado, aplicados en base y servidor (bloqueado por: núcleo multi-tenant)
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
 - [S] Aviso de mora al dueño en el panel y pantalla «Carta temporalmente no disponible» (bloqueado por: planes y entitlements)
-- [S] Historial de cambios de precio por trigger (`price_history`) (bloqueado por: gestión de carta)
+- [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (bloqueado por: gestión de carta)
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
 - [S] Textos legales: términos, privacidad y aviso de alérgenos
 - [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos)
@@ -52,7 +52,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] Spike descartable: `<model-viewer>` con un plato real en un iPhone y un Android — valida ADR 0002 y el presupuesto de peso
 - [M] Catálogo de modelos 3D: carga desde SuperAdmin, validación de formato y peso, publicación (bloqueado por: spike WebAR, planes y entitlements)
 - [M] «Ver en mi mesa»: botón por *feature flag*, visor bajo demanda, AR en iOS/Android y alternativa sin AR
-- [S] Cupo de platos del add-on (bloqueado por: definición comercial del cupo)
+- [S] Cupo de platos del add-on: 15 platos 3D y packs extra de +10 por USD 10/mes (definición comercial cerrada)
 
 ### Fase 3 — Fidelización, Wallet y cercanía (plan Premium)
 - [S] Spike descartable: emitir un pase de prueba en Apple Wallet y Google Wallet con ubicaciones — valida ADR 0003 (bloqueado por: cuentas Apple Developer y emisor de Google Wallet; requiere aprobación y pago)
@@ -66,7 +66,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] Cobro automático de la suscripción (Mercado Pago Suscripciones) con activación y suspensión por webhook
 - [M] Subdominio o dominio propio por organización
 - [M] Carta en varios idiomas
-- [M] Analítica básica: platos más vistos y llamados por franja horaria — sin plan asignado (bloqueado por: decidir en qué plan va)
+- [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [M] Esqueleto caminante: bootstrap + carta pública de solo lectura con RLS — revisado por Codex (aprobar con cambios), correcciones aplicadas, integrado a `main` (2026-10-13) → ficha: agile/cambios/esqueleto-menu-publico.md
 - [M] Exploración inicial: producto, arquitectura, ADR 0001–0004 y backlog (2026-10-13)

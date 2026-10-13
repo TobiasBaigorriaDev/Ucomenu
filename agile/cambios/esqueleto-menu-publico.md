@@ -1,5 +1,5 @@
 # Cambio: Esqueleto caminante — bootstrap + menú público de solo lectura
-Estado: verificado (pendiente de revisión con `agile-revisar` y de integración a `master`)
+Estado: **hecho** — revisado con `agile-revisar` (Codex, solo lectura: *aprobar con cambios*), correcciones aplicadas e integrado a `main` el 2026-10-13
 Nivel: M
 
 ## Objetivo
@@ -34,9 +34,14 @@ Ejecutadas el 2026-10-13 sobre una base recién reseteada (`pnpm db:reset`):
 
 - **Clon limpio** (criterio 1, commit `1d0400f`): `pnpm install --frozen-lockfile`, `typecheck`, `lint`, `test` y `build` terminan sin error. Un primer intento falló en `pnpm test` solo porque el clon estaba en una ruta de 291 caracteres (límite de 260 de Windows); repetido en una ruta de 173, pasa. El clon no incluye `.env*`, así que `build` no necesita variables de entorno.
 
-Pendientes:
-- Revisión independiente con `agile-revisar`.
-- No probado: dispositivos reales, Safari/iOS, lector de pantalla, rendimiento (LCP) y modo oscuro.
+Revisión independiente (`agile-revisar`, segundo agente Codex, solo lectura) — veredicto **aprobar con cambios**; correcciones aplicadas en el commit `87ec7e3`:
+- **P2 contrato del slug:** la ruta rechazaba slugs de más de 64 caracteres, pero la base aceptaba cualquier largo. Migración `20261013235625_slug_max_length.sql` (`CHECK char_length(slug) <= 64` en `organizations` y `branches`, constraints nombrados), validación única en `src/lib/slug.ts` (`isValidSlug`) y pruebas de borde 64/65 (unitarias y contra la base).
+- **RLS más estricta:** `UPDATE` y `DELETE` exigen `42501` (antes aceptaban cualquier error) y toda la lectura/escritura pública se prueba también con el rol `authenticated` (usuario real sin membresía, creado y borrado por la propia suite).
+- Verificación posterior: typecheck, lint y build OK · unitarias 23/23 · RLS 49/49 · E2E 11/11. **Mutación:** al borrar los CHECK de slug, conceder `UPDATE/DELETE` a `authenticated` y apagar RLS en `products`, fallan 15 de 49; tras `db:reset` pasan 49/49. (Conceder `INSERT` a `anon` sin quitar RLS no hace fallar la prueba: sigue rechazando con `42501` porque RLS no tiene política de inserción; son dos capas.)
+
+Decisiones del usuario al cerrar (2026-10-13): `price_history` aprobado; `impeccable` fuera del repo (`.gitignore`); rama principal `main`; analítica básica desde Pro; pack extra WebAR +USD 10/mes por 10 platos.
+
+No probado: dispositivos reales, Safari/iOS, lector de pantalla, rendimiento (LCP) y modo oscuro.
 
 ## Aprendizajes / cambios de decisión
 - **`cacheComponents` desactivado** (el scaffold de Next 16.4 lo trae activo). Con él, `notFound()` solo devuelve 404 real si se llama antes de que empiece el streaming; una ruta dinámica `/m/[org]/[branch]` obliga a `generateStaticParams` + `use cache` por slug, y cachear por un slug arbitrario de una ruta pública permite llenar la caché con slugs inventados. Sin él, la carta se renderiza por pedido y devuelve 404 verdadero. **El caché de la carta se diseña en el ítem «Rendimiento de la carta pública».**

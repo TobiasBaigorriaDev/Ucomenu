@@ -67,15 +67,16 @@ Tres niveles más WebAR como add-on, con **cobro manual** en el MVP: el SuperAdm
 | Platos activos | hasta 80 | hasta 200 | sin límite |
 | Menú digital + QR por mesa + identidad visual | ✔ | ✔ | ✔ |
 | Llamado al mozo / pedir la cuenta + panel de sala | — | ✔ | ✔ |
+| Analítica básica (posterior al MVP) | — | ✔ | ✔ |
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
 | **Add-on WebAR** | no disponible | contratable | contratable |
 
-- **Add-on WebAR:** +USD 25/mes sobre Pro o Premium. Incluye un cupo de hasta **15 platos con modelo 3D activo**. Se pueden habilitar **packs extra de +10 platos 3D** (precio del pack: lo fija el SuperAdmin; parametrizable).
+- **Add-on WebAR:** +USD 25/mes sobre Pro o Premium. Incluye un cupo de hasta **15 platos con modelo 3D activo**. Se pueden habilitar **packs extra de +10 platos 3D** (**+USD 10/mes por cada pack**; parametrizable en la base).
 - **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito.
 - **Límites:** son techos para *crear* (no se puede superar el tope). Los platos se cuentan solo si están activos.
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.
 - En el MVP se venden **Básico y Pro**. Premium y el add-on WebAR se habilitan cuando se entreguen las fases 3 y 2.
-- *Supuesto (nuevo):* la analítica (platos más vistos, llamados por franja) **no está asignada a ningún plan**; queda en el backlog sin plan hasta que se decida.
+- **Analítica básica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). Se construye después del MVP (Fase 4).
 
 ### Mora y suspensión (degradación progresiva)
 Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Supuesto (nuevo)*):
@@ -112,7 +113,7 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 
 - *Supuesto (nuevo):* lo que el Staff **no** puede hacer es lo que no figura en su definición (personal, sucursales, apariencia, plan).
 - Cambiar plan, add-ons o estado de la suscripción es **exclusivo del SuperAdmin**; el Dueño solo los ve.
-- Como el Staff puede cambiar precios, los **cambios de precio quedan registrados** (quién, cuándo, valor anterior y nuevo). *Supuesto (nuevo)*, por tratarse de dinero.
+- Como el Staff puede cambiar precios, los **cambios de precio quedan registrados** (quién, cuándo, valor anterior y nuevo), sea Staff o Dueño quien los haga. Confirmado por el usuario el 2026-10-13.
 
 ### Menú
 - El comensal solo ve categorías y platos **activos**; un plato agotado en la sucursal se muestra como no disponible, no desaparece.
