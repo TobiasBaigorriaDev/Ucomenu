@@ -1,0 +1,25 @@
+# Secretos y entornos locales
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# Dependencias y builds (ajustar por stack)
+node_modules/
+dist/
+build/
+.venv/
+__pycache__/
+*.pyc
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/settings.json
+
+# Estado local de agentes (no versionar)
+.claude/settings.local.json
