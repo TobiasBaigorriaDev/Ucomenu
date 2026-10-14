@@ -38,7 +38,7 @@
 ## Pruebas del panel de sala (2026-10-14, sobre `main` con el panel integrado, base compartida recién reseteada)
 - typecheck · lint · build OK · unitarias **147/147** · RLS **370/370** (15 archivos) · E2E **121/121** en dos corridas completas seguidas.
 - Mutaciones del panel: 41 defensas rotas de a una, 39 detectadas y 2 equivalentes (en la ficha, con la reclasificación pedida por Codex). Mesas 46/51 y llamado 44/47: ver sus fichas.
-- **No ejecutado:** el sonido real y el *Wake Lock* en un teléfono (Safari/iOS y Android); el sondeo en una red móvil real; lector de pantalla; `pnpm dev` de punta a punta; escaneo real de un QR impreso; la barra del llamado en un teléfono real; la IP real detrás del hosting.
+- **Probado en un teléfono real (2026-10-14, Wi-Fi local, `next dev`):** carta pública, mesa con la barra del llamado, panel de sala (aviso en ~3 s y sonido), historial de precios y escaneo real del QR de la hoja. **No ejecutado:** *Wake Lock* (exige HTTPS), el sondeo en una red móvil real, lector de pantalla, la IP real detrás del hosting. El usuario encontró el historial de precios «muy sencillo» visualmente (funciona, pendiente un repaso de diseño si se pide).
 - **Lección:** tras una tanda de mutaciones de pantalla, `.next` conserva la compilación de la última mutación: **siempre `pnpm build` antes de la verificación final**.
 - **Endurecimiento de las pruebas de RLS** (un *worker* de Vitest caído con `0xC0000409` dejaba organizaciones `tt-*` sin limpiar): limpieza previa (`tests/rls/global-setup.ts`), `hookTimeout` de 60 s, `testTimeout` de 30 s, reintentos en `deleteOrg` y la prueba de lectura pública de `catalog.rls.test.ts` ignora organizaciones `tt-*`/`e2e-*`.
 
