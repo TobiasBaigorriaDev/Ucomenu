@@ -1,7 +1,7 @@
 # Cambio: Historial de cambios de precio (`price_history`)
-Estado: **implementado y verificado en una instancia aislada; sin integrar** — falta la corrida contra la base compartida (otra ventana), la revisión de un segundo agente y la aprobación humana de las decisiones marcadas «a confirmar» (nivel C)
+Estado: **hecho e integrado a `main` (2026-10-14)** — aprobado por Codex (solo lectura) tras dos P2 corregidos; decisiones de borrado y de `changed_by = NULL` aceptadas por el usuario (ADR 0012). Pendiente fuera de este ítem: RLS/E2E en la base compartida tras `pnpm db:reset`, retención y purga antes del borrado de organizaciones (nivel C)
 Nivel: **C** (el tablero lo marcaba S; se sube por dinero, permisos y por ser un registro que debe ser a prueba de escritura desde la aplicación)
-Rama: `feat/historial-precios` · worktree `../UcoMenu-precios` · **commit base `da20ffd`** (`main` local: incluye gestión de carta `c191728` y mesas y QR `3057b41`/`6762c81`; `origin/main` está atrasada en `0f468a4`)
+Rama: `feat/historial-precios` (integrada por avance directo; borrable) · worktree `../UcoMenu-precios` (borrable) · **commit base `da20ffd`**, luego fusionado con `main` `ca04004` (llamado incluido)
 
 ## Objetivo
 Que cada cambio **efectivo** del precio de un plato quede registrado por la base, en la misma transacción: plato, organización, quién lo hizo, cuándo, precio anterior y nuevo en centavos. Cierra el riesgo declarado en `producto.md` (Roles) y `arquitectura.md`: el Staff cambia precios y hoy no queda rastro.
