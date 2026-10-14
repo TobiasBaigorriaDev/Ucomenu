@@ -15,6 +15,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   create_trial_subscription: [true, false, false], // trigger
   enforce_branch_limit: [true, false, false], // trigger
   enforce_product_limit: [true, false, false], // trigger
+  guard_last_owner: [true, false, false], // trigger de memberships (ADR 0007)
   has_feature: [true, false, false],
   is_org_member: [true, false, true], // usada por políticas
   is_org_owner: [true, false, true], // usada por políticas

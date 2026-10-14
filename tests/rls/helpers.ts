@@ -29,6 +29,20 @@ export const PRODUCT_EN_CATEGORIA_INACTIVA = "13000000-0000-4000-8000-0000000000
 export const PRODUCT_EN_ORG_INACTIVA = "33000000-0000-4000-8000-000000000001";
 export const PRODUCT_EN_ORG_MOROSA = "43000000-0000-4000-8000-000000000001";
 
+// Usuarios de ejemplo del seed (contraseña pública de desarrollo).
+export const SEED_PASSWORD = "ucomenu-dev-2026";
+export const SEED_USERS = {
+  duenoCafe: { id: "a0000000-0000-4000-8000-000000000001", email: "dueno@cafe-ejemplo.test" },
+  mozoCafe: { id: "a0000000-0000-4000-8000-000000000002", email: "mozo@cafe-ejemplo.test" },
+  duenoParrilla: { id: "a0000000-0000-4000-8000-000000000003", email: "dueno@parrilla-demo.test" },
+  mozoParrilla: { id: "a0000000-0000-4000-8000-000000000004", email: "mozo@parrilla-demo.test" },
+  duenoMoroso: { id: "a0000000-0000-4000-8000-000000000005", email: "dueno@resto-moroso.test" },
+  mozoMoroso: { id: "a0000000-0000-4000-8000-000000000006", email: "mozo@resto-moroso.test" },
+  multi: { id: "a0000000-0000-4000-8000-000000000007", email: "multi@ucomenu.test" },
+} as const;
+/** Ids de los usuarios del seed que pertenecen a cada organización del seed. */
+export const SEED_MEMBERS_CAFE = [SEED_USERS.duenoCafe.id, SEED_USERS.mozoCafe.id, SEED_USERS.multi.id];
+
 export function client(key: string | undefined): Db {
   if (!url || !key) {
     throw new Error("Faltan variables de entorno de Supabase. Copiá .env.example a .env.local y .env.test.local.");

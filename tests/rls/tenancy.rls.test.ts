@@ -13,6 +13,7 @@ import {
   ORG_CAFE,
   ORG_PARRILLA,
   PRODUCT_ESPRESSO,
+  SEED_MEMBERS_CAFE,
   serviceClient,
   type Db,
   type TestUser,
@@ -195,7 +196,7 @@ describe("membresías: quién ve qué", () => {
 
     expect(error).toBeNull();
     expect(data?.every((m) => m.organization_id === ORG_CAFE)).toBe(true);
-    expect(data?.map((m) => m.user_id).sort()).toEqual([ownerA.id, staffA.id].sort());
+    expect(data?.map((m) => m.user_id).sort()).toEqual([ownerA.id, staffA.id, ...SEED_MEMBERS_CAFE].sort());
   });
 
   it("el staff ve solo la suya", async () => {

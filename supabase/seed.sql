@@ -78,3 +78,58 @@ insert into public.categories (id, organization_id, name, sort_order) values
 insert into public.products (id, organization_id, category_id, name, price_cents) values
   ('43000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '42000000-0000-4000-8000-000000000001',
    'Milanesa completa', 980000);
+
+-- ---------------------------------------------------------------------------
+-- Usuarios de ejemplo (SOLO DESARROLLO Y PRUEBAS). Contraseña pública: ucomenu-dev-2026.
+-- Nunca se cargan en producción: el seed solo corre con `supabase db reset` local.
+-- Las pruebas E2E y de base dependen de estos usuarios.
+--   dueno@cafe-ejemplo.test / mozo@cafe-ejemplo.test         → Café Ejemplo (owner / staff)
+--   dueno@parrilla-demo.test / mozo@parrilla-demo.test       → Parrilla Demo
+--   dueno@resto-moroso.test / mozo@resto-moroso.test         → Resto Moroso (cuenta vencida)
+--   multi@ucomenu.test                                       → owner en Café Ejemplo y staff en Parrilla Demo
+-- ---------------------------------------------------------------------------
+do $$
+declare
+  u record;
+begin
+  for u in
+    select * from (values
+      ('a0000000-0000-4000-8000-000000000001'::uuid, 'dueno@cafe-ejemplo.test'),
+      ('a0000000-0000-4000-8000-000000000002'::uuid, 'mozo@cafe-ejemplo.test'),
+      ('a0000000-0000-4000-8000-000000000003'::uuid, 'dueno@parrilla-demo.test'),
+      ('a0000000-0000-4000-8000-000000000004'::uuid, 'mozo@parrilla-demo.test'),
+      ('a0000000-0000-4000-8000-000000000005'::uuid, 'dueno@resto-moroso.test'),
+      ('a0000000-0000-4000-8000-000000000006'::uuid, 'mozo@resto-moroso.test'),
+      ('a0000000-0000-4000-8000-000000000007'::uuid, 'multi@ucomenu.test')
+    ) as t(id, email)
+  loop
+    insert into auth.users (
+      instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+      confirmation_token, recovery_token, email_change, email_change_token_new
+    ) values (
+      '00000000-0000-0000-0000-000000000000', u.id, 'authenticated', 'authenticated', u.email,
+      extensions.crypt('ucomenu-dev-2026', extensions.gen_salt('bf')), now(),
+      '{"provider":"email","providers":["email"]}', '{}', now(), now(),
+      '', '', '', ''
+    );
+
+    insert into auth.identities (id, user_id, provider_id, provider, identity_data, created_at, updated_at, last_sign_in_at)
+    values (
+      gen_random_uuid(), u.id, u.id::text, 'email',
+      jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true),
+      now(), now(), now()
+    );
+  end loop;
+end;
+$$;
+
+insert into public.memberships (user_id, organization_id, role) values
+  ('a0000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'owner'),
+  ('a0000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', 'staff'),
+  ('a0000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000001', 'owner'),
+  ('a0000000-0000-4000-8000-000000000004', '20000000-0000-4000-8000-000000000001', 'staff'),
+  ('a0000000-0000-4000-8000-000000000005', '40000000-0000-4000-8000-000000000001', 'owner'),
+  ('a0000000-0000-4000-8000-000000000006', '40000000-0000-4000-8000-000000000001', 'staff'),
+  ('a0000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000001', 'owner'),
+  ('a0000000-0000-4000-8000-000000000007', '20000000-0000-4000-8000-000000000001', 'staff');
