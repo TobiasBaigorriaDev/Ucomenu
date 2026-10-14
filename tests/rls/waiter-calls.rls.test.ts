@@ -417,9 +417,14 @@ describe("acceso directo a waiter_calls", () => {
 
     for (const usuario of [owner, staff, ajeno]) {
       expect((await usuario.db.from("waiter_calls").insert(nuevo)).error?.code).toBe("42501");
-      expect((await usuario.db.from("waiter_calls").update({ status: "attended" }).eq("organization_id", local.id)).error?.code).toBe("42501");
+      // Solo `status` es escribible (para atender, ficha del panel de sala); cualquier otra columna no.
+      expect((await usuario.db.from("waiter_calls").update({ kind: "bill" }).eq("organization_id", local.id)).error?.code).toBe("42501");
+      expect((await usuario.db.from("waiter_calls").update({ client_key: "a".repeat(32) }).eq("organization_id", local.id)).error?.code).toBe("42501");
       expect((await usuario.db.from("waiter_calls").delete().eq("organization_id", local.id)).error?.code).toBe("42501");
     }
+    // Quien no es miembro tampoco atiende: la política no le deja ver ni cambiar la fila (0 filas, sin error).
+    const ajena = await ajeno.db.from("waiter_calls").update({ status: "attended" }).eq("organization_id", local.id).select("id");
+    expect(ajena.data ?? []).toHaveLength(0);
     expect((await filas(local.id))[0].status).toBe("pending");
   });
 

@@ -141,6 +141,7 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 - Estados: `pendiente` → `atendido` (lo marca el personal) | `vencido` (automático a los **30 minutos**; se calcula por la antigüedad, sin proceso programado).
 - El personal puede **silenciar una mesa** temporalmente ante abuso.
 - El llamado no se pierde si el panel estaba desconectado: al reconectar aparecen todos los pendientes.
+- **Panel de sala** *(Staff y Dueño; ADR 0011)*: en `/sala/{slug}` la lista se actualiza sola cada ~3 segundos (no es instantánea; con la pestaña oculta los navegadores la ralentizan). Cada llamado muestra la mesa, el tipo y «hace N»; el que más espera va primero y desde los 5 minutos se marca como urgente. Un llamado nuevo resalta, suma al título de la pestaña y, si el personal activó las alertas con un toque (el navegador no deja sonar sin él), suena y mantiene la pantalla encendida; lo que ya estaba al abrir la pantalla no suena. «Atendido» lo saca de la lista y registra la hora y quién lo atendió; si dos personas lo tocan a la vez, una lo atiende y la otra ve que ya estaba atendido. Sin conexión la pantalla lo avisa, conserva la última lista y se recupera sola al volver. Los pendientes de más de 30 minutos no se muestran. Con plan Básico, o con la cuenta en solo lectura o suspendida, el panel muestra un aviso en lugar de la lista (el Staff sin datos del plan).
 
 ### Suscripción
 - Qué puede usar una organización lo determinan su plan, sus add-ons y su estado de mora, y se verifica **siempre en el servidor**, nunca solo ocultando botones.

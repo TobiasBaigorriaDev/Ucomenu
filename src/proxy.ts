@@ -37,6 +37,10 @@ export async function proxy(request: NextRequest) {
   // Comodidad, no autorización: sin sesión, a /login conservando la ruta completa que se pidió.
   // La página vuelve a comprobar todo en el servidor (getUser + membresía).
   const { pathname } = request.nextUrl;
+  // La consulta del panel de sala es una API (JSON): sin sesión responde 401 en vez de redirigir a una página HTML.
+  if (!data?.claims && /^\/sala\/[^/]+\/estado$/.test(pathname)) {
+    return NextResponse.json({ error: "no_session" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+  }
   if (!data?.claims && pathname !== "/login") {
     const login = new URL("/login", request.url);
     login.searchParams.set("next", pathname);

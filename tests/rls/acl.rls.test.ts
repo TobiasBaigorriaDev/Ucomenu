@@ -12,6 +12,7 @@ import { sql } from "./helpers";
 // con sus permisos a propósito. Columnas: [definer, anon, public, authenticated].
 const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authenticated: boolean]> = {
   billing_state: [false, false, false], // pura; solo la usan otras funciones
+  can_attend_calls: [true, false, true], // usada por la política de UPDATE de waiter_calls (panel de sala)
   create_trial_subscription: [true, false, false], // trigger
   enforce_branch_limit: [true, false, false], // trigger
   enforce_product_limit: [true, false, false], // trigger
@@ -25,6 +26,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   org_state: [true, false, false],
   plan_grants: [true, false, false],
   enforce_table_limit: [true, false, false], // trigger de tables (ADR 0006 / mesas y QR)
+  stamp_attended_call: [false, false, false], // trigger de waiter_calls: fija attended_at y attended_by (panel de sala)
   rotate_table_token: [false, false, false], // trigger de tables: regenera qr_token (ADR 0009)
   product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
 };

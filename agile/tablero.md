@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [M] Panel de sala en tiempo real: llamados pendientes en `/sala/{slug}` por sondeo corto (~3 s, decisión del usuario; ADR 0011), alerta sonora y visual, marcar atendido (política de `UPDATE` solo sobre `status` y *trigger* que fija hora y persona), recuperación al reconectar y aviso con plan o cuenta que no lo permiten — implementado en `feat/panel-de-sala` (sin integrar): 132 unitarias, 331 de RLS, 119 E2E, 33 de 37 mutaciones detectadas (4 equivalentes); falta la revisión de un segundo agente → ficha: agile/cambios/panel-de-sala.md · ADR 0011
 
 ## Bloqueado
 - (vacío)
@@ -31,7 +31,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
-- [M] Panel de sala en tiempo real: canal privado por sucursal, alerta sonora y visual, marcar atendido (con su política de `UPDATE`), recarga al reconectar; debe tratar como vencido todo pendiente con más de 30 min (desbloqueado: el llamado ya existe)
 - [S] Configuración del llamado: UI para el cooldown por sucursal (`branches.waiter_call_cooldown_seconds`) y para silenciar una mesa (`tables.muted_until`); el vencimiento a 30 min ya es derivado y las columnas ya existen
 
 ### Fase 1 — MVP · Plataforma SaaS
