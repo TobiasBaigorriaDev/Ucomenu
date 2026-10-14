@@ -10,10 +10,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- (vacío)
+- [C] Acceso del personal: login y sesión (Supabase Auth con `@supabase/ssr`), estructura de `/panel` y `/sala` según rol, alta/baja de personal por el dueño, regla «una organización no se queda sin owner» y aviso de mora con `org_entitlements` — la ficha se crea al empezar; decisiones previas abiertas en `agile/ahora.md`
 
 ## Para verificar
-- [C] Planes y entitlements: catálogo, mora derivada (bordes al segundo), escrituras bloqueadas en solo lectura/suspendida, límites por trigger y carta suspendida — 176 pruebas de RLS, 16 E2E y 24 de 26 mutaciones detectadas (2 equivalentes); revisado por Codex (aprobar con cambios), dos defectos corregidos; falta confirmar y integrar → ficha: agile/cambios/planes-y-entitlements.md · ADR 0006
+- (vacío)
 
 ## Bloqueado
 - (vacío)
@@ -22,13 +22,12 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
 ### Fase 0 — Cimientos
-- [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol; alta/baja de personal por el dueño, regla «una organización no se queda sin owner» y aviso de mora al dueño con `org_entitlements` (desbloqueado por planes y entitlements)
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
-- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal; los topes de plan y el bloqueo por mora ya los aplica la base)
+- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal; los topes de plan y el bloqueo por mora ya los aplica la base; los errores `53400` y las escrituras bloqueadas se muestran con `org_entitlements`)
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
-- [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible, regenerar QR, entrada por `/t/{token}`
+- [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible, regenerar QR, entrada por `/t/{token}`; trigger del tope `tables_per_branch` con la guarda de pertenencia antes de contar (ADR 0006) y `org_can_write` en sus políticas
 - [M] Disponibilidad por sucursal: marcar agotado; gestión de sucursales
 - [M] Diseño gastronómico de alto impacto: sistema visual de la carta e identidad del local (logo y colores)
 - [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
@@ -40,7 +39,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
-- [S] Aviso de mora al dueño en el panel (la pantalla pública «Carta temporalmente no disponible» ya está hecha) (bloqueado por: acceso del personal)
+- [S] Aviso de mora al dueño en el panel (la pantalla pública «Carta temporalmente no disponible» ya está hecha); se resuelve junto con «Acceso del personal» si cabe en el incremento
 - [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (bloqueado por: gestión de carta)
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
 - [S] Textos legales: términos, privacidad y aviso de alérgenos
@@ -67,6 +66,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [C] Planes y entitlements: catálogo parametrizable, mora derivada (bordes al segundo), escrituras bloqueadas en solo lectura y suspendida, límites por plan con trigger, carta suspendida — revisado por Codex (2 rondas, aprobado), 176 pruebas de RLS, 16 E2E y 24 de 26 mutaciones detectadas (2 equivalentes), integrado a `main` (2026-10-14) → ficha: agile/cambios/planes-y-entitlements.md · ADR 0006
 - [C] Núcleo multi-tenant: membresías, roles y RLS de escritura con aislamiento entre organizaciones — revisado por Codex (aprobar), 81 pruebas de RLS y mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/nucleo-multi-tenant.md · ADR 0005
 - [M] Esqueleto caminante: bootstrap + carta pública de solo lectura con RLS — revisado por Codex (aprobar con cambios), correcciones aplicadas, integrado a `main` (2026-10-13) → ficha: agile/cambios/esqueleto-menu-publico.md
 - [M] Exploración inicial: producto, arquitectura, ADR 0001–0004 y backlog (2026-10-13)

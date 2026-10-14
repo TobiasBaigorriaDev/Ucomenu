@@ -1,5 +1,5 @@
 # Cambio: Planes y entitlements — catálogo de planes, mora derivada, límites y bloqueo de escrituras
-Estado: verificado; revisado por Codex (*aprobar con cambios*), correcciones aplicadas; pendiente de integrar a `main` tras confirmar la corrección
+Estado: **hecho** — revisado por Codex (*aprobar con cambios*, dos P2 corregidos; segunda ronda: *aprobar*) e integrado a `main` el 2026-10-14
 Nivel: C
 
 ## Objetivo
@@ -69,7 +69,7 @@ Ejecutadas el 2026-10-14 sobre una base recién reseteada (`pnpm db:reset`), mig
 - Sin residuos tras las corridas: 0 organizaciones `tt-*` y 0 usuarios `rls-*` en la base.
 
 Pendientes:
-- Revisión independiente con `agile-revisar` (nivel C: segundo agente, solo lectura).
+- Ninguno de revisión: Codex aprobó las correcciones (2026-10-14).
 - No probado: rendimiento de las políticas con `org_is_published` por fila con volumen real; Safari/iOS y dispositivos reales; lector de pantalla; login desde la app (no existe todavía); la zona horaria de la base distinta de UTC en producción (el cálculo usa horas y es independiente de la zona de sesión, verificado en SQL).
 
 ## Aprendizajes / cambios de decisión
@@ -116,4 +116,4 @@ Amenazas: leer el estado de otra organización por `org_entitlements`, saltarse 
 - Rollback: `git revert` de la migración + `pnpm db:reset`. En una base con datos: volver a crear las políticas anteriores (están en `20261014000121_*` y `20261013230544_*`), `drop trigger`/`drop function` de lo nuevo y `drop table` de las cuatro tablas nuevas; no se pierde dato de carta.
 
 ## (C) Aceptación explícita del riesgo
-- El usuario fijó las reglas de negocio de mora, alta, límites y alcance el 2026-10-14 y pidió ejecutar el ítem con `agile-iterar`. Operación solo local y aditiva. La revisión de nivel C por un segundo agente (solo lectura) queda **pendiente**; no se integra a `main` hasta entonces.
+- El usuario fijó las reglas de negocio de mora, alta, límites y alcance el 2026-10-14 y pidió ejecutar el ítem con `agile-iterar`. Operación solo local y aditiva. La revisión de nivel C se hizo con un segundo agente (Codex, solo lectura): primera ronda *aprobar con cambios* (2 P2), segunda ronda *aprobar*. Integrado a `main` el 2026-10-14.

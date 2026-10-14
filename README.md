@@ -4,12 +4,13 @@ SaaS multi-tenant de **menú digital interactivo** para restaurantes, bares y ca
 
 Proyecto creado con la plantilla **Agile SDD 1.1.1**: desarrollo guiado por especificaciones vivas, en iteraciones pequeñas y verificables, con Codex CLI y Claude Code elegidos manualmente.
 
-## Cómo empezar
-1. Completá `docs/producto.md` y `docs/arquitectura.md` (idealmente explorando con Claude Code + `agile-explorar`).
-2. Completá la sección **Comandos del proyecto** de `AGENTS.md`.
-3. Elegí un incremento pequeño y verificable y trabajalo con `agile-iterar` (Codex o Claude).
-4. Revisá según el nivel de riesgo (`agile-revisar`).
-5. Cerrá cada sesión actualizando `agile/ahora.md`.
+## Cómo trabajar
+1. Leé `AGENTS.md` y `agile/ahora.md` (en qué quedó la última sesión y cuál es el próximo paso).
+2. Elegí un incremento pequeño y verificable del `agile/tablero.md` y trabajalo con `agile-iterar` (Codex o Claude); si el tema no está claro, `agile-explorar` primero.
+3. Revisá según el nivel de riesgo (`agile-revisar`); en el nivel C la revisión la hace el otro agente, en solo lectura.
+4. Cerrá cada sesión actualizando `agile/ahora.md`.
+
+**Estado (2026-10-14):** carta pública con RLS; multi-tenant con membresías y roles; planes, mora derivada y límites aplicados en la base. Sigue «Acceso del personal» (login y paneles). Detalle en `agile/tablero.md`.
 
 ## Desarrollo local
 Requisitos: Node 24, pnpm y Docker encendido.
@@ -20,7 +21,9 @@ pnpm db:reset        # aplica migraciones + datos semilla ficticios
 # Copiá .env.example a .env.local y completá la clave con: pnpm exec supabase status -o env
 pnpm dev             # http://localhost:3000/m/cafe-ejemplo/centro
 ```
-Pruebas, lint y demás comandos: sección **Comandos del proyecto** de `AGENTS.md`.
+Cartas de ejemplo del seed: `/m/cafe-ejemplo/centro`, `/m/parrilla-demo/sur` y `/m/resto-moroso/unica` (cuenta suspendida por mora: muestra «Carta temporalmente no disponible»).
+
+Pruebas, lint y demás comandos: sección **Comandos del proyecto** de `AGENTS.md`. Las pruebas de RLS necesitan Docker encendido y la base reseteada (`pnpm db:reset`).
 
 ## Estructura
 | Ruta | Para qué sirve |
