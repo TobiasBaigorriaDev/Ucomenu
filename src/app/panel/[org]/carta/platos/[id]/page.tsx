@@ -75,6 +75,16 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           canWrite={canWrite}
         />
       </section>
+
+      <p className="mt-12">
+        <Link
+          href={`/panel/${membership.org.slug}/carta/platos/${product.id}/historial`}
+          className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2"
+          data-testid="ver-historial-plato"
+        >
+          Ver el historial de precios de este plato
+        </Link>
+      </p>
     </main>
   );
 }

@@ -149,6 +149,44 @@ export async function listMembers(ctx: PersonnelContext, orgId: string): Promise
   );
 }
 
+export type AuthorInfo = { email: string; role: Role };
+
+/**
+ * Para la pantalla del historial de precios (ficha pantalla-historial-de-precios): el email y el rol actual de las
+ * personas `userIds` que SIGUEN siendo miembros de `orgId`. Solo el Dueño (comprobado con su sesión, no con la clave
+ * de servicio). Quien ya no es miembro de este local queda fuera del resultado aunque su cuenta de Auth exista (trabaja
+ * en otro local): nunca se entrega el email de alguien ajeno a esta organización. La membresía se lee con la sesión
+ * del Dueño (RLS); `service_role` solo consulta el email de Auth de ids que ya son miembros.
+ */
+export async function resolveAuthors(
+  ctx: PersonnelContext,
+  orgId: string,
+  userIds: string[],
+): Promise<Result<Map<string, AuthorInfo>>> {
+  if (!(await isOwnerOf(ctx, orgId))) return fail("forbidden");
+
+  const ids = [...new Set(userIds)];
+  if (ids.length === 0) return ok(new Map());
+
+  const { data, error } = await ctx.session
+    .from("memberships")
+    .select("user_id, role")
+    .eq("organization_id", orgId)
+    .in("user_id", ids);
+  if (error) return fail("unexpected");
+
+  const resolved = await Promise.all(
+    data.map(async (m): Promise<[string, AuthorInfo] | null> => {
+      if (!isRole(m.role)) return null;
+      const user = await ctx.admin.auth.admin.getUserById(m.user_id);
+      if (user.error) throw new Error("auth_lookup_failed"); // no confundir una falla con «ya no está en el local»
+      return [m.user_id, { email: user.data.user?.email ?? "(sin email)", role: m.role }];
+    }),
+  ).catch(() => null);
+  if (!resolved) return fail("unexpected");
+  return ok(new Map(resolved.filter((entry): entry is [string, AuthorInfo] => entry !== null)));
+}
+
 export async function createMember(
   ctx: PersonnelContext,
   orgId: string,

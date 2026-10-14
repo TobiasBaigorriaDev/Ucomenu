@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [M] Pantalla del historial de precios (por plato y por local; Dueño y Staff; debe tolerar platos y personas ya eliminados) — surgido de «Historial de cambios de precio» (ADR 0012) → ficha: agile/cambios/pantalla-historial-de-precios.md · rama `feat/pantalla-historial-precios` (probado: 187 unitarias, 386 RLS, 129 E2E; Codex aprobó con cambios dos veces, ya corregidos; falta su confirmación)
 
 ## Bloqueado
 - (vacío)
@@ -36,7 +36,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements). **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history`** (hoy `ON DELETE RESTRICT`, ADR 0012)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
-- [M] Pantalla del historial de precios (por plato y por local; Dueño y Staff; debe tolerar platos y personas ya eliminados) — surgido de «Historial de cambios de precio» (ADR 0012)
 - [S] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [S] Purga de `waiter_calls` por antigüedad (propuesta: 30 días) y textos legales sobre el identificador de cliente derivado de la IP — surgido de «Llamado desde la mesa»
 - [M] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)

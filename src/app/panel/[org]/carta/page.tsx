@@ -53,6 +53,12 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
         </p>
       ) : null}
 
+      <p className="mt-3">
+        <Link href={`/panel/${membership.org.slug}/historial-de-precios`} className={linkButtonClass} data-testid="ver-historial-precios">
+          Historial de precios
+        </Link>
+      </p>
+
       <section aria-labelledby="nueva-categoria" className="mt-8">
         <h2 id="nueva-categoria" className="font-display text-2xl">
           Nueva categoría
