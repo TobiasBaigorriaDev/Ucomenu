@@ -69,6 +69,16 @@ export function formatDate(iso: string | number | Date): string {
   );
 }
 
+/** Fecha con año, para la pantalla de suscripción. */
+export function formatDateWithYear(iso: string | number | Date): string {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Argentina/Buenos_Aires",
+  }).format(new Date(iso));
+}
+
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
 /**

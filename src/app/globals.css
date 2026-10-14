@@ -10,6 +10,17 @@
   --muted: #566562;
   --cobalt: #2646c4;
   --tile: #d6dff3;
+  /* Avisos de la cuenta (panel): fondo, texto y borde por gravedad. Texto sobre fondo > 7:1. */
+  --grace-bg: #f6ecc4;
+  --grace-ink: #4a3a00;
+  --grace-edge: #b58a00;
+  --readonly-bg: #f8dcc3;
+  --readonly-ink: #5c2a00;
+  --readonly-edge: #c2570c;
+  --suspended-bg: #f3d0cc;
+  --suspended-ink: #5e120d;
+  --suspended-edge: #b3261e;
+  --danger: #9b1c14;
   color-scheme: light;
 }
 
@@ -19,6 +30,16 @@
   --color-muted: var(--muted);
   --color-cobalt: var(--cobalt);
   --color-tile: var(--tile);
+  --color-grace-bg: var(--grace-bg);
+  --color-grace-ink: var(--grace-ink);
+  --color-grace-edge: var(--grace-edge);
+  --color-readonly-bg: var(--readonly-bg);
+  --color-readonly-ink: var(--readonly-ink);
+  --color-readonly-edge: var(--readonly-edge);
+  --color-suspended-bg: var(--suspended-bg);
+  --color-suspended-ink: var(--suspended-ink);
+  --color-suspended-edge: var(--suspended-edge);
+  --color-danger: var(--danger);
   --font-display: var(--font-young-serif), Georgia, serif;
   --font-sans: var(--font-hanken), system-ui, sans-serif;
 }

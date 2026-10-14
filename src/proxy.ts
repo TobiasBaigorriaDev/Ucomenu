@@ -6,8 +6,9 @@ import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
  * Renueva la sesión de Supabase en cada pedido de las áreas con login, para que las páginas
  * (que no pueden escribir cookies) reciban siempre un token vigente.
  *
- * NO autoriza nada: quién puede ver qué lo decide cada página en el servidor, con `getUser()` y
- * la membresía (ver `src/lib/auth/session.ts`). Un proxy no alcanza como única defensa.
+ * NO autoriza: quién puede ver qué lo decide cada página en el servidor, con `getUser()` y la membresía
+ * (ver `src/lib/auth/session.ts`). Un proxy no alcanza como única defensa; acá solo se renueva la sesión
+ * y se redirige a /login a quien no tiene ninguna.
  */
 export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -31,7 +32,17 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+
+  // Comodidad, no autorización: sin sesión, a /login conservando la ruta completa que se pidió.
+  // La página vuelve a comprobar todo en el servidor (getUser + membresía).
+  const { pathname } = request.nextUrl;
+  if (!data?.claims && pathname !== "/login") {
+    const login = new URL("/login", request.url);
+    login.searchParams.set("next", pathname);
+    return NextResponse.redirect(login);
+  }
+
   return response;
 }
 
