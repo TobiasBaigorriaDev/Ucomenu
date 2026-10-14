@@ -1,0 +1,87 @@
+# Cambio: Mesas y QR — alta de mesas, token opaco, hoja imprimible, regenerar QR y entrada por `/t/{token}`
+Estado: **para verificar** — implementado y probado en la rama `feat/mesas-y-qr` (sin integrar a `main`)
+Nivel: M (el backlog lo define así: aditivo, sin dinero ni borrados; lo tratamos con rigor extra porque agrega una función pública y un token que más adelante identifica la mesa del llamado — por eso incluye pruebas de base, pruebas adversarias y mutaciones)
+
+## Objetivo
+Que el Dueño y el Staff den de alta las mesas de cada sucursal, impriman la hoja con el QR de cada una y puedan regenerarlo; y que el comensal que escanea el QR llegue a la carta de su sucursal sabiendo en qué mesa está (`/t/{token}`). Es la base del «Llamado al mozo», que solo existe si se entró por el QR de una mesa.
+
+## Decisiones (derivadas de `docs/producto.md`, `docs/arquitectura.md` y los ADR 0005/0006/0008; revisables)
+1. **Quién:** Dueño **y** Staff gestionan mesas (`producto.md`, *Roles y permisos*). Nada de esto es exclusivo del Dueño. Se escribe con el cliente de la persona (RLS), nunca con `service_role`, y toda escritura confirma las filas afectadas (un `UPDATE` bloqueado afecta 0 filas sin error).
+2. **Rutas:** panel `/panel/{slug}/mesas` (mesas por sucursal) y `/panel/{slug}/mesas/imprimir?sucursal={id}` (hoja imprimible); público `/t/{token}`. Entrada «Mesas» en la navegación del panel para ambos roles; cada página y acción exige `requireMembership`.
+3. **Tabla `tables`** (`organization_id`, `branch_id`, `label`, `qr_token`, `is_active`, `created_at`) con **clave foránea compuesta** a `branches (id, organization_id)`: una mesa nunca apunta a una sucursal de otra organización. `label` de 1 a 40 caracteres, **única por sucursal sin distinguir mayúsculas**. **No hay borrado** en este ítem (desactivar es la baja; quitar una mesa con historial de llamados se resuelve cuando existan los llamados). «Silenciada hasta» llega con el ítem del llamado.
+4. **Token opaco:** 32 caracteres hexadecimales (un UUID v4 sin guiones: 122 bits aleatorios), **generados por la base**; la API **no puede fijarlo**. La columna se inserta por defecto y un *trigger* de `UPDATE` descarta cualquier valor que llegue y pone uno nuevo: **regenerar el QR = «tocar» `qr_token`** con la cuenta al día. Así no hace falta una función `SECURITY DEFINER` solo para regenerar, y nadie puede elegir un token adivinable.
+5. **Resolución pública por función, sin enumeración:** `anon` **no** tiene permiso ni política de lectura sobre `tables` (si no, podría listar todos los tokens). La entrada `/t/{token}` usa `public.resolve_table_qr(p_token)` (`SECURITY DEFINER`, valida el formato antes de buscar) que devuelve **solo** organización, sucursal, etiqueta, si la mesa está activa y el estado (`available` | `suspended`), o `null`.
+6. **Qué ve el comensal en `/t/{token}`:** token desconocido o malformado → **404** (igual que uno inexistente; un QR regenerado deja de servir); mesa activa → la carta de la sucursal con «Mesa N» en la cabecera; **mesa inactiva** → la carta sin etiqueta de mesa, como un link directo (el QR impreso no se rompe); cuenta **suspendida** → «Carta temporalmente no disponible»; **solo lectura** → funciona igual (los QR no se rompen por mora, `producto.md`). Página con `noindex` y sin enviar *referrer* (el token vive en la URL).
+7. **Tope `tables_per_branch`** (ADR 0006): cuenta las mesas **activas** de la sucursal y bloquea **crear una activa y activar una inactiva**; desactivar siempre se permite y editar una ya activa no consume cupo. El *trigger* comprueba **antes de contar** que la persona sea miembro de la organización y que la sucursal pertenezca a esa organización (si no, no cuenta ni informa nada y decide RLS/FK), con *advisory lock* por sucursal. Error `53400`; la pantalla muestra «Mesas activas: X de N» por sucursal y el mensaje del tope con el número que sale de `org_entitlements`.
+8. **Cuenta bloqueada:** en solo lectura y suspendida no se crean, renombran, activan ni regeneran mesas (política con `org_can_write`); se pueden ver y **la hoja se puede imprimir** (es lectura). La pantalla deshabilita los controles con el motivo, igual que la carta.
+9. **QR:** librería **`qrcode-generator` 2.0.4** (MIT, sin dependencias; **aprobada por el usuario el 2026-10-14**, agregada a `agile/herramientas-aprobadas.md`). El servidor dibuja el SVG (cada módulo oscuro como parte de un único `<path>`, sin `dangerouslySetInnerHTML`), corrección de errores M y zona de silencio de 4 módulos. La URL codificada es `{base}/t/{token}`; `base` = `NEXT_PUBLIC_SITE_URL` si está definida y, si no, el host y protocolo del pedido (cabeceras `x-forwarded-*`/`host`). Nunca se acepta la base desde un parámetro.
+10. **Hoja imprimible:** tarjetas con el nombre del local, «Mesa N», el QR y «Escaneá para ver la carta», 6 por hoja A4; al imprimir se oculta el marco del panel (cabecera, navegación y aviso). Botón «Imprimir» (`window.print()`).
+11. **Alta de a una mesa**, con sugerencia del próximo nombre («Mesa 7»). Las mesas se ordenan por nombre con orden natural («Mesa 2» antes de «Mesa 10»); no hay `sort_order`.
+12. **Seed:** mesas de ejemplo con tokens fijos y conocidos (solo desarrollo y pruebas) para probar `/t/{token}`.
+
+## Comportamiento y aceptación
+**Alta y gestión (Dueño y Staff)**
+- [x] Dada una sucursal, cuando el Dueño o el Staff agrega una mesa con una etiqueta válida, entonces aparece en la lista de esa sucursal, activa, con un token que no pudo elegir.
+- [x] Etiqueta vacía, de más de 40 caracteres o repetida en la sucursal (también con otras mayúsculas) → error claro y lo escrito se conserva; dos sucursales pueden repetir etiquetas.
+- [x] Renombrar y activar/desactivar persisten; «Platos» no cambia: nada de la carta se toca.
+- [x] «Regenerar QR» (con confirmación) cambia el token: el QR anterior pasa a dar 404 y el nuevo funciona; la etiqueta y el estado de la mesa no cambian.
+- [x] La lista muestra «Mesas activas: X de N» por sucursal y se ordena en orden natural.
+
+**Tope del plan y cuenta bloqueada**
+- [x] Con el tope de mesas activas alcanzado (Básico: 20), crear una activa y activar una inactiva muestran el mensaje del tope con el número correcto; desactivar sigue permitido; crear una mesa **inactiva** funciona a nivel de base y del módulo (la pantalla da de alta solo mesas activas); el tope es por sucursal (otra sucursal tiene su propio cupo).
+- [x] En **solo lectura** y **suspendida**: se ve la lista y se puede abrir la hoja imprimible, pero los controles están deshabilitados con el motivo y una acción forzada responde con ese motivo sin éxito falso y sin cambiar nada (Dueño y Staff). En **gracia** se edita con normalidad.
+
+**QR e impresión**
+- [x] La hoja imprimible muestra una tarjeta por mesa **activa** de la sucursal elegida, con su QR (SVG) cuya URL es `{base}/t/{token}`; sin desborde a 390 px; al imprimir se oculta el marco del panel.
+- [x] El QR de una mesa codifica exactamente la URL de su token actual (se comprueba contra la matriz del codificador) y cambia al regenerar.
+
+**Entrada por `/t/{token}` (comensal anónimo)**
+- [x] Un token válido de mesa activa muestra la carta de su sucursal con «Mesa N»; el mismo token de una mesa inactiva muestra la carta sin «Mesa N».
+- [x] Un token inexistente, con formato inválido, de un QR regenerado o con caracteres raros → 404 idéntico, sin pistas.
+- [x] Con la cuenta en solo lectura funciona; suspendida muestra «Carta temporalmente no disponible».
+- [x] Un usuario anónimo **no puede leer** `tables` por la API (ni listar tokens) ni escribir; solo puede llamar a la función de resolución.
+
+**Permisos y aislamiento**
+- [x] Sin sesión, `/panel/{slug}/mesas…` redirige al login; un usuario de otro local recibe 404; un id de mesa o de sucursal de **otra organización** (URL o campo oculto manipulado) no se ve ni se modifica.
+- [x] Por la API, nadie puede fijar un `qr_token`, mover una mesa de sucursal u organización, ni crear una mesa en una sucursal ajena.
+
+## Alcance / fuera de alcance
+- Incluye: migración (`tables`, claves, índices, RLS, permisos por columna, *trigger* de token, *trigger* del tope, función `resolve_table_qr`); seed; módulo `src/lib/mesas` (validación, escrituras con RLS y confirmación de filas, resolución, URL base, matriz y SVG del QR); páginas `/panel/{slug}/mesas` y `/imprimir`; ruta pública `/t/{token}` (reutilizando la carta con el componente extraído); estilos de impresión; ADR 0009; pruebas (unitarias, base, módulo, E2E) y mutaciones; ajustes de `acl.rls.test.ts`, `.env.example`, `database.types.ts`, docs, tablero y handoff.
+- No incluye: borrado de mesas; alta masiva («Mesa 1 a 20»); orden manual; «silenciada hasta» y el llamado al mozo; diseño del QR con logo o colores; PDF o descarga del QR como imagen; control de lectura por ubicación; gestión de sucursales (alta, baja y edición de sucursales llegan con «Disponibilidad por sucursal»); cuota de intentos de lectura de tokens.
+
+## Dependencias y riesgos
+- **Dependencia nueva `qrcode-generator` 2.0.4**: aprobada; versión exacta fijada en `package.json` y `pnpm-lock.yaml`. No requiere red en ejecución ni secretos.
+- **Un QR fotografiado sirve desde afuera del local** (riesgo ya registrado en `arquitectura.md`): se mitiga con regenerar ahora y con cooldown/límites en el ítem del llamado. El token no es un secreto fuerte: identifica la mesa, no autoriza escritura de nada por sí solo.
+- **Función pública nueva (`SECURITY DEFINER`)**: se acota con formato validado, salida mínima y `search_path` vacío; entra a la matriz de funciones de `acl.rls.test.ts`.
+- **«Tocar el token» como regeneración** es poco evidente: queda explicado en la migración y probado (el valor enviado se descarta; mismo valor = sin cambio).
+- **Token en la URL:** puede quedar en historiales y *logs* de acceso; `noindex` y sin *referrer*. Sin límite de intentos: 122 bits hacen inviable adivinar.
+- **Sin borrado:** un local con mesas de más solo puede desactivarlas.
+- **Base del QR:** si `NEXT_PUBLIC_SITE_URL` no está definida en producción y el panel se abre por otro dominio, el QR impreso apunta a ese dominio; va al checklist de «Salida a producción».
+
+## Evidencias de verificación
+Ejecutadas el 2026-10-14 sobre una base recién reseteada (`pnpm db:reset`, migración `20261014035425_tables_and_qr.sql`) y con el build hecho sobre el código final:
+- `pnpm typecheck` OK · `pnpm lint` OK · `pnpm build` OK.
+- `pnpm test` **106/106** (17 nuevas en `src/lib/mesas/mesas.test.ts`: etiquetas, orden natural, URL y base del QR con cabeceras hostiles, matriz del QR —patrones de posición, módulo oscuro, **nivel de corrección M leído de los bits de formato** y las dos copias coherentes—, trazado SVG, lectura de la respuesta pública y mensajes).
+- `pnpm test:rls` **286/286** en 11 archivos (257 → 286): `tables` (18: permisos por columna, token generado por la base y regeneración que descarta el valor enviado, etiquetas, aislamiento incluida la sucursal ajena sin filtrar el uso, tope Básico/Pro y por sucursal, gracia/solo lectura/suspendida y `resolve_table_qr` con tokens válidos, inactivos, malformados, de organización inactiva y suspendida) y `mesas` (11: el módulo de datos con usuarios reales, una persona con dos locales, cuenta bloqueada **sin falsos éxitos** con una comprobación de estado desactualizada simulada). `acl` ajustada (tres funciones nuevas en las matrices).
+- `pnpm test:e2e` **84/84** (64 previas + 20 de mesas a 390 px) en dos corridas completas; en una tercera una prueba de la carta murió con el *worker* (0 ms) y las otras 83 pasaron: es la inestabilidad ya registrada de Windows (`0xC0000409`), no un fallo de las pruebas. Cubre: `/t/{token}` con mesa activa, inactiva, suspendida, solo lectura y 8 tokens inválidos con 404 idéntico, `noindex` y sin *referrer*; alta, validación, renombrar, activar y orden natural; Staff; regenerar (token viejo 404, nuevo sirve, las demás mesas no cambian); «Probar el QR»; hoja imprimible (solo mesas activas, **el trazado SVG es exactamente el QR de `{base}/t/{token}`**, marco oculto al imprimir, cambia al regenerar, abre con la cuenta bloqueada, sucursal ajena 404); tope de 20; solo lectura y suspendida con Dueño y Staff (controles deshabilitados, tres acciones forzadas sin éxito falso, base y QR intactos); gracia; 404 para otro local; formularios manipulados (local, sucursal y mesa ajenos).
+- **Mutaciones: 50 defensas rotas de a una, 45 detectadas y 5 equivalentes.** Base (21, 19 detectadas): *trigger* de token y de tope apagados, tope sin guarda de membresía / de sucursal, que cuente inactivas, que editar consuma cupo o que bloquee inactivas, políticas sin `org_can_write` o sin membresía, `anon` con `SELECT`, permisos de columna (`branch_id`, `qr_token`) y de `DELETE`, etiqueta repetida, y la función pública con organización inactiva, estado fijo, token en la respuesta y mesa inactiva. Módulo y unitarias (20, 18 detectadas): 0 filas sin chequear (x3), consultas sin acotar (x4), `guard` abierto, duplicado y `53400` sin traducir, orden natural, sugerencia, base del QR (host sin validar, `SITE_URL` ignorada o con esquema peligroso), zona de silencio, nivel de corrección, estado inválido, token con mayúsculas. Aplicación (9, 8 detectadas): página que siempre permite escribir, hoja con inactivas, número de mesa en una inactiva, base del QR ajena, marco impreso, acción que informa éxito aunque falle, acción sin `requireMembership` y sin `noindex`/*referrer*.
+  - *Equivalentes:* (1) política de `UPDATE` sin la membresía: PostgREST siempre filtra por columnas, así que también rige la política de lectura (que sí la exige); (2) `resolve_table_qr` sin validar el formato: un texto cualquiera simplemente no coincide con ningún token; (3) `regenerateTableQr` con la lectura previa sin acotar: el `UPDATE` sí está acotado y decide igual; (4) `createTable` sin comprobar la sucursal: la clave compuesta de la base rechaza igual (mismo resultado); (5) `/t/{token}` sin mirar la suspensión: `getPublicMenu` vuelve a comprobarla y muestra la misma pantalla.
+  - Dos que **sobrevivían** enseñaron pruebas flojas y se reforzaron: la acción sin `requireMembership` (solo se miraba la base; ahora el formulario con el local ajeno debe terminar en el 404) y el nivel de corrección del QR (ahora se lee de los bits de formato).
+- Revisión visual a 390 px y en impresión (A4 emulado): lista de mesas, hoja con tarjetas en dos columnas, carta pública con «Mesa 1». Los patrones de posición y la zona de silencio se ven correctos.
+- Sin residuos: 0 organizaciones `tt-*`/`e2e-*` y 0 usuarios `e2e-*`/`rls-*` (se limpiaron a mano los de la corrida con el *worker* caído y el de `limits.rls`, ver «Aprendizajes»).
+
+Pendientes (no ejecutado):
+- **Escanear un QR impreso con un teléfono real** (iOS y Android): en el entorno no hay un decodificador (`BarcodeDetector` no existe en el Chromium de pruebas) y instalar uno requiere aprobación. La URL, la matriz, el nivel de corrección y la zona de silencio sí están verificados.
+- Revisión de un segundo agente (Codex, solo lectura): opcional en nivel M, **no pedida todavía**.
+- Impresión real en papel (tamaño de las tarjetas, contraste); `pnpm dev` de punta a punta; Safari/iOS; lector de pantalla; verificar `NEXT_PUBLIC_SITE_URL` en producción (checklist de «Salida a producción»).
+
+## Aprendizajes / cambios de decisión
+- **Se instaló `qrcode-generator` 2.0.4 con aprobación explícita** (el usuario eligió entre tres opciones; las otras dos quedaron descartadas). Quedó en `agile/herramientas-aprobadas.md` y en el ADR 0009. El tipo se importa con `esModuleInterop` (`export =`).
+- **Un plan Básico solo admite una sucursal**, así que las pruebas del tope por sucursal crean el local con Pro (dos sucursales) y después bajan el plan: el tope de sucursales solo se aplica al crear.
+- **`BEFORE UPDATE OF qr_token` solo se dispara si la columna figura en el `SET`**: por eso «tocar el token» manda un valor cualquiera (`regenerar`) y el *trigger* lo reemplaza; mandar el valor actual no regenera. Quedó escrito en la migración y probado.
+- **Una política de `UPDATE` sin membresía no es explotable por la API** porque PostgREST filtra siempre por columnas y entonces rige también la política de lectura; la mutación quedó como equivalente. Lo mismo vale para el borrado de Storage (ADR 0008).
+- **El QR se verificó por estructura, no con una cámara:** la matriz tiene los tres patrones de posición, el módulo oscuro y el nivel de corrección M (leído de los bits de formato, con las dos copias coherentes), y la página imprime exactamente el trazado de `{base}/t/{token}`. Un escaneo real queda pendiente.
+- **La base del QR sale de `NEXT_PUBLIC_SITE_URL` o del host del pedido** (cabeceras validadas, nunca de un parámetro): sin la variable, un QR impreso desde otro dominio apunta a ese dominio. Va al checklist de producción.
+- **Las mesas inactivas se resuelven** (carta sin número) en vez de dar 404, para que un QR impreso de una mesa fuera de servicio no se rompa; el alta desde la pantalla crea solo mesas activas (crear inactivas queda disponible a nivel de base y módulo).
+- **Fuga preexistente en `limits.rls.test.ts`** (usuario `rls-fuga-otra-org-*` por corrida; ver la ficha de «Gestión de carta»): sigue sin corregirse, fuera de alcance.
+- **Windows:** un *worker* de Playwright murió otra vez con `0xC0000409` en una de tres corridas completas y dejó dos usuarios `e2e-*` sin limpiar (sus `afterAll` no corrieron).

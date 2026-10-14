@@ -24,6 +24,8 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   org_limit: [true, false, false],
   org_state: [true, false, false],
   plan_grants: [true, false, false],
+  enforce_table_limit: [true, false, false], // trigger de tables (ADR 0006 / mesas y QR)
+  rotate_table_token: [false, false, false], // trigger de tables: regenera qr_token (ADR 0009)
   product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
 };
 
@@ -31,6 +33,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
   org_entitlements: [false, true],
   public_menu_status: [true, true],
+  resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
 };
 
 describe("funciones de autorización y entitlements", () => {

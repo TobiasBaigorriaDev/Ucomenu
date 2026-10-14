@@ -82,3 +82,14 @@ body {
   border-bottom: 2px dotted rgb(27 42 40 / 0.4);
   transform: translateY(-0.3em);
 }
+
+/* Hoja de QR de las mesas: A4 con margen corto; el marco del panel se oculta con `print:hidden`. */
+@media print {
+  @page {
+    size: A4;
+    margin: 10mm;
+  }
+  html {
+    background: #fff;
+  }
+}

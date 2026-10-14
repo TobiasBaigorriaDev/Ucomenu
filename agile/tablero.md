@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [M] Mesas y QR: alta de mesas por sucursal, token opaco generado por la base, hoja imprimible, regenerar QR y entrada pública `/t/{token}` — implementado en `feat/mesas-y-qr` (sin integrar): 106 unitarias, 286 de RLS, 84 E2E, 45 de 50 mutaciones detectadas (5 equivalentes); falta escanear un QR impreso con un teléfono real y la revisión opcional de Codex → ficha: agile/cambios/mesas-y-qr.md · ADR 0009
 
 ## Bloqueado
 - (vacío)
@@ -26,7 +26,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 1 — MVP · Menú digital (plan Básico)
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
-- [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible, regenerar QR, entrada por `/t/{token}`; trigger del tope `tables_per_branch` con la guarda de pertenencia antes de contar (ADR 0006) y `org_can_write` en sus políticas
 - [M] Disponibilidad por sucursal: marcar agotado; gestión de sucursales
 - [M] Diseño gastronómico de alto impacto: sistema visual de la carta e identidad del local (logo y colores)
 - [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
@@ -40,6 +39,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (desbloqueado: la gestión de carta ya permite cambiar precios; hasta que exista, el Staff cambia precios sin registro)
+- [M] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [M] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
 - [S] Textos legales: términos, privacidad y aviso de alérgenos

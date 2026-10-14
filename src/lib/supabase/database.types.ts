@@ -203,6 +203,32 @@ isOneToOne: false
       referencedColumns: ["code"]
     }
                   ]
+                },"tables": {
+                  Row: {
+                    "branch_id": string,"created_at": string,"id": string,"is_active": boolean,"label": string,"organization_id": string,"qr_token": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label": string,"organization_id": string,"qr_token"?: string
+                  }
+                  Update: {
+                    "branch_id"?: string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label"?: string,"organization_id"?: string,"qr_token"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tables_branch_id_organization_id_fkey"
+      columns: ["branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "tables_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -214,6 +240,9 @@ isOneToOne: false
                            },
 "public_menu_status":
 { Args: { "p_branch_slug": string,"p_org_slug": string }; Returns: string
+                           },
+"resolve_table_qr":
+{ Args: { "p_token": string }; Returns: Json
                            }
           }
           Enums: {

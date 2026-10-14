@@ -128,8 +128,10 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 
 ### Mesas y QR
 - Cada mesa tiene un QR con un **identificador opaco** (no el número de mesa), de modo que no se pueda adivinar el de otra mesa.
-- Se puede **regenerar** el QR de una mesa; el anterior deja de funcionar para llamados.
+- Se puede **regenerar** el QR de una mesa; el anterior deja de funcionar (da «no encontramos esta carta») y hay que imprimir el nuevo.
 - Entrar por link directo muestra la carta completa pero sin las acciones de llamado.
+- **Gestión de mesas** *(Dueño y Staff; ADR 0009)*: se agregan de a una por sucursal, con un nombre de hasta 40 caracteres único en la sucursal; se renombran, se activan o desactivan y **no se borran** en esta etapa. El tope del plan (Básico 20, Pro 50 por sucursal) cuenta las mesas **activas**: con el tope alcanzado no se puede crear una activa ni activar otra (sí desactivar). La hoja imprimible trae una tarjeta por mesa activa (seis por A4) con el QR de `{dirección pública}/t/{token}`; se puede imprimir aunque la cuenta esté en solo lectura o suspendida, pero no se modifican mesas.
+- **Qué ve el comensal al escanear:** la carta de la sucursal con el número de mesa. Si la mesa está **desactivada** ve la carta sin número (como el link directo); con la cuenta en **solo lectura** funciona igual; **suspendida**, «Carta temporalmente no disponible»; un QR desconocido o regenerado, «no encontramos esta carta».
 
 ### Llamado al mozo
 - Requiere plan Pro o superior y suscripción en gracia o activa; si no, el botón no se muestra.

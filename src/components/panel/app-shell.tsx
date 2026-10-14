@@ -26,6 +26,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, children }: Props) {
     if (area === "panel") {
       items.push({ href: `/panel/${org.slug}`, label: "Resumen", exact: true });
       items.push({ href: `/panel/${org.slug}/carta`, label: "Carta" });
+      items.push({ href: `/panel/${org.slug}/mesas`, label: "Mesas" });
       if (role === "owner") {
         items.push({ href: `/panel/${org.slug}/suscripcion`, label: "Suscripción" });
         items.push({ href: `/panel/${org.slug}/personal`, label: "Personal" });
@@ -39,8 +40,8 @@ export function AppShell({ area, org, role, hasSeveralOrgs, children }: Props) {
 
   return (
     <div className="min-h-screen">
-      <div aria-hidden className="tile-band h-2" />
-      <header className="mx-auto max-w-3xl px-4 pt-4">
+      <div aria-hidden className="tile-band h-2 print:hidden" />
+      <header className="mx-auto max-w-3xl px-4 pt-4 print:hidden">
         <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
           <div className="min-w-0">
             {org ? (

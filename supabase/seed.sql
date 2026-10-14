@@ -79,6 +79,24 @@ insert into public.products (id, organization_id, category_id, name, price_cents
   ('43000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '42000000-0000-4000-8000-000000000001',
    'Milanesa completa', 980000);
 
+-- Mesas de ejemplo con tokens FIJOS (solo desarrollo y pruebas: en la app el token lo genera siempre la base).
+-- Las pruebas de /t/{token} dependen de estos valores.
+--   Café Ejemplo:  Mesa 1 y Mesa 2 activas; «Mesa 3 (fuera de servicio)» inactiva
+--   Parrilla Demo: Mesa 1 activa · Bar Inactivo (organización inactiva) · Resto Moroso (cuenta suspendida)
+insert into public.tables (id, organization_id, branch_id, label, qr_token, is_active) values
+  ('14000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000001',
+   'Mesa 1', 'c0ffee01000000000000000000000000', true),
+  ('14000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000001',
+   'Mesa 2', 'c0ffee02000000000000000000000000', true),
+  ('14000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', '11000000-0000-4000-8000-000000000001',
+   'Mesa 3 (fuera de servicio)', 'c0ffee03000000000000000000000000', false),
+  ('24000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000001',
+   'Mesa 1', 'fa11a001000000000000000000000000', true),
+  ('34000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', '31000000-0000-4000-8000-000000000001',
+   'Mesa 1', 'bad00001000000000000000000000000', true),
+  ('44000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '41000000-0000-4000-8000-000000000001',
+   'Mesa 1', 'dead0001000000000000000000000000', true);
+
 -- ---------------------------------------------------------------------------
 -- Usuarios de ejemplo (SOLO DESARROLLO Y PRUEBAS). Contraseña pública: ucomenu-dev-2026.
 -- Nunca se cargan en producción: el seed solo corre con `supabase db reset` local.
