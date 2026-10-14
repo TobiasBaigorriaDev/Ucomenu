@@ -151,6 +151,44 @@ describe("lectura del usuario sin membresía", () => {
   });
 });
 
+describe("escritura del usuario autenticado sin membresía", () => {
+  it("no puede insertar en ninguna tabla de negocio, de A ni de B", async () => {
+    const db = sinMembresia.db;
+    for (const org of [ORG_CAFE, ORG_PARRILLA]) {
+      const categoria = await db.from("categories").insert({ organization_id: org, name: `${PREFIX}sin-membresia` });
+      const plato = await db.from("products").insert({
+        organization_id: org,
+        category_id: org === ORG_CAFE ? CATEGORY_CAFETERIA : CATEGORY_PARRILLA,
+        name: `${PREFIX}sin-membresia`,
+        price_cents: 1,
+      });
+      expect(categoria.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
+      expect(plato.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
+    }
+  });
+
+  it("no modifica ni borra nada (0 filas) y los datos quedan intactos", async () => {
+    const db = sinMembresia.db;
+    const tablas = ["organizations", "branches", "categories", "products"] as const;
+    const antes = await Promise.all(tablas.map((t) => service.from(t).select("*").order("id")));
+
+    const resultados = [];
+    for (const t of tablas) {
+      resultados.push(await db.from(t).update({ name: "hackeado" }).neq("name", "").select("id"));
+      resultados.push(await db.from(t).delete().neq("name", "").select("id"));
+    }
+
+    // Sin permiso de DELETE (organizations, branches) falla con 42501; con permiso, RLS deja 0 filas.
+    for (const r of resultados) {
+      if (r.error) expect(r.error.code).toBe(INSUFFICIENT_PRIVILEGE);
+      else expect(r.data).toEqual([]);
+    }
+
+    const despues = await Promise.all(tablas.map((t) => service.from(t).select("*").order("id")));
+    expect(despues.map((r) => r.data)).toEqual(antes.map((r) => r.data));
+  });
+});
+
 describe("membresías: quién ve qué", () => {
   it("el owner ve las de su organización y no las de otra", async () => {
     const { data, error } = await ownerA.db.from("memberships").select("user_id, organization_id, role");

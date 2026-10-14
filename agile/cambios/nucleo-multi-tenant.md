@@ -1,5 +1,5 @@
 # Cambio: Núcleo multi-tenant — membresías, roles y RLS de escritura
-Estado: verificado (pendiente de `agile-revisar` por un segundo agente, solo lectura, antes de integrar a `main`)
+Estado: **hecho** — revisado con `agile-revisar` (Codex, solo lectura: *aprobar*, sin defectos bloqueantes) e integrado a `main` el 2026-10-14
 Nivel: C
 
 ## Objetivo
@@ -41,21 +41,27 @@ Roles de prueba: `owner` y `staff` de la organización A, `owner` de la B, usuar
 ## Evidencias de verificación
 Ejecutadas el 2026-10-14 sobre una base recién reseteada (`pnpm db:reset`), migración `20261014000121_tenant_core_memberships_and_write_policies.sql`:
 - `pnpm typecheck` OK · `pnpm lint` OK · `pnpm build` OK · `pnpm test` 23/23 · `pnpm test:e2e` 11/11.
-- `pnpm test:rls`: **71/71** (antes 49): `catalog.rls.test.ts` (lectura pública y escritura anónima, con y sin sesión) y `tenancy.rls.test.ts` (nuevo, con usuarios reales de Auth: owner/staff de A, owner de B, sin membresía y un miembro de dos organizaciones). Cubre todos los criterios de aceptación anteriores.
+- `pnpm test:rls`: **71/71** (antes 49; con las dos pruebas de la revisión, 81/81, ver abajo): `catalog.rls.test.ts` (lectura pública y escritura anónima, con y sin sesión) y `tenancy.rls.test.ts` (nuevo, con usuarios reales de Auth: owner/staff de A, owner de B, sin membresía y un miembro de dos organizaciones). Cubre todos los criterios de aceptación anteriores.
 - **Pruebas de mutación** (cada una rompe una defensa por separado; 8 mutaciones, todas detectadas tras sumar una prueba):
   - RLS apagado en `products` y `categories`: 25 fallan · política de insert de `products` abierta: 2 · `membresías` escribibles por la API: 4 · `is_org_member` siempre verdadero: 20 · autorización agregando `user_metadata`: 1 · el staff puede renombrar organizaciones: 1.
   - `organization_id` actualizable: **sobrevivía** (RLS y la FK compuesta lo tapaban para un miembro de una sola organización). Se agregó la prueba del miembro de dos organizaciones; con la mutación ahora falla.
   - `EXECUTE` de `anon` sobre la función: no es observable por la API (el esquema `private` no está expuesto); se verificó directo en la base: `anon` sin `USAGE` en `private` ni `EXECUTE`, `public` sin `EXECUTE`, `authenticated` con `EXECUTE`.
 - Tras `db:reset`, las 71 vuelven a pasar.
 
-Pendientes:
-- Revisión independiente con `agile-revisar` (nivel C: segundo agente, solo lectura).
-- No probado: login y sesiones reales desde la app (llega con «Acceso del personal»), rendimiento de las políticas con volumen de datos, limpieza de usuarios de prueba si una corrida se interrumpe a la mitad (quedarían usuarios `rls-*@example.test` en la base local; `db:reset` los borra).
+Revisión independiente (`agile-revisar`, Codex, solo lectura, 2026-10-14): **aprobar**, sin defectos bloqueantes. Dos mejoras menores, aplicadas:
+- **ACL y `search_path` automatizados** (`tests/rls/acl.rls.test.ts`, 8 pruebas, consulta el catálogo dentro del contenedor local de Postgres): las funciones de `private` son `SECURITY DEFINER`, de `postgres`, con `search_path` vacío y `EXECUTE` solo para `authenticated`; `anon` sin `USAGE` en `private`; no hay `SECURITY DEFINER` en `public`; toda tabla de `public` tiene RLS; `memberships` solo con `SELECT` para `authenticated`; `organization_id`, `id`, `slug`, `is_active` y `currency` no son actualizables; `anon` sin permisos de escritura. Funciona también como guardia para tablas y funciones futuras.
+- **Escritura del usuario autenticado sin membresía** (`tenancy.rls.test.ts`): `INSERT` rechazado con `42501` en A y B, y `UPDATE`/`DELETE` sin efecto (0 filas o `42501`) con los datos intactos en las cuatro tablas.
+- Verificación: typecheck, lint y build OK · unitarias 23/23 · **RLS 81/81** · E2E 11/11.
+- Mutaciones de las pruebas nuevas, todas detectadas: `EXECUTE` a `anon` (1 falla), tabla nueva sin RLS (1), `SECURITY DEFINER` en `public` (1), `organization_id` actualizable en `branches` (1), política de `UPDATE` abierta en `categories` (5). La mutación «función sin `search_path` fijo» **sobrevivía** al principio: `proconfig` quedaba `NULL` y la comparación daba `NULL`, no falso; se corrigió con `coalesce(..., false)` y ahora falla.
+
+No probado: login y sesiones reales desde la app (llega con «Acceso del personal»), rendimiento de las políticas con volumen de datos, limpieza de usuarios de prueba si una corrida se interrumpe a la mitad (quedarían usuarios `rls-*@example.test` en la base local; `db:reset` los borra).
 
 ## Aprendizajes / cambios de decisión
 - **`UPDATE`/`DELETE` fuera de la organización no devuelven error:** RLS oculta las filas y afectan 0. Solo `INSERT` y los permisos por columna devuelven `42501`. La aplicación debe tratar «0 filas» como «no permitido o inexistente».
 - **RLS no alcanza para un miembro de dos organizaciones:** puede mover una fila de A a B porque pasa el `WITH CHECK` de ambas. La barrera real es el `GRANT UPDATE (columnas)` sin `organization_id`. Decisión promovida a `docs/decisiones/0005-autorizacion-por-membresia.md`.
 - La prueba de mutación volvió a encontrar una defensa sin prueba propia (la de `organization_id`), igual que en el esqueleto: sigue siendo parte del procedimiento para el nivel C.
+- Las comprobaciones sobre `NULL` en SQL pueden pasar de largo: `not (... and NULL)` es `NULL` y la fila no se reporta. En pruebas de catálogo usar `coalesce(..., false)` y verificarlas con una mutación.
+- `acl.rls.test.ts` ejecuta SQL con `docker exec` porque la API REST no consulta `pg_catalog`; exige Docker encendido y el contenedor `supabase_db_ucomenu`.
 - Los viejos tests «`authenticated` no puede escribir» dejaron de ser ciertos (ahora un miembro escribe en su organización); se reemplazaron por la matriz de `tenancy.rls.test.ts` y, para sin membresía, por «0 filas afectadas».
 
 ## (C) Invariantes
@@ -90,4 +96,4 @@ Amenazas consideradas: escalada de rol propio, mover filas a otra organización,
 - Rollback (antes de que exista dato dependiente): `drop policy` de las políticas nuevas, `revoke` de los grants nuevos, `drop table public.memberships`, `drop schema private cascade`. La base vuelve al estado de solo lectura pública. En local basta `git revert` + `pnpm db:reset`.
 
 ## (C) Aceptación explícita del riesgo
-- El usuario pidió el ítem con nivel C el 2026-10-13 y delegó la ejecución en `agile-iterar`. No hay operaciones destructivas ni contra producción. La revisión de este nivel (`agile-revisar` por un segundo agente, solo lectura) queda **pendiente** antes de integrar a `main`.
+- El usuario pidió el ítem con nivel C el 2026-10-13 y delegó la ejecución en `agile-iterar`. No hay operaciones destructivas ni contra producción. La revisión de este nivel (`agile-revisar`, segundo agente, solo lectura) se hizo el 2026-10-14 con resultado *aprobar*; el usuario pidió integrar a `main` ese mismo día.

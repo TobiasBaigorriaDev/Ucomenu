@@ -10,10 +10,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- (vacío)
+- [C] Planes y entitlements: catálogo `plans` parametrizable, `subscriptions`, add-ons, `has_feature`, límites de plan y estado de mora derivado, aplicados en la base y el servidor — desbloquea «Gestión de carta» y «Acceso del personal» (la ficha se crea al empezar; preguntas previas en `agile/ahora.md`)
 
 ## Para verificar
-- [C] Núcleo multi-tenant: membresías, roles y RLS de escritura — 71 pruebas de RLS y 8 mutaciones; falta `agile-revisar` por un segundo agente → ficha: agile/cambios/nucleo-multi-tenant.md
+- (vacío)
 
 ## Bloqueado
 - (vacío)
@@ -22,7 +22,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
 ### Fase 0 — Cimientos
-- [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol; alta/baja de personal por el dueño y regla «una organización no se queda sin owner» (bloqueado por: núcleo multi-tenant)
+- [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol; alta/baja de personal por el dueño y regla «una organización no se queda sin owner» (conviene después de planes y entitlements)
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
 - [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal y planes y entitlements — hoy la base ya deja escribir a un miembro sin aplicar el tope de platos del plan)
@@ -39,7 +39,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] Configuración del llamado: cooldown por sucursal, silenciar mesa, vencimiento automático
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] Planes y entitlements: catálogo `plans` parametrizable, `subscriptions`, add-ons, `has_feature`, límites y estado de mora derivado, aplicados en base y servidor (bloqueado por: núcleo multi-tenant)
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
 - [S] Aviso de mora al dueño en el panel y pantalla «Carta temporalmente no disponible» (bloqueado por: planes y entitlements)
 - [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (bloqueado por: gestión de carta)
@@ -68,5 +67,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [C] Núcleo multi-tenant: membresías, roles y RLS de escritura con aislamiento entre organizaciones — revisado por Codex (aprobar), 81 pruebas de RLS y mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/nucleo-multi-tenant.md · ADR 0005
 - [M] Esqueleto caminante: bootstrap + carta pública de solo lectura con RLS — revisado por Codex (aprobar con cambios), correcciones aplicadas, integrado a `main` (2026-10-13) → ficha: agile/cambios/esqueleto-menu-publico.md
 - [M] Exploración inicial: producto, arquitectura, ADR 0001–0004 y backlog (2026-10-13)
