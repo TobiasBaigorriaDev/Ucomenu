@@ -336,6 +336,53 @@ describe("límite por cliente (30 cada 10 minutos)", () => {
     expect(await llamar(local.token, "bill")).toEqual({ status: "created" }); // sin identificador no se cuenta
   });
 
+  it("la comprobación y la inserción son atómicas por cliente: con 29 previos, pedidos simultáneos a mesas distintas dejan exactamente 30", async () => {
+    const local = await nuevoLocal("tt-llamado-limite-carrera");
+    const cliente = nuevoCliente();
+    // 29 avisos ya atendidos del cliente (en la mesa 2): le queda exactamente uno.
+    const previos = Array.from({ length: 29 }, (_, i) => ({
+      organization_id: local.id,
+      branch_id: local.branch,
+      table_id: local.table2,
+      kind: i % 2 === 0 ? "waiter" : "bill",
+      status: "attended",
+      client_key: cliente,
+      created_at: new Date(Date.now() - 2 * MIN - i * 1000).toISOString(),
+    }));
+    expect((await service.from("waiter_calls").insert(previos)).error).toBeNull();
+
+    // Doce mesas más: cada pedido va a una mesa distinta, así que el lock por mesa no los serializa.
+    const mesas = await service
+      .from("tables")
+      .insert(Array.from({ length: 12 }, (_, i) => ({ organization_id: local.id, branch_id: local.branch, label: `Carrera ${i + 1}` })))
+      .select("qr_token");
+    expect(mesas.error).toBeNull();
+
+    const resultados = await Promise.all(mesas.data!.map((m) => llamar(m.qr_token, "waiter", cliente)));
+    expect(resultados.filter((r) => r.status === "created")).toHaveLength(1);
+    expect(resultados.filter((r) => r.status === "rate_limited")).toHaveLength(11);
+
+    const { count } = await service.from("waiter_calls").select("id", { count: "exact", head: true }).eq("client_key", cliente);
+    expect(count).toBe(30);
+  });
+
+  it("mezclar clientes, mesas y tipos a la vez no produce interbloqueos ni errores (el orden de los locks es fijo)", async () => {
+    const local = await nuevoLocal("tt-llamado-mezcla");
+    const mesas = await service
+      .from("tables")
+      .insert(Array.from({ length: 6 }, (_, i) => ({ organization_id: local.id, branch_id: local.branch, label: `Mezcla ${i + 1}` })))
+      .select("qr_token");
+    expect(mesas.error).toBeNull();
+    const clientes = Array.from({ length: 5 }, () => nuevoCliente());
+
+    const pedidos = mesas.data!.flatMap((m, i) =>
+      (["waiter", "bill"] as const).flatMap((kind) => clientes.map((c, j) => llamar(m.qr_token, kind, (i + j) % 3 === 0 ? undefined : c))),
+    );
+    const resultados = await Promise.all(pedidos); // `llamar` falla si la función devuelve un error (p. ej. 40P01)
+    expect(resultados.filter((r) => r.status === "created")).toHaveLength(12); // una por mesa y tipo
+    expect((await filas(local.id)).filter((f) => f.status === "pending")).toHaveLength(12);
+  });
+
   it("los llamados de hace más de 10 minutos no cuentan", async () => {
     const local = await nuevoLocal("tt-llamado-limite-vence");
     const cliente = nuevoCliente();

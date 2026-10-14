@@ -12,7 +12,8 @@
 -- Reglas de fondo:
 --  * La ÚNICA puerta de escritura es public.create_waiter_call (SECURITY DEFINER): ningún rol de la API inserta,
 --    modifica ni borra waiter_calls. «Marcar atendido» llega con el panel de sala (su política y sus columnas).
---  * Un pendiente por (mesa, tipo): índice único parcial + advisory lock por mesa. Un pendiente vence a los 30
+--  * Un pendiente por (mesa, tipo): índice único parcial + advisory lock por mesa. El límite por cliente (que cuenta en todas
+--    las mesas) toma además un advisory lock por cliente, siempre después del de la mesa. Un pendiente vence a los 30
 --    minutos de forma DERIVADA (sin cron): la función marca como vencidos los pendientes viejos de esa mesa antes
 --    de decidir, así uno viejo nunca bloquea el índice único.
 --  * Sin plan o sin la cuenta al día (has_feature), con la mesa inactiva o silenciada o la organización inactiva:
@@ -153,6 +154,13 @@ begin
   -- Límite por cliente (segunda línea de defensa). Un valor ausente o con otro formato no se cuenta.
   v_client := case when p_client ~ '^[0-9a-f]{32}$' then p_client end;
   if v_client is not null then
+    -- El contador abarca TODAS las mesas del cliente y el lock de arriba es por mesa: sin esto, dos pedidos
+    -- simultáneos del mismo cliente a mesas distintas leerían el mismo conteo e insertarían ambos (31 avisos).
+    -- El lock se toma SIEMPRE después del de la mesa (mesa, luego cliente): el orden fijo evita interbloqueos.
+    -- Se libera al terminar la transacción, o sea después del insert; en READ COMMITTED el conteo siguiente ya
+    -- ve lo que confirmó quien tenía el lock.
+    perform pg_advisory_xact_lock(hashtextextended('waiter_client:' || v_client, 0));
+
     select count(*), min(created_at) into v_count, v_oldest
     from public.waiter_calls
     where client_key = v_client

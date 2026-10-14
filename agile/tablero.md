@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [C] Llamado desde la mesa: función de base `create_waiter_call` como única puerta de escritura pública (un pendiente por mesa y tipo, vencimiento derivado a 30 min, cooldown por mesa y tipo, límite por cliente, `unavailable` uniforme) y botones en `/t/{token}` — implementado en `feat/llamado-desde-la-mesa` (sin integrar): 123 unitarias, 308 de RLS, 104 E2E, 43 de 45 mutaciones detectadas (2 equivalentes); falta la revisión de nivel C por Codex → ficha: agile/cambios/llamado-desde-la-mesa.md · ADR 0010
+- [C] Llamado desde la mesa: función de base `create_waiter_call` como única puerta de escritura pública (un pendiente por mesa y tipo, vencimiento derivado a 30 min, cooldown por mesa y tipo, límite por cliente, `unavailable` uniforme) y botones en `/t/{token}` — implementado en `feat/llamado-desde-la-mesa` (sin integrar): 123 unitarias, 308 de RLS, 104 E2E, 44 de 47 mutaciones detectadas (3 equivalentes); Codex: aprobar con cambios (P2 del límite por cliente corregido, falta su confirmación) → ficha: agile/cambios/llamado-desde-la-mesa.md · ADR 0010
 
 ## Bloqueado
 - (vacío)
