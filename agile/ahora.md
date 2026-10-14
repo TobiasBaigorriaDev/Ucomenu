@@ -9,7 +9,7 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** `main` integrado con el panel de sala (aprobado por Codex sobre `2fa8482`; sin subir a GitHub: falta la autorización del usuario). Siguiente: integrar `feat/diseno-carta-editorial` (`git merge main` con el panel dentro) y elegir el próximo ítem
+- **Objetivo actual:** `main` integrado con el panel de sala (aprobado por Codex sobre `2fa8482`; subido a GitHub). Siguiente: integrar `feat/diseno-carta-editorial` (`git merge main` con el panel dentro) y elegir el próximo ítem
 - **Rama / último commit:** `main` (el panel de sala entró por avance directo desde `feat/panel-de-sala`, ya integrada y borrable). Siguen `feat/diseno-carta-editorial` (`../UcoMenu-carta`) y el sobrante `../UcoMenu-precios` (historial ya integrado)
 - **Nivel:** M
 - **Ficha relevante:** hecho: `panel-de-sala.md` (ADR 0011), `historial-de-precios.md` (ADR 0012), `llamado-desde-la-mesa.md` (ADR 0010), `mesas-y-qr.md` (ADR 0009), `gestion-de-carta.md` (ADR 0008)
@@ -21,7 +21,7 @@
 - **Llamado desde la mesa (ADR 0010):** en `/t/{token}` una barra fija con «Llamar al mozo» y «Pedir la cuenta», solo si `resolve_table_qr` informa `calls_enabled` (mesa activa y no silenciada, plan Pro o superior, cuenta en gracia o activa). La **única puerta de escritura** es `public.create_waiter_call(token, tipo, cliente)` (definer; ningún rol de la API escribe `waiter_calls`): un pendiente por mesa y tipo (índice único parcial + lock por mesa), vencimiento a 30 min derivado (marca `expired` al llamar), cooldown de 60 s por mesa y tipo (columna `branches.waiter_call_cooldown_seconds`), límite de 30 avisos cada 10 min por identificador de cliente (HMAC de la IP armado por el servidor; nunca la IP; conteo e inserción serializados por un lock por cliente, tomado después del de la mesa), `unavailable` uniforme sin revelar la causa. La *server action* usa el cliente `anon`. Los miembros leen `waiter_calls` de su organización. Columna nueva `tables.muted_until` (sin UI).
 - **Panel de sala (ADR 0011):** `/sala/{slug}` lista los llamados pendientes de la organización (menos de 30 min, el más viejo primero) y se actualiza solo por **sondeo** cada ~3 s a `GET /sala/{slug}/estado` (sesión y RLS; `401` sin sesión —el *proxy* responde JSON en esta ruta—, `404` idéntico para otro local, `503` base caída; sin caché). Tarjeta con mesa, tipo, «hace N» (hora del servidor) y «Atendido»; urgente desde 5 min con texto. Llamado nuevo: resalta, título «(N) Sala en vivo» y, con alertas activadas por un toque, doble pitido (Web Audio) y *Wake Lock*; lo que ya estaba al cargar no suena. Atender: *server action* + política de `UPDATE` solo sobre `status` (pending → attended, con plan y cuenta al día) + *trigger* que fija `attended_at`/`attended_by`; dos a la vez: gana uno. Sin conexión: aviso con la última lista y recuperación inmediata al volver. Sin plan o cuenta que lo permita: aviso en vez de la lista y sin sondeo.
 - Falta: UI de silenciar mesas y del cooldown, purga de `waiter_calls`, SuperAdmin (con la retención del historial resuelta), variantes y adicionales, pantalla del historial de precios, borrado de la carta y de las mesas, y Realtime si algún día se quiere (exige una enmienda al ADR 0007 por el token).
-- GitHub: `origin/main` en `9081785` (historial de precios). **El panel de sala está en `main` local pero NO subido** (pedir autorización al usuario).
+- GitHub: `origin/main` en `f642a6e` (panel de sala incluido, subido el 2026-10-14 con autorización del usuario).
 
 ## Pruebas del panel de sala (2026-10-14, sobre `main` con el panel integrado, base compartida recién reseteada)
 - typecheck · lint · build OK · unitarias **147/147** · RLS **370/370** (15 archivos) · E2E **121/121** en dos corridas completas seguidas.
@@ -71,10 +71,9 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-1. Subir `main` a GitHub (el panel de sala) **solo con la autorización del usuario**.
-2. Integrar `feat/diseno-carta-editorial`: `git merge main` en su rama, arreglar la franja gris del `pb-32` de `/t/[token]/page.tsx` y que la barra del llamado combine con la paleta editorial, y volver a correr unitarias (incl. `mosaic.test.ts`) y los E2E de la carta, de `/t/{token}`, de `llamados` y de `sala`.
-3. Probar el panel de sala en un teléfono real (sonido, *Wake Lock*) y el escaneo real del QR.
-4. Siguientes ítems: «Configuración del llamado» (UI de silenciar mesas y cooldown, S), pantalla del historial de precios, SuperAdmin (con la retención del historial resuelta), purga de `waiter_calls`. Borrar sobrantes: `git worktree remove ../UcoMenu-precios`, `git branch -d feat/historial-precios feat/panel-de-sala`.
+1. Integrar `feat/diseno-carta-editorial`: `git merge main` en su rama, arreglar la franja gris del `pb-32` de `/t/[token]/page.tsx` y que la barra del llamado combine con la paleta editorial, y volver a correr unitarias (incl. `mosaic.test.ts`) y los E2E de la carta, de `/t/{token}`, de `llamados` y de `sala`.
+2. Probar el panel de sala en un teléfono real (sonido, *Wake Lock*) y el escaneo real del QR.
+3. Siguientes ítems: «Configuración del llamado» (UI de silenciar mesas y cooldown, S), pantalla del historial de precios, SuperAdmin (con la retención del historial resuelta), purga de `waiter_calls`. Borrar sobrantes: `git worktree remove ../UcoMenu-precios`, `git branch -d feat/historial-precios feat/panel-de-sala`.
 
 ## Estado del worktree al cerrar
 - `main` limpio salvo la carpeta ajena sin versionar `docs/referencias/` (no es mía; no se commitea). Base compartida con el esquema de `main` (incluye `price_history` y el panel de sala).
