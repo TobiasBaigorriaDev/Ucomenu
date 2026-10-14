@@ -1,64 +1,45 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/lib/supabase/database.types";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  anonClient,
+  CATEGORY_CAFETERIA,
+  CATEGORY_PARRILLA,
+  createUser,
+  deleteUser,
+  ORG_CAFE,
+  ORG_INACTIVA,
+  ORG_PARRILLA,
+  PRODUCT_EN_CATEGORIA_INACTIVA,
+  PRODUCT_EN_ORG_INACTIVA,
+  PRODUCT_INACTIVO,
+  serviceClient,
+  type Db,
+  type TestUser,
+} from "./helpers";
 
 /**
- * Pruebas de integración contra el Supabase LOCAL con los datos de supabase/seed.sql.
- * Requisitos: `pnpm db:start` y `pnpm db:reset`. Ver .env.example.
+ * Lectura pública y escritura del rol anónimo, con los datos de supabase/seed.sql.
+ * El aislamiento entre miembros de organizaciones está en tenancy.rls.test.ts.
  */
 
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+let anon: Db;
+let service: Db;
+let sinMembresia: TestUser | undefined;
 
-// Ids de supabase/seed.sql
-const ORG_CAFE = "10000000-0000-4000-8000-000000000001";
-const ORG_PARRILLA = "20000000-0000-4000-8000-000000000001";
-const ORG_INACTIVA = "30000000-0000-4000-8000-000000000001";
-const CATEGORY_CAFETERIA = "12000000-0000-4000-8000-000000000001";
-const CATEGORY_PARRILLA = "22000000-0000-4000-8000-000000000001";
-const PRODUCT_INACTIVO = "13000000-0000-4000-8000-000000000003";
-const PRODUCT_EN_CATEGORIA_INACTIVA = "13000000-0000-4000-8000-000000000005";
-const PRODUCT_EN_ORG_INACTIVA = "33000000-0000-4000-8000-000000000001";
-
-function client(key: string | undefined): SupabaseClient<Database> {
-  if (!url || !key) {
-    throw new Error("Faltan variables de entorno de Supabase. Copiá .env.example a .env.local y .env.test.local.");
-  }
-  return createClient<Database>(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
-}
-
-let anon: SupabaseClient<Database>;
-let authenticated: SupabaseClient<Database>;
-let service: SupabaseClient<Database>;
-let authenticatedUserId: string | undefined;
-
-// Usuario con sesión pero SIN membresía en ninguna organización: debe ver y poder lo mismo que anon.
+// Usuario con sesión pero SIN membresía en ninguna organización: ve lo mismo que anon.
 beforeAll(async () => {
-  anon = client(publishableKey);
-  service = client(serviceKey);
-
-  const email = `rls-sin-membresia-${Date.now()}@example.test`;
-  const password = "contrasena-de-prueba-123";
-  const created = await service.auth.admin.createUser({ email, password, email_confirm: true });
-  if (created.error || !created.data.user) {
-    throw new Error(`No se pudo crear el usuario de prueba: ${created.error?.message}`);
-  }
-  authenticatedUserId = created.data.user.id;
-
-  authenticated = client(publishableKey);
-  const signedIn = await authenticated.auth.signInWithPassword({ email, password });
-  if (signedIn.error) throw new Error(`No se pudo iniciar sesión: ${signedIn.error.message}`);
+  anon = anonClient();
+  service = serviceClient();
+  sinMembresia = await createUser(service, "sin-membresia");
 });
 
 afterAll(async () => {
-  if (authenticatedUserId) await service.auth.admin.deleteUser(authenticatedUserId);
+  await deleteUser(service, sinMembresia);
 });
 
-// Roles de la Data API que comparten las políticas públicas: cada prueba de lectura y escritura corre con ambos.
+// Roles de la API que comparten la lectura pública.
 const roles = [
   ["anon", () => anon],
-  ["authenticated", () => authenticated],
+  ["authenticated sin membresía", () => (sinMembresia as TestUser).db],
 ] as const;
 
 describe.each(roles)("lectura pública (rol %s)", (_role, getClient) => {
@@ -124,15 +105,15 @@ describe.each(roles)("lectura pública (rol %s)", (_role, getClient) => {
   });
 });
 
-describe.each(roles)("escritura (rol %s): todo rechazado", (_role, getClient) => {
+describe("escritura (rol anon): todo rechazado", () => {
   // Filas VÁLIDAS (cumplen NOT NULL, CHECK y FK): así el único motivo posible de rechazo es el permiso.
   const inserts = {
-    organizations: () => getClient().from("organizations").insert({ slug: "intruso", name: "intruso" }),
+    organizations: () => anon.from("organizations").insert({ slug: "intruso", name: "intruso" }),
     branches: () =>
-      getClient().from("branches").insert({ organization_id: ORG_CAFE, slug: "intruso", name: "intruso" }),
-    categories: () => getClient().from("categories").insert({ organization_id: ORG_CAFE, name: "intruso" }),
+      anon.from("branches").insert({ organization_id: ORG_CAFE, slug: "intruso", name: "intruso" }),
+    categories: () => anon.from("categories").insert({ organization_id: ORG_CAFE, name: "intruso" }),
     products: () =>
-      getClient()
+      anon
         .from("products")
         .insert({ organization_id: ORG_CAFE, category_id: CATEGORY_CAFETERIA, name: "intruso", price_cents: 100 }),
   };
@@ -144,13 +125,13 @@ describe.each(roles)("escritura (rol %s): todo rechazado", (_role, getClient) =>
   });
 
   it.each(["organizations", "branches", "categories", "products"] as const)("no puede modificar %s", async (table) => {
-    const { error } = await getClient().from(table).update({ name: "hackeado" }).neq("name", "");
+    const { error } = await anon.from(table).update({ name: "hackeado" }).neq("name", "");
 
     expect(error?.code).toBe("42501");
   });
 
   it.each(["organizations", "branches", "categories", "products"] as const)("no puede borrar %s", async (table) => {
-    const { error } = await getClient().from(table).delete().neq("name", "");
+    const { error } = await anon.from(table).delete().neq("name", "");
 
     expect(error?.code).toBe("42501");
   });

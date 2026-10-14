@@ -16,3 +16,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0002 | [WebAR sin app: `<model-viewer>` con GLB + USDZ](0002-webar-sin-app.md) | propuesta | 2026-10-13 |
 | 0003 | [Fidelización con pases de Wallet y cercanía nativa](0003-fidelizacion-wallet-geofencing.md) | propuesta | 2026-10-13 |
 | 0004 | [Multi-tenancy: organización con sucursales, aislada por RLS](0004-multi-tenant-rls-y-sucursales.md) | aceptada | 2026-10-13 |
+| 0005 | [Autorización por membresía en la base, con permisos por columna](0005-autorizacion-por-membresia.md) | aceptada | 2026-10-14 |

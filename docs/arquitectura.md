@@ -79,7 +79,7 @@ Esquema inicial resumido. Toda tabla de negocio lleva `organization_id`.
 Precios: enteros en centavos + moneda (`ARS`); nunca punto flotante.
 
 ## Multi-tenancy y permisos
-- **Base y esquema compartidos**, aislamiento por `organization_id` con **RLS activado en todas las tablas** de negocio. La política estándar permite acceso solo si el usuario tiene una membresía en esa organización; las funciones auxiliares de pertenencia viven en un esquema no expuesto.
+- **Base y esquema compartidos**, aislamiento por `organization_id` con **RLS activado en todas las tablas** de negocio. La política estándar permite acceso solo si el usuario tiene una membresía en esa organización; las funciones auxiliares de pertenencia (`private.is_org_member`, `private.is_org_owner`) viven en el esquema `private`, no expuesto. **Implementado** (ADR 0005): la autorización sale de `memberships`, nunca del JWT ni de `user_metadata`; solo el servidor escribe membresías, organizaciones y sucursales; los permisos de escritura son por columna (`organization_id` no se puede cambiar por la API).
 - **Comensal (rol anónimo):** solo lectura de filas publicables (organización activa, categoría y plato activos). No puede escribir en ninguna tabla directamente.
 - **Staff:** lee y actualiza `waiter_calls`; lee y escribe categorías, platos, opciones, disponibilidad y mesas de su organización (y suma sellos en fase 3). No administra sucursales, personal ni apariencia, y no ve el plan.
 - **Dueño:** todo lo del Staff, más sucursales, personal y apariencia; lee `subscriptions`, `subscription_addons`, `payments` y `audit_log` de su organización, sin poder escribirlos.

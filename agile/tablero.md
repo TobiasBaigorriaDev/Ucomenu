@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [C] Núcleo multi-tenant: membresías, roles y RLS de escritura — 71 pruebas de RLS y 8 mutaciones; falta `agile-revisar` por un segundo agente → ficha: agile/cambios/nucleo-multi-tenant.md
 
 ## Bloqueado
 - (vacío)
@@ -22,11 +22,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
 ### Fase 0 — Cimientos
-- [C] Núcleo multi-tenant: membresías, roles y políticas RLS de escritura con pruebas de aislamiento entre organizaciones
-- [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol (bloqueado por: núcleo multi-tenant)
+- [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol; alta/baja de personal por el dueño y regla «una organización no se queda sin owner» (bloqueado por: núcleo multi-tenant)
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
-- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal)
+- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal y planes y entitlements — hoy la base ya deja escribir a un miembro sin aplicar el tope de platos del plan)
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
 - [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible, regenerar QR, entrada por `/t/{token}`

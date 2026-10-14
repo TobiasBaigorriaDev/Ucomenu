@@ -2,30 +2,36 @@
 
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
-- **Última actualización:** 2026-10-13 — agente: Claude Code
-- **Objetivo actual:** primera iteración cerrada e integrada a `main`; siguiente: «Núcleo multi-tenant» (C)
-- **Rama / último commit:** `main` (antes `master`) con el esqueleto caminante integrado
-- **Nivel:** M (cerrado)
-- **Ficha relevante:** `agile/cambios/esqueleto-menu-publico.md` (estado: hecho)
+- **Última actualización:** 2026-10-14 — agente: Claude Code
+- **Objetivo actual:** «Núcleo multi-tenant» (nivel C) implementado y verificado; falta la revisión independiente
+- **Rama / último commit:** `feat/nucleo-multi-tenant` (sale de `main`, que ya integra el esqueleto caminante)
+- **Nivel:** C
+- **Ficha relevante:** `agile/cambios/nucleo-multi-tenant.md` (estado: verificado, pendiente de `agile-revisar`)
 
 ## Estado
-- Hecho: proyecto Next 16 + Supabase local; migraciones `create_catalog_core` y `slug_max_length`; carta pública en `/m/{org}/{sucursal}`; RLS de solo lectura; seed ficticio; comandos en `AGENTS.md`.
-- Revisión: `agile-revisar` por Codex (solo lectura) → aprobar con cambios; corregido (slug máx 64 en base y ruta; RLS con `42501` y rol `authenticated`).
+- Primera iteración (esqueleto caminante): cerrada e integrada a `main` (revisada por Codex; slug máx. 64 y RLS reforzada).
+- Núcleo multi-tenant: migración `20261014000121_tenant_core_memberships_and_write_policies.sql` (tabla `memberships`, esquema `private` con `is_org_member`/`is_org_owner`, políticas de escritura y grants por columna), tipos regenerados, ADR 0005, `tests/rls/{helpers,catalog,tenancy}.rls.test.ts`.
+- Reglas clave: la autorización sale de `memberships` (no del JWT); solo el servidor escribe membresías/organizaciones/sucursales; `organization_id` no se puede cambiar por la API; owner y staff gestionan carta; solo owner renombra organización y sucursal.
 
-## Pruebas (2026-10-13, tras las correcciones)
-- typecheck · lint · build OK · unitarias 23/23 · RLS 49/49 · E2E 11/11.
-- Mutación de RLS y de los CHECK de slug: 15/49 fallan con la protección rota; 49/49 al restaurar.
-- No ejecutadas: Safari/iOS y dispositivos reales, lector de pantalla, LCP, modo oscuro.
+## Pruebas (2026-10-14)
+- typecheck · lint · build OK · unitarias 23/23 · RLS 71/71 · E2E 11/11.
+- Mutación: 8 defensas rotas una por una, todas detectadas (una requirió una prueba nueva: miembro de dos organizaciones).
+- No ejecutadas: login/sesiones desde la app (aún no existen), rendimiento de las políticas con volumen, Safari/iOS, lector de pantalla, LCP, modo oscuro.
 
 ## Decisiones recientes
-- Rama principal `main`. Analítica básica desde Pro. Pack extra WebAR: +USD 10/mes por 10 platos 3D. `price_history` aprobado (Staff u Dueño).
-- Skill `impeccable` (con `.exe`) y sus agentes: ignorados en `.gitignore`; no se versionan.
-- `cacheComponents` desactivado; el caché se diseña en «Rendimiento de la carta pública».
+- Rama principal `main`. Analítica básica desde Pro. Pack extra WebAR +USD 10/mes por 10 platos 3D. `price_history` aprobado.
+- `impeccable` y sus agentes: en `.gitignore`.
+- `platform_admins` se crea en el ítem SuperAdmin; el SuperAdmin opera con `service_role` desde el servidor.
 
 ## Bloqueos y riesgos
+- Los límites de plan y la mora aún no se aplican en las escrituras: «Gestión de carta» depende también de «Planes y entitlements».
+- Un `UPDATE`/`DELETE` fuera de la organización afecta 0 filas sin error; la app debe tratarlo así.
 - `react-best-practices` no instalada ni aprobada.
-- Windows: rutas de más de ~260 caracteres rompen `pnpm test` (ver `AGENTS.md`).
-- `pnpm build` antes de `test:e2e` (un servidor viejo sirve CSS inexistente).
+- Windows: rutas de más de ~260 caracteres rompen `pnpm test`. `pnpm build` antes de `test:e2e`.
 
 ## Próxima acción probable
-- «Núcleo multi-tenant» (nivel C): ver su ficha en `agile/cambios/nucleo-multi-tenant.md` cuando exista.
+1. `agile-revisar` del Núcleo con un segundo agente (solo lectura) sobre `feat/nucleo-multi-tenant`; corregir y, si pasa, integrar a `main`.
+2. Luego, por dependencias: «Acceso del personal» (login y `/panel`, `/sala`, `/admin`) o «Planes y entitlements».
+
+## Estado del worktree al cerrar
+- `git status` limpio salvo lo ignorado a propósito (`impeccable`).
