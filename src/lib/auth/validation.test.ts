@@ -45,6 +45,18 @@ describe("safeNext", () => {
     }
   });
 
+  it("acepta el camino de la hoja de QR de una sucursal (la sucursal va en el camino, no en la query)", () => {
+    for (const ok of [
+      "/panel/cafe-ejemplo/mesas",
+      "/panel/cafe-ejemplo/mesas/imprimir/11000000-0000-4000-8000-000000000001",
+      "/panel/cafe-ejemplo/carta/platos/13000000-0000-4000-8000-000000000001",
+    ]) {
+      expect(safeNext(ok), ok).toBe(ok);
+    }
+    // Una query sigue siendo inválida: se perdería o habría que sanearla.
+    expect(safeNext("/panel/cafe-ejemplo/mesas/imprimir?sucursal=11000000-0000-4000-8000-000000000001")).toBeNull();
+  });
+
   it("ignora URL externas, esquemas, rutas protocolo-relativas y otras rutas", () => {
     const malos = [
       "https://evil.test",

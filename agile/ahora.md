@@ -3,21 +3,22 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** «Mesas y QR» implementada y probada en `feat/mesas-y-qr`; falta escanear un QR impreso con un teléfono real, decidir la revisión de Codex (opcional en nivel M) y la integración a `main`
-- **Rama / último commit:** `feat/mesas-y-qr` (sale de `main` en `0f468a4`, ya subido); `main` sin cambios. Ver `git log` para el commit de cierre. La rama `feat/gestion-de-carta` queda local y se puede borrar
+- **Objetivo actual:** «Mesas y QR» implementada y probada en `feat/mesas-y-qr`; Codex dijo *aprobar con cambios* (un P2, ya corregido); falta que lo confirme, escanear un QR impreso con un teléfono real y la integración a `main`
+- **Rama / último commit:** `feat/mesas-y-qr` (sale de `main` en `0f468a4`, ya subido; `3057b41` revisado por Codex y un commit posterior con la corrección del P2); `main` sin cambios. Ver `git log`. La rama `feat/gestion-de-carta` queda local y se puede borrar
 - **Nivel:** M
 - **Ficha relevante:** `agile/cambios/mesas-y-qr.md` (para verificar) · ADR 0009 · hecho antes: `agile/cambios/gestion-de-carta.md` (ADR 0008)
 
 ## Estado
 - En `main`: esqueleto caminante, núcleo multi-tenant, planes y entitlements, acceso del personal y gestión de carta. Los cinco pasaron revisión de Codex (solo lectura). En la rama: mesas y QR.
 - Gestión de carta: `/panel/{slug}/carta` (categorías y platos: alta, edición, subir/bajar, activar/desactivar; Dueño y Staff), `/carta/platos/nuevo` y `/carta/platos/{id}` (datos y foto), «Platos activos: X de N» con el mensaje del tope `53400`, formularios deshabilitados con el motivo en solo lectura y suspendida y acciones forzadas sin éxito falso, foto en la carta pública. **Fotos en Supabase Storage** (bucket público `product-images`, ruta por organización, escritura con `org_can_write`; ADR 0008); el navegador reduce la foto antes de subirla. **No hay borrado** de categorías ni platos (se desactivan).
-- Mesas y QR: `/panel/{slug}/mesas` (alta de a una por sucursal, renombrar, activar/desactivar, regenerar QR con confirmación, «Mesas activas: X de N» y el mensaje del tope; Dueño y Staff), `/panel/{slug}/mesas/imprimir?sucursal=` (hoja A4 con 6 tarjetas, solo mesas activas; se abre aunque la cuenta esté bloqueada) y `/t/{token}` (carta con «Mesa N»; mesa inactiva = carta sin número; desconocido o regenerado = 404; suspendida = «no disponible»). Token de 32 hex generado por la base; regenerar = tocar `qr_token` (trigger); `anon` no lee `tables`, solo `resolve_table_qr(token)`. Sin borrado de mesas. QR dibujado en el servidor con `qrcode-generator` 2.0.4 (aprobada). ADR 0009.
+- Mesas y QR: `/panel/{slug}/mesas` (alta de a una por sucursal, renombrar, activar/desactivar, regenerar QR con confirmación, «Mesas activas: X de N» y el mensaje del tope; Dueño y Staff), `/panel/{slug}/mesas/imprimir/{sucursal}` (hoja A4 con 6 tarjetas, solo mesas activas; se abre aunque la cuenta esté bloqueada) y `/t/{token}` (carta con «Mesa N»; mesa inactiva = carta sin número; desconocido o regenerado = 404; suspendida = «no disponible»). Token de 32 hex generado por la base; regenerar = tocar `qr_token` (trigger); `anon` no lee `tables`, solo `resolve_table_qr(token)`. Sin borrado de mesas. QR dibujado en el servidor con `qrcode-generator` 2.0.4 (aprobada). ADR 0009.
 - Falta: llamados, SuperAdmin (`platform_admins`, pagos, auditoría), variantes y adicionales, historial de precios, borrado de la carta y de las mesas.
 - GitHub: `main` subido con la gestión de carta (0f468a4); la rama de mesas no se subió.
 
 ## Pruebas (2026-10-14, base recién reseteada, sobre el código final de la rama)
-- typecheck · lint · build OK · unitarias 106/106 · RLS 286/286 · E2E 84/84 (dos corridas completas seguidas; en una tercera murió un *worker* de Playwright, `0xC0000409`, y las otras 83 pasaron).
-- Mutaciones: 50 defensas rotas de a una, 45 detectadas y 5 equivalentes (explicadas en la ficha).
+- typecheck · lint · build OK · unitarias 107/107 · RLS 286/286 · E2E 86/86 (cuatro corridas completas seguidas tras la corrección; una corrida previa falló en masa sin causa demostrada y no se reprodujo, ver la ficha).
+- Mutaciones: 51 defensas rotas de a una, 46 detectadas y 5 equivalentes (explicadas en la ficha).
+- Codex (solo lectura) sobre `3057b41`: aprobar con cambios; el P2 (la hoja perdía la sucursal al pasar por el login) se corrigió llevando la sucursal en el camino, con E2E del recorrido.
 - **No ejecutado: escanear un QR impreso con un teléfono real** (el entorno no tiene decodificador; la URL, la matriz, el nivel de corrección M y la zona de silencio sí están verificados), impresión en papel, `pnpm dev` de punta a punta, Safari/iOS y cámara del celular, fotos HEIC, lector de pantalla, rendimiento con fotos, bucket en Supabase Cloud, renovación automática del token por el proxy, revisión de Codex sobre mesas.
 
 ## Para usar la app en local
@@ -35,6 +36,7 @@
 ## Bloqueos y riesgos
 - Producción: apagar el registro público y fijar la contraseña mínima de 10 en Supabase Cloud; verificar el bucket `product-images`; **definir `NEXT_PUBLIC_SITE_URL`** con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel). Todo en el checklist de «Salida a producción».
 - El Staff cambia precios sin historial hasta que exista `price_history` (decisión ya aprobada; ítem S desbloqueado).
+- **El proxy conserva solo el camino al mandar al login y `safeNext` solo acepta caminos:** una ruta que necesite un dato para renderizar debe llevarlo en el camino, no en una query (aprendido con el P2 de la hoja de QR). `/carta/platos/nuevo?categoria=` pierde la categoría preseleccionada si hubo login en el medio (cosmético).
 - Un QR fotografiado sirve desde afuera del local: se mitiga regenerando y, en el ítem del llamado, con cooldown y límites; quien lo escriba debe resolver el token con `resolve_table_qr`, nunca leyendo `tables` con `anon`.
 - Sin cuota de almacenamiento por organización; archivos huérfanos acotados a fallas a mitad de camino; las fotos de una organización suspendida siguen accesibles por URL directa.
 - Contraseña temporal sin cambio forzado; sin recupero por correo; restablecer no revoca sesiones abiertas.
@@ -46,8 +48,8 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-1. Escanear con un teléfono un QR impreso desde `/panel/{slug}/mesas/imprimir` (levantar `pnpm dev` o `pnpm build` + `pnpm start` y abrirlo por la IP de la red local con `NEXT_PUBLIC_SITE_URL` apuntando a ella) y confirmar que abre la carta con «Mesa N».
-2. Decidir: ronda corta de Codex (solo lectura) sobre la rama y/o integrar `feat/mesas-y-qr` a `main` y subirla.
+1. Escanear con un teléfono un QR impreso desde `/panel/{slug}/mesas/imprimir/{sucursal}` (levantar `pnpm dev` o `pnpm build` + `pnpm start` y abrirlo por la IP de la red local con `NEXT_PUBLIC_SITE_URL` apuntando a ella) y confirmar que abre la carta con «Mesa N».
+2. Pedir a Codex que confirme la corrección del P2 (ronda corta, solo lectura) e integrar `feat/mesas-y-qr` a `main` y subirla.
 3. Siguiente ítem: «Llamado desde la mesa» (nivel C, desbloqueado por este ítem) o el historial de precios (S).
 
 ## Estado del worktree al cerrar

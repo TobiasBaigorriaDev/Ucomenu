@@ -68,7 +68,7 @@ export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesa
 
             {active > 0 ? (
               <div className="mt-3">
-                <Link href={`/panel/${membership.org.slug}/mesas/imprimir?sucursal=${branch.id}`} className={linkButtonClass}>
+                <Link href={`/panel/${membership.org.slug}/mesas/imprimir/${branch.id}`} className={linkButtonClass}>
                   Imprimir los QR de {branch.name}
                 </Link>
               </div>

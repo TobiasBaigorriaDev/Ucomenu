@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Mesas y QR: alta de mesas por sucursal, token opaco generado por la base, hoja imprimible, regenerar QR y entrada pública `/t/{token}` — implementado en `feat/mesas-y-qr` (sin integrar): 106 unitarias, 286 de RLS, 84 E2E, 45 de 50 mutaciones detectadas (5 equivalentes); falta escanear un QR impreso con un teléfono real y la revisión opcional de Codex → ficha: agile/cambios/mesas-y-qr.md · ADR 0009
+- [M] Mesas y QR: alta de mesas por sucursal, token opaco generado por la base, hoja imprimible, regenerar QR y entrada pública `/t/{token}` — implementado en `feat/mesas-y-qr` (sin integrar): 107 unitarias, 286 de RLS, 86 E2E, 46 de 51 mutaciones detectadas (5 equivalentes); Codex: aprobar con cambios (P2 corregido, falta su confirmación); falta escanear un QR impreso con un teléfono real → ficha: agile/cambios/mesas-y-qr.md · ADR 0009
 
 ## Bloqueado
 - (vacío)

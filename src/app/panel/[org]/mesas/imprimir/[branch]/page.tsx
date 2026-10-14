@@ -8,20 +8,23 @@ import { asUuid } from "@/lib/carta/validation";
 import { loadMesas } from "@/lib/mesas/tables";
 import { resolveBaseUrl, tableUrl } from "@/lib/mesas/url";
 import { createSessionClient } from "@/lib/supabase/server";
-import { PrintButton } from "./print-button";
+import { PrintButton } from "../print-button";
 
 export const metadata: Metadata = { title: "Imprimir los QR" };
 
 /**
  * Hoja imprimible de los QR de una sucursal: una tarjeta por mesa ACTIVA. Es solo lectura, así que sigue
  * disponible con la cuenta en solo lectura o suspendida. La base del QR no viene de un parámetro de la URL.
+ *
+ * La sucursal va en el CAMINO (`/mesas/imprimir/{sucursal}`) y no en una query: sin sesión, el proxy manda a
+ * `/login?next=…` conservando solo el camino, y `safeNext` solo acepta caminos. Con la query se perdía la
+ * sucursal al pasar por el login y la hoja respondía 404.
  */
-export default async function PrintTablesPage({ params, searchParams }: PageProps<"/panel/[org]/mesas/imprimir">) {
-  const { org } = await params;
-  const { sucursal } = await searchParams;
-  const { membership } = await requireMembership(org, `/panel/${org}/mesas/imprimir`);
+export default async function PrintTablesPage({ params }: PageProps<"/panel/[org]/mesas/imprimir/[branch]">) {
+  const { org, branch: branchParam } = await params;
+  const { membership } = await requireMembership(org, `/panel/${org}/mesas/imprimir/${branchParam}`);
 
-  const branchId = asUuid(Array.isArray(sucursal) ? sucursal[0] : sucursal);
+  const branchId = asUuid(branchParam);
   if (!branchId) notFound();
 
   const db = await createSessionClient();

@@ -35,7 +35,7 @@ Convención (confirmada): identificadores de código y base en inglés; interfaz
 - `/m/{org}/{sucursal}` — carta pública por link directo.
 - `/t/{token}` — entrada por QR de mesa: resuelve la mesa y muestra la misma carta con las acciones de llamado.
 - `/panel` — gestión del local (dueño y staff; Suscripción y Personal solo dueño). `/sala` — personal de sala. `/admin` — SuperAdmin (pendiente).
-- **Implementado** (ADR 0009): `tables` con clave compuesta a la sucursal, token opaco generado por la base, regeneración por *trigger*, tope `tables_per_branch` por *trigger* con la guarda de pertenencia antes de contar, escrituras con `org_can_write` y función pública `resolve_table_qr`. Rutas: `/panel/{slug}/mesas`, `/panel/{slug}/mesas/imprimir` y `/t/{token}`. El QR se dibuja en el servidor (`qrcode-generator`).
+- **Implementado** (ADR 0009): `tables` con clave compuesta a la sucursal, token opaco generado por la base, regeneración por *trigger*, tope `tables_per_branch` por *trigger* con la guarda de pertenencia antes de contar, escrituras con `org_can_write` y función pública `resolve_table_qr`. Rutas: `/panel/{slug}/mesas`, `/panel/{slug}/mesas/imprimir/{sucursal}` y `/t/{token}`. El QR se dibuja en el servidor (`qrcode-generator`).
 - **Implementado** (ADR 0007): `/login`, `/cuenta`, `/panel` y `/sala` (resuelven el local: directo con uno, selector con varios), `/panel/{slug}`, `/panel/{slug}/suscripcion`, `/panel/{slug}/personal` y `/sala/{slug}`. La organización activa vive **en la URL**, no en una cookie. `/m/{org}/{sucursal}` es la carta pública.
 - Identificación del tenant **por ruta**; subdominio o dominio propio quedan como evolución.
 

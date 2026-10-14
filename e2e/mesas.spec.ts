@@ -224,7 +224,7 @@ test.describe("hoja imprimible", () => {
     await ingresar(page, t.owner, t);
 
     await page.getByRole("link", { name: /Imprimir los QR de/ }).click();
-    await expect(page).toHaveURL(new RegExp(`/mesas/imprimir\\?sucursal=${branch}$`));
+    await expect(page).toHaveURL(new RegExp(`/mesas/imprimir/${branch}$`));
     const tarjetas = page.getByTestId("tarjeta-qr");
     await expect(tarjetas).toHaveCount(2); // la inactiva no se imprime
     await expect(page.getByRole("button", { name: "Imprimir" })).toBeVisible();
@@ -252,7 +252,7 @@ test.describe("hoja imprimible", () => {
     await mesa(page, "Mesa 1").locator("summary", { hasText: "Regenerar QR" }).click();
     await mesa(page, "Mesa 1").getByRole("button", { name: "Sí, regenerar" }).click();
     await expect(estado(page)).toContainText("QR regenerado");
-    await page.goto(`/panel/${t.slug}/mesas/imprimir?sucursal=${branch}`);
+    await page.goto(`/panel/${t.slug}/mesas/imprimir/${branch}`);
     const { data } = await service().from("tables").select("qr_token").eq("id", mesas["Mesa 1"].id).single();
     expect(data!.qr_token).not.toBe(mesas["Mesa 1"].qr_token);
     await expect(page.locator('[data-testid="tarjeta-qr"][data-label="Mesa 1"] svg')).toHaveAttribute("data-qr-url", `${BASE}/t/${data!.qr_token}`);
@@ -262,10 +262,44 @@ test.describe("hoja imprimible", () => {
     for (const estadoCuenta of ["read_only", "suspended"] as const) {
       const t = await nuevoLocal(`mesas-imp-${estadoCuenta.replace("_", "")}`, estadoCuenta);
       const { branch } = await sembrarMesas(t, ["Mesa 1"]);
-      await ingresar(page, t.owner, t, `/mesas/imprimir?sucursal=${branch}`);
+      await ingresar(page, t.owner, t, `/mesas/imprimir/${branch}`);
       await expect(page.getByTestId("tarjeta-qr")).toHaveCount(1);
       await page.context().clearCookies();
     }
+  });
+
+  test("sin sesión, la hoja pasa por el login y vuelve a la MISMA sucursal (la sucursal no se pierde)", async ({ page }) => {
+    const t = await nuevoLocal("mesas-imp-login");
+    const { branch } = await sembrarMesas(t, ["Mesa 1", "Mesa 2"]);
+    const ruta = `/panel/${t.slug}/mesas/imprimir/${branch}`;
+
+    // El proxy real manda al login conservando la ruta completa, sucursal incluida.
+    await page.goto(ruta);
+    await expect(page).toHaveURL(/\/login\?next=/);
+    expect(new URL(page.url()).searchParams.get("next")).toBe(ruta);
+    await expect(page.getByTestId("tarjeta-qr")).toHaveCount(0); // no se filtra nada antes de ingresar
+
+    await page.getByLabel("Email").fill(t.owner.email);
+    await page.getByLabel("Contraseña").fill(t.owner.password);
+    await page.getByRole("button", { name: "Ingresar" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`${ruta}$`));
+    await expect(page.getByTestId("tarjeta-qr")).toHaveCount(2);
+  });
+
+  test("tras el login, un destino manipulado hacia otra sucursal o local no abre nada ajeno", async ({ page }) => {
+    const a = await nuevoLocal("mesas-imp-login-a");
+    const b = await nuevoLocal("mesas-imp-login-b");
+    const { branch: branchB } = await sembrarMesas(b, ["Secreta"]);
+
+    // Entra por la ruta de la sucursal de OTRO local: login y 404 (igual que una inexistente), sin ver nada.
+    await page.goto(`/panel/${a.slug}/mesas/imprimir/${branchB}`);
+    await expect(page).toHaveURL(/\/login\?next=/);
+    await page.getByLabel("Email").fill(a.owner.email);
+    await page.getByLabel("Contraseña").fill(a.owner.password);
+    await page.getByRole("button", { name: "Ingresar" }).click();
+    await expect(page.getByRole("heading", { name: "No encontramos esta carta" })).toBeVisible();
+    await expect(page.getByText("Secreta")).toHaveCount(0);
   });
 
   test("una sucursal de otro local, inexistente o malformada es 404", async ({ page }) => {
@@ -273,8 +307,8 @@ test.describe("hoja imprimible", () => {
     const b = await nuevoLocal("mesas-imp-b");
     const branchB = await sucursalDe(b);
     await login(page, a.owner.email, a.owner.password);
-    for (const sucursal of [branchB, "00000000-0000-4000-8000-000000000000", "no-es-un-id", ""]) {
-      const respuesta = await page.goto(`/panel/${a.slug}/mesas/imprimir?sucursal=${sucursal}`);
+    for (const sucursal of [branchB, "00000000-0000-4000-8000-000000000000", "no-es-un-id"]) {
+      const respuesta = await page.goto(`/panel/${a.slug}/mesas/imprimir/${sucursal}`);
       expect(respuesta?.status(), sucursal).toBe(404);
     }
   });
@@ -383,7 +417,7 @@ test.describe("acceso y aislamiento", () => {
     await login(page, a.owner.email, a.owner.password);
     expect((await page.goto(`/panel/${b.slug}/mesas`))?.status()).toBe(404);
     await expect(page.getByText("Secreta")).toHaveCount(0);
-    expect((await page.goto(`/panel/${b.slug}/mesas/imprimir?sucursal=${await sucursalDe(b)}`))?.status()).toBe(404);
+    expect((await page.goto(`/panel/${b.slug}/mesas/imprimir/${await sucursalDe(b)}`))?.status()).toBe(404);
   });
 
   test("un formulario manipulado (local ajeno, sucursal ajena, mesa ajena) no escribe en el otro local", async ({ page }) => {
