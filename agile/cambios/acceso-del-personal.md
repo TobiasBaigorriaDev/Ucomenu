@@ -1,5 +1,5 @@
 # Cambio: Acceso del personal — login, sesión, `/panel` y `/sala` por rol, alta de personal y aviso de mora
-Estado: **para verificar** — implementado y probado en la rama `feat/acceso-del-personal` (sin integrar a `main`); falta la revisión independiente de nivel C
+Estado: **hecho** — revisado por Codex (solo lectura, *aprobar* hasta `65d801a`, sin defectos bloqueantes) e integrado a `main` el 2026-10-14
 Nivel: C
 
 ## Objetivo
@@ -87,7 +87,7 @@ Ejecutadas el 2026-10-14 sobre una base recién reseteada (`pnpm db:reset`), mig
 - Sin residuos tras las corridas: 0 organizaciones `tt-*`/`e2e-*` y 0 usuarios `rls-*`/`e2e-*` (se limpiaron a mano los que dejaron corridas interrumpidas).
 
 Pendientes (no ejecutado):
-- Revisión independiente (segundo agente, solo lectura): requisito del nivel C antes de integrar.
+- ~~Revisión independiente~~ **Hecha (Codex, 2026-10-14): aprobar.** Verificó autorización por página y acción, aislamiento entre organizaciones, cuentas compartidas y la guarda del último Dueño; reejecutó 43/43 unitarias, 11/11 de ACL, lint y TypeScript, y comprobó permisos y lecturas con SQL de solo lectura. No reejecutó el resto de las pruebas de base, los E2E, el build ni las mutaciones (cifras de esta ficha). Confirmó que la renovación automática del token sigue sin prueba propia.
 - Renovación automática del token por el proxy (token vencido); Safari/iOS y dispositivos reales; lector de pantalla; contraste medido con herramienta; `pnpm dev` de punta a punta (la clave de servicio local ya está en `.env.local` por autorización del usuario, pero solo se probó con el build de las pruebas E2E); límites de intentos de Auth; configuración de Supabase Cloud (registro público y contraseña mínima); rendimiento del panel con equipos grandes.
 - ~~A confirmar~~ **Confirmado por el usuario (2026-10-14):** el Staff ve un aviso de mora **operativo reducido** (estado y «avisale al dueño», sin plan, montos ni fechas) y el Dueño el completo; `docs/producto.md` ya lo refleja.
 
@@ -138,4 +138,4 @@ Amenazas: ruta protegida solo en la UI; IDOR por `slug`/`membership_id` de otra 
 - Rollback: `git revert` + `pnpm db:reset`. En una base con datos: `drop trigger` y `drop function` de la guarda; las cuentas creadas siguen válidas.
 
 ## (C) Aceptación explícita del riesgo
-- El usuario fijó las seis decisiones y el alcance el 2026-10-14 y pidió ejecutar el ítem con `agile-iterar`. Operación solo local. La revisión de nivel C se pedirá a un segundo agente (solo lectura) antes de integrar.
+- El usuario fijó las seis decisiones y el alcance el 2026-10-14, pidió ejecutar el ítem con `agile-iterar`, confirmó el aviso de mora reducido del Staff y autorizó copiar la clave de servicio local a `.env.local`. Operación solo local. Revisión de nivel C por un segundo agente (Codex, solo lectura): *aprobar*. Integrado a `main` el 2026-10-14.
