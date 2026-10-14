@@ -9,8 +9,8 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** `main` con la carta editorial integrada (squash merge de `feat/diseno-carta-editorial`, aprobada por Codex sobre `223a461`); sin subir a GitHub. Siguiente: *push* cuando el usuario lo pida, limpiar sobrantes y elegir el próximo ítem
-- **Rama / último commit:** `main` (la carta entró por squash; el hash está en `git log -1`). Sobrantes borrables cuando el usuario lo autorice: `feat/diseno-carta-editorial` y `feat/diseno-carta` (+ etiqueta `alt/carta-variante-a-tarjetas`, que se conserva) y los *worktrees* `../UcoMenu-carta` y `../UcoMenu-precios`
+- **Objetivo actual:** `main` con la carta editorial integrada (squash merge, aprobada por Codex sobre `223a461`); ramas y *worktrees* sobrantes eliminados; sin subir a GitHub. Siguiente: *push* cuando el usuario lo pida y elegir el próximo ítem
+- **Rama / último commit:** `main`, única rama local (la carta entró por squash; el hash está en `git log`). Ramas `feat/*` eliminadas el 2026-10-14; la variante A de la carta sobrevive solo como la etiqueta `alt/carta-variante-a-tarjetas` (`fd238d8`), que se conserva
 - **Nivel:** M
 - **Ficha relevante:** hecho: `panel-de-sala.md` (ADR 0011), `historial-de-precios.md` (ADR 0012), `llamado-desde-la-mesa.md` (ADR 0010), `mesas-y-qr.md` (ADR 0009), `gestion-de-carta.md` (ADR 0008)
 
@@ -53,7 +53,7 @@
 - Llamado: función abierta a `anon` + identificador de cliente como parámetro (**decisión del usuario**: el límite por IP se puede eludir llamando a la API directo; el tope duro es por mesa); cooldown por mesa y tipo y tope de 30 avisos cada 10 min **confirmados por el usuario** (ADR 0010).
 
 ## Bloqueos y riesgos
-- **Otros *worktrees*:** `../UcoMenu-carta` (carta ya integrada; contiene el arnés sin versionar `src/app/zz-preview/` y `public/`, a borrar con el *worktree*) y `../UcoMenu-precios` (historial integrado). No hay trabajo pendiente en ninguno. **Base compartida:** `pnpm db:reset` aplica las migraciones del *worktree* donde se corre; no correr suites de dos *worktrees* a la vez.
+- **Otros *worktrees*:** ninguno: `../UcoMenu-carta` y `../UcoMenu-precios` se eliminaron (queda una carpeta vacía `../UcoMenu-precios` que otro proceso tiene abierta; se borra a mano al cerrarlo). **Base compartida:** `pnpm db:reset` aplica las migraciones del *worktree* donde se corre; no correr suites de dos *worktrees* a la vez.
 - **`NEXT_PUBLIC_SITE_URL` definida en el shell** (p. ej. para probar el QR con el celular) altera el QR impreso y, si se corre `pnpm test` sin cuidado, rompía dos pruebas de `mesas.test.ts` y la de la hoja imprimible: ya no (las pruebas la toleran, con y sin la variable; ojo: Next la fija al **compilar**, así que hay que volver a correr `pnpm build` al cambiarla).
 - La carpeta `.playwright-mcp/` (salidas del navegador automatizado) aparece en el checkout original; está ignorada en `.gitignore` y se puede borrar.
 - Producción: apagar el registro público y fijar la contraseña mínima de 10 en Supabase Cloud; verificar el bucket `product-images`; **definir `NEXT_PUBLIC_SITE_URL`** con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel). Todo en el checklist de «Salida a producción».
@@ -71,7 +71,7 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-1. Subir `main` a GitHub cuando el usuario lo pida (la carta editorial está integrada localmente) y borrar sobrantes con su autorización: `git worktree remove ../UcoMenu-carta ../UcoMenu-precios` (el de la carta tiene archivos sin versionar del arnés), `git branch -d feat/diseno-carta-editorial feat/historial-precios feat/panel-de-sala` (`feat/diseno-carta` y la etiqueta `alt/carta-variante-a-tarjetas` se conservan hasta que el usuario decida).
+1. Subir `main` a GitHub cuando el usuario lo pida (la carta editorial está integrada localmente, 2 commits por delante de `origin/main`).
 2. Probar el panel de sala en un teléfono real (sonido, *Wake Lock*) y el escaneo real del QR.
 3. Siguientes ítems: «Configuración del llamado» (UI de silenciar mesas y cooldown, S), pantalla del historial de precios, SuperAdmin (con la retención del historial resuelta), purga de `waiter_calls`. Borrar sobrantes: `git worktree remove ../UcoMenu-precios`, `git branch -d feat/historial-precios feat/panel-de-sala`.
 
@@ -86,5 +86,5 @@
 - **Pruebas (base compartida reseteada desde este *worktree*, `NEXT_PUBLIC_SITE_URL` sin definir):** typecheck · lint · build OK · unitarias **151/151** · RLS **370/370** (segunda corrida; en la primera un *worker* murió con `0xC0000409`) · E2E **121/121 en dos corridas completas seguidas** (hubo otras dos con caída de *worker* de Playwright, también `0xC0000409`, que no cuentan). **No se modificó ninguna prueba**: el diseño no rompió ningún selector ni comportamiento. Revisión visual a 390 y 768 px con el arnés (con y sin fotos, con mensaje de error en la barra): sin desborde. Sin organizaciones `e2e-*`/`tt-*` residuales.
 - **No ejecutado:** la carta y la barra del llamado en un teléfono real (Safari/iOS, Android), el escaneo real de un QR impreso, fotos reales, lector de pantalla; segunda revisión (Codex) no pedida.
 - **Pendiente (incrementos aparte):** que el Dueño elija variantes de la temática, logo y colores (requiere esquema, permisos y quizá tope por plan; la paleta ya está en variables CSS bajo `.carta`); `/impeccable init` y `document` (no hay `PRODUCT.md` ni `DESIGN.md`); buscador y filtros, detalle de plato, modo oscuro y rendimiento de imágenes.
-- **Arnés temporal (no versionado, NO entró a `main`):** `src/app/zz-preview/` y `public/` siguen solo en el *worktree* `../UcoMenu-carta`; se van con él.
-- **Próxima acción:** *push* de `main` cuando el usuario lo pida; luego limpieza de ramas y *worktrees* con su autorización.
+- **Arnés temporal:** el arnés de vista previa (`src/app/zz-preview/`, `public/`) se eliminó junto con el *worktree* `../UcoMenu-carta`; nunca entró a `main`.
+- **Próxima acción:** *push* de `main` cuando el usuario lo pida.
