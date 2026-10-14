@@ -53,12 +53,13 @@ export function client(key: string | undefined): Db {
 export const anonClient = () => client(publishableKey);
 export const serviceClient = () => client(serviceKey);
 
-export type TestUser = { id: string; db: Db };
+export const TEST_PASSWORD = "contrasena-de-prueba-123";
+export type TestUser = { id: string; email: string; db: Db };
 
 /** Crea un usuario real de Auth con sesión iniciada. Hay que borrarlo con `deleteUser`. */
 export async function createUser(service: Db, label: string): Promise<TestUser> {
   const email = `rls-${label}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.test`;
-  const password = "contrasena-de-prueba-123";
+  const password = TEST_PASSWORD;
 
   const created = await service.auth.admin.createUser({ email, password, email_confirm: true });
   if (created.error || !created.data.user) {
@@ -69,7 +70,7 @@ export async function createUser(service: Db, label: string): Promise<TestUser> 
   const signedIn = await db.auth.signInWithPassword({ email, password });
   if (signedIn.error) throw new Error(`No se pudo iniciar sesión: ${signedIn.error.message}`);
 
-  return { id: created.data.user.id, db };
+  return { id: created.data.user.id, email, db };
 }
 
 export async function deleteUser(service: Db, user: TestUser | undefined): Promise<void> {

@@ -1,0 +1,128 @@
+/**
+ * Lectura tipada de `org_entitlements(org)` (ADR 0006) y avisos de mora del panel.
+ * Funciones puras: se prueban en `entitlements.test.ts`.
+ */
+
+export type BillingState = "active" | "grace" | "read_only" | "suspended";
+export type Role = "owner" | "staff";
+
+export type Entitlements = {
+  state: BillingState;
+  canWrite: boolean;
+  features: string[];
+  /** Solo para el Dueño: el Staff no recibe plan ni fechas (ADR 0006). */
+  plan?: string;
+  billingCycle?: string;
+  periodEnd?: string;
+  daysLate?: number;
+  limits: Record<string, number | null>;
+  usage: Record<string, number>;
+};
+
+const STATES: readonly BillingState[] = ["active", "grace", "read_only", "suspended"];
+
+const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
+
+export function parseEntitlements(raw: unknown): Entitlements | null {
+  if (!isRecord(raw)) return null;
+  const state = STATES.find((s) => s === raw.state);
+  if (!state) return null;
+
+  const numbers = (value: unknown): Record<string, number> =>
+    isRecord(value)
+      ? Object.fromEntries(Object.entries(value).filter((e): e is [string, number] => typeof e[1] === "number"))
+      : {};
+
+  return {
+    state,
+    canWrite: raw.can_write === true,
+    features: Array.isArray(raw.features) ? raw.features.filter((f): f is string => typeof f === "string") : [],
+    plan: typeof raw.plan === "string" ? raw.plan : undefined,
+    billingCycle: typeof raw.billing_cycle === "string" ? raw.billing_cycle : undefined,
+    periodEnd: typeof raw.period_end === "string" ? raw.period_end : undefined,
+    daysLate: typeof raw.days_late === "number" ? raw.days_late : undefined,
+    limits: isRecord(raw.limits)
+      ? Object.fromEntries(
+          Object.entries(raw.limits).filter((e): e is [string, number | null] => e[1] === null || typeof e[1] === "number"),
+        )
+      : {},
+    usage: numbers(raw.usage),
+  };
+}
+
+export const PLAN_NAME: Record<string, string> = { basic: "Básico", pro: "Pro", premium: "Premium" };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const GRACE_DAYS = 7;
+const READ_ONLY_DAYS = 15;
+
+export type MoraNotice = {
+  tone: "grace" | "read_only" | "suspended";
+  title: string;
+  body: string;
+};
+
+/** Fecha corta en es-AR en la zona del negocio (las sucursales aún no tienen zona propia). */
+export function formatDate(iso: string | number | Date): string {
+  return new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long", timeZone: "America/Argentina/Buenos_Aires" }).format(
+    new Date(iso),
+  );
+}
+
+const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
+
+/**
+ * Qué aviso muestra el panel según el estado de la cuenta y el rol. `active` no muestra nada.
+ * El Staff solo recibe el estado (sin días ni fechas): coincide con lo que le devuelve la base.
+ */
+export function moraNotice(ent: Entitlements | null, role: Role): MoraNotice | null {
+  if (!ent || ent.state === "active") return null;
+
+  const end = ent.periodEnd ? new Date(ent.periodEnd).getTime() : null;
+  const owner = role === "owner";
+
+  if (ent.state === "grace") {
+    if (!owner) {
+      return {
+        tone: "grace",
+        title: "El pago de la suscripción está vencido",
+        body: "Podés trabajar con normalidad por ahora. Avisale al dueño para que no pase a solo lectura.",
+      };
+    }
+    const dias = ent.daysLate ?? 1;
+    const hasta = end !== null ? ` hasta el ${formatDate(end + GRACE_DAYS * DAY_MS)}` : "";
+    return {
+      tone: "grace",
+      title: `Tu suscripción venció hace ${plural(dias, "día", "días")}`,
+      body: `Podés seguir trabajando con normalidad${hasta}; después la cuenta pasa a solo lectura. Contactá a UcoMenu para registrar el pago.`,
+    };
+  }
+
+  if (ent.state === "read_only") {
+    if (!owner) {
+      return {
+        tone: "read_only",
+        title: "La cuenta está en solo lectura",
+        body: "Podés ver todo, pero no editar. Avisale al dueño para regularizar el pago.",
+      };
+    }
+    const hasta = end !== null ? ` Si no se regulariza antes del ${formatDate(end + READ_ONLY_DAYS * DAY_MS)}, la carta deja de mostrarse.` : "";
+    return {
+      tone: "read_only",
+      title: "Tu cuenta está en solo lectura",
+      body: `Podés ver todo, pero no editar la carta.${hasta} Contactá a UcoMenu para registrar el pago.`,
+    };
+  }
+
+  return owner
+    ? {
+        tone: "suspended",
+        title: "Tu cuenta está suspendida",
+        body: "La carta no se muestra a tus clientes. Tus datos están a salvo. Contactá a UcoMenu para registrar el pago y reactivarla.",
+      }
+    : {
+        tone: "suspended",
+        title: "La cuenta está suspendida",
+        body: "La carta no se muestra al público. Avisale al dueño para regularizar el pago.",
+      };
+}
