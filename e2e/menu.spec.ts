@@ -100,6 +100,8 @@ test.describe("rutas que no existen", () => {
     ["organización inactiva", "/m/bar-inactivo/unica"],
     ["slug con caracteres inválidos", "/m/CAFE_ejemplo/centro"],
     ["slug de 65 caracteres", `/m/${"a".repeat(65)}/centro`],
+    ["sucursal inexistente en una organización suspendida", "/m/resto-moroso/no-existe"],
+    ["sucursal de otra organización en una organización suspendida", "/m/resto-moroso/centro"],
   ] as const) {
     test(`responde 404 para ${label}`, async ({ page }) => {
       const response = await page.goto(path);

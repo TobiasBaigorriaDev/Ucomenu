@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [C] Planes y entitlements: catálogo, mora derivada (bordes al segundo), escrituras bloqueadas en solo lectura/suspendida, límites por trigger y carta suspendida — 170 pruebas de RLS, 14 E2E y 22 de 23 mutaciones detectadas (1 equivalente); falta `agile-revisar` por un segundo agente → ficha: agile/cambios/planes-y-entitlements.md · ADR 0006
+- [C] Planes y entitlements: catálogo, mora derivada (bordes al segundo), escrituras bloqueadas en solo lectura/suspendida, límites por trigger y carta suspendida — 176 pruebas de RLS, 16 E2E y 24 de 26 mutaciones detectadas (2 equivalentes); revisado por Codex (aprobar con cambios), dos defectos corregidos; falta confirmar y integrar → ficha: agile/cambios/planes-y-entitlements.md · ADR 0006
 
 ## Bloqueado
 - (vacío)

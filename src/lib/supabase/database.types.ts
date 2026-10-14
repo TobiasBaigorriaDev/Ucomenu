@@ -213,7 +213,7 @@ isOneToOne: false
 { Args: { "p_org": string }; Returns: Json
                            },
 "public_menu_status":
-{ Args: { "p_slug": string }; Returns: string
+{ Args: { "p_branch_slug": string,"p_org_slug": string }; Returns: string
                            }
           }
           Enums: {

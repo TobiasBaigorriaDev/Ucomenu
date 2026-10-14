@@ -282,6 +282,12 @@ where not exists (select 1 from public.subscriptions s where s.organization_id =
 -- ---------------------------------------------------------------------------
 -- Límites: se aplican al crear y al ACTIVAR. Activo -> inactivo nunca se bloquea.
 -- Un advisory lock por organización serializa los pedidos simultáneos para que no superen el tope.
+--
+-- Los triggers BEFORE corren ANTES del WITH CHECK de RLS y estas funciones son SECURITY DEFINER:
+-- si contaran sin más, un usuario podría provocar el error 53400 contra una organización ajena
+-- y leer su tope y su uso en el detalle. Por eso, si el pedido trae un usuario (API) que no es
+-- miembro de la organización, el trigger no cuenta ni informa nada y deja que RLS rechace la
+-- escritura con 42501. Sin usuario (servidor, service_role) el tope se aplica siempre.
 -- ---------------------------------------------------------------------------
 
 create function private.enforce_product_limit()
@@ -299,6 +305,10 @@ begin
   end if;
   -- Ya estaba activo en la misma organización: editarlo no consume cupo.
   if tg_op = 'UPDATE' and old.is_active and old.organization_id = new.organization_id then
+    return new;
+  end if;
+  -- Usuario de la API sin membresía en esta organización: no se cuenta ni se informa; decide RLS.
+  if (select auth.uid()) is not null and not private.is_org_member(new.organization_id) then
     return new;
   end if;
 
@@ -337,6 +347,11 @@ declare
   v_limit integer;
   v_count integer;
 begin
+  -- Usuario de la API sin membresía en esta organización: no se cuenta ni se informa; decide RLS.
+  if (select auth.uid()) is not null and not private.is_org_member(new.organization_id) then
+    return new;
+  end if;
+
   perform pg_advisory_xact_lock(hashtextextended('limit:branches:' || new.organization_id::text, 0));
 
   v_limit := private.org_limit(new.organization_id, 'branches');
@@ -432,8 +447,9 @@ comment on function public.org_entitlements(uuid) is
   'Estado, escritura permitida, features, límites y uso de la organización. Solo para sus miembros.';
 
 -- Estado público de una carta: 'available' | 'suspended' | null (no existe o no es publicable).
--- No revela la causa ni los días de mora.
-create function public.public_menu_status(p_slug text)
+-- Exige que la sucursal exista: una sucursal inventada es «no existe» (404) aunque la organización
+-- esté suspendida. Revela solo que el enlace es válido y si está disponible, nunca la causa ni los días de mora.
+create function public.public_menu_status(p_org_slug text, p_branch_slug text)
 returns text
 language sql
 stable
@@ -442,9 +458,12 @@ set search_path = ''
 as $$
   select case when private.org_is_published(o.id) then 'available' else 'suspended' end
   from public.organizations o
-  where o.slug = p_slug and o.is_active;
+  join public.branches b on b.organization_id = o.id
+  where o.slug = p_org_slug
+    and b.slug = p_branch_slug
+    and o.is_active;
 $$;
-comment on function public.public_menu_status(text) is
+comment on function public.public_menu_status(text, text) is
   'Para que la ruta pública distinga «Carta temporalmente no disponible» de «no existe».';
 
 -- ---------------------------------------------------------------------------
@@ -595,7 +614,7 @@ revoke all on function
   private.enforce_product_limit(),
   private.enforce_branch_limit(),
   public.org_entitlements(uuid),
-  public.public_menu_status(text)
+  public.public_menu_status(text, text)
 from public, anon, authenticated;
 
 grant execute on function private.org_can_write(uuid) to authenticated;
@@ -606,4 +625,4 @@ grant execute on function private.org_is_published(uuid) to anon, authenticated;
 grant usage on schema private to anon;
 
 grant execute on function public.org_entitlements(uuid) to authenticated;
-grant execute on function public.public_menu_status(text) to anon, authenticated;
+grant execute on function public.public_menu_status(text, text) to anon, authenticated;

@@ -42,7 +42,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 
   if (orgError) throw new Error(`No se pudo leer la organización: ${orgError.message}`);
   const branch = org?.branches[0];
-  if (!org || !branch) return unavailableOrNull(supabase, orgSlug);
+  if (!org || !branch) return unavailableOrNull(supabase, orgSlug, branchSlug);
 
   const [categories, products] = await Promise.all([
     supabase.from("categories").select("id, name, sort_order").eq("organization_id", org.id),
@@ -69,8 +69,13 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
  * Una organización suspendida oculta sus sucursales (RLS), así que desde la consulta principal
  * se ve igual que una inexistente. Solo en ese camino se pregunta el estado público.
  */
-async function unavailableOrNull(supabase: ReturnType<typeof createPublicClient>, orgSlug: string): Promise<PublicMenuResult> {
-  const status = await supabase.rpc("public_menu_status", { p_slug: orgSlug });
+async function unavailableOrNull(
+  supabase: ReturnType<typeof createPublicClient>,
+  orgSlug: string,
+  branchSlug: string,
+): Promise<PublicMenuResult> {
+  // La función exige que la sucursal exista: una inventada sigue siendo 404 aunque la cuenta esté suspendida.
+  const status = await supabase.rpc("public_menu_status", { p_org_slug: orgSlug, p_branch_slug: branchSlug });
   if (status.error) throw new Error(`No se pudo leer el estado de la carta: ${status.error.message}`);
   if (status.data !== "suspended") return null;
 

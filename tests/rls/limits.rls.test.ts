@@ -277,6 +277,77 @@ describe("sucursales", () => {
   });
 });
 
+describe("el tope no filtra información a quien no es de la organización", () => {
+  // Los triggers BEFORE corren antes del WITH CHECK de RLS: sin una comprobación previa de pertenencia,
+  // un tercero podría provocar 53400 contra una organización al tope y leer su límite y su uso en el detalle.
+  let llena: { id: string; categoryId: string };
+  let ajeno: TestUser;
+  let deOtraOrg: TestUser;
+
+  beforeAll(async () => {
+    llena = await nuevaOrg("tt-lim-fuga", "basic");
+    expect((await insertProducts(service, llena.id, llena.categoryId, 80)).error).toBeNull();
+    expect((await insertProducts(service, llena.id, llena.categoryId, 1, false, "tt-dormido")).error).toBeNull();
+    ajeno = await createUser(service, "fuga-ajeno");
+    deOtraOrg = await createUser(service, "fuga-otra-org");
+    const otra = await createOrg(service, "tt-lim-fuga-otra", "basic");
+    orgs.push(otra);
+    await addMembership(service, deOtraOrg, otra, "owner");
+  });
+
+  afterAll(async () => {
+    await Promise.all([ajeno, deOtraOrg].map((u) => deleteUser(service, u)));
+  });
+
+  const sinPistas = (error: { code?: string; message: string; details?: string | null; hint?: string | null } | null) => {
+    expect(error?.code).toBe("42501");
+    const todo = [error?.message, error?.details, error?.hint].filter(Boolean).join(" ");
+    expect(todo).not.toMatch(/limit|active|53400|cupo|plan/i);
+  };
+
+  it.each([
+    ["un usuario sin membresía", () => ajeno],
+    ["el owner de otra organización", () => deOtraOrg],
+  ])("%s que inserta un plato activo en una organización al tope recibe 42501 sin datos del tope", async (_label, getUser) => {
+    const { error } = await getUser()
+      .db.from("products")
+      .insert({ organization_id: llena.id, category_id: llena.categoryId, name: "tt-intruso", price_cents: 1 });
+
+    sinPistas(error);
+  });
+
+  it("tampoco filtra al insertar una sucursal o al activar un plato ajeno", async () => {
+    for (const usuario of [ajeno, deOtraOrg]) {
+      const sucursal = await usuario.db
+        .from("branches")
+        .insert({ organization_id: llena.id, slug: "tt-intruso", name: "tt-intruso" });
+      sinPistas(sucursal.error);
+
+      const dormido = await service.from("products").select("id").eq("organization_id", llena.id).eq("is_active", false).single();
+      const activar = await usuario.db.from("products").update({ is_active: true }).eq("id", dormido.data?.id as string).select("id");
+      expect(activar.error).toBeNull(); // RLS oculta la fila: 0 filas, sin error ni pistas
+      expect(activar.data).toEqual([]);
+    }
+  });
+
+  it("el personal de la propia organización sí recibe el motivo (con el tope)", async () => {
+    const { error } = await owner.db
+      .from("products")
+      .insert({ organization_id: llena.id, category_id: llena.categoryId, name: "tt-propio", price_cents: 1 });
+
+    expect(error?.code).toBe("53400");
+    expect(error?.message).toBe("limit_exceeded:active_products");
+  });
+
+  it("el servidor sigue sujeto al tope", async () => {
+    const { error } = await service
+      .from("products")
+      .insert({ organization_id: llena.id, category_id: llena.categoryId, name: "tt-servidor", price_cents: 1 });
+
+    expect(error?.code).toBe("53400");
+  });
+});
+
 describe("concurrencia", () => {
   it("con 79 activos, diez altas simultáneas dejan exactamente 80", async () => {
     const org = await nuevaOrg("tt-lim-concurrencia", "basic");

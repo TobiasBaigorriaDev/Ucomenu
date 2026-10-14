@@ -160,7 +160,7 @@ describe.each(casos)("cuenta %s", (_label, finEnMs, estadoEsperado, escribe, car
     const categorias = await anon.from("categories").select("id").eq("organization_id", orgId);
     const platos = await anon.from("products").select("id").eq("organization_id", orgId);
     const sucursales = await anon.from("branches").select("id").eq("organization_id", orgId);
-    const estado = await anon.rpc("public_menu_status", { p_slug: "tt-mora" });
+    const estado = await anon.rpc("public_menu_status", { p_org_slug: "tt-mora", p_branch_slug: "tt-mora-sucursal" });
 
     expect(estado.data).toBe(cartaVisible ? "available" : "suspended");
     expect(categorias.data).toHaveLength(cartaVisible ? 1 : 0);
@@ -398,15 +398,25 @@ describe("entitlements: quién ve qué", () => {
   });
 
   it("public_menu_status: existe, suspendida y no encontrada", async () => {
-    const cafe = await anon.rpc("public_menu_status", { p_slug: "cafe-ejemplo" });
-    const moroso = await anon.rpc("public_menu_status", { p_slug: "resto-moroso" });
-    const inactivo = await anon.rpc("public_menu_status", { p_slug: "bar-inactivo" });
-    const inexistente = await anon.rpc("public_menu_status", { p_slug: "no-existe" });
+    const estado = (org: string, sucursal: string) => anon.rpc("public_menu_status", { p_org_slug: org, p_branch_slug: sucursal });
+    const cafe = await estado("cafe-ejemplo", "centro");
+    const moroso = await estado("resto-moroso", "unica");
+    const inactivo = await estado("bar-inactivo", "unica");
+    const inexistente = await estado("no-existe", "centro");
 
     expect(cafe.data).toBe("available");
     expect(moroso.data).toBe("suspended");
     expect(inactivo.data).toBeNull();
     expect(inexistente.data).toBeNull();
+  });
+
+  it("public_menu_status: una sucursal inexistente es «no existe» también en una organización suspendida", async () => {
+    const estado = (org: string, sucursal: string) => anon.rpc("public_menu_status", { p_org_slug: org, p_branch_slug: sucursal });
+
+    expect((await estado("resto-moroso", "no-existe")).data).toBeNull();
+    expect((await estado("cafe-ejemplo", "no-existe")).data).toBeNull();
+    expect((await estado("cafe-ejemplo", "sur")).data).toBeNull(); // sucursal de otra organización
+    expect((await estado("resto-moroso", "centro")).data).toBeNull(); // sucursal de otra organización
   });
 });
 
@@ -472,7 +482,7 @@ describe("tablas de planes y suscripciones", () => {
 
   it("la organización morosa del seed sigue suspendida y con sus datos", async () => {
     const platos = await service.from("products").select("id").eq("organization_id", ORG_MOROSA);
-    const estado = await anon.rpc("public_menu_status", { p_slug: "resto-moroso" });
+    const estado = await anon.rpc("public_menu_status", { p_org_slug: "resto-moroso", p_branch_slug: "unica" });
 
     expect(platos.data).toHaveLength(1);
     expect(estado.data).toBe("suspended");
