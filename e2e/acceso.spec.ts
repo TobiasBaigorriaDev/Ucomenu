@@ -51,6 +51,23 @@ test.describe("sin sesión", () => {
     }
   });
 
+  test("un next manipulado en el formulario se ignora (la acción vuelve a sanearlo)", async ({ page }) => {
+    // Sin red: si la acción redirigiera afuera, la prueba lo vería en la URL sin salir de la máquina.
+    await page.route("https://evil.test/**", (route) => route.fulfill({ body: "sitio externo" }));
+    for (const manipulado of ["https://evil.test/robo", "//evil.test", "/admin"]) {
+      await page.goto(`/login?next=${encodeURIComponent("/panel/cafe-ejemplo/personal")}`);
+      // El campo oculto solo existe con un destino válido; se lo reemplaza antes de enviar.
+      await page.locator('input[name="next"]').evaluate((el: HTMLInputElement, valor) => (el.value = valor), manipulado);
+      await page.getByLabel("Email").fill(SEED.duenoCafe);
+      await page.getByLabel("Contraseña").fill(SEED_PASSWORD);
+      await page.getByRole("button", { name: "Ingresar" }).click();
+
+      await expect(page).toHaveURL(/\/panel\/cafe-ejemplo$/);
+      await page.getByRole("button", { name: "Salir" }).click();
+      await expect(page).toHaveURL(/\/login$/);
+    }
+  });
+
   test("no hay registro público", async ({ request }) => {
     const respuesta = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/signup`, {
       headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "", "Content-Type": "application/json" },

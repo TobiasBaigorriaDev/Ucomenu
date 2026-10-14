@@ -21,4 +21,4 @@ El ADR 0004 fija que el aislamiento entre organizaciones lo garantiza la base co
 ## Consecuencias
 - Cada tabla de negocio nueva debe sumar sus políticas con estas funciones **y** sus grants por columna, más pruebas de matriz entre dos organizaciones y una mutación.
 - Un `UPDATE`/`DELETE` fuera de la organización no falla: afecta 0 filas. La aplicación debe tratar «0 filas» como «no permitido o inexistente».
-- Falta, y se hará en sus ítems: límites de plan y estado de mora en las escrituras («Planes y entitlements»), y la regla «una organización no se queda sin owner» («Acceso del personal»).
+- Resuelto después: límites de plan y mora en las escrituras (ADR 0006) y la regla «una organización no se queda sin owner» con la gestión del personal desde el servidor (ADR 0007, que reemplaza la idea de «una función validada» por un módulo de servidor con el invariante en la base).

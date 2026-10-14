@@ -7,7 +7,7 @@
   - **Desviación consciente:** `cacheComponents` está **desactivado** (el scaffold lo trae activo). Con él, un 404 real exige prerender por slug y cachear por un slug arbitrario de una ruta pública es riesgoso; sin él, la carta se renderiza por pedido. El caché se diseñará en el ítem «Rendimiento de la carta pública» (ver `agile/cambios/esqueleto-menu-publico.md`).
 - **Base de datos:** PostgreSQL gestionado por Supabase, con Row Level Security (RLS) como mecanismo de aislamiento. → ADR 0004
 - **Tiempo real:** Supabase Realtime (solo para el panel de sala).
-- **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo.
+- **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo. **Implementado** (ADR 0007): email y contraseña, sin registro público, sesión por cookies `httpOnly` con `@supabase/ssr` 0.12.7 y sin cliente de Supabase en el navegador.
 - **Archivos:** Supabase Storage (fotos de platos, logos, modelos 3D).
 - **Hosting / despliegue:** Vercel (aplicación) + Supabase Cloud (datos). Desplegar requiere aprobación explícita.
 - **Pruebas (implementado):** unitarias y de RLS con Vitest (RLS contra Supabase local), E2E con Playwright a 390 px contra el build. Comandos en `AGENTS.md`.
@@ -34,7 +34,8 @@ Convención (confirmada): identificadores de código y base en inglés; interfaz
 ### Superficies (rutas, *supuesto de nombres*)
 - `/m/{org}/{sucursal}` — carta pública por link directo.
 - `/t/{token}` — entrada por QR de mesa: resuelve la mesa y muestra la misma carta con las acciones de llamado.
-- `/panel` — dueño. `/sala` — personal de sala. `/admin` — SuperAdmin.
+- `/panel` — gestión del local (dueño y staff; Suscripción y Personal solo dueño). `/sala` — personal de sala. `/admin` — SuperAdmin (pendiente).
+- **Implementado** (ADR 0007): `/login`, `/cuenta`, `/panel` y `/sala` (resuelven el local: directo con uno, selector con varios), `/panel/{slug}`, `/panel/{slug}/suscripcion`, `/panel/{slug}/personal` y `/sala/{slug}`. La organización activa vive **en la URL**, no en una cookie. `/m/{org}/{sucursal}` es la carta pública.
 - Identificación del tenant **por ruta**; subdominio o dominio propio quedan como evolución.
 
 ## Datos principales
@@ -85,6 +86,7 @@ Precios: enteros en centavos + moneda (`ARS`); nunca punto flotante.
 - **Dueño:** todo lo del Staff, más sucursales, personal y apariencia; lee `subscriptions`, `subscription_addons`, `payments` y `audit_log` de su organización, sin poder escribirlos.
 - **SuperAdmin:** opera desde el servidor con la clave de servicio; esa clave **nunca** llega al navegador.
 - **Implementado** (ADR 0006): `plans`, `addons`, `subscriptions` y `subscription_addons` en la base; estado de mora derivado (`private.billing_state`, bordes inclusivos: gracia hasta +168 h, solo lectura hasta +360 h); escrituras de catálogo bloqueadas en `read_only` y `suspended` (`private.org_can_write` en las políticas); carta pública oculta en `suspended` (`private.org_is_published`) y mensaje «Carta temporalmente no disponible» en la ruta; límites por trigger con *advisory lock* (error `53400`); alta con prueba de 14 días por trigger. API: `org_entitlements(org)` y `public_menu_status(org, sucursal)`. Pendiente: `payments`, `audit_log` y `platform_admins` (SuperAdmin); trigger de mesas (con «Mesas y QR»).
+- **Implementado** (ADR 0007): la gestión del personal (alta, baja, rol, contraseña) la hace el servidor con `service_role`, **después** de comprobar con el cliente de la persona (RLS) que es `owner` de esa organización; nunca toma cuentas de otra organización. El *trigger* `private.guard_last_owner` impide dejar a una organización sin `owner` por cualquier camino. Cada página y cada acción de `/panel` y `/sala` vuelve a exigir sesión (`getUser()`) y membresía; `proxy.ts` solo renueva la sesión.
 - **Feature flags:** una única función `has_feature(organization_id, feature)` deriva las capacidades del plan, los add-ons vigentes **y el estado de mora**: en `read_only` y `suspended` las features interactivas (`waiter_call`, `webar`, `loyalty`) devuelven falso, y en `suspended` también la carta pública. La usan las políticas RLS, las funciones de base y el servidor. Claves: `menu`, `waiter_call`, `analytics`, `loyalty` (por plan) y `webar` (por add-on vigente en Pro o Premium). La interfaz oculta lo no contratado, pero **la verificación que cuenta es la del servidor**.
 - **Límites de plan** (sucursales, mesas, platos activos, platos 3D): se hacen cumplir en la base, al crear o activar, contra los valores de `plans`; superar el tope no borra nada, solo impide crear más.
 - Las pruebas de aislamiento entre dos organizaciones son requisito para dar por hecho cualquier cambio de esquema (nivel C).

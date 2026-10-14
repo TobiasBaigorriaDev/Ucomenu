@@ -10,10 +10,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- [C] Acceso del personal: login y sesión (Supabase Auth con `@supabase/ssr`), estructura de `/panel` y `/sala` según rol, alta/baja de personal por el dueño, regla «una organización no se queda sin owner» y aviso de mora con `org_entitlements` — la ficha se crea al empezar; decisiones previas abiertas en `agile/ahora.md`
+- (vacío)
 
 ## Para verificar
-- (vacío)
+- [C] Acceso del personal: login y sesión (`@supabase/ssr`), `/panel` y `/sala` por rol, selector de local, gestión de personal por el Dueño, regla «una organización no se queda sin owner» en la base y aviso de mora — implementado en `feat/acceso-del-personal`: 43 unitarias, 226 de RLS, 46 E2E y 22/22 mutaciones detectadas; **falta la revisión de un segundo agente** → ficha: agile/cambios/acceso-del-personal.md · ADR 0007
 
 ## Bloqueado
 - (vacío)
@@ -24,7 +24,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 0 — Cimientos
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
-- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal; los topes de plan y el bloqueo por mora ya los aplica la base; los errores `53400` y las escrituras bloqueadas se muestran con `org_entitlements`)
+- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (desbloqueado cuando se integre el acceso del personal; los topes de plan y el bloqueo por mora ya los aplica la base; los errores `53400` y las escrituras bloqueadas se muestran con `org_entitlements`)
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
 - [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible, regenerar QR, entrada por `/t/{token}`; trigger del tope `tables_per_branch` con la guarda de pertenencia antes de contar (ADR 0006) y `org_can_write` en sus políticas
@@ -39,7 +39,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
-- [S] Aviso de mora al dueño en el panel (la pantalla pública «Carta temporalmente no disponible» ya está hecha); se resuelve junto con «Acceso del personal» si cabe en el incremento
+- [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (en verificación)
 - [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (bloqueado por: gestión de carta)
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
 - [S] Textos legales: términos, privacidad y aviso de alérgenos

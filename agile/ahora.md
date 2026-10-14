@@ -3,54 +3,46 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** «Planes y entitlements» cerrado e integrado a `main`; siguiente: «Acceso del personal» (nivel C), aún sin ficha
-- **Rama / último commit:** `main` en `872c656` (+ el commit de documentación de cierre); sin ramas de trabajo abiertas
-- **Nivel:** C (siguiente)
-- **Ficha relevante:** `agile/cambios/planes-y-entitlements.md` (hecho) · próxima: `agile/cambios/acceso-del-personal.md` (por crear)
+- **Objetivo actual:** «Acceso del personal» (nivel C) implementado y probado en su rama; **falta la revisión independiente de un segundo agente (solo lectura)** antes de integrar a `main`
+- **Rama / último commit:** `feat/acceso-del-personal` (4 commits sobre `main` en `fe95297`, más los cambios de documentación y de la prueba E2E de `next` manipulado, **sin commitear aún**); `main` ya está subido a GitHub; la rama **no** se subió
+- **Nivel:** C
+- **Ficha relevante:** `agile/cambios/acceso-del-personal.md` · ADR 0007
 
 ## Estado
-- En `main`: esqueleto caminante, núcleo multi-tenant y planes y entitlements. Los tres pasaron revisión de Codex (solo lectura).
-- Tablas: `organizations`, `branches`, `categories`, `products`, `memberships`, `plans`, `addons`, `subscriptions`, `subscription_addons`. API: `org_entitlements(org)` y `public_menu_status(org, sucursal)`. ADR 0001 a 0006.
-- Falta: login y sesión, paneles, alta de personal, mesas, llamados, SuperAdmin (`platform_admins`, pagos, auditoría).
-- GitHub: `origin/main` estaba al día hasta `81fb72e`; **los commits de Planes (`42e62c4`, `872c656`) y de documentación no están subidos**. Subir `main` es un paso aparte.
+- En `main`: esqueleto caminante, núcleo multi-tenant, planes y entitlements.
+- En la rama: login por email y contraseña sin registro público, sesión por cookies `httpOnly` (`@supabase/ssr` 0.12.7), `/panel/{slug}` (Resumen, Suscripción y Personal solo Dueño) y `/sala/{slug}`, selector de local, aviso de mora (gracia, solo lectura, suspendida), gestión de personal por el Dueño (alta, rol, baja, restablecer contraseña), `/cuenta`, invariante «una organización nunca se queda sin owner» en la base, usuarios de ejemplo en el seed y `pnpm dev:crear-dueno`.
+- Falta: gestión de carta en el panel, mesas, llamados, SuperAdmin (`platform_admins`, pagos, auditoría).
 
-## Pruebas (2026-10-14, sobre `872c656`)
-- typecheck · lint · build OK · unitarias 23/23 · RLS 176/176 (`catalog`, `tenancy`, `acl`, `billing`, `limits`) · E2E 16/16.
-- Mutaciones: 26 defensas rotas de a una, 24 detectadas, 2 equivalentes (documentadas en la ficha).
-- No ejecutadas: rendimiento de `org_is_published` con volumen, Safari/iOS, lector de pantalla, login desde la app (no existe), LCP, modo oscuro.
+## Pruebas (2026-10-14, base recién reseteada)
+- typecheck · lint · build OK · unitarias 43/43 · RLS 226/226 · E2E 46/46.
+- Mutaciones: 22 defensas rotas de a una, 22 detectadas (3 de base, 9 del módulo de personal, 10 de la aplicación).
+- No ejecutadas: renovación automática del token por el proxy, Safari/iOS, lector de pantalla, `pnpm dev` con la clave de servicio, configuración de Supabase Cloud, límites de intentos.
 
-## Preparación de «Acceso del personal»
-Fuentes: `docs/producto.md` (roles y permisos), `docs/arquitectura.md` (Auth, rutas `/panel`, `/sala`, `/admin`), ADR 0005 (membresías) y 0006 (`org_entitlements`).
-Alcance probable (nivel C: sesiones y permisos): login y cierre de sesión; sesión por cookies con `@supabase/ssr`; protección de rutas por rol en el servidor (no solo ocultar enlaces); `/panel` (owner y staff, con secciones según rol) y `/sala`; alta/baja de personal por el dueño; regla «una organización no se queda sin owner»; aviso de mora al dueño con `org_entitlements`.
-
-**Ya resuelto:** `@supabase/ssr` está aprobado en el inventario (stack del ADR 0001) y falta instalar con versión fija. Supabase Auth local ya corre; las confirmaciones por email están apagadas en local y la bandeja de pruebas es Inbucket.
-
-**Decisiones del usuario antes de implementar (cambian seguridad y reglas de negocio) — propuesta entre paréntesis:**
-1. **Método de login:** email y contraseña, o enlace mágico. (Propuesta: email y contraseña para Dueño y Staff; sin registro público.)
-2. **Alta del personal:** el dueño invita por email (requiere un servicio de correo de producción, es un tercero y exige aprobación) o crea la cuenta él mismo con una contraseña temporal que se cambia al entrar (no requiere correo). (Propuesta: contraseña temporal en el MVP; invitación por email cuando se contrate el servicio de correo.)
-3. **Alta del dueño inicial:** se crea hoy con el servidor porque el ítem «SuperAdmin» no existe. (Propuesta: un script local solo de desarrollo, y los usuarios de ejemplo en el seed con contraseña pública de desarrollo, nunca en producción.)
-4. **Usuario en más de una organización:** el modelo lo permite. (Propuesta: selector simple al entrar si tiene más de una; el panel opera sobre una a la vez.)
-5. **Acceso por rol:** `/panel` y `/sala` para owner y staff; el staff no ve plan, personal ni apariencia (ya definido). `/admin` queda fuera hasta «SuperAdmin». (Propuesta: aceptar.)
-6. **Recuperar contraseña:** requiere correo. (Propuesta: fuera del MVP de este ítem; el dueño restablece la del personal y el SuperAdmin la del dueño.)
+## Para usar la app en local
+- `SUPABASE_SERVICE_ROLE_KEY` tiene que estar en `.env.local` para que `pnpm dev` pueda gestionar personal (las pruebas la toman de `.env.test.local`). Ver `.env.example`.
+- Usuarios del seed (contraseña pública de desarrollo `ucomenu-dev-2026`): `dueno@cafe-ejemplo.test`, `mozo@cafe-ejemplo.test`, `dueno@parrilla-demo.test`, `mozo@parrilla-demo.test`, `dueno@resto-moroso.test`, `mozo@resto-moroso.test`, `multi@ucomenu.test` (Dueño en Café Ejemplo y Personal en Parrilla Demo).
+- Tras cambiar `supabase/config.toml` hay que `pnpm db:stop` y `pnpm db:start`.
 
 ## Decisiones recientes
+- Organización activa en la URL; identidad por `getUser()`; rol por `memberships` en cada pedido; cada página y acción exige su nivel (los layouts no se re-ejecutan).
+- `service_role` solo en el módulo de personal, tras comprobar con el cliente de la persona que es Dueño; nunca toma cuentas de otro local.
+- Cortar o reducir un acceso (baja, bajar de rol, restablecer) no depende del pago; dar acceso nuevo, sí.
 - Estado de mora derivado, bordes inclusivos; en solo lectura y suspendida no se escribe catálogo.
-- Límites por trigger con guarda de pertenencia antes de contar (regla para mesas y modelos 3D).
-- `anon` con `USAGE` en `private` y `EXECUTE` solo de `org_is_published`; la prueba de ACL fija la matriz de funciones.
-- Rama principal `main`. Analítica desde Pro. Pack extra WebAR +USD 10/mes. `price_history` aprobado. `impeccable` ignorado.
 
 ## Bloqueos y riesgos
-- Sin decisiones 1 a 6 no se puede fijar el alcance de «Acceso del personal».
+- **A confirmar con el usuario:** el Staff ve un aviso de mora reducido (estado y «avisale al dueño», sin plan ni fechas); `docs/producto.md` dice que los avisos de mora son solo del Dueño.
+- Producción: apagar el registro público y fijar la contraseña mínima de 10 en Supabase Cloud (checklist de «Salida a producción»).
+- Contraseña temporal sin cambio forzado; sin recupero por correo; restablecer no revoca sesiones abiertas.
 - `org_is_published` se evalúa por fila: medir en «Rendimiento de la carta pública».
 - `service_role` puede dejar una suscripción incoherente; la auditoría llega con «SuperAdmin».
 - Un `UPDATE`/`DELETE` bloqueado afecta 0 filas sin error; la app debe mostrar el estado con `org_entitlements.can_write`.
 - `react-best-practices` no instalada ni aprobada.
-- Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` necesita Docker.
+- Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; una corrida de Vitest perdió un worker una vez (`0xC0000409`).
 
 ## Próxima acción probable
-1. Subir `main` a GitHub (pendiente de tu confirmación).
-2. Responder las decisiones 1 a 6 (o aceptar las propuestas).
-3. Crear la rama `feat/acceso-del-personal`, redactar `agile/cambios/acceso-del-personal.md` (nivel C) y ejecutar `/agile-iterar`.
+1. Commitear los cambios pendientes de la rama.
+2. Pedir a Codex una ronda corta de revisión **solo lectura** de la rama (nivel C). Si aprueba, integrar a `main` y subirla.
+3. Siguiente ítem: «Gestión de carta» (ya desbloqueado) y luego «Mesas y QR».
 
 ## Estado del worktree al cerrar
-- `git status` limpio salvo lo ignorado a propósito (`impeccable`).
+- Cambios sin commitear: documentación (ADR 0007, arquitectura, ficha, tablero, este archivo) y `e2e/acceso.spec.ts`. Ignorado a propósito: `impeccable`.

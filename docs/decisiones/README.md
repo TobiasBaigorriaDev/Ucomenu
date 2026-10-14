@@ -18,3 +18,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0004 | [Multi-tenancy: organización con sucursales, aislada por RLS](0004-multi-tenant-rls-y-sucursales.md) | aceptada | 2026-10-13 |
 | 0005 | [Autorización por membresía en la base, con permisos por columna](0005-autorizacion-por-membresia.md) | aceptada | 2026-10-14 |
 | 0006 | [Planes, mora y límites resueltos en la base](0006-planes-mora-y-limites-en-la-base.md) | aceptada | 2026-10-14 |
+| 0007 | [Acceso del personal: sesión por cookies, rol por membresía y alta desde el servidor](0007-acceso-del-personal.md) | aceptada | 2026-10-14 |
