@@ -1,7 +1,7 @@
 # Cambio: Pantalla del historial de precios
-Estado: **para verificar** — implementado y probado; Codex aprobó con cambios (corregidos); falta que confirme las correcciones y, con orden del usuario, integrar a `main`
+Estado: **hecho e integrado a `main` (2026-10-14, squash `cbf19cd`, sin `push`)** — Codex aprobó con cambios en dos rondas, corregidos; la rama `feat/pantalla-historial-precios` sigue existiendo (borrable con `git branch -D`, porque el squash no la deja «fusionada» para Git)
 Nivel: **M** (solo lectura, sin migración; toca dinero y permisos, así que las pruebas incluyen aislamiento entre locales y entre roles)
-Rama: `feat/pantalla-historial-precios` (desde `main` `915b4f5`)
+Rama: `feat/pantalla-historial-precios` (desde `main` `3104459`, integrada por squash; borrable)
 
 ## Objetivo
 Que el Dueño y el Staff vean, dentro del panel, los cambios de precio que la base ya registra (`price_history`, ADR 0012): qué plato, de cuánto a cuánto, cuándo y quién. Cierra la mitigación declarada en `arquitectura.md` («el Dueño y el Staff pueden consultar los cambios»).

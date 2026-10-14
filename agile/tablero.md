@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Pantalla del historial de precios (por plato y por local; Dueño y Staff; debe tolerar platos y personas ya eliminados) — surgido de «Historial de cambios de precio» (ADR 0012) → ficha: agile/cambios/pantalla-historial-de-precios.md · rama `feat/pantalla-historial-precios` (probado: 187 unitarias, 386 RLS, 129 E2E; Codex aprobó con cambios dos veces, ya corregidos; falta su confirmación)
+- (vacío)
 
 ## Bloqueado
 - (vacío)
@@ -65,6 +65,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [M] Pantalla del historial de precios: `/panel/{slug}/historial-de-precios` (todo el local) y `/panel/{slug}/carta/platos/{id}/historial` (un plato), Dueño y Staff, 50 por página por cursor, tolera platos eliminados y personas dadas de baja; el Dueño ve el email de quien sigue en el local y el Staff solo «Vos» / «Otra persona del equipo» (decisión del usuario); sin migración — revisado por Codex (aprobar con cambios dos veces: emails largos en móvil, cursor con instantes imposibles y desfase ±15:59; corregidos), integrado a `main` (2026-10-14): 187 unitarias, 386 de RLS, 129 E2E → ficha: agile/cambios/pantalla-historial-de-precios.md
 - [M] Diseño gastronómico de la carta pública (dirección editorial): cabecera centrada, mosaico de categorías, barra fija de categorías, lista de platos sin tarjetas con miniaturas, paleta crema/verde/terracota acotada a `.carta`, barra del llamado con la paleta de la carta — aprobada por Codex (solo lectura) sobre `223a461`, 151 unitarias, 370 de RLS y 121 E2E ×2, integrada a `main` por squash merge (2026-10-14; sin subir). La variante A (`feat/diseno-carta`, `fd238d8`, etiqueta `alt/carta-variante-a-tarjetas`) queda como alternativa histórica → ficha: agile/cambios/diseno-carta.md
 - [M] Panel de sala en tiempo real: llamados pendientes en `/sala/{slug}` por sondeo corto (~3 s, decisión del usuario; ADR 0011), alerta sonora y visual, marcar atendido (política de `UPDATE` solo sobre `status`, solo pendientes de menos de 30 min, y *trigger* que fija hora y persona), recuperación al reconectar y aviso con plan o cuenta que no lo permiten — revisado por Codex (aprobar con cambios; 3 P2 y 2 P3 corregidos y confirmados), integrado a `main` (2026-10-14): 147 unitarias, 370 de RLS, 121 E2E ×2, 39 de 41 mutaciones detectadas (2 equivalentes) → ficha: agile/cambios/panel-de-sala.md · ADR 0011
 - [C] Historial de cambios de precio: tabla `price_history` llenada por trigger `AFTER UPDATE OF price_cents` en la misma transacción (solo cambios efectivos; quién por `auth.uid()`, NULL = actor técnico no identificado), solo se agrega (ni API ni `service_role` ni el dueño de la tabla), lectura de Dueño y Staff, `ON DELETE RESTRICT` en la organización y sin FK en plato y persona (ADR 0012, aceptada) — revisado por Codex (aprobar tras dos P2 sobre el destino de la limpieza de pruebas), 133 unitarias, 346 de RLS, 104 E2E, 15 de 15 mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/historial-de-precios.md
