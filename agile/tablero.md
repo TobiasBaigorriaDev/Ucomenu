@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Panel de sala en tiempo real: llamados pendientes en `/sala/{slug}` por sondeo corto (~3 s, decisión del usuario; ADR 0011), alerta sonora y visual, marcar atendido (política de `UPDATE` solo sobre `status` y *trigger* que fija hora y persona), recuperación al reconectar y aviso con plan o cuenta que no lo permiten — implementado en `feat/panel-de-sala` (sin integrar): 147 unitarias, 370 de RLS y 121 E2E con `main` (historial de precios) fusionado, 33 de 37 mutaciones detectadas (4 equivalentes); Codex aprobó con cambios (3 P2 y 2 P3, corregidos); falta que confirme las correcciones → ficha: agile/cambios/panel-de-sala.md · ADR 0011
+- (vacío)
 
 ## Bloqueado
 - (vacío)
@@ -66,6 +66,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [M] Panel de sala en tiempo real: llamados pendientes en `/sala/{slug}` por sondeo corto (~3 s, decisión del usuario; ADR 0011), alerta sonora y visual, marcar atendido (política de `UPDATE` solo sobre `status`, solo pendientes de menos de 30 min, y *trigger* que fija hora y persona), recuperación al reconectar y aviso con plan o cuenta que no lo permiten — revisado por Codex (aprobar con cambios; 3 P2 y 2 P3 corregidos y confirmados), integrado a `main` (2026-10-14): 147 unitarias, 370 de RLS, 121 E2E ×2, 39 de 41 mutaciones detectadas (2 equivalentes) → ficha: agile/cambios/panel-de-sala.md · ADR 0011
 - [C] Historial de cambios de precio: tabla `price_history` llenada por trigger `AFTER UPDATE OF price_cents` en la misma transacción (solo cambios efectivos; quién por `auth.uid()`, NULL = actor técnico no identificado), solo se agrega (ni API ni `service_role` ni el dueño de la tabla), lectura de Dueño y Staff, `ON DELETE RESTRICT` en la organización y sin FK en plato y persona (ADR 0012, aceptada) — revisado por Codex (aprobar tras dos P2 sobre el destino de la limpieza de pruebas), 133 unitarias, 346 de RLS, 104 E2E, 15 de 15 mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/historial-de-precios.md
 - [C] Llamado desde la mesa: función de base `create_waiter_call` como única puerta de escritura pública (un pendiente por mesa y tipo, vencimiento derivado a 30 min, cooldown por mesa y tipo, límite por cliente atómico, `unavailable` uniforme) y botones en `/t/{token}` — revisado por Codex (aprobar con cambios; P2 del límite por cliente corregido), 123 unitarias, 310 de RLS, 104 E2E y 44 de 47 mutaciones detectadas (3 equivalentes), integrado a `main` (2026-10-14) → ficha: agile/cambios/llamado-desde-la-mesa.md · ADR 0010
 - [M] Mesas y QR: alta de mesas por sucursal, token opaco generado por la base, hoja imprimible, regenerar QR y entrada pública `/t/{token}` — revisado por Codex (aprobar con cambios; P2 de la sucursal perdida en el login corregido), 107 unitarias, 286 de RLS, 86 E2E y 46 de 51 mutaciones detectadas (5 equivalentes), integrado a `main` (2026-10-14); pendientes: confirmación de Codex del P2 y escaneo con un teléfono real → ficha: agile/cambios/mesas-y-qr.md · ADR 0009

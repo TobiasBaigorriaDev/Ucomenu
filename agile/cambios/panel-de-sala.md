@@ -1,5 +1,5 @@
 # Cambio: Panel de sala en tiempo real — llamados pendientes en vivo, alerta sonora y visual, marcar atendido y recuperación al reconectar
-Estado: **para verificar** — implementado y probado en la rama `feat/panel-de-sala` (sin integrar a `main`); falta la revisión de un segundo agente
+Estado: **hecho** — revisado por Codex (aprobar con cambios; sus 3 P2 y 2 P3 corregidos y confirmados con «Aprobar» sobre `2fa8482`) e integrado a `main` (2026-10-14, por avance directo; sin subir a GitHub)
 Nivel: M (el backlog lo define así; agrega una política de `UPDATE` sobre `waiter_calls` y una ruta de consulta con sesión, por eso incluye pruebas de base y adversarias, mutaciones y revisión visual)
 
 ## Objetivo
@@ -58,7 +58,7 @@ Ejecutadas el 2026-10-14 sobre una base recién reseteada (`pnpm db:reset`, migr
 - **Con `main` fusionado (historial de precios, ADR 0012), 2026-10-14:** typecheck, lint y build OK; `pnpm test` **142/142**; `pnpm test:rls` **367/367** (15 archivos); `pnpm test:e2e` **119/119** en dos corridas completas seguidas; sin residuos `e2e-*`/`tt-*`. La migración del panel (`20261014151013`) queda después de la del historial (`20261014061500`) y no depende de ella.
 
 Pendientes (no ejecutado):
-- **Revisión de un segundo agente (Codex, solo lectura): hecha sobre `4706e23`, «Aprobar con cambios» (3 P2 y 2 P3, ningún P1), todo corregido (ver «Revisión de Codex» abajo); falta que Codex confirme las correcciones.**
+- **Revisión de un segundo agente (Codex, solo lectura): hecha sobre `4706e23`, «Aprobar con cambios» (3 P2 y 2 P3, ningún P1), todo corregido (ver «Revisión de Codex» abajo); Codex confirmó las correcciones sobre `2fa8482` («Aprobar», sin hallazgos pendientes).**
 - El sonido real y el *Wake Lock* en un teléfono (Safari/iOS y Android), el tiempo de respuesta con el sondeo en una red móvil real y con el local en producción, lector de pantalla, `pnpm dev` de punta a punta.
 - Realtime (descartado por decisión del usuario), silenciar mesas y cambiar el cooldown desde el panel, purga de `waiter_calls`.
 
@@ -78,3 +78,4 @@ Pendientes (no ejecutado):
   - **P3 — el sondeo seguía con `enabled:false`:** ahora se detiene; E2E de plan que baja con la pantalla abierta (cuenta las consultas).
   - **P3 — error de membresías fuera del manejo de 503:** la identidad y las membresías están dentro del `try`; prueba unitaria de la ruta (`tests/unit/sala-estado-route.test.ts`).
   - Verificación tras las correcciones (base reseteada, build final): typecheck, lint y build OK; unitarias **147/147**; RLS **370/370**; E2E **121/121** en dos corridas completas.
+  - Sobre `main` ya integrado (base reseteada, build final): typecheck, lint y build OK; unitarias 147/147; RLS 370/370; E2E 121/121 en dos corridas.
