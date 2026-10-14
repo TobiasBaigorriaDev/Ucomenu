@@ -29,6 +29,8 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   stamp_attended_call: [false, false, false], // trigger de waiter_calls: fija attended_at y attended_by (panel de sala)
   rotate_table_token: [false, false, false], // trigger de tables: regenera qr_token (ADR 0009)
   product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
+  record_price_change: [true, false, false], // trigger de products: escribe price_history (la API no tiene INSERT)
+  price_history_append_only: [false, false, false], // trigger de price_history: rechaza UPDATE, DELETE y TRUNCATE
 };
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.
@@ -139,6 +141,19 @@ describe("RLS y permisos de tablas", () => {
       expect(permisos("anon", tabla), `${tabla}: anon`).toEqual(["f", "f", "f", "f", "f"]);
       expect(permisos("authenticated", tabla), `${tabla}: authenticated`).toEqual(["t", "f", "f", "f", "f"]);
     }
+  });
+
+  it("price_history: anon sin permisos; authenticated y service_role solo con SELECT (se escribe por trigger)", () => {
+    const permisos = (rol: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'public.price_history', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    expect(permisos("anon")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    expect(permisos("authenticated")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
+    expect(permisos("service_role")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
   });
 
   it("organization_id, id, slug y is_active no son actualizables por la API", () => {

@@ -123,7 +123,27 @@ isOneToOne: false
                     "code"?: string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"yearly_price_usd_cents"?: number
                   }
                   Relationships: [
-                    
+
+                  ]
+                },"price_history": {
+                  Row: {
+                    "changed_at": string,"changed_by": string | null,"id": string,"new_price_cents": number,"old_price_cents": number,"organization_id": string,"product_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "changed_at"?: string,"changed_by"?: string | null,"id"?: string,"new_price_cents": number,"old_price_cents": number,"organization_id": string,"product_id": string
+                  }
+                  Update: {
+                    "changed_at"?: string,"changed_by"?: string | null,"id"?: string,"new_price_cents"?: number,"old_price_cents"?: number,"organization_id"?: string,"product_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "price_history_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"products": {
                   Row: {

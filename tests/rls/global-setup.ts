@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { purgePriceHistoryWhere } from "./purge-price-history";
 
 /**
  * Limpieza previa de las pruebas de RLS. Si una corrida anterior se interrumpió (o su limpieza final no alcanzó a
@@ -18,6 +19,9 @@ export default async function setup() {
   }
 
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+
+  // Una organización con historial de precios no se puede borrar (RESTRICT) y el historial solo se agrega: se purga primero.
+  purgePriceHistoryWhere("organization_id in (select id from public.organizations where slug like 'tt-%')");
 
   // Primero las organizaciones (borrarlas en cascada está permitido; el último Dueño no se puede borrar antes).
   const orgs = await db.from("organizations").delete().like("slug", "tt-%");

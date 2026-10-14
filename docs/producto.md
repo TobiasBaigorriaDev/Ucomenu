@@ -119,6 +119,7 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 - *Supuesto (nuevo):* lo que el Staff **no** puede hacer es lo que no figura en su definición (personal, sucursales, apariencia, plan).
 - Cambiar plan, add-ons o estado de la suscripción es **exclusivo del SuperAdmin**; el Dueño solo los ve.
 - Como el Staff puede cambiar precios, los **cambios de precio quedan registrados** (quién, cuándo, valor anterior y nuevo), sea Staff o Dueño quien los haga. Confirmado por el usuario el 2026-10-13.
+- **Historial de precios** *(ADR 0012)*: lo registra la base ante cada cambio efectivo del precio de un plato (no al crearlo ni al editar otros campos); **Dueño y Staff leen el historial de su organización** *(confirmado por el usuario el 2026-10-14)*, nadie lo modifica ni lo borra desde la aplicación. Un cambio hecho sin usuario (operación técnica) se registra sin autor. La pantalla para consultarlo llega en un ítem aparte.
 
 ### Menú
 - El comensal solo ve categorías y platos **activos**; un plato agotado en la sucursal se muestra como no disponible, no desaparece.

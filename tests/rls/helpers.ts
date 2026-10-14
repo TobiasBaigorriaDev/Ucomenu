@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { asegurarDestinoLocal, purgePriceHistoryWhere } from "./purge-price-history";
 
 /**
  * Utilidades compartidas de las pruebas de RLS contra el Supabase LOCAL.
@@ -84,15 +85,19 @@ export const apiKey = publishableKey;
 /**
  * SQL directo contra el Postgres local (para lo que la API REST no puede: catálogo, funciones internas).
  * Corre dentro del contenedor de Supabase (`project_id` de supabase/config.toml). Solo para pruebas.
+ * `SUPABASE_DB_CONTAINER` apunta a otra instancia local (p. ej. una aislada para un worktree).
  */
+const dbContainer = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+
 export function sql(query: string): string[][] {
+  asegurarDestinoLocal(dbContainer); // solo el Docker local y un contenedor supabase_db_*
   let out: string;
   try {
-    out = execFileSync("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-At", "-F", "|", "-c", query], {
+    out = execFileSync("docker", ["exec", dbContainer, "psql", "-U", "postgres", "-At", "-F", "|", "-c", query], {
       encoding: "utf8",
     });
   } catch (error) {
-    throw new Error(`No se pudo consultar el contenedor supabase_db_ucomenu. ¿Está encendido (pnpm db:start)? ${String(error)}`);
+    throw new Error(`No se pudo consultar el contenedor ${dbContainer}. ¿Está encendido (pnpm db:start)? ${String(error)}`);
   }
   return out
     .split("\n")
@@ -113,8 +118,18 @@ export async function createOrg(service: Db, slug: string, plan: PlanCode = "bas
   return org.data.id;
 }
 
+/**
+ * Limpieza de PRUEBAS: borra el historial de precios de una organización de prueba. Una organización con
+ * historial no se puede borrar (ON DELETE RESTRICT) y ni la API ni service_role pueden borrarlo (solo se agrega):
+ * se hace como dueño de la tabla, apagando un momento el trigger de solo-agregado en una sola transacción.
+ */
+export function purgePriceHistory(orgId: string): void {
+  purgePriceHistoryWhere(`organization_id = '${orgId}'`);
+}
+
 export async function deleteOrg(service: Db, orgId: string | undefined): Promise<void> {
   if (!orgId) return;
+  purgePriceHistory(orgId);
   // Con varias bajas concurrentes un borrado puede fallar de forma transitoria: se reintenta y, si no se logra, se avisa
   // (antes el error se perdía y quedaba un resto que rompía la corrida siguiente).
   for (let intento = 1; intento <= 3; intento++) {

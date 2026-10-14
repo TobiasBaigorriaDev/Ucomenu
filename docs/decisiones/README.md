@@ -23,3 +23,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0009 | [Mesas y QR: token opaco generado por la base, resolución pública por función y regeneración por trigger](0009-mesas-y-qr-token-opaco.md) | aceptada | 2026-10-14 |
 | 0010 | [Llamado desde la mesa: una función de base como única puerta de escritura pública y límite por cliente como segunda línea](0010-llamado-desde-la-mesa.md) | aceptada | 2026-10-14 |
 | 0011 | [Panel de sala: sondeo corto al servidor en vez de Supabase Realtime](0011-panel-de-sala-por-sondeo.md) | aceptada | 2026-10-14 |
+| 0012 | [Historial de precios: trigger en la misma transacción, solo se agrega y sin borrado en cascada](0012-historial-de-precios.md) | aceptada | 2026-10-14 |
