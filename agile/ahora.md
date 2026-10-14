@@ -3,7 +3,7 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code (worktree `../UcoMenu-precios`)
-- **Objetivo actual:** «Historial de cambios de precio» (`price_history`) implementado y **validado** en `feat/historial-precios` (con `main` fusionado, ADR 0012 aceptada). Falta solo la revisión de un segundo agente (Codex, solo lectura); después, integrar y subir. Sin integrar a `main`, sin push
+- **Objetivo actual:** «Historial de cambios de precio» (`price_history`) implementado, validado y **aprobado por Codex** (solo lectura, `ca04004..a971149`) en `feat/historial-precios`. Falta la orden del usuario para integrar a `main` y subir; después, `pnpm db:reset` + RLS/E2E en la base compartida. Sin integrar, sin push
 - **Rama / último commit:** `feat/historial-precios` (base original `da20ffd`; se fusionó `main` `ca04004`). Ver `git log`. Este archivo describe SOLO esta rama; el panel de sala (`feat/panel-de-sala`) y el diseño de la carta (`feat/diseno-carta-editorial`) siguen aparte
 - **Nivel:** C
 - **Ficha relevante:** `agile/cambios/historial-de-precios.md` · ADR 0012 · antes: `agile/cambios/llamado-desde-la-mesa.md` (ADR 0010), `mesas-y-qr.md` (ADR 0009) y `gestion-de-carta.md` (ADR 0008)
@@ -62,7 +62,7 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-0. **Historial de precios:** pedir a Codex una ronda de revisión de solo lectura sobre `feat/historial-precios`; con su aprobación, integrar a `main`, hacer `pnpm db:reset` + `pnpm db:types` (sin cambios esperados) y correr RLS/E2E en la base compartida; reconciliar con el panel de sala (migración `20261014151013`, sin dependencia). Pendiente de producto: retención y purga antes del borrado de organizaciones en SuperAdmin.
+0. **Historial de precios:** con la orden del usuario, integrar `feat/historial-precios` a `main`, hacer `pnpm db:reset` y `pnpm db:types` (sin cambios esperados) y correr RLS/E2E en la base compartida; reconciliar con el panel de sala (migración `20261014151013`, sin dependencia). Pendiente de producto: retención y purga antes del borrado de organizaciones en SuperAdmin.
 1. «Panel de sala en tiempo real» está en `feat/panel-de-sala` (no es de esta rama).
 2. Quien integre `feat/diseno-carta-editorial` resuelve el solapamiento con la barra del llamado (`/t/[token]/page.tsx`, `menu-header.tsx`, `public-menu-view.tsx`).
 
