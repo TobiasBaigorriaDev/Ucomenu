@@ -21,8 +21,8 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** `main` con la pantalla del historial de precios integrada (squash `cbf19cd`, aprobada por Codex tras dos rondas de correcciones); sin subir a GitHub. Siguiente: *push* cuando el usuario lo pida y elegir el próximo ítem
-- **Rama / último commit:** `main`; la pantalla entró por squash (`cbf19cd`). La rama `feat/pantalla-historial-precios` sigue existiendo (borrable con `git branch -D`, el squash no la marca fusionada). Se trabaja con un solo par de agentes por ahora (la preparación de *worktrees* se revirtió en `3104459`)
+- **Objetivo actual:** `main` con la pantalla del historial de precios y la carta editorial integradas, probadas en un teléfono real y **subidas a GitHub** (2026-10-14, con autorización del usuario). Sin trabajo a medias. Siguiente: elegir el próximo ítem del tablero
+- **Rama / último commit:** `main` = `origin/main` al cerrar (ver `git log`); única rama local (`feat/pantalla-historial-precios` se borró tras confirmar que `main` tiene todo su código). Un solo par de agentes por ahora (la preparación de *worktrees* se revirtió en `3104459`; `docs/paralelo.md` ya no existe)
 - **Nivel:** M
 - **Ficha relevante:** hecho: `pantalla-historial-de-precios.md` (sin ADR nuevo; sin migración), `panel-de-sala.md` (ADR 0011), `historial-de-precios.md` (ADR 0012), `llamado-desde-la-mesa.md` (ADR 0010), `mesas-y-qr.md` (ADR 0009), `gestion-de-carta.md` (ADR 0008)
 
@@ -33,7 +33,7 @@
 - **Llamado desde la mesa (ADR 0010):** en `/t/{token}` una barra fija con «Llamar al mozo» y «Pedir la cuenta», solo si `resolve_table_qr` informa `calls_enabled` (mesa activa y no silenciada, plan Pro o superior, cuenta en gracia o activa). La **única puerta de escritura** es `public.create_waiter_call(token, tipo, cliente)` (definer; ningún rol de la API escribe `waiter_calls`): un pendiente por mesa y tipo (índice único parcial + lock por mesa), vencimiento a 30 min derivado (marca `expired` al llamar), cooldown de 60 s por mesa y tipo (columna `branches.waiter_call_cooldown_seconds`), límite de 30 avisos cada 10 min por identificador de cliente (HMAC de la IP armado por el servidor; nunca la IP; conteo e inserción serializados por un lock por cliente, tomado después del de la mesa), `unavailable` uniforme sin revelar la causa. La *server action* usa el cliente `anon`. Los miembros leen `waiter_calls` de su organización. Columna nueva `tables.muted_until` (sin UI).
 - **Panel de sala (ADR 0011):** `/sala/{slug}` lista los llamados pendientes de la organización (menos de 30 min, el más viejo primero) y se actualiza solo por **sondeo** cada ~3 s a `GET /sala/{slug}/estado` (sesión y RLS; `401` sin sesión —el *proxy* responde JSON en esta ruta—, `404` idéntico para otro local, `503` base caída; sin caché). Tarjeta con mesa, tipo, «hace N» (hora del servidor) y «Atendido»; urgente desde 5 min con texto. Llamado nuevo: resalta, título «(N) Sala en vivo» y, con alertas activadas por un toque, doble pitido (Web Audio) y *Wake Lock*; lo que ya estaba al cargar no suena. Atender: *server action* + política de `UPDATE` solo sobre `status` (pending → attended, con plan y cuenta al día) + *trigger* que fija `attended_at`/`attended_by`; dos a la vez: gana uno. Sin conexión: aviso con la última lista y recuperación inmediata al volver. Sin plan o cuenta que lo permita: aviso en vez de la lista y sin sondeo.
 - Falta: UI de silenciar mesas y del cooldown, purga de `waiter_calls`, SuperAdmin (con la retención del historial resuelta), variantes y adicionales, borrado de la carta y de las mesas, y Realtime si algún día se quiere (exige una enmienda al ADR 0007 por el token).
-- GitHub: `origin/main` en `f642a6e` (panel de sala incluido, subido el 2026-10-14 con autorización del usuario).
+- GitHub: `origin/main` al día con `main` (subido el 2026-10-14 con autorización del usuario; incluye la carta editorial y la pantalla del historial de precios).
 
 ## Pruebas del panel de sala (2026-10-14, sobre `main` con el panel integrado, base compartida recién reseteada)
 - typecheck · lint · build OK · unitarias **147/147** · RLS **370/370** (15 archivos) · E2E **121/121** en dos corridas completas seguidas.
@@ -84,9 +84,9 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-1. Subir `main` a GitHub cuando el usuario lo pida (la carta editorial y la pantalla del historial están integradas localmente, por delante de `origin/main`).
-2. Probar el panel de sala en un teléfono real (sonido, *Wake Lock*) y el escaneo real del QR.
-3. Siguientes ítems: «Configuración del llamado» (UI de silenciar mesas y cooldown, S), SuperAdmin (con la retención del historial resuelta), purga de `waiter_calls`. Borrar sobrantes: `git worktree remove ../UcoMenu-precios`, `git branch -d feat/historial-precios feat/panel-de-sala`.
+1. Elegir el próximo ítem del tablero. Candidatos: «Configuración del llamado» (UI de silenciar mesas y cooldown, S), repaso de diseño del historial de precios (S), SuperAdmin (con la retención del historial resuelta), purga de `waiter_calls`; ver también «Mejoras y deuda técnica» en `agile/tablero.md`.
+2. Para probar algo en un teléfono real: receta en «Para usar la app en local» (usar `next dev`, no `next start`).
+3. Flujo habitual: rama `feat/*` desde `main` → `agile-explorar`/`agile-iterar` → Codex revisa un SHA en solo lectura → squash a `main` con orden del usuario.
 
 ## Estado del worktree al cerrar
 - `main` limpio salvo la carpeta ajena sin versionar `docs/referencias/` (no es mía; no se commitea). Base compartida con el esquema de `main` (incluye `price_history` y el panel de sala).

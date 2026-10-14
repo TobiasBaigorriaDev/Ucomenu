@@ -30,6 +30,12 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Disponibilidad por sucursal: marcar agotado; gestión de sucursales
 - [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
 
+### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
+- [S] Repaso de diseño de la pantalla del historial de precios: el usuario la vio funcional pero «muy sencilla» frente a la carta editorial (usar la skill de diseño; sin cambiar datos ni permisos)
+- [S] `expectNoHorizontalOverflow` (`e2e/support.ts`) da falsos aprobados en móvil (el viewport crece con el contenido): reemplazarlo por la medida de `e2e/historial-precios.spec.ts` y revisar las pruebas que lo usan
+- [S] `pnpm lint` global falla por scripts sin seguimiento en `output/` (diagnósticos de Codex): decidir si se ignora `output/` en Git/ESLint
+- [S] Probar *Wake Lock* del panel de sala: exige HTTPS (túnel o certificado local; herramienta de terceros, requiere aprobación)
+
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
 - [S] Configuración del llamado: UI para el cooldown por sucursal (`branches.waiter_call_cooldown_seconds`) y para silenciar una mesa (`tables.muted_until`); el vencimiento a 30 min ya es derivado y las columnas ya existen
 
