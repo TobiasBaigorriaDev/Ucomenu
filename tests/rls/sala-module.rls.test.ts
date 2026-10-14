@@ -197,6 +197,19 @@ describe("attendCall", () => {
     expect(await attendCall(owner.db, local.id, id)).toEqual({ status: "expired" });
   });
 
+  it("uno de 30 minutos o más, aunque siga `pending`, responde «expired» y no se atiende; uno de 29 sí", async () => {
+    const local = await nuevoLocal("tt-salamod-viejo");
+    await llamar(local.tables[0].token, "waiter");
+    await llamar(local.tables[1].token, "bill");
+    const [uno, otro] = (await loadSala(owner.db, local.id)).calls;
+    await service.from("waiter_calls").update({ created_at: new Date(Date.now() - 31 * MIN).toISOString() }).eq("id", uno.id);
+    await service.from("waiter_calls").update({ created_at: new Date(Date.now() - 29 * MIN).toISOString() }).eq("id", otro.id);
+
+    expect(await attendCall(owner.db, local.id, uno.id)).toEqual({ status: "expired" });
+    expect((await service.from("waiter_calls").select("status, attended_by").eq("id", uno.id).single()).data).toEqual({ status: "pending", attended_by: null });
+    expect(await attendCall(staff.db, local.id, otro.id)).toEqual({ status: "attended" });
+  });
+
   it("sin plan o sin cuenta al día responde «unavailable» y no cambia nada (sin falso éxito)", async () => {
     const local = await nuevoLocal("tt-salamod-bloqueado");
     await llamar(local.tables[0].token, "waiter");

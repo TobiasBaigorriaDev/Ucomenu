@@ -12,6 +12,8 @@
 -- Reglas de fondo:
 --  * Un miembro de ESA organización puede pasar un llamado de `pending` a `attended`, y nada más: no puede volver
 --    uno atendido a pendiente, marcarlo `expired`, ni tocar otra columna. Solo se concede UPDATE sobre `status`.
+--  * Solo mientras el llamado no venció: uno de 30 minutos o más (aunque siga `pending` hasta que la función pública
+--    lo marque) ya no se puede atender; el borde coincide con el de la lista de la sala (`created_at > now() - 30 min`).
 --  * attended_at y attended_by los fija un trigger (now() y auth.uid()): nadie puede atribuir la atención a otra
 --    persona ni cambiar la hora.
 --  * Atender exige que el local pueda usar el llamado (plan y cuenta al día: has_feature('waiter_call')), igual que
@@ -35,7 +37,11 @@ grant execute on function private.can_attend_calls(uuid) to authenticated;
 create policy "waiter_calls: los miembros atienden los pendientes"
   on public.waiter_calls for update
   to authenticated
-  using (status = 'pending' and private.can_attend_calls(organization_id))
+  using (
+    status = 'pending'
+    and created_at > now() - interval '30 minutes'
+    and private.can_attend_calls(organization_id)
+  )
   with check (status = 'attended' and private.can_attend_calls(organization_id));
 
 -- Solo `status`: la hora y la persona las pone el trigger.

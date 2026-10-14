@@ -278,6 +278,48 @@ test.describe("atender", () => {
   });
 });
 
+test.describe("consultas en vuelo", () => {
+  test("una respuesta lenta que salió antes de atender no vuelve a mostrar la tarjeta ya atendida", async ({ browser }) => {
+    const { t, mesas } = await nuevoLocal("sala-respuesta-vieja");
+    await llamar(mesas[0].qr_token, "waiter");
+    await llamar(mesas[1].qr_token, "bill");
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.staff, t);
+    await expect(tarjeta(page, "Mesa 1")).toBeVisible();
+    await expect(tarjeta(page, "Mesa 2")).toBeVisible();
+
+    // La próxima consulta se lee ya (con Mesa 1 pendiente) pero se entrega recién después de atender.
+    let capturada!: () => void;
+    const seCapturo = new Promise<void>((resolve) => (capturada = resolve));
+    let liberar!: () => void;
+    const liberada = new Promise<void>((resolve) => (liberar = resolve));
+    let armada = true;
+    await page.route("**/sala/*/estado", async (route) => {
+      if (!armada) return route.continue();
+      armada = false;
+      const respuesta = await route.fetch();
+      capturada();
+      await liberada;
+      await route.fulfill({ response: respuesta });
+    });
+    await seCapturo;
+
+    await page.getByRole("button", { name: /Marcar como atendido: Mesa 1/ }).click();
+    await expect(page.getByTestId("nota-sala")).toContainText("Mesa 1: marcado como atendido");
+    await expect(tarjeta(page, "Mesa 1")).toHaveCount(0);
+
+    liberar();
+    // Se mira SIN reintentos durante menos que un ciclo de 3 s: si la respuesta vieja se aplicara, la tarjeta
+    // reaparecería unos instantes (hasta que la consulta siguiente la volviera a sacar) y un `expect` con espera no lo vería.
+    for (let i = 0; i < 8; i++) {
+      expect(await tarjeta(page, "Mesa 1").count(), `a los ${i * 250} ms`).toBe(0);
+      await page.waitForTimeout(250);
+    }
+    await expect(tarjeta(page, "Mesa 2")).toBeVisible();
+    await ctx.close();
+  });
+});
+
 test.describe("conexión", () => {
   test("sin conexión muestra un aviso con la última lista y, al volver, se recupera sola (incluido lo creado durante el corte)", async ({ browser }) => {
     const { t, mesas } = await nuevoLocal("sala-offline");
@@ -321,6 +363,23 @@ test.describe("conexión", () => {
 });
 
 test.describe("plan y cuenta", () => {
+  test("si el plan se baja con la pantalla abierta, aparece el aviso y se deja de consultar", async ({ browser }) => {
+    const { t, mesas } = await nuevoLocal("sala-plan-baja");
+    await llamar(mesas[0].qr_token);
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.staff, t);
+    await expect(tarjeta(page, "Mesa 1")).toBeVisible();
+
+    await service().from("subscriptions").update({ plan_code: "basic" }).eq("organization_id", t.orgId);
+    await expect(page.getByTestId("sala-deshabilitada")).toBeVisible({ timeout: 8_000 });
+
+    let consultas = 0;
+    page.on("request", (r) => r.url().includes("/estado") && consultas++);
+    await page.waitForTimeout(7_000);
+    expect(consultas).toBe(0);
+    await ctx.close();
+  });
+
   test("plan Básico: aviso en lugar de la lista, sin sondeo; el Dueño ve el motivo y el Staff no", async ({ browser }) => {
     const { t, mesas } = await nuevoLocal("sala-basico", { plan: "basic" });
     // Un pendiente creado cuando el plan todavía era Pro: con Básico la sala no lo muestra.

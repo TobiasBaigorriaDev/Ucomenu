@@ -23,5 +23,6 @@ El panel de sala tiene que mostrar los llamados al personal «en vivo». `arquit
 - El modelo no cambia si se suma Realtime después: la tabla sigue siendo la fuente de verdad y la pantalla ya recarga todo en cada ciclo; bastaría un canal que dispare el mismo ciclo antes. Hacerlo exigiría una enmienda al ADR 0007 sobre el token.
 - Los celulares con la pantalla apagada o la pestaña en segundo plano pueden no sonar: se recomienda un dispositivo dedicado (*Wake Lock* ayuda con la pantalla encendida).
 - El sonido requiere un gesto del usuario en cada carga; sin él la alerta es visual y del título.
-- Atender depende del plan y de la mora: un pendiente al pasar a solo lectura ya no se puede atender (vence solo a los 30 minutos).
+- Atender depende del plan y de la mora: un pendiente al pasar a solo lectura ya no se puede atender (vence solo a los 30 minutos). Tampoco se puede atender uno de 30 minutos o más aunque siga `pending`: la política lo exige (mismo borde que la lista).
+- El cliente hace una sola consulta a la vez y descarta las respuestas anteriores a una atención; con `enabled:false` deja de consultar.
 - Quien agregue otra pantalla «en vivo» debe seguir este patrón: ruta de lectura con sesión y RLS, respuesta mínima, `401`/`404` uniformes y reemplazo completo de la lista en cada ciclo.

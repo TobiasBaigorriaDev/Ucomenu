@@ -70,9 +70,11 @@ export type AttendResult =
 /**
  * Marca un llamado como atendido. Un UPDATE bloqueado por RLS afecta 0 filas SIN error, así que se pide la fila de
  * vuelta y, si no hubo cambio, se lee el estado actual para decir la verdad (ya atendido, vencido o bloqueado).
- * La hora y la persona las pone la base (trigger): acá solo se manda `status`.
+ * La hora y la persona las pone la base (trigger): acá solo se manda `status`. Un pendiente de 30 minutos o más la
+ * política tampoco lo deja atender (vencimiento derivado, ADR 0010): se informa como vencido aunque su `status` siga
+ * siendo `pending` hasta que la función pública lo marque.
  */
-export async function attendCall(db: Db, orgId: string, callId: unknown): Promise<AttendResult> {
+export async function attendCall(db: Db, orgId: string, callId: unknown, now: Date = new Date()): Promise<AttendResult> {
   const id = asUuid(callId);
   if (!id) return { status: "not_found" };
 
@@ -89,9 +91,17 @@ export async function attendCall(db: Db, orgId: string, callId: unknown): Promis
   }
   if (updated.data.length > 0) return { status: "attended" };
 
-  const current = await db.from("waiter_calls").select("status").eq("id", id).eq("organization_id", orgId).maybeSingle();
+  const current = await db
+    .from("waiter_calls")
+    .select("status, created_at")
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .maybeSingle();
   if (current.error || !current.data) return { status: "not_found" };
   if (current.data.status === "attended") return { status: "already_attended" };
   if (current.data.status === "expired") return { status: "expired" };
+  if (current.data.status === "pending" && now.getTime() - Date.parse(current.data.created_at) >= EXPIRY_MS) {
+    return { status: "expired" };
+  }
   return { status: "unavailable" };
 }

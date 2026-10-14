@@ -21,6 +21,8 @@ import { createBeeper, type Beeper } from "./beep";
 const PREFERENCE_KEY = "ucomenu:sala:alertas";
 /** Cuánto dura el resaltado de un llamado nuevo. */
 const FRESH_MS = 8_000;
+/** Una consulta que no responde en este tiempo se corta: cuenta como falla y no frena el sondeo. */
+const REQUEST_TIMEOUT_MS = 10_000;
 
 type Connection = "ok" | "offline" | "expired" | "gone";
 type Alerts = "off" | "on" | "blocked";
@@ -65,6 +67,8 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
   const alertsRef = useRef<Alerts>("off");
   const beeper = useRef<Beeper | null>(null);
   const wakeLock = useRef<WakeLockSentinel | null>(null);
+  // Sube cada vez que termina una atención: invalida las consultas que ya estaban en vuelo.
+  const attendEpoch = useRef(0);
 
   const requestWakeLock = useCallback(async () => {
     try {
@@ -126,53 +130,76 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
   }, []);
 
   // --- Sondeo: la tabla es la fuente de verdad; cada respuesta reemplaza la lista entera.
+  // Una sola consulta a la vez (si no, una respuesta vieja podía pisar a una nueva) y una respuesta que salió ANTES de
+  // que terminara una atención se descarta: podía traer de vuelta la tarjeta que acaba de atenderse.
   useEffect(() => {
     if (!initial.enabled) return;
 
+    let disposed = false;
     let stopped = false;
+    let inFlight = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    let controller: AbortController | undefined;
     let failures = 0;
 
-    const poll = async () => {
-      clearTimeout(timer);
+    type Outcome = { kind: "expired" } | { kind: "gone" } | { kind: "state"; next: SalaState } | { kind: "error" };
+
+    const fetchState = async (signal: AbortSignal): Promise<Outcome> => {
       try {
         const response = await fetch(`/sala/${encodeURIComponent(slug)}/estado`, {
           cache: "no-store",
           credentials: "same-origin",
           headers: { Accept: "application/json" },
+          signal,
         });
-        if (response.status === 401) {
-          setConnection("expired");
-          stopped = true;
-          return;
-        }
-        if (response.status === 404) {
-          setConnection("gone");
-          stopped = true;
-          return;
-        }
+        if (response.status === 401) return { kind: "expired" };
+        if (response.status === 404) return { kind: "gone" };
         const isJson = (response.headers.get("content-type") ?? "").includes("application/json");
-        const next = response.ok && isJson ? parseSalaState(await response.json()) : null;
         // Un redirect al login (sesión vencida detectada por el proxy) llega como HTML.
-        if (response.redirected && !isJson) {
-          setConnection("expired");
-          stopped = true;
-          return;
-        }
-        if (!next) throw new Error("respuesta inesperada");
-        failures = 0;
-        setConnection("ok");
-        applyState(next);
+        if (response.redirected && !isJson) return { kind: "expired" };
+        const next = response.ok && isJson ? parseSalaState(await response.json()) : null;
+        return next ? { kind: "state", next } : { kind: "error" };
       } catch {
+        return { kind: "error" };
+      }
+    };
+
+    const poll = async () => {
+      if (inFlight || stopped || disposed) return;
+      inFlight = true;
+      clearTimeout(timer);
+      const epochAtStart = attendEpoch.current;
+      controller = new AbortController();
+      const abortTimer = setTimeout(() => controller?.abort(), REQUEST_TIMEOUT_MS);
+      const outcome = await fetchState(controller.signal);
+      clearTimeout(abortTimer);
+      inFlight = false;
+      if (disposed) return;
+
+      if (outcome.kind === "expired" || outcome.kind === "gone") {
+        setConnection(outcome.kind === "expired" ? "expired" : "gone");
+        stopped = true;
+        return;
+      }
+      if (outcome.kind === "error") {
         failures += 1;
         setConnection("offline");
+      } else if (attendEpoch.current === epochAtStart) {
+        failures = 0;
+        setConnection("ok");
+        applyState(outcome.next);
+        // El plan o la cuenta ya no lo permiten: la pantalla muestra el aviso y no se sigue consultando.
+        if (!outcome.next.enabled) {
+          stopped = true;
+          return;
+        }
       }
-      if (!stopped) timer = setTimeout(poll, nextPollDelay(!document.hidden, failures));
+      timer = setTimeout(poll, nextPollDelay(!document.hidden, failures));
     };
 
     timer = setTimeout(poll, VISIBLE_POLL_MS);
 
-    // Al volver a la pestaña o recuperar la red, se consulta de inmediato.
+    // Al volver a la pestaña o recuperar la red, se consulta de inmediato (si no hay otra consulta en curso).
     const wake = () => {
       if (!stopped && !document.hidden) void poll();
     };
@@ -180,8 +207,9 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
     window.addEventListener("online", wake);
 
     return () => {
-      stopped = true;
+      disposed = true;
       clearTimeout(timer);
+      controller?.abort();
       document.removeEventListener("visibilitychange", wake);
       window.removeEventListener("online", wake);
     };
@@ -229,6 +257,7 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
     setNotes((current) => Object.fromEntries(Object.entries(current).filter(([id]) => id !== call.id)));
     try {
       const result = await attendCallAction(slug, call.id);
+      attendEpoch.current += 1;
       if (result.status === "unavailable") {
         setNotes((current) => ({ ...current, [call.id]: "No se pudo marcar como atendido: la cuenta o el plan no lo permiten ahora." }));
         return;

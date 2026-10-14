@@ -8,6 +8,7 @@ import {
   deleteOrg,
   deleteUser,
   serviceClient,
+  sql,
   setSubscription,
   type Db,
   type TestUser,
@@ -143,6 +144,22 @@ describe("atender un llamado", () => {
     expect(await fila(id)).toMatchObject({ status: "attended", attended_by: primera.attended_by, attended_at: primera.attended_at });
   });
 
+  it("uno de 30 minutos o más no se atiende aunque siga `pending` (la política lo frena); uno de 29 sí", async () => {
+    const local = await nuevoLocal("tt-sala-viejo");
+    const viejo = await llamado(local, "waiter");
+    const fresco = await llamado(local, "bill");
+    await service.from("waiter_calls").update({ created_at: new Date(Date.now() - 31 * MIN).toISOString() }).eq("id", viejo);
+    await service.from("waiter_calls").update({ created_at: new Date(Date.now() - 29 * MIN).toISOString() }).eq("id", fresco);
+    expect((await fila(viejo)).status).toBe("pending"); // sigue pending hasta que alguien vuelva a llamar a esa mesa
+
+    expect((await atender(owner.db, viejo)).data ?? []).toHaveLength(0);
+    expect((await atender(staff.db, viejo)).data ?? []).toHaveLength(0);
+    expect(await fila(viejo)).toMatchObject({ status: "pending", attended_at: null, attended_by: null });
+
+    expect((await atender(staff.db, fresco)).data).toHaveLength(1);
+    expect((await fila(fresco)).status).toBe("attended");
+  });
+
   it("dos personas que atienden a la vez: gana una sola", async () => {
     const local = await nuevoLocal("tt-sala-carrera");
     const id = await llamado(local);
@@ -182,6 +199,30 @@ describe("quién no puede atender", () => {
     await addMembership(service, ajeno, otro.id, "staff");
     expect((await atender(ajeno.db, id)).data ?? []).toHaveLength(0);
     expect((await fila(id)).status).toBe("pending");
+  });
+
+  it("un UPDATE sin WHERE ni lectura de columnas (no pasa por la política de lectura) tampoco cambia lo de otra organización: ni de un no miembro ni de anon", async () => {
+    const local = await nuevoLocal("tt-sala-update-directo");
+    const id = await llamado(local);
+    const intruso = await createUser(service, "sala-intruso"); // sin membresía en ninguna parte: no toca nada más
+    try {
+      // Sin WHERE que lea columnas, la política de LECTURA no filtra: solo la de UPDATE y los permisos de la tabla frenan.
+      const como = (rol: string, claims: string) =>
+        sql(`begin; set local role ${rol}; select set_config('request.jwt.claims', '${claims}', true); update public.waiter_calls set status = 'attended' where true; commit`);
+
+      como("authenticated", `{"sub":"${intruso.id}","role":"authenticated"}`);
+      expect((await fila(id)).status).toBe("pending");
+
+      // anon: sin permiso de UPDATE sobre la tabla, la base lo rechaza.
+      expect(() => como("anon", '{"role":"anon"}')).toThrow();
+      expect((await fila(id)).status).toBe("pending");
+
+      // Control: un miembro del local, con el mismo UPDATE, sí atiende (la prueba detecta el cambio de verdad).
+      como("authenticated", `{"sub":"${staff.id}","role":"authenticated"}`);
+      expect(await fila(id)).toMatchObject({ status: "attended", attended_by: staff.id });
+    } finally {
+      await deleteUser(service, intruso);
+    }
   });
 
   it("sin el plan o sin la cuenta al día, la base no deja atender", async () => {

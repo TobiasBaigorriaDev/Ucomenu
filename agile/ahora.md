@@ -3,7 +3,7 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** «Panel de sala en tiempo real» en `feat/panel-de-sala` con `main` (historial de precios) ya fusionado y todo verificado; falta la revisión de Codex (solo lectura), con ella aprobada integrar a `main` y subir. El diseño de la carta (`feat/diseno-carta-editorial`) va después, con `git merge main` una vez dentro el panel
+- **Objetivo actual:** «Panel de sala en tiempo real» en `feat/panel-de-sala` (con `main` fusionado): Codex lo revisó («Aprobar con cambios», 3 P2 y 2 P3) y todo está corregido y verificado; falta que Codex confirme las correcciones y, con su aprobación, integrar a `main`. La carta editorial va después (`git merge main` con el panel dentro)
 - **Rama / último commit:** `feat/panel-de-sala` (checkout `../UcoMenu`; `main` fusionado en `db27e64`, sin integrar). Siguen `feat/diseno-carta-editorial` (`../UcoMenu-carta`) y el sobrante `../UcoMenu-precios` (historial ya integrado)
 - **Nivel:** M
 - **Ficha relevante:** `agile/cambios/panel-de-sala.md` (para verificar) · ADR 0011 · hechos: `historial-de-precios.md` (ADR 0012), `llamado-desde-la-mesa.md` (ADR 0010), `mesas-y-qr.md` (ADR 0009), `gestion-de-carta.md` (ADR 0008)
@@ -18,9 +18,9 @@
 - GitHub: `main` subido con el historial de precios incluido (`9081785`); el panel de sala no se subió.
 
 ## Pruebas del panel de sala (2026-10-14, sobre `feat/panel-de-sala` con `main` fusionado, base compartida recién reseteada)
-- typecheck · lint · build OK · unitarias **142/142** · RLS **367/367** (15 archivos) · E2E **119/119** en dos corridas completas seguidas. Sin organizaciones `e2e-*`/`tt-*` residuales. Tipos regenerados idénticos (salvo un espacio en blanco).
-- Mutaciones del panel (antes de fusionar): 37 defensas rotas de a una, 33 detectadas y 4 equivalentes (en la ficha). Mesas 46/51 y llamado 44/47: ver sus fichas.
-- **No ejecutado:** revisión de Codex del panel de sala; el sonido real y el *Wake Lock* en un teléfono (Safari/iOS y Android); el sondeo en una red móvil real; lector de pantalla; `pnpm dev` de punta a punta; escaneo real de un QR impreso; la barra del llamado en un teléfono real; la IP real detrás del hosting.
+- typecheck · lint · build OK · unitarias **147/147** · RLS **370/370** (15 archivos) · E2E **121/121** en dos corridas completas seguidas (tras las correcciones de la revisión de Codex). Sin organizaciones `e2e-*`/`tt-*` residuales. Tipos regenerados idénticos (salvo un espacio en blanco).
+- Mutaciones del panel: 41 defensas rotas de a una, 39 detectadas y 2 equivalentes (en la ficha, con la reclasificación pedida por Codex). Mesas 46/51 y llamado 44/47: ver sus fichas.
+- **No ejecutado:** confirmación de Codex de las correcciones; el sonido real y el *Wake Lock* en un teléfono (Safari/iOS y Android); el sondeo en una red móvil real; lector de pantalla; `pnpm dev` de punta a punta; escaneo real de un QR impreso; la barra del llamado en un teléfono real; la IP real detrás del hosting.
 - **Lección:** tras una tanda de mutaciones de pantalla, `.next` conserva la compilación de la última mutación: **siempre `pnpm build` antes de la verificación final**.
 - **Endurecimiento de las pruebas de RLS** (un *worker* de Vitest caído con `0xC0000409` dejaba organizaciones `tt-*` sin limpiar): limpieza previa (`tests/rls/global-setup.ts`), `hookTimeout` de 60 s, `testTimeout` de 30 s, reintentos en `deleteOrg` y la prueba de lectura pública de `catalog.rls.test.ts` ignora organizaciones `tt-*`/`e2e-*`.
 
@@ -65,7 +65,7 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-1. Pedir a Codex la revisión (solo lectura) de `feat/panel-de-sala`; corregir lo que encuentre.
+1. Pedir a Codex que confirme las correcciones de `feat/panel-de-sala` (3 P2 y 2 P3: vencidos atendibles, carrera del sondeo, mutaciones «equivalentes», sondeo con plan bajo, 503 de membresías).
 2. Con ella aprobada: integrar a `main`, `pnpm db:reset` + RLS/E2E sobre `main` y subir (el aviso de otro agente indica integrar y subir tras la aprobación; confirmar con el usuario si la autorización de subir sigue vigente).
 3. Integrar `feat/diseno-carta-editorial` (con `git merge main` y los ajustes de arriba).
 4. Probar el panel de sala en un teléfono real (sonido, *Wake Lock*) y el escaneo real del QR.
