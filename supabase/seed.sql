@@ -151,3 +151,20 @@ insert into public.memberships (user_id, organization_id, role) values
   ('a0000000-0000-4000-8000-000000000006', '40000000-0000-4000-8000-000000000001', 'staff'),
   ('a0000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000001', 'owner'),
   ('a0000000-0000-4000-8000-000000000007', '20000000-0000-4000-8000-000000000001', 'staff');
+
+-- ---------------------------------------------------------------------------
+-- Historial de precios de ejemplo (ficha historial-de-precios). Se inserta directo: el seed corre como dueño de
+-- la tabla y no hay usuario en la sesión, así que el trigger no sabría atribuirlo. Cada último precio coincide con el
+-- precio actual del plato. Un cambio sin usuario (changed_by null) representa una operación técnica.
+--   Café Ejemplo:  Espresso 2.600 -> 2.700 (Staff) -> 2.800 (Dueño) · Flat white 4.000 -> 4.200 (técnica)
+--   Parrilla Demo: Entraña 12.000 -> 12.500 (Staff)
+-- ---------------------------------------------------------------------------
+insert into public.price_history (id, organization_id, product_id, changed_by, changed_at, old_price_cents, new_price_cents) values
+  ('16000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000001',
+   'a0000000-0000-4000-8000-000000000002', now() - interval '10 days', 260000, 270000),
+  ('16000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000001',
+   'a0000000-0000-4000-8000-000000000001', now() - interval '3 days', 270000, 280000),
+  ('16000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000002',
+   null, now() - interval '5 days', 400000, 420000),
+  ('26000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', '23000000-0000-4000-8000-000000000001',
+   'a0000000-0000-4000-8000-000000000004', now() - interval '2 days', 1200000, 1250000);
