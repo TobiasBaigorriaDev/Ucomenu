@@ -88,8 +88,8 @@ Ejecutadas el 2026-10-14 sobre una base recién reseteada (`pnpm db:reset`), mig
 
 Pendientes (no ejecutado):
 - Revisión independiente (segundo agente, solo lectura): requisito del nivel C antes de integrar.
-- Renovación automática del token por el proxy (token vencido); Safari/iOS y dispositivos reales; lector de pantalla; contraste medido con herramienta; `pnpm dev` con la clave de servicio en `.env.local` (las pruebas la inyectan desde `.env.test.local`); límites de intentos de Auth; configuración de Supabase Cloud (registro público y contraseña mínima); rendimiento del panel con equipos grandes.
-- **A confirmar con el usuario:** el Staff ve un aviso de mora **reducido** (estado y «avisale al dueño», sin plan ni fechas), pero `docs/producto.md` dice que los «avisos de mora» son solo del Dueño. Se lo dejó porque en solo lectura el Staff necesita entender por qué no puede editar (ADR 0006).
+- Renovación automática del token por el proxy (token vencido); Safari/iOS y dispositivos reales; lector de pantalla; contraste medido con herramienta; `pnpm dev` de punta a punta (la clave de servicio local ya está en `.env.local` por autorización del usuario, pero solo se probó con el build de las pruebas E2E); límites de intentos de Auth; configuración de Supabase Cloud (registro público y contraseña mínima); rendimiento del panel con equipos grandes.
+- ~~A confirmar~~ **Confirmado por el usuario (2026-10-14):** el Staff ve un aviso de mora **operativo reducido** (estado y «avisale al dueño», sin plan, montos ni fechas) y el Dueño el completo; `docs/producto.md` ya lo refleja.
 
 ## Aprendizajes / cambios de decisión
 - **Un layout no se re-ejecuta al navegar entre páginas hijas** (App Router): la autorización va en cada página y cada acción; el layout solo arma la cabecera. Quedó escrito en `session.ts` y en el ADR 0007.

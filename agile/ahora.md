@@ -4,7 +4,7 @@
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
 - **Objetivo actual:** «Acceso del personal» (nivel C) implementado y probado en su rama; **falta la revisión independiente de un segundo agente (solo lectura)** antes de integrar a `main`
-- **Rama / último commit:** `feat/acceso-del-personal` (4 commits sobre `main` en `fe95297`, más los cambios de documentación y de la prueba E2E de `next` manipulado, **sin commitear aún**); `main` ya está subido a GitHub; la rama **no** se subió
+- **Rama / último commit:** `feat/acceso-del-personal` (commits sobre `main` en `fe95297`, todo commiteado); `main` ya está subido a GitHub; la rama **no** se subió
 - **Nivel:** C
 - **Ficha relevante:** `agile/cambios/acceso-del-personal.md` · ADR 0007
 
@@ -19,7 +19,7 @@
 - No ejecutadas: renovación automática del token por el proxy, Safari/iOS, lector de pantalla, `pnpm dev` con la clave de servicio, configuración de Supabase Cloud, límites de intentos.
 
 ## Para usar la app en local
-- `SUPABASE_SERVICE_ROLE_KEY` tiene que estar en `.env.local` para que `pnpm dev` pueda gestionar personal (las pruebas la toman de `.env.test.local`). Ver `.env.example`.
+- `SUPABASE_SERVICE_ROLE_KEY` (clave de servicio del Supabase LOCAL) ya está en `.env.local` por autorización del usuario; `.env.local` y `.env.test.local` están ignorados por Git. Sin ella `pnpm dev` no puede gestionar personal. Ver `.env.example`.
 - Usuarios del seed (contraseña pública de desarrollo `ucomenu-dev-2026`): `dueno@cafe-ejemplo.test`, `mozo@cafe-ejemplo.test`, `dueno@parrilla-demo.test`, `mozo@parrilla-demo.test`, `dueno@resto-moroso.test`, `mozo@resto-moroso.test`, `multi@ucomenu.test` (Dueño en Café Ejemplo y Personal en Parrilla Demo).
 - Tras cambiar `supabase/config.toml` hay que `pnpm db:stop` y `pnpm db:start`.
 
@@ -30,7 +30,7 @@
 - Estado de mora derivado, bordes inclusivos; en solo lectura y suspendida no se escribe catálogo.
 
 ## Bloqueos y riesgos
-- **A confirmar con el usuario:** el Staff ve un aviso de mora reducido (estado y «avisale al dueño», sin plan ni fechas); `docs/producto.md` dice que los avisos de mora son solo del Dueño.
+- Confirmado por el usuario: el Staff ve un aviso de mora operativo reducido y el Dueño el completo (ya en `docs/producto.md`).
 - Producción: apagar el registro público y fijar la contraseña mínima de 10 en Supabase Cloud (checklist de «Salida a producción»).
 - Contraseña temporal sin cambio forzado; sin recupero por correo; restablecer no revoca sesiones abiertas.
 - `org_is_published` se evalúa por fila: medir en «Rendimiento de la carta pública».
@@ -40,9 +40,9 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; una corrida de Vitest perdió un worker una vez (`0xC0000409`).
 
 ## Próxima acción probable
-1. Commitear los cambios pendientes de la rama.
-2. Pedir a Codex una ronda corta de revisión **solo lectura** de la rama (nivel C). Si aprueba, integrar a `main` y subirla.
+1. El usuario le pasa la rama a Codex (revisión **solo lectura**, nivel C) y trae el veredicto. Si aprueba, integrar a `main` y subir a GitHub; si pide cambios, corregirlos y repetir una ronda.
+2. Con `pnpm dev`, probar el login y el alta de personal de punta a punta.
 3. Siguiente ítem: «Gestión de carta» (ya desbloqueado) y luego «Mesas y QR».
 
 ## Estado del worktree al cerrar
-- Cambios sin commitear: documentación (ADR 0007, arquitectura, ficha, tablero, este archivo) y `e2e/acceso.spec.ts`. Ignorado a propósito: `impeccable`.
+- Limpio salvo lo ignorado a propósito (`impeccable`, `.env*.local`).

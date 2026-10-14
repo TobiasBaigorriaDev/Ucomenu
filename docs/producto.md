@@ -89,6 +89,7 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 
 - El estado se **deriva de las fechas** (vencimiento y fecha actual); registrar un pago extiende el período y restablece todo.
 - *Supuesto (nuevo):* en modo solo lectura y suspendida, el panel del dueño sigue accesible con el aviso de mora.
+- **Aviso de mora por rol** *(confirmado 2026-10-14)*: el **Dueño** ve el aviso completo (días de atraso, fecha límite de cada etapa y cómo regularizar). El **Staff** ve un aviso **operativo reducido**: solo el estado de la cuenta (pago vencido, solo lectura o suspendida) y «avisale al dueño», **sin plan, montos ni fechas**, para que entienda por qué no puede editar. Lo que el Staff recibe lo decide la base (`org_entitlements` no le devuelve plan ni fechas). Ver ADR 0006 y 0007.
 - **Escrituras de catálogo:** en **solo lectura (días 8 a 15) y suspendida (16 en adelante) quedan bloqueadas todas las escrituras de catálogo** (crear, modificar y borrar categorías, platos, precios, sucursales y mesas), tanto para el Dueño como para el Staff. En gracia (días 1 a 7) se edita con normalidad. El local ve su estado y sus datos, pero no puede actualizar precios ni cargar platos hasta regularizar el pago. *(Confirmado 2026-10-14.)*
 - **Cuenta de días:** día 1 es el primer día completo después del vencimiento; el día 7 todavía es gracia, el 8 ya es solo lectura, el 15 es el último de solo lectura y el 16 suspende.
 - Los datos de suscripción (plan, fechas, add-ons) los escribe **exclusivamente el servidor**; los pagos y el SuperAdmin llegan en su propio ítem.
@@ -112,7 +113,8 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 | Escanear pases Wallet y sumar sellos | ✔ | ✔ |
 | Gestionar platos, precios, stock (disponibilidad) y mesas | ✔ | ✔ |
 | Administrar sucursales, personal y apariencia | — | ✔ |
-| Ver plan, facturación y avisos de mora | — | ✔ |
+| Ver plan, facturación y el aviso de mora completo (días de atraso, fechas, cómo regularizar) | — | ✔ |
+| Ver el aviso operativo de mora (estado de la cuenta y «avisale al dueño», sin plan, fechas ni montos) | ✔ | ✔ |
 
 - *Supuesto (nuevo):* lo que el Staff **no** puede hacer es lo que no figura en su definición (personal, sucursales, apariencia, plan).
 - Cambiar plan, add-ons o estado de la suscripción es **exclusivo del SuperAdmin**; el Dueño solo los ve.
