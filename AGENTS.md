@@ -70,7 +70,7 @@ Gestor: **pnpm** (Node 24). Antes de las pruebas de base y E2E: Docker encendido
 - **Una sola tarea principal a la vez por worktree.** Dos agentes nunca editan el mismo worktree simultáneamente. Para trabajo realmente independiente: ramas + `git worktree`.
 - Al cambiar de agente: terminar o pausar, revisar `git status`, actualizar `agile/ahora.md`, abrir el otro agente en el mismo repo.
 - Revisión por segundo agente: **solo lectura**, una ronda normal, sin bucles por preferencias de estilo.
-- Dos pares en paralelo (Claude implementa + Codex audita, cada par en su worktree): ver `docs/paralelo.md`. En un worktree A/B **nunca** `pnpm db:*` (usan la pila compartida): `node tools/supabase-aislado.mjs <a|b> start|reset|stop`, con `SUPABASE_DB_CONTAINER` y `E2E_PORT` propios.
+- Dos pares en paralelo (cada par en su worktree; uno implementa y el otro audita en solo lectura, **roles intercambiables**): ver `docs/paralelo.md`. En un worktree A/B **nunca** `pnpm db:*` (usan la pila compartida): `node tools/supabase-aislado.mjs <a|b> start|reset|stop`, con `SUPABASE_DB_CONTAINER` y `E2E_PORT` propios.
 
 ## Cierre de sesión
 Actualizá `agile/ahora.md` (objetivo, rama/commit, pruebas, bloqueos, próximo paso). Promové decisiones duraderas a `docs/decisiones/`.
