@@ -11,6 +11,8 @@ export type MenuProduct = {
   description: string | null;
   price_cents: number;
   sort_order: number;
+  /** Ruta de la foto en Storage (`{organización}/{plato}/{uuid}.{ext}`); nulo = sin foto. */
+  image_path?: string | null;
 };
 
 export type MenuSection = {

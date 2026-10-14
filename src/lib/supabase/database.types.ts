@@ -127,14 +127,14 @@ isOneToOne: false
                   ]
                 },"products": {
                   Row: {
-                    "category_id": string,"created_at": string,"currency": string,"description": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order": number
+                    "category_id": string,"created_at": string,"currency": string,"description": string | null,"id": string,"image_path": string | null,"is_active": boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "category_id": string,"created_at"?: string,"currency"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order"?: number
+                    "category_id": string,"created_at"?: string,"currency"?: string,"description"?: string | null,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order"?: number
                   }
                   Update: {
-                    "category_id"?: string,"created_at"?: string,"currency"?: string,"description"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"price_cents"?: number,"sort_order"?: number
+                    "category_id"?: string,"created_at"?: string,"currency"?: string,"description"?: string | null,"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"price_cents"?: number,"sort_order"?: number
                   }
                   Relationships: [
                     {

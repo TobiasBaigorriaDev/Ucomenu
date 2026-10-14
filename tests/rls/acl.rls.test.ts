@@ -24,6 +24,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   org_limit: [true, false, false],
   org_state: [true, false, false],
   plan_grants: [true, false, false],
+  product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
 };
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.

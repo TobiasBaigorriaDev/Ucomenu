@@ -124,6 +124,7 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 - El comensal solo ve categorías y platos **activos**; un plato agotado en la sucursal se muestra como no disponible, no desaparece.
 - Las etiquetas dietarias las declara el local. La carta muestra un aviso de que la información sobre alérgenos es responsabilidad del establecimiento.
 - El precio que se muestra es el precio base del plato; variantes y adicionales muestran su diferencia de precio.
+- **Gestión de la carta** *(Dueño y Staff; ADR 0008)*: categorías y platos se crean, editan, reordenan (subir/bajar) y se activan o desactivan; **no se borran** en esta etapa (desactivar es la baja). Un plato nuevo y una categoría nueva van al final. Cada plato admite **una foto** (JPG, PNG o WebP, hasta 2 MB; la app la reduce antes de subir). El precio se carga en pesos y se guarda en centavos enteros (hasta $ 10.000.000). Si el plan llegó a su tope de platos activos, activar o crear uno activo se rechaza con el número del tope; se puede crear oculto. Con la cuenta en solo lectura o suspendida la carta se ve pero no se edita, y la pantalla lo explica.
 
 ### Mesas y QR
 - Cada mesa tiene un QR con un **identificador opaco** (no el número de mesa), de modo que no se pueda adivinar el de otra mesa.

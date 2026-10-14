@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:rls": "vitest run --config vitest.rls.config.mts",
     "test:e2e": "playwright test",
-    "db:start": "supabase start -x realtime,storage-api,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,studio,postgres-meta",
+    "db:start": "supabase start -x realtime,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,studio,postgres-meta",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset --local",
     "dev:crear-dueno": "node tools/crear-dueno.mjs",

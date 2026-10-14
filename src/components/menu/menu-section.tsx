@@ -1,3 +1,5 @@
+import Image from "next/image";
+import { imageUrl } from "@/lib/carta/images";
 import { formatArs } from "@/lib/money";
 import type { MenuSection as Section } from "@/lib/menu";
 import { categoryAnchor } from "./category-nav";
@@ -12,8 +14,22 @@ export function MenuSection({ section }: { section: Section }) {
         {category.name}
       </h2>
       <ul className="mt-5 space-y-6">
-        {products.map((product) => (
+        {products.map((product) => {
+          const photo = imageUrl(product.image_path);
+          return (
           <li key={product.id}>
+            {photo ? (
+              // Tamaño fijo para que la foto no mueva el diseño al cargar. Sin optimizar: ver «Rendimiento de la carta pública».
+              <Image
+                src={photo}
+                alt={`Foto de ${product.name}`}
+                width={640}
+                height={360}
+                unoptimized
+                loading="lazy"
+                className="mb-3 aspect-[16/9] w-full rounded-md object-cover"
+              />
+            ) : null}
             <div className="flex items-baseline gap-2">
               <h3 className="text-[1.0625rem] leading-snug font-semibold break-words">{product.name}</h3>
               <span aria-hidden="true" className="leader" />
@@ -23,7 +39,8 @@ export function MenuSection({ section }: { section: Section }) {
               <p className="mt-1 max-w-[34ch] text-[0.9375rem] leading-relaxed text-muted">{product.description}</p>
             ) : null}
           </li>
-        ))}
+          );
+        })}
       </ul>
     </section>
   );

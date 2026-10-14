@@ -48,7 +48,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
     supabase.from("categories").select("id, name, sort_order").eq("organization_id", org.id),
     supabase
       .from("products")
-      .select("id, category_id, name, description, price_cents, sort_order")
+      .select("id, category_id, name, description, price_cents, sort_order, image_path")
       .eq("organization_id", org.id),
   ]);
 

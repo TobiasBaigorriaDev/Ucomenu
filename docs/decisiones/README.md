@@ -19,3 +19,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0005 | [Autorización por membresía en la base, con permisos por columna](0005-autorizacion-por-membresia.md) | aceptada | 2026-10-14 |
 | 0006 | [Planes, mora y límites resueltos en la base](0006-planes-mora-y-limites-en-la-base.md) | aceptada | 2026-10-14 |
 | 0007 | [Acceso del personal: sesión por cookies, rol por membresía y alta desde el servidor](0007-acceso-del-personal.md) | aceptada | 2026-10-14 |
+| 0008 | [Fotos de los platos: bucket público de Storage, ruta por organización y escritura con la cuenta al día](0008-fotos-de-platos-en-storage.md) | aceptada | 2026-10-14 |

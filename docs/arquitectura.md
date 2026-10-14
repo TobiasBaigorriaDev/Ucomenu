@@ -57,7 +57,7 @@ Esquema inicial resumido. Toda tabla de negocio lleva `organization_id`.
 
 **Carta**
 - `categories` (organización, nombre, orden, activa)
-- `products` (organización, categoría, nombre, descripción, precio base, imagen, orden, activo)
+- `products` (organización, categoría, nombre, descripción, precio base en centavos, `image_path`, orden, activo). `image_path` guarda la ruta `{organization_id}/{product_id}/{uuid}.{ext}` del bucket público `product-images` (ADR 0008); un `check` la acota a la carpeta del propio plato
 - `price_history` (plato u opción, precio anterior y nuevo, quién, cuándo) — se llena por trigger ante cualquier cambio de precio
 - `option_groups` (plato, nombre, mínimo y máximo a elegir) y `options` (grupo, nombre, diferencia de precio). Una variante es un grupo con mínimo 1 y máximo 1; los adicionales, un grupo con mínimo 0 y máximo N.
 - `dietary_tags` (catálogo global) y `product_dietary_tags`

@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [M] Gestión de carta en el panel: categorías y platos con foto (Storage), orden y activo/inactivo, mensajes de tope (`53400`) y escrituras bloqueadas por mora — implementado en `feat/gestion-de-carta` (sin integrar): 89 unitarias, 256 de RLS, 64 E2E, 31 de 33 mutaciones detectadas (2 equivalentes); falta revisión opcional de Codex y la aceptación del usuario → ficha: agile/cambios/gestion-de-carta.md · ADR 0008
 
 ## Bloqueado
 - (vacío)
@@ -24,7 +24,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 0 — Cimientos
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
-- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (desbloqueado: el acceso del personal ya está en `main`; los topes de plan y el bloqueo por mora ya los aplica la base; los errores `53400` y las escrituras bloqueadas se muestran con `org_entitlements`)
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
 - [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible, regenerar QR, entrada por `/t/{token}`; trigger del tope `tables_per_branch` con la guarda de pertenencia antes de contar (ADR 0006) y `org_can_write` en sus políticas
@@ -40,7 +39,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
-- [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (bloqueado por: gestión de carta)
+- [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (desbloqueado: la gestión de carta ya permite cambiar precios; hasta que exista, el Staff cambia precios sin registro)
+- [M] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
 - [S] Textos legales: términos, privacidad y aviso de alérgenos
 - [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos)
