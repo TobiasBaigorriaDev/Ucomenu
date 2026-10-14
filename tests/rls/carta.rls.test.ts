@@ -449,6 +449,54 @@ describe("fotos", () => {
     expect((await removeProductImage(owner.db, org, id)).ok).toBe(true);
   });
 
+  it("si Storage no borra ningún objeto (cero filas, sin error), la foto huérfana se registra en el log", async () => {
+    const org = await nuevaOrg("tt-carta-foto-cero");
+    const cat = await createCategory(owner.db, org, { name: "Carta" });
+    if (!cat.ok) throw new Error("categoría");
+    const plato = await createProduct(owner.db, org, { categoryId: cat.data.id, name: "Plato", description: "", price: "1", active: true });
+    if (!plato.ok) throw new Error("plato");
+    const id = plato.data.id;
+
+    const primera = await setProductImage(owner.db, org, id, png());
+    expect(primera.ok).toBe(true);
+    const anterior = (await service.from("products").select("image_path").eq("id", id).single()).data!.image_path!;
+    objects.push(anterior);
+
+    // Storage "borra" cero objetos y no da error: lo que pasa cuando RLS descarta el borrado.
+    const sinBorrar: Db = new Proxy(owner.db, {
+      get(target, prop, receiver) {
+        if (prop === "storage") {
+          const storage = target.storage;
+          return {
+            ...storage,
+            from: (bucket: string) => {
+              const real = storage.from(bucket);
+              return { upload: real.upload.bind(real), remove: async () => ({ data: [], error: null }) };
+            },
+          };
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      // Reemplazar: el plato queda con la foto nueva (ok) y la anterior no se pudo borrar.
+      expect((await setProductImage(sinBorrar, org, id, png())).ok).toBe(true);
+      expect(log).toHaveBeenCalledWith(expect.stringContaining(anterior));
+      expect(log).toHaveBeenCalledWith(expect.stringContaining("no borró ningún objeto"));
+      log.mockClear();
+
+      // Quitar: lo mismo con la foto vigente.
+      const vigente = (await service.from("products").select("image_path").eq("id", id).single()).data!.image_path!;
+      objects.push(vigente);
+      expect((await removeProductImage(sinBorrar, org, id)).ok).toBe(true);
+      expect(log).toHaveBeenCalledWith(expect.stringContaining(vigente));
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it("si no se puede apuntar el plato a la foto nueva, se borra la recién subida", async () => {
     const org = await nuevaOrg("tt-carta-foto-huerfana");
     const cat = await createCategory(owner.db, org, { name: "Carta" });

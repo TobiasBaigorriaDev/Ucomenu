@@ -358,10 +358,14 @@ async function applyOrder(
 // Fotos
 // ---------------------------------------------------------------------------
 
-/** Borra un archivo del bucket. Si falla no rompe nada (queda huérfano): se registra la ruta para limpiarlo. */
+/**
+ * Borra un archivo del bucket. Si falla no rompe nada (queda huérfano): se registra la ruta para limpiarlo.
+ * Un borrado que Storage descarta por RLS devuelve CERO objetos y ningún error, así que también se cuenta.
+ */
 async function removeObject(db: Db, path: string): Promise<void> {
-  const { error } = await db.storage.from(IMAGE_BUCKET).remove([path]);
+  const { data, error } = await db.storage.from(IMAGE_BUCKET).remove([path]);
   if (error) console.error(`No se pudo borrar la foto huérfana ${path}: ${error.message}`);
+  else if (!data || data.length === 0) console.error(`No se pudo borrar la foto huérfana ${path}: Storage no borró ningún objeto.`);
 }
 
 /**

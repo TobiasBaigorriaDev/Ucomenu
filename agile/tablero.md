@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Gestión de carta en el panel: categorías y platos con foto (Storage), orden y activo/inactivo, mensajes de tope (`53400`) y escrituras bloqueadas por mora — implementado en `feat/gestion-de-carta` (sin integrar): 89 unitarias, 256 de RLS, 64 E2E, 31 de 33 mutaciones detectadas (2 equivalentes); falta revisión opcional de Codex y la aceptación del usuario → ficha: agile/cambios/gestion-de-carta.md · ADR 0008
+- (vacío)
 
 ## Bloqueado
 - (vacío)
@@ -66,6 +66,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [M] Gestión de carta: categorías y platos con foto (Storage), orden y activo/inactivo, mensajes de tope (`53400`) y escrituras bloqueadas por mora — revisado por Codex (aprobar, una observación P3 corregida), 89 unitarias, 257 de RLS, 64 E2E y 32 de 34 mutaciones detectadas (2 equivalentes), integrado a `main` (2026-10-14) → ficha: agile/cambios/gestion-de-carta.md · ADR 0008
 - [C] Acceso del personal: login y sesión (`@supabase/ssr`), `/panel` y `/sala` por rol, selector de local, gestión de personal por el Dueño, regla «una organización no se queda sin owner» en la base y aviso de mora (completo para el Dueño, reducido para el Staff) — revisado por Codex (aprobar), 43 unitarias, 226 de RLS, 46 E2E y 22/22 mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/acceso-del-personal.md · ADR 0007
 - [C] Planes y entitlements: catálogo parametrizable, mora derivada (bordes al segundo), escrituras bloqueadas en solo lectura y suspendida, límites por plan con trigger, carta suspendida — revisado por Codex (2 rondas, aprobado), 176 pruebas de RLS, 16 E2E y 24 de 26 mutaciones detectadas (2 equivalentes), integrado a `main` (2026-10-14) → ficha: agile/cambios/planes-y-entitlements.md · ADR 0006
 - [C] Núcleo multi-tenant: membresías, roles y RLS de escritura con aislamiento entre organizaciones — revisado por Codex (aprobar), 81 pruebas de RLS y mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/nucleo-multi-tenant.md · ADR 0005

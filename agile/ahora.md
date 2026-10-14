@@ -3,21 +3,22 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** «Gestión de carta» implementada y probada en `feat/gestion-de-carta`; falta decidir si se pide una ronda de Codex (opcional en nivel M) y la integración a `main`
-- **Rama / último commit:** `feat/gestion-de-carta` (sale de `main` en `6e06d79`); `main` sin cambios. Ver `git log` para el commit de cierre
+- **Objetivo actual:** «Gestión de carta» cerrada e integrada a `main` (revisión de Codex: aprobar); siguiente: «Mesas y QR»
+- **Rama / último commit:** `main` con la integración (fast-forward desde `feat/gestion-de-carta`); la rama queda local y se puede borrar. Ver `git log`
 - **Nivel:** M
-- **Ficha relevante:** `agile/cambios/gestion-de-carta.md` (para verificar) · ADR 0008
+- **Ficha relevante:** `agile/cambios/gestion-de-carta.md` (hecho) · ADR 0008 · próxima: `agile/cambios/mesas-y-qr.md` (por crear)
 
 ## Estado
-- En `main`: esqueleto caminante, núcleo multi-tenant, planes y entitlements, acceso del personal. En la rama: gestión de carta.
+- En `main`: esqueleto caminante, núcleo multi-tenant, planes y entitlements, acceso del personal y gestión de carta. Los cinco pasaron revisión de Codex (solo lectura).
 - Gestión de carta: `/panel/{slug}/carta` (categorías y platos: alta, edición, subir/bajar, activar/desactivar; Dueño y Staff), `/carta/platos/nuevo` y `/carta/platos/{id}` (datos y foto), «Platos activos: X de N» con el mensaje del tope `53400`, formularios deshabilitados con el motivo en solo lectura y suspendida y acciones forzadas sin éxito falso, foto en la carta pública. **Fotos en Supabase Storage** (bucket público `product-images`, ruta por organización, escritura con `org_can_write`; ADR 0008); el navegador reduce la foto antes de subirla. **No hay borrado** de categorías ni platos (se desactivan).
 - Falta: mesas y QR, llamados, SuperAdmin (`platform_admins`, pagos, auditoría), variantes y adicionales, historial de precios, borrado de la carta.
-- GitHub: `main` subido hasta la integración del acceso del personal; la rama de carta no se subió.
+- GitHub: `main` subido con la gestión de carta.
 
 ## Pruebas (2026-10-14, base recién reseteada, sobre el código final de la rama)
-- typecheck · lint · build OK · unitarias 89/89 · RLS 256/256 · E2E 64/64 (tres corridas completas seguidas).
-- Mutaciones: 33 defensas rotas de a una, 31 detectadas y 2 equivalentes (explicadas en la ficha).
-- No ejecutadas: `pnpm dev` de punta a punta, Safari/iOS y cámara del celular, fotos HEIC, lector de pantalla, rendimiento con fotos, bucket en Supabase Cloud, revisión de Codex, renovación automática del token por el proxy.
+- typecheck · lint · build OK · unitarias 89/89 · RLS 257/257 · E2E 64/64 (tres corridas completas seguidas).
+- Mutaciones: 34 defensas rotas de a una, 32 detectadas y 2 equivalentes (explicadas en la ficha).
+- Codex (solo lectura): aprobar `c191728`; la observación P3 (borrado de Storage con cero objetos) se corrigió con prueba.
+- No ejecutadas: `pnpm dev` de punta a punta, Safari/iOS y cámara del celular, fotos HEIC, lector de pantalla, rendimiento con fotos, bucket en Supabase Cloud, renovación automática del token por el proxy.
 
 ## Para usar la app en local
 - **Tras actualizar a esta rama: `pnpm db:stop` y `pnpm db:start`** (ahora arranca `storage-api`) y `pnpm db:reset` (migración de fotos).
@@ -44,9 +45,9 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-1. Decidir: pedir a Codex una ronda corta de solo lectura sobre la rama (opcional en nivel M) y/o integrar `feat/gestion-de-carta` a `main` y subirla.
+1. «Mesas y QR»: redactar la ficha (nivel M) y ejecutar `/agile-iterar` (el usuario lo pidió el 2026-10-14).
 2. Probar `pnpm dev` de punta a punta con la cámara del celular (login con un usuario del seed, cargar un plato con foto).
-3. Siguiente ítem: «Mesas y QR» (reutiliza el patrón de la carta) o el historial de precios (S).
+3. Después: historial de precios (S) o variantes y adicionales.
 
 ## Estado del worktree al cerrar
-- Rama `feat/gestion-de-carta` con el trabajo confirmado; `git status` limpio salvo lo ignorado a propósito (`impeccable`, `.env*.local`).
+- `git status` limpio salvo lo ignorado a propósito (`impeccable`, `.env*.local`).
