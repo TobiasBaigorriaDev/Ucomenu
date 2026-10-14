@@ -1,5 +1,5 @@
 # Cambio: Llamado desde la mesa — «Llamar al mozo» y «Pedir la cuenta» desde el QR, con una función de base como única puerta de escritura
-Estado: **para verificar** — implementado y probado en la rama `feat/llamado-desde-la-mesa` (sin integrar a `main`); revisión de nivel C de Codex: *aprobar con cambios* sobre `cd26208` (un P2, corregido); falta que lo confirme
+Estado: **hecho** — revisión de nivel C de Codex: *aprobar con cambios* sobre `cd26208` (un P2, corregido en `26e9d49`); el usuario dio todo por aprobado e integró a `main` el 2026-10-14
 Nivel: **C** — escritura **pública y sin sesión** sobre datos de un local, que dispara una alerta al personal; el abuso afecta la operación del salón y se guarda un dato derivado de la IP del comensal. Requiere invariantes, pruebas adversarias, mutaciones, revisión de un segundo agente y aprobación humana de los riesgos.
 
 ## Objetivo
