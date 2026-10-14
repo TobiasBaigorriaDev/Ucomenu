@@ -60,19 +60,19 @@ describe("URL del QR", () => {
 
   it("sin SITE_URL usa el host del pedido: http para local, https para el resto, respetando el proxy", () => {
     expect(resolveBaseUrl(cabeceras({ host: "localhost:3100" }), "")).toBe("http://localhost:3100");
-    expect(resolveBaseUrl(cabeceras({ host: "127.0.0.1:3000" }), undefined)).toBe("http://127.0.0.1:3000");
-    expect(resolveBaseUrl(cabeceras({ host: "carta.example.com" }), undefined)).toBe("https://carta.example.com");
+    expect(resolveBaseUrl(cabeceras({ host: "127.0.0.1:3000" }), "")).toBe("http://127.0.0.1:3000");
+    expect(resolveBaseUrl(cabeceras({ host: "carta.example.com" }), "")).toBe("https://carta.example.com");
     expect(
-      resolveBaseUrl(cabeceras({ host: "interno:3000", "x-forwarded-host": "publico.example.com, otro.test", "x-forwarded-proto": "https" }), undefined),
+      resolveBaseUrl(cabeceras({ host: "interno:3000", "x-forwarded-host": "publico.example.com, otro.test", "x-forwarded-proto": "https" }), ""),
     ).toBe("https://publico.example.com");
-    expect(resolveBaseUrl(cabeceras({ host: "x.test", "x-forwarded-proto": "ftp" }), undefined)).toBe("https://x.test");
+    expect(resolveBaseUrl(cabeceras({ host: "x.test", "x-forwarded-proto": "ftp" }), "")).toBe("https://x.test");
   });
 
   it("descarta hosts mal formados o con basura (inyección de cabecera)", () => {
     for (const host of ["", "evil.test/ruta", "a b.test", "x.test\r\nSet-Cookie: a=b", "<script>", "evil.test@otro.test", "x.test:99999999", "-malo.test"]) {
-      expect(resolveBaseUrl(cabeceras({ host }), undefined), host).toBeNull();
+      expect(resolveBaseUrl(cabeceras({ host }), ""), host).toBeNull();
     }
-    expect(resolveBaseUrl(cabeceras({}), undefined)).toBeNull();
+    expect(resolveBaseUrl(cabeceras({}), "")).toBeNull();
   });
 });
 

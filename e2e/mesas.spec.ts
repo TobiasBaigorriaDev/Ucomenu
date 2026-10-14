@@ -16,7 +16,8 @@ import {
  * pública `/t/{token}`, contra el build y el Supabase local, a 390 px. Cada prueba usa un local propio.
  */
 
-const BASE = "http://localhost:3100"; // el servidor de las pruebas (playwright.config.ts)
+// Base del QR: NEXT_PUBLIC_SITE_URL si el entorno la define (el servidor de pruebas la hereda); si no, el servidor de las pruebas.
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).origin : "http://localhost:3100";
 const tenants: Tenant[] = [];
 
 async function nuevoLocal(label: string, estado: Estado = "active") {
