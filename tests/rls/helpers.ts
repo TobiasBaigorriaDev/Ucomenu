@@ -114,7 +114,15 @@ export async function createOrg(service: Db, slug: string, plan: PlanCode = "bas
 }
 
 export async function deleteOrg(service: Db, orgId: string | undefined): Promise<void> {
-  if (orgId) await service.from("organizations").delete().eq("id", orgId);
+  if (!orgId) return;
+  // Con varias bajas concurrentes un borrado puede fallar de forma transitoria: se reintenta y, si no se logra, se avisa
+  // (antes el error se perdía y quedaba un resto que rompía la corrida siguiente).
+  for (let intento = 1; intento <= 3; intento++) {
+    const { error } = await service.from("organizations").delete().eq("id", orgId);
+    if (!error) return;
+    if (intento === 3) console.warn(`No se pudo borrar la organización de prueba ${orgId}: ${error.message}`);
+    else await new Promise((resolve) => setTimeout(resolve, 200 * intento));
+  }
 }
 
 /**
