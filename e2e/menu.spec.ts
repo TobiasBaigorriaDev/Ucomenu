@@ -72,6 +72,26 @@ test.describe("otra organización", () => {
   });
 });
 
+test.describe("cuenta suspendida por mora", () => {
+  test("muestra «Carta temporalmente no disponible» y no publica ningún plato", async ({ page }) => {
+    const response = await page.goto("/m/resto-moroso/unica");
+
+    expect(response?.status()).toBe(200);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Resto Moroso");
+    await expect(page.getByText("Carta temporalmente no disponible")).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Milanesa completa");
+    await expect(page.locator("body")).not.toContainText("Minutas");
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
+  });
+
+  test("no se desborda horizontalmente", async ({ page }) => {
+    await page.goto("/m/resto-moroso/unica");
+
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+});
+
 test.describe("rutas que no existen", () => {
   for (const [label, path] of [
     ["organización inexistente", "/m/no-existe/centro"],
@@ -79,6 +99,7 @@ test.describe("rutas que no existen", () => {
     ["sucursal de otra organización", "/m/cafe-ejemplo/sur"],
     ["organización inactiva", "/m/bar-inactivo/unica"],
     ["slug con caracteres inválidos", "/m/CAFE_ejemplo/centro"],
+    ["slug de 65 caracteres", `/m/${"a".repeat(65)}/centro`],
   ] as const) {
     test(`responde 404 para ${label}`, async ({ page }) => {
       const response = await page.goto(path);

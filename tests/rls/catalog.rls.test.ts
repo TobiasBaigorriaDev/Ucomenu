@@ -7,9 +7,11 @@ import {
   deleteUser,
   ORG_CAFE,
   ORG_INACTIVA,
+  ORG_MOROSA,
   ORG_PARRILLA,
   PRODUCT_EN_CATEGORIA_INACTIVA,
   PRODUCT_EN_ORG_INACTIVA,
+  PRODUCT_EN_ORG_MOROSA,
   PRODUCT_INACTIVO,
   serviceClient,
   type Db,
@@ -47,7 +49,8 @@ describe.each(roles)("lectura pública (rol %s)", (_role, getClient) => {
     const { data, error } = await getClient().from("organizations").select("slug").order("slug");
 
     expect(error).toBeNull();
-    expect(data?.map((o) => o.slug)).toEqual(["cafe-ejemplo", "parrilla-demo"]);
+    // La organización morosa (suspendida) conserva su fila pública, pero no publica su carta.
+    expect(data?.map((o) => o.slug)).toEqual(["cafe-ejemplo", "parrilla-demo", "resto-moroso"]);
   });
 
   it("ve solo los platos activos de categorías activas en organizaciones activas", async () => {
@@ -76,6 +79,7 @@ describe.each(roles)("lectura pública (rol %s)", (_role, getClient) => {
     ["un plato inactivo", PRODUCT_INACTIVO],
     ["un plato activo dentro de una categoría inactiva", PRODUCT_EN_CATEGORIA_INACTIVA],
     ["un plato de una organización inactiva", PRODUCT_EN_ORG_INACTIVA],
+    ["un plato de una organización suspendida por mora", PRODUCT_EN_ORG_MOROSA],
   ])("no puede leer %s ni siquiera por id", async (_label, id) => {
     const { data, error } = await getClient().from("products").select("id").eq("id", id).maybeSingle();
 
@@ -91,6 +95,17 @@ describe.each(roles)("lectura pública (rol %s)", (_role, getClient) => {
     expect(branches.data).toEqual([]);
     expect(categories.error).toBeNull();
     expect(categories.data).toEqual([]);
+  });
+
+  it("no ve sucursales, categorías ni platos de una organización suspendida por mora", async () => {
+    const branches = await getClient().from("branches").select("id").eq("organization_id", ORG_MOROSA);
+    const categories = await getClient().from("categories").select("id").eq("organization_id", ORG_MOROSA);
+    const products = await getClient().from("products").select("id").eq("organization_id", ORG_MOROSA);
+
+    for (const r of [branches, categories, products]) {
+      expect(r.error).toBeNull();
+      expect(r.data).toEqual([]);
+    }
   });
 
   it("al filtrar por organización no aparece ningún plato de otra", async () => {
@@ -202,23 +217,33 @@ describe("largo máximo de slug (64 caracteres)", () => {
     expect(error?.message).toContain("organizations_slug_max_length");
   });
 
-  it("acepta una sucursal con un slug de 64 caracteres", async () => {
-    const { data, error } = await service
-      .from("branches")
-      .insert({ organization_id: ORG_CAFE, slug: slug64, name: "Slug largo" })
-      .select("id")
-      .single();
+  describe("sucursales (en una organización propia: el plan Básico admite una sola)", () => {
+    let orgId: string;
 
-    expect(error).toBeNull();
-    if (data) await service.from("branches").delete().eq("id", data.id);
-  });
+    beforeAll(async () => {
+      const org = await service.from("organizations").insert({ slug: "tt-slug-sucursales", name: "tt-slug" }).select("id").single();
+      if (org.error) throw new Error(org.error.message);
+      orgId = org.data.id;
+    });
 
-  it("rechaza una sucursal con un slug de 65 caracteres", async () => {
-    const { error } = await service
-      .from("branches")
-      .insert({ organization_id: ORG_CAFE, slug: slug65, name: "Slug demasiado largo" });
+    afterAll(async () => {
+      await service.from("organizations").delete().eq("id", orgId);
+    });
 
-    expect(error?.code).toBe("23514"); // check_violation
-    expect(error?.message).toContain("branches_slug_max_length");
+    it("acepta una sucursal con un slug de 64 caracteres", async () => {
+      const { error } = await service.from("branches").insert({ organization_id: orgId, slug: slug64, name: "Slug largo" });
+
+      expect(error).toBeNull();
+      await service.from("branches").delete().eq("organization_id", orgId);
+    });
+
+    it("rechaza una sucursal con un slug de 65 caracteres", async () => {
+      const { error } = await service
+        .from("branches")
+        .insert({ organization_id: orgId, slug: slug65, name: "Slug demasiado largo" });
+
+      expect(error?.code).toBe("23514"); // check_violation
+      expect(error?.message).toContain("branches_slug_max_length");
+    });
   });
 });

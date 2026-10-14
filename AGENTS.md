@@ -37,7 +37,7 @@ Reglas compartidas para Codex CLI y Claude Code. Mantené este archivo **corto**
 Gestor: **pnpm** (Node 24). Antes de las pruebas de base y E2E: Docker encendido, `pnpm db:start`, `pnpm db:reset` y `.env.local` / `.env.test.local` (ver `.env.example`).
 - Instalar dependencias: `pnpm install --frozen-lockfile`
 - Tests unitarios (sin base): `pnpm test`
-- Tests de RLS (Supabase local; `acl.rls.test.ts` consulta el catálogo con `docker exec` sobre `supabase_db_ucomenu`): `pnpm test:rls`
+- Tests de RLS (Supabase local; `acl`, `billing` y `limits` usan `docker exec` sobre `supabase_db_ucomenu`; tardan ~25 s): `pnpm test:rls`
 - Tests E2E (Playwright, contra el build): `pnpm build` y `pnpm test:e2e` (o `pnpm test:e2e:full`)
 - Lint / typecheck: `pnpm lint` · `pnpm typecheck`
 - Build: `pnpm build`

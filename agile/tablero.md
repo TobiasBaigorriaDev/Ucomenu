@@ -10,10 +10,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- [C] Planes y entitlements: catálogo `plans` parametrizable, `subscriptions`, add-ons, `has_feature`, límites de plan y estado de mora derivado, aplicados en la base y el servidor — desbloquea «Gestión de carta» y «Acceso del personal» (la ficha se crea al empezar; preguntas previas en `agile/ahora.md`)
+- (vacío)
 
 ## Para verificar
-- (vacío)
+- [C] Planes y entitlements: catálogo, mora derivada (bordes al segundo), escrituras bloqueadas en solo lectura/suspendida, límites por trigger y carta suspendida — 170 pruebas de RLS, 14 E2E y 22 de 23 mutaciones detectadas (1 equivalente); falta `agile-revisar` por un segundo agente → ficha: agile/cambios/planes-y-entitlements.md · ADR 0006
 
 ## Bloqueado
 - (vacío)
@@ -22,10 +22,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
 ### Fase 0 — Cimientos
-- [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol; alta/baja de personal por el dueño y regla «una organización no se queda sin owner» (conviene después de planes y entitlements)
+- [M] Acceso del personal: login, sesión y estructura de `/panel`, `/sala` y `/admin` según rol; alta/baja de personal por el dueño, regla «una organización no se queda sin owner» y aviso de mora al dueño con `org_entitlements` (desbloqueado por planes y entitlements)
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
-- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal y planes y entitlements — hoy la base ya deja escribir a un miembro sin aplicar el tope de platos del plan)
+- [M] Gestión de carta en el panel del dueño: categorías y platos con foto, orden y activo/inactivo (bloqueado por: acceso del personal; los topes de plan y el bloqueo por mora ya los aplica la base)
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
 - [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible, regenerar QR, entrada por `/t/{token}`
@@ -40,7 +40,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
-- [S] Aviso de mora al dueño en el panel y pantalla «Carta temporalmente no disponible» (bloqueado por: planes y entitlements)
+- [S] Aviso de mora al dueño en el panel (la pantalla pública «Carta temporalmente no disponible» ya está hecha) (bloqueado por: acceso del personal)
 - [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (bloqueado por: gestión de carta)
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
 - [S] Textos legales: términos, privacidad y aviso de alérgenos

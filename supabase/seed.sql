@@ -58,3 +58,23 @@ insert into public.categories (id, organization_id, name, sort_order) values
 insert into public.products (id, organization_id, category_id, name, price_cents) values
   ('33000000-0000-4000-8000-000000000001', '30000000-0000-4000-8000-000000000001', '32000000-0000-4000-8000-000000000001',
    'Fernet con cola', 450000);
+
+-- Organización 4: con la cuenta vencida hace más de 15 días (suspendida). Su carta no se publica.
+-- Toda organización nueva recibe una prueba de 14 días (trigger); acá se vence a propósito.
+-- Las organizaciones 1 a 3 quedan con la prueba vigente (se dan de alta al correr el seed).
+insert into public.organizations (id, slug, name) values
+  ('40000000-0000-4000-8000-000000000001', 'resto-moroso', 'Resto Moroso');
+
+update public.subscriptions
+set trial_ends_at = now() - interval '40 days'
+where organization_id = '40000000-0000-4000-8000-000000000001';
+
+insert into public.branches (id, organization_id, slug, name) values
+  ('41000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', 'unica', 'Única');
+
+insert into public.categories (id, organization_id, name, sort_order) values
+  ('42000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', 'Minutas', 1);
+
+insert into public.products (id, organization_id, category_id, name, price_cents) values
+  ('43000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000001', '42000000-0000-4000-8000-000000000001',
+   'Milanesa completa', 980000);

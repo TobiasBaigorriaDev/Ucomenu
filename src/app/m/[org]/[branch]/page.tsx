@@ -3,20 +3,26 @@ import { notFound } from "next/navigation";
 import { CategoryNav } from "@/components/menu/category-nav";
 import { MenuHeader } from "@/components/menu/menu-header";
 import { MenuSection } from "@/components/menu/menu-section";
+import { MenuUnavailable } from "@/components/menu/menu-unavailable";
 import { getPublicMenu } from "@/lib/public-menu";
 
 export async function generateMetadata({ params }: PageProps<"/m/[org]/[branch]">): Promise<Metadata> {
   const { org, branch } = await params;
-  const menu = await getPublicMenu(org, branch);
-  if (!menu) return { title: "Carta no encontrada" };
-  return { title: `Carta de ${menu.organization.name}` };
+  const result = await getPublicMenu(org, branch);
+  if (!result) return { title: "Carta no encontrada" };
+  if (result.kind === "unavailable") {
+    return { title: `${result.organizationName} · Carta no disponible`, robots: { index: false } };
+  }
+  return { title: `Carta de ${result.menu.organization.name}` };
 }
 
 export default async function PublicMenuPage({ params }: PageProps<"/m/[org]/[branch]">) {
   const { org, branch } = await params;
-  const menu = await getPublicMenu(org, branch);
-  if (!menu) notFound();
+  const result = await getPublicMenu(org, branch);
+  if (!result) notFound();
+  if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} />;
 
+  const { menu } = result;
   const { sections } = menu;
 
   return (

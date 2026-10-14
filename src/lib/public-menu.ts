@@ -10,11 +10,22 @@ export type PublicMenu = {
 };
 
 /**
- * Carta pública de una sucursal. Devuelve `null` si la organización o la sucursal no existen
- * o no son publicables (RLS las oculta). Está envuelta en `cache` para que `generateMetadata`
+ * Resultado de pedir una carta pública:
+ *  - `menu`: la carta publicada;
+ *  - `unavailable`: la organización existe pero su cuenta está suspendida por mora (se muestra
+ *    «Carta temporalmente no disponible»; los datos siguen intactos);
+ *  - `null`: no existe o no es publicable (RLS la oculta) -> 404.
+ */
+export type PublicMenuResult =
+  | { kind: "menu"; menu: PublicMenu }
+  | { kind: "unavailable"; organizationName: string }
+  | null;
+
+/**
+ * Carta pública de una sucursal. Está envuelta en `cache` para que `generateMetadata`
  * y la página compartan una sola consulta por pedido.
  */
-export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): Promise<PublicMenu | null> => {
+export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): Promise<PublicMenuResult> => {
   // Descarta slugs imposibles sin ir a la base.
   if (!isValidSlug(orgSlug) || !isValidSlug(branchSlug)) {
     return null;
@@ -31,7 +42,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 
   if (orgError) throw new Error(`No se pudo leer la organización: ${orgError.message}`);
   const branch = org?.branches[0];
-  if (!org || !branch) return null;
+  if (!org || !branch) return unavailableOrNull(supabase, orgSlug);
 
   const [categories, products] = await Promise.all([
     supabase.from("categories").select("id, name, sort_order").eq("organization_id", org.id),
@@ -45,8 +56,25 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
 
   return {
-    organization: { id: org.id, name: org.name, slug: org.slug },
-    branch: { id: branch.id, name: branch.name, slug: branch.slug },
-    sections: groupMenu(categories.data, products.data),
+    kind: "menu",
+    menu: {
+      organization: { id: org.id, name: org.name, slug: org.slug },
+      branch: { id: branch.id, name: branch.name, slug: branch.slug },
+      sections: groupMenu(categories.data, products.data),
+    },
   };
 });
+
+/**
+ * Una organización suspendida oculta sus sucursales (RLS), así que desde la consulta principal
+ * se ve igual que una inexistente. Solo en ese camino se pregunta el estado público.
+ */
+async function unavailableOrNull(supabase: ReturnType<typeof createPublicClient>, orgSlug: string): Promise<PublicMenuResult> {
+  const status = await supabase.rpc("public_menu_status", { p_slug: orgSlug });
+  if (status.error) throw new Error(`No se pudo leer el estado de la carta: ${status.error.message}`);
+  if (status.data !== "suspended") return null;
+
+  const org = await supabase.from("organizations").select("name").eq("slug", orgSlug).maybeSingle();
+  if (org.error) throw new Error(`No se pudo leer la organización: ${org.error.message}`);
+  return org.data ? { kind: "unavailable", organizationName: org.data.name } : null;
+}

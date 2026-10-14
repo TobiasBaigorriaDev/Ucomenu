@@ -72,8 +72,8 @@ Tres niveles más WebAR como add-on, con **cobro manual** en el MVP: el SuperAdm
 | **Add-on WebAR** | no disponible | contratable | contratable |
 
 - **Add-on WebAR:** +USD 25/mes sobre Pro o Premium. Incluye un cupo de hasta **15 platos con modelo 3D activo**. Se pueden habilitar **packs extra de +10 platos 3D** (**+USD 10/mes por cada pack**; parametrizable en la base).
-- **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito.
-- **Límites:** son techos para *crear* (no se puede superar el tope). Los platos se cuentan solo si están activos.
+- **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito. Toda organización nueva arranca con esta prueba a partir de su fecha de alta, sin intervención de nadie. *(Confirmado 2026-10-14.)*
+- **Límites:** son techos para *crear* y para *activar* (no se puede superar el tope). Los platos se cuentan solo si están activos (`is_active`): con el tope alcanzado se bloquea tanto crear un plato activo como pasar uno inactivo a activo; pasar un plato de activo a inactivo siempre se permite, para que el local pueda acomodarse a su cupo. Misma regla para sucursales y mesas. *(Confirmado 2026-10-14.)*
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.
 - En el MVP se venden **Básico y Pro**. Premium y el add-on WebAR se habilitan cuando se entreguen las fases 3 y 2.
 - **Analítica básica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). Se construye después del MVP (Fase 4).
@@ -89,6 +89,9 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 
 - El estado se **deriva de las fechas** (vencimiento y fecha actual); registrar un pago extiende el período y restablece todo.
 - *Supuesto (nuevo):* en modo solo lectura y suspendida, el panel del dueño sigue accesible con el aviso de mora.
+- **Escrituras de catálogo:** en **solo lectura (días 8 a 15) y suspendida (16 en adelante) quedan bloqueadas todas las escrituras de catálogo** (crear, modificar y borrar categorías, platos, precios, sucursales y mesas), tanto para el Dueño como para el Staff. En gracia (días 1 a 7) se edita con normalidad. El local ve su estado y sus datos, pero no puede actualizar precios ni cargar platos hasta regularizar el pago. *(Confirmado 2026-10-14.)*
+- **Cuenta de días:** día 1 es el primer día completo después del vencimiento; el día 7 todavía es gracia, el 8 ya es solo lectura, el 15 es el último de solo lectura y el 16 suspende.
+- Los datos de suscripción (plan, fechas, add-ons) los escribe **exclusivamente el servidor**; los pagos y el SuperAdmin llegan en su propio ítem.
 
 ## MVP
 - **Incluye:** menú digital completo (módulo 1), llamado al mozo con panel de sala (módulo 2), panel (módulo 5), SuperAdmin con gestión manual de planes, límites y mora (módulo 6), multi-sucursal, planes Básico y Pro con *feature flags*, prueba gratuita de 14 días.

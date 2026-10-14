@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 
@@ -16,6 +17,7 @@ const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 export const ORG_CAFE = "10000000-0000-4000-8000-000000000001";
 export const ORG_PARRILLA = "20000000-0000-4000-8000-000000000001";
 export const ORG_INACTIVA = "30000000-0000-4000-8000-000000000001";
+export const ORG_MOROSA = "40000000-0000-4000-8000-000000000001";
 export const BRANCH_CAFE = "11000000-0000-4000-8000-000000000001";
 export const BRANCH_PARRILLA = "21000000-0000-4000-8000-000000000001";
 export const CATEGORY_CAFETERIA = "12000000-0000-4000-8000-000000000001";
@@ -25,6 +27,7 @@ export const PRODUCT_ESPRESSO = "13000000-0000-4000-8000-000000000001";
 export const PRODUCT_INACTIVO = "13000000-0000-4000-8000-000000000003";
 export const PRODUCT_EN_CATEGORIA_INACTIVA = "13000000-0000-4000-8000-000000000005";
 export const PRODUCT_EN_ORG_INACTIVA = "33000000-0000-4000-8000-000000000001";
+export const PRODUCT_EN_ORG_MOROSA = "43000000-0000-4000-8000-000000000001";
 
 export function client(key: string | undefined): Db {
   if (!url || !key) {
@@ -62,3 +65,88 @@ export async function deleteUser(service: Db, user: TestUser | undefined): Promi
 /** Para las pruebas que llaman a la API REST directamente (p. ej. esquemas no expuestos). */
 export const apiUrl = url;
 export const apiKey = publishableKey;
+
+/**
+ * SQL directo contra el Postgres local (para lo que la API REST no puede: catálogo, funciones internas).
+ * Corre dentro del contenedor de Supabase (`project_id` de supabase/config.toml). Solo para pruebas.
+ */
+export function sql(query: string): string[][] {
+  let out: string;
+  try {
+    out = execFileSync("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-At", "-F", "|", "-c", query], {
+      encoding: "utf8",
+    });
+  } catch (error) {
+    throw new Error(`No se pudo consultar el contenedor supabase_db_ucomenu. ¿Está encendido (pnpm db:start)? ${String(error)}`);
+  }
+  return out
+    .split("\n")
+    .filter((line) => line.length > 0)
+    .map((line) => line.split("|"));
+}
+
+export type PlanCode = "basic" | "pro" | "premium";
+
+const HORA_MS = 60 * 60 * 1000;
+export const DIA_MS = 24 * HORA_MS;
+
+/** Una organización de prueba (la prueba de 14 días se crea sola por trigger). Borrarla con `deleteOrg`. */
+export async function createOrg(service: Db, slug: string, plan: PlanCode = "basic"): Promise<string> {
+  const org = await service.from("organizations").insert({ slug, name: slug }).select("id").single();
+  if (org.error) throw new Error(`No se pudo crear la organización ${slug}: ${org.error.message}`);
+  await setSubscription(service, org.data.id, { plan });
+  return org.data.id;
+}
+
+export async function deleteOrg(service: Db, orgId: string | undefined): Promise<void> {
+  if (orgId) await service.from("organizations").delete().eq("id", orgId);
+}
+
+/**
+ * Fija plan y fin del período relativo a AHORA: `finEnMs` positivo = vence en el futuro,
+ * negativo = vencido hace tanto. Deja una sola fecha (current_period_end) para que sea el fin efectivo.
+ */
+export async function setSubscription(
+  service: Db,
+  orgId: string,
+  cambios: { plan?: PlanCode; finEnMs?: number },
+): Promise<void> {
+  const update: { plan_code?: string; current_period_end?: string; trial_ends_at?: string | null } = {};
+  if (cambios.plan) update.plan_code = cambios.plan;
+  if (cambios.finEnMs !== undefined) {
+    update.current_period_end = new Date(Date.now() + cambios.finEnMs).toISOString();
+    update.trial_ends_at = null;
+  }
+  const { error } = await service.from("subscriptions").update(update).eq("organization_id", orgId);
+  if (error) throw new Error(`No se pudo actualizar la suscripción: ${error.message}`);
+}
+
+export async function addMembership(service: Db, user: TestUser, orgId: string, role: "owner" | "staff"): Promise<void> {
+  const { error } = await service.from("memberships").insert({ user_id: user.id, organization_id: orgId, role });
+  if (error) throw new Error(`No se pudo crear la membresía: ${error.message}`);
+}
+
+export async function createCategory(service: Db, orgId: string, name = "tt-categoria"): Promise<string> {
+  const { data, error } = await service.from("categories").insert({ organization_id: orgId, name }).select("id").single();
+  if (error) throw new Error(`No se pudo crear la categoría: ${error.message}`);
+  return data.id;
+}
+
+/** Inserta `cantidad` platos de una sola vez (un único INSERT). */
+export async function insertProducts(
+  service: Db,
+  orgId: string,
+  categoryId: string,
+  cantidad: number,
+  isActive = true,
+  prefijo = "tt-plato",
+) {
+  const filas = Array.from({ length: cantidad }, (_, i) => ({
+    organization_id: orgId,
+    category_id: categoryId,
+    name: `${prefijo}-${i + 1}`,
+    price_cents: 1000,
+    is_active: isActive,
+  }));
+  return service.from("products").insert(filas);
+}

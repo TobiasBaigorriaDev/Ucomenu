@@ -3,46 +3,38 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code
-- **Objetivo actual:** «Núcleo multi-tenant» cerrado e integrado a `main`; siguiente: «Planes y entitlements» (nivel C), aún sin ficha
-- **Rama / último commit:** `main` (ver `git log`); sin ramas de trabajo abiertas
-- **Nivel:** C (cerrado)
-- **Ficha relevante:** `agile/cambios/nucleo-multi-tenant.md` (hecho) · próxima: `agile/cambios/planes-y-entitlements.md` (por crear)
+- **Objetivo actual:** «Planes y entitlements» (nivel C) implementado y verificado; falta la revisión independiente antes de integrar
+- **Rama / último commit:** `feat/planes-y-entitlements` (sale de `main`, que está respaldado en GitHub: `origin/main`)
+- **Nivel:** C
+- **Ficha relevante:** `agile/cambios/planes-y-entitlements.md` (estado: verificado, pendiente de `agile-revisar`) · ADR 0006
 
 ## Estado
-- Hecho e integrado a `main`: esqueleto caminante (carta pública con RLS) y núcleo multi-tenant (`memberships`, `private.is_org_member/is_org_owner`, políticas de escritura, permisos por columna; ADR 0004 y 0005). Ambos revisados por Codex.
-- Tablas hoy: `organizations`, `branches`, `categories`, `products`, `memberships`. Aún no existen planes, suscripciones, mesas, llamados ni `platform_admins`.
+- En `main` (y en GitHub): esqueleto caminante y núcleo multi-tenant, ambos revisados por Codex.
+- En la rama: migración `20261014003848_plans_and_entitlements.sql` (tablas `plans`, `addons`, `subscriptions`, `subscription_addons`; estado de mora derivado; límites por trigger con advisory lock; escrituras bloqueadas en solo lectura y suspendida; carta pública oculta si está suspendida; alta con prueba de 14 días; API `org_entitlements` y `public_menu_status`), ruta pública con «Carta temporalmente no disponible», seed con `resto-moroso`, tipos regenerados, ADR 0006, `tests/rls/{billing,limits}.rls.test.ts` y `acl` con matriz cerrada de funciones.
+- Reglas del usuario aplicadas (2026-10-14): en `read_only` (días 8–15) y `suspended` (16+) no se escribe catálogo (ni Dueño ni Staff); alta con 14 días de Básico; los topes cuentan activos y bloquean crear y activar (activo → inactivo siempre se permite); `platform_admins`, pagos y auditoría quedan para «SuperAdmin».
 
-## Pruebas (2026-10-14, sobre el último estado)
-- typecheck · lint · build OK · unitarias 23/23 · RLS 81/81 (`catalog`, `tenancy`, `acl`) · E2E 11/11. Mutaciones de RLS y ACL detectadas.
-- No ejecutadas: login desde la app (no existe), rendimiento de políticas con volumen, Safari/iOS, lector de pantalla, LCP, modo oscuro.
-
-## Preparación de «Planes y entitlements»
-Fuente: `docs/producto.md` (planes, límites, mora, prueba de 14 días, add-on) y `docs/arquitectura.md` (modelo de datos y flags). Alcance probable:
-- Tablas `plans` (precios y límites parametrizables, sin valores en el código), `subscriptions`, `subscription_addons`, `payments`, `audit_log`.
-- Función de estado de mora derivada de `now()` y `current_period_end`/`trial_ends_at` (`active` → `grace` 1–7 → `read_only` 8–15 → `suspended` 16+).
-- `has_feature(organization_id, feature)` que incluye plan, add-ons y mora; límites (sucursales, mesas, platos activos) aplicados en la base al **crear o activar**, sin borrar lo existente. Cierra el riesgo abierto: hoy un miembro puede superar el tope de platos.
-- La carta pública debe mostrar «Carta temporalmente no disponible» en `suspended`: toca la política de lectura pública y la ruta `/m/...` (el 404 real ya está resuelto; esto es otro estado).
-- Pruebas: matriz plan × feature × mora, límites en el borde (80/81 platos, etc.), aislamiento entre organizaciones y mutación, como en el Núcleo.
-
-**Preguntas para el usuario antes de implementar (cambian reglas de negocio y dinero):**
-1. En `read_only` y `suspended`, ¿el Staff/Dueño puede seguir editando la carta y los precios? (el producto dice que el panel sigue accesible; no dice si se puede escribir).
-2. ¿Qué plan reciben por defecto las organizaciones sin suscripción cargada (p. ej. las del seed)? Propuesta: prueba de 14 días de Básico al darlas de alta.
-3. Al bajar de plan con más platos activos que el nuevo tope, se conservan y solo se bloquea crear más (ya está en producto). Confirmar que **reactivar** un plato inactivo también se bloquea al tope.
-4. ¿El SuperAdmin entra en este ítem (`platform_admins` y registro de pagos) o queda para «SuperAdmin»? Propuesta: separado; aquí solo el esquema y las funciones, con datos cargados por `service_role`.
+## Pruebas (2026-10-14)
+- typecheck · lint · build OK · unitarias 23/23 · RLS 170/170 (`catalog`, `tenancy`, `acl`, `billing`, `limits`) · E2E 14/14.
+- Mutaciones: 23 defensas rotas de a una, 22 detectadas; la restante es equivalente (política pública de `products` sin `org_is_published`, cubierta por la de `categories`; con ambas quitadas se detecta).
+- No ejecutadas: rendimiento de `org_is_published` por fila con volumen, Safari/iOS, lector de pantalla, login desde la app (no existe), LCP, modo oscuro.
 
 ## Decisiones recientes
-- Rama principal `main`. Analítica básica desde Pro. Pack extra WebAR +USD 10/mes por 10 platos 3D. `price_history` aprobado.
-- `impeccable` y sus agentes: en `.gitignore`.
+- Estado de mora derivado (`private.billing_state`): bordes inclusivos, gracia hasta +168 h, solo lectura hasta +360 h; «día N» = techo de las 24 h transcurridas.
+- `anon` tiene `USAGE` en `private` y `EXECUTE` solo de `org_is_published`; la prueba de ACL fija la matriz de funciones (una función nueva rompe la prueba hasta declararla).
+- Carta suspendida: la fila de organización sigue pública (nombre y slug); la ruta responde 200 con aviso y `noindex`.
 
 ## Bloqueos y riesgos
-- Límites del plan y mora aún no se aplican en las escrituras (se cierra con este ítem).
-- Un `UPDATE`/`DELETE` fuera de la organización afecta 0 filas sin error; la app debe tratarlo así.
+- Falta la revisión de nivel C por un segundo agente (solo lectura).
+- `org_is_published` se evalúa por fila en las políticas públicas: medir en «Rendimiento de la carta pública».
+- `service_role` puede dejar una suscripción incoherente; la auditoría llega con «SuperAdmin».
+- Trigger de mesas pendiente (la función `org_limit(org, 'tables_per_branch')` ya existe).
+- Un `UPDATE`/`DELETE` bloqueado afecta 0 filas sin error; la app debe mostrar el estado con `org_entitlements.can_write`.
 - `react-best-practices` no instalada ni aprobada.
-- Windows: rutas de más de ~260 caracteres rompen `pnpm test`. `pnpm build` antes de `test:e2e`. `pnpm test:rls` necesita Docker (consulta el catálogo con `docker exec`).
+- Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` necesita Docker (`docker exec` sobre `supabase_db_ucomenu`).
 
 ## Próxima acción probable
-1. Responder las preguntas de arriba (o aceptar las propuestas).
-2. Crear `agile/cambios/planes-y-entitlements.md` (nivel C) y ejecutar `/agile-iterar`.
+1. `agile-revisar` de `feat/planes-y-entitlements` con un segundo agente (solo lectura); corregir y, si pasa, integrar a `main` y subir a GitHub.
+2. Luego: «Acceso del personal» (login, `/panel`, `/sala`, `/admin`, aviso de mora con `org_entitlements`) y después «Gestión de carta».
 
 ## Estado del worktree al cerrar
 - `git status` limpio salvo lo ignorado a propósito (`impeccable`).

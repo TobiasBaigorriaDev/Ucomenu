@@ -23,7 +23,21 @@ export type Database = {
           }
         },"public": {
           Tables: {
-            "branches": {
+            "addons": {
+                  Row: {
+                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at": string,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at"?: string,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number
+                  }
+                  Update: {
+                    "allowed_plans"?: (string)[],"base_model_quota"?: number,"code"?: string,"created_at"?: string,"monthly_price_usd_cents"?: number,"name"?: string,"pack_monthly_price_usd_cents"?: number,"pack_size"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"branches": {
                   Row: {
                     "created_at": string,"id": string,"name": string,"organization_id": string,"slug": string
                   }
@@ -97,6 +111,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"plans": {
+                  Row: {
+                    "code": string,"created_at": string,"features": (string)[],"max_active_products": number | null,"max_branches": number | null,"max_tables_per_branch": number | null,"monthly_price_usd_cents": number,"name": string,"yearly_price_usd_cents": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"monthly_price_usd_cents": number,"name": string,"yearly_price_usd_cents": number
+                  }
+                  Update: {
+                    "code"?: string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"yearly_price_usd_cents"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"products": {
                   Row: {
                     "category_id": string,"created_at": string,"currency": string,"description": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order": number
@@ -123,13 +151,70 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"subscription_addons": {
+                  Row: {
+                    "addon_code": string,"created_at": string,"ends_at": string | null,"extra_packs": number,"id": string,"organization_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "addon_code": string,"created_at"?: string,"ends_at"?: string | null,"extra_packs"?: number,"id"?: string,"organization_id": string
+                  }
+                  Update: {
+                    "addon_code"?: string,"created_at"?: string,"ends_at"?: string | null,"extra_packs"?: number,"id"?: string,"organization_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "subscription_addons_addon_code_fkey"
+      columns: ["addon_code"]
+isOneToOne: false
+      referencedRelation: "addons"
+      referencedColumns: ["code"]
+    },{
+      foreignKeyName: "subscription_addons_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"subscriptions": {
+                  Row: {
+                    "billing_cycle": string,"created_at": string,"current_period_end": string | null,"id": string,"notes": string | null,"organization_id": string,"plan_code": string,"trial_ends_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "billing_cycle"?: string,"created_at"?: string,"current_period_end"?: string | null,"id"?: string,"notes"?: string | null,"organization_id": string,"plan_code": string,"trial_ends_at"?: string | null
+                  }
+                  Update: {
+                    "billing_cycle"?: string,"created_at"?: string,"current_period_end"?: string | null,"id"?: string,"notes"?: string | null,"organization_id"?: string,"plan_code"?: string,"trial_ends_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "subscriptions_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: true
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "subscriptions_plan_code_fkey"
+      columns: ["plan_code"]
+isOneToOne: false
+      referencedRelation: "plans"
+      referencedColumns: ["code"]
+    }
+                  ]
                 }
           }
           Views: {
             [_ in never]: never
           }
           Functions: {
-            [_ in never]: never
+            "org_entitlements":
+{ Args: { "p_org": string }; Returns: Json
+                           },
+"public_menu_status":
+{ Args: { "p_slug": string }; Returns: string
+                           }
           }
           Enums: {
             [_ in never]: never
