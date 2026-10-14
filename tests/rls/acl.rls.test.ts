@@ -33,6 +33,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
+  create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],
   public_menu_status: [true, true],
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables

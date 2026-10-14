@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import { purgePriceHistoryWhere } from "./purge-price-history";
 
 /**
  * Utilidades compartidas de las pruebas de RLS contra el Supabase LOCAL.
@@ -117,22 +118,25 @@ export async function createOrg(service: Db, slug: string, plan: PlanCode = "bas
 }
 
 /**
- * Limpieza de PRUEBAS: borra el historial de precios de una organización de prueba. Producto y organización con
- * historial no se pueden borrar (ON DELETE RESTRICT) y ni la API ni service_role pueden borrarlo (solo se agrega):
+ * Limpieza de PRUEBAS: borra el historial de precios de una organización de prueba. Una organización con
+ * historial no se puede borrar (ON DELETE RESTRICT) y ni la API ni service_role pueden borrarlo (solo se agrega):
  * se hace como dueño de la tabla, apagando un momento el trigger de solo-agregado en una sola transacción.
  */
 export function purgePriceHistory(orgId: string): void {
-  sql(
-    `begin; alter table public.price_history disable trigger price_history_no_update_delete; ` +
-      `delete from public.price_history where organization_id = '${orgId}'; ` +
-      `alter table public.price_history enable trigger price_history_no_update_delete; commit`,
-  );
+  purgePriceHistoryWhere(`organization_id = '${orgId}'`);
 }
 
 export async function deleteOrg(service: Db, orgId: string | undefined): Promise<void> {
   if (!orgId) return;
   purgePriceHistory(orgId);
-  await service.from("organizations").delete().eq("id", orgId);
+  // Con varias bajas concurrentes un borrado puede fallar de forma transitoria: se reintenta y, si no se logra, se avisa
+  // (antes el error se perdía y quedaba un resto que rompía la corrida siguiente).
+  for (let intento = 1; intento <= 3; intento++) {
+    const { error } = await service.from("organizations").delete().eq("id", orgId);
+    if (!error) return;
+    if (intento === 3) console.warn(`No se pudo borrar la organización de prueba ${orgId}: ${error.message}`);
+    else await new Promise((resolve) => setTimeout(resolve, 200 * intento));
+  }
 }
 
 /**

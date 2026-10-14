@@ -1,4 +1,4 @@
-# 0010 — Historial de precios: trigger en la misma transacción, solo se agrega y sin borrado en cascada
+# 0012 — Historial de precios: trigger en la misma transacción, solo se agrega y sin borrado en cascada
 
 - Estado: propuesta (la lectura para Dueño y Staff la confirmó el usuario el 2026-10-14; los borrados y la representación de lo técnico esperan su confirmación)
 - Fecha: 2026-10-14

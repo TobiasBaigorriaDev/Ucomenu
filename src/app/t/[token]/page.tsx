@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { MenuUnavailable } from "@/components/menu/menu-unavailable";
 import { PublicMenuView } from "@/components/menu/public-menu-view";
+import { CallBar } from "./call-bar";
 import { resolveTable } from "@/lib/mesas/public-table";
 import { getPublicMenu } from "@/lib/public-menu";
 
@@ -28,6 +29,15 @@ export default async function TablePage({ params }: PageProps<"/t/[token]">) {
   if (!result) notFound();
   if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} />;
 
-  // Una mesa desactivada se comporta como el link directo: la carta, sin la etiqueta de mesa.
-  return <PublicMenuView menu={result.menu} tableLabel={table.tableActive ? table.tableLabel : null} />;
+  // Una mesa desactivada se comporta como el link directo: la carta, sin la etiqueta de mesa ni los botones de llamado.
+  // Los botones solo existen si la base informa que se puede llamar (plan, cuenta al día, mesa activa y no silenciada);
+  // aunque alguien fuerce la acción, la función de base responde «no disponible».
+  return table.callsEnabled ? (
+    <div className="pb-32">
+      <PublicMenuView menu={result.menu} tableLabel={table.tableLabel} />
+      <CallBar token={token} />
+    </div>
+  ) : (
+    <PublicMenuView menu={result.menu} tableLabel={table.tableActive ? table.tableLabel : null} />
+  );
 }

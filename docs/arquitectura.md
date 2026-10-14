@@ -35,6 +35,7 @@ Convención (confirmada): identificadores de código y base en inglés; interfaz
 - `/m/{org}/{sucursal}` — carta pública por link directo.
 - `/t/{token}` — entrada por QR de mesa: resuelve la mesa y muestra la misma carta con las acciones de llamado.
 - `/panel` — gestión del local (dueño y staff; Suscripción y Personal solo dueño). `/sala` — personal de sala. `/admin` — SuperAdmin (pendiente).
+- **Implementado** (ADR 0010): `waiter_calls` sin permisos de escritura para la API; función pública `create_waiter_call(token, tipo, cliente)` como única puerta (un pendiente por mesa y tipo con índice único parcial y lock, vencimiento derivado a los 30 minutos, cooldown por mesa y tipo configurable por sucursal, límite de 30 avisos cada 10 minutos por identificador de cliente, `unavailable` uniforme sin revelar la causa); `resolve_table_qr` informa `calls_enabled`; la *server action* de `/t/{token}` usa el cliente `anon`. Pendiente: panel de sala, tiempo real, atender, silenciar mesa y cooldown desde el panel, purga.
 - **Implementado** (ADR 0009): `tables` con clave compuesta a la sucursal, token opaco generado por la base, regeneración por *trigger*, tope `tables_per_branch` por *trigger* con la guarda de pertenencia antes de contar, escrituras con `org_can_write` y función pública `resolve_table_qr`. Rutas: `/panel/{slug}/mesas`, `/panel/{slug}/mesas/imprimir/{sucursal}` y `/t/{token}`. El QR se dibuja en el servidor (`qrcode-generator`).
 - **Implementado** (ADR 0007): `/login`, `/cuenta`, `/panel` y `/sala` (resuelven el local: directo con uno, selector con varios), `/panel/{slug}`, `/panel/{slug}/suscripcion`, `/panel/{slug}/personal` y `/sala/{slug}`. La organización activa vive **en la URL**, no en una cookie. `/m/{org}/{sucursal}` es la carta pública.
 - Identificación del tenant **por ruta**; subdominio o dominio propio quedan como evolución.
@@ -66,7 +67,7 @@ Esquema inicial resumido. Toda tabla de negocio lleva `organization_id`.
 
 **Salón**
 - `tables` (organización, sucursal, etiqueta, `qr_token` opaco, activa; «silenciada hasta» llega con el llamado). El `qr_token` (32 hex) lo genera siempre la base y regenerarlo es tocar la columna (*trigger*); `anon` no lee la tabla: la entrada pública usa `resolve_table_qr(token)` (ADR 0009)
-- `waiter_calls` (sucursal, mesa, tipo `waiter` | `bill`, estado `pending` | `attended` | `expired`, creado, atendido, atendido por)
+- `waiter_calls` (organización, sucursal, mesa, tipo `waiter` | `bill`, estado `pending` | `attended` | `expired`, creado, atendido, atendido por, `client_key`). Solo escribe `create_waiter_call`; los miembros la leen (ADR 0010). `client_key` es un HMAC de la IP del comensal armado por el servidor, nunca la IP. Columnas de apoyo: `tables.muted_until` y `branches.waiter_call_cooldown_seconds`
 
 **Fase 2 — WebAR**
 - `product_models` (plato, ruta `.glb`, ruta `.usdz`, póster, peso, estado `draft` | `published`). El cupo (15 + 10 por pack extra) cuenta los modelos `published` de la organización.
@@ -107,7 +108,7 @@ Comensal (sin sesión, sin websocket)
                            └─ alerta sonora + visual → «atendido» → UPDATE vía RLS
 ```
 - **La tabla es la fuente de verdad; el evento es solo un aviso.** Al conectar o reconectar, el panel recarga los pendientes, y mantiene un sondeo lento de respaldo. Así un evento perdido nunca deja una mesa sin atender.
-- **Cooldown y unicidad se resuelven en la base**, de forma atómica, para que dos toques simultáneos no generen dos llamados. Se suma un límite de frecuencia por IP en el servidor.
+- **Cooldown y unicidad se resuelven en la base**, de forma atómica, para que dos toques simultáneos no generen dos llamados. El límite de frecuencia por cliente también se cuenta en la base con un identificador que arma el servidor (HMAC de la IP); quien llame a la API directo puede elegir ese valor, por eso es una segunda línea (ADR 0010).
 - **Canal privado por sucursal** con autorización por RLS: el personal solo puede suscribirse a canales de sucursales de **su** organización (la membresía es por organización, no por sucursal), nunca a las de otra.
 - **Solo el personal mantiene conexiones en tiempo real.** El consumo de conexiones crece con los dispositivos del personal, no con los comensales.
 - El comensal recibe confirmación en la respuesta del POST; conocer el estado posterior («ya te atendieron») se resuelve con una consulta liviana.
@@ -158,7 +159,7 @@ Sello (el personal escanea el QR del pase en /sala)
 - **Peso de los modelos 3D** sobre datos móviles. Mitigación: carga bajo demanda, presupuesto de peso, póster previo.
 - **Cercanía de Wallet no garantizada ni medible**, máximo 10 ubicaciones por pase. Limitación de plataforma: hay que comunicarla al vender Premium.
 - **Vencimiento anual del certificado de Apple:** si vence, los pases dejan de actualizarse. Requiere recordatorio operativo.
-- **Staff puede cambiar precios** (decisión de producto). Mitigación: `price_history` por trigger (implementado, ADR 0010); el Dueño y el Staff pueden consultar los cambios.
+- **Staff puede cambiar precios** (decisión de producto). Mitigación: `price_history` por trigger (implementado, ADR 0012); el Dueño y el Staff pueden consultar los cambios.
 - **Teléfono del socio sin verificar** (fase 3): identifica pero no autentica; alguien podría registrar un número ajeno. Impacto acotado porque los sellos los suma solo el personal. Reevaluar con verificación por código si aparece abuso.
 - **Dependencia de Supabase y Vercel.** Se acepta por velocidad; los datos están en Postgres estándar y son portables.
 - **Límites de los planes gratuitos** (pausa por inactividad, conexiones, almacenamiento): producción necesita plan pago antes del primer cliente real.

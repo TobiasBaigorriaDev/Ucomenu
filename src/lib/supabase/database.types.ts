@@ -39,14 +39,14 @@ export type Database = {
                   ]
                 },"branches": {
                   Row: {
-                    "created_at": string,"id": string,"name": string,"organization_id": string,"slug": string
+                    "created_at": string,"id": string,"name": string,"organization_id": string,"slug": string,"waiter_call_cooldown_seconds": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"name": string,"organization_id": string,"slug": string
+                    "created_at"?: string,"id"?: string,"name": string,"organization_id": string,"slug": string,"waiter_call_cooldown_seconds"?: number
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"name"?: string,"organization_id"?: string,"slug"?: string
+                    "created_at"?: string,"id"?: string,"name"?: string,"organization_id"?: string,"slug"?: string,"waiter_call_cooldown_seconds"?: number
                   }
                   Relationships: [
                     {
@@ -225,14 +225,14 @@ isOneToOne: false
                   ]
                 },"tables": {
                   Row: {
-                    "branch_id": string,"created_at": string,"id": string,"is_active": boolean,"label": string,"organization_id": string,"qr_token": string
+                    "branch_id": string,"created_at": string,"id": string,"is_active": boolean,"label": string,"muted_until": string | null,"organization_id": string,"qr_token": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "branch_id": string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label": string,"organization_id": string,"qr_token"?: string
+                    "branch_id": string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label": string,"muted_until"?: string | null,"organization_id": string,"qr_token"?: string
                   }
                   Update: {
-                    "branch_id"?: string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label"?: string,"organization_id"?: string,"qr_token"?: string
+                    "branch_id"?: string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label"?: string,"muted_until"?: string | null,"organization_id"?: string,"qr_token"?: string
                   }
                   Relationships: [
                     {
@@ -249,13 +249,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"waiter_calls": {
+                  Row: {
+                    "attended_at": string | null,"attended_by": string | null,"branch_id": string,"client_key": string | null,"created_at": string,"id": string,"kind": string,"organization_id": string,"status": string,"table_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attended_at"?: string | null,"attended_by"?: string | null,"branch_id": string,"client_key"?: string | null,"created_at"?: string,"id"?: string,"kind": string,"organization_id": string,"status"?: string,"table_id": string
+                  }
+                  Update: {
+                    "attended_at"?: string | null,"attended_by"?: string | null,"branch_id"?: string,"client_key"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"organization_id"?: string,"status"?: string,"table_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "waiter_calls_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "waiter_calls_table_id_branch_id_organization_id_fkey"
+      columns: ["table_id","branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "tables"
+      referencedColumns: ["id","branch_id","organization_id"]
+    }
+                  ]
                 }
           }
           Views: {
             [_ in never]: never
           }
           Functions: {
-            "org_entitlements":
+            "create_waiter_call":
+{ Args: { "p_client"?: string,"p_kind": string,"p_token": string }; Returns: Json
+                           },
+"org_entitlements":
 { Args: { "p_org": string }; Returns: Json
                            },
 "public_menu_status":

@@ -16,6 +16,13 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/rls/**/*.test.ts"],
+    // Borra restos de corridas interrumpidas (organizaciones `tt-*`, usuarios `rls-*`) antes de empezar.
+    globalSetup: ["./tests/rls/global-setup.ts"],
+    // La limpieza final de algunos archivos borra decenas de organizaciones con cientos de filas: con la base fría
+    // supera los 10 s por defecto y, si se corta, deja restos que rompen la corrida siguiente.
+    hookTimeout: 60_000,
+    // Con la base fría las pruebas de concurrencia (varias rondas de bajas simultáneas) pasan los 5 s por defecto.
+    testTimeout: 30_000,
     // Comparten una base: se ejecutan de a un archivo por vez.
     fileParallelism: false,
   },

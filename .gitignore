@@ -40,3 +40,6 @@ next-env.d.ts
 .agents/skills/impeccable/
 .claude/skills/impeccable/
 .claude/agents/impeccable-*.md
+
+# Salidas del navegador automatizado (MCP de Playwright): no son parte del proyecto
+/.playwright-mcp/

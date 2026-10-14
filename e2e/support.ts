@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, type Page } from "@playwright/test";
+import { purgePriceHistoryWhere } from "../tests/rls/purge-price-history";
 
 /**
  * Apoyo de las pruebas E2E del acceso. Crea locales y personas de prueba con la clave de servicio
@@ -97,6 +98,7 @@ export async function createTenant(label: string, estado: Estado = "active"): Pr
     owner,
     staff,
     cleanup: async () => {
+      purgePriceHistoryWhere(`organization_id = '${orgId}'`); // el historial de precios bloquea el borrado (RESTRICT)
       await db.from("organizations").delete().eq("id", orgId); // la cascada de dueños se permite
       for (const p of people) await db.auth.admin.deleteUser(p.id);
     },

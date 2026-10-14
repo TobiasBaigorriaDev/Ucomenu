@@ -50,7 +50,10 @@ describe.each(roles)("lectura pública (rol %s)", (_role, getClient) => {
 
     expect(error).toBeNull();
     // La organización morosa (suspendida) conserva su fila pública, pero no publica su carta.
-    expect(data?.map((o) => o.slug)).toEqual(["cafe-ejemplo", "parrilla-demo", "resto-moroso"]);
+    // Se ignoran las organizaciones temporales de otras pruebas (`tt-*`, `e2e-*`): si un *worker* de otro archivo se cayó
+    // a mitad de camino, sus restos no tienen por qué romper una prueba sobre las organizaciones del seed.
+    const delSeed = data?.map((o) => o.slug).filter((slug) => !slug.startsWith("tt-") && !slug.startsWith("e2e-"));
+    expect(delSeed).toEqual(["cafe-ejemplo", "parrilla-demo", "resto-moroso"]);
   });
 
   it("ve solo los platos activos de categorías activas en organizaciones activas", async () => {
