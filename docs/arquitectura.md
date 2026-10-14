@@ -59,7 +59,7 @@ Esquema inicial resumido. Toda tabla de negocio lleva `organization_id`.
 **Carta**
 - `categories` (organización, nombre, orden, activa)
 - `products` (organización, categoría, nombre, descripción, precio base en centavos, `image_path`, orden, activo). `image_path` guarda la ruta `{organization_id}/{product_id}/{uuid}.{ext}` del bucket público `product-images` (ADR 0008); un `check` la acota a la carpeta del propio plato
-- `price_history` (plato u opción, precio anterior y nuevo, quién, cuándo) — se llena por trigger ante cualquier cambio de precio
+- `price_history` (organización, plato, precio anterior y nuevo en centavos, quién —`auth.uid()` o NULL si fue una operación técnica—, cuándo) — se llena por trigger `AFTER UPDATE OF price_cents` ante cada cambio efectivo, en la misma transacción; solo se agrega (sin escritura de la API ni de `service_role`); lectura de Dueño y Staff de la organización; `organization_id` con `ON DELETE RESTRICT`, `product_id` y `changed_by` sin clave foránea (ADR 0010). **Implementado para platos**; el precio de las opciones llevará su trigger cuando existan
 - `option_groups` (plato, nombre, mínimo y máximo a elegir) y `options` (grupo, nombre, diferencia de precio). Una variante es un grupo con mínimo 1 y máximo 1; los adicionales, un grupo con mínimo 0 y máximo N.
 - `dietary_tags` (catálogo global) y `product_dietary_tags`
 - `branch_product_availability` (sucursal, plato, disponible)
@@ -158,7 +158,7 @@ Sello (el personal escanea el QR del pase en /sala)
 - **Peso de los modelos 3D** sobre datos móviles. Mitigación: carga bajo demanda, presupuesto de peso, póster previo.
 - **Cercanía de Wallet no garantizada ni medible**, máximo 10 ubicaciones por pase. Limitación de plataforma: hay que comunicarla al vender Premium.
 - **Vencimiento anual del certificado de Apple:** si vence, los pases dejan de actualizarse. Requiere recordatorio operativo.
-- **Staff puede cambiar precios** (decisión de producto). Mitigación: `price_history` por trigger; el Dueño puede auditar los cambios.
+- **Staff puede cambiar precios** (decisión de producto). Mitigación: `price_history` por trigger (implementado, ADR 0010); el Dueño y el Staff pueden consultar los cambios.
 - **Teléfono del socio sin verificar** (fase 3): identifica pero no autentica; alguien podría registrar un número ajeno. Impacto acotado porque los sellos los suma solo el personal. Reevaluar con verificación por código si aparece abuso.
 - **Dependencia de Supabase y Vercel.** Se acepta por velocidad; los datos están en Postgres estándar y son portables.
 - **Límites de los planes gratuitos** (pausa por inactividad, conexiones, almacenamiento): producción necesita plan pago antes del primer cliente real.

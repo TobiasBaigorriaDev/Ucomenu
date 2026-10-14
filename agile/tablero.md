@@ -38,7 +38,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
-- [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (desbloqueado: la gestión de carta ya permite cambiar precios; hasta que exista, el Staff cambia precios sin registro)
+- [C] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario — **implementado en `feat/historial-precios`** (worktree `../UcoMenu-precios`, base `da20ffd`), verificado en una instancia aislada; falta correrlo contra la base compartida, revisión de un segundo agente y confirmar los borrados (ADR 0010); la pantalla de consulta es un ítem aparte. Ficha: `agile/cambios/historial-de-precios.md`
 - [M] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [M] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
