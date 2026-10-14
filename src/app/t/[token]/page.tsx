@@ -33,10 +33,7 @@ export default async function TablePage({ params }: PageProps<"/t/[token]">) {
   // Los botones solo existen si la base informa que se puede llamar (plan, cuenta al día, mesa activa y no silenciada);
   // aunque alguien fuerce la acción, la función de base responde «no disponible».
   return table.callsEnabled ? (
-    <div className="pb-32">
-      <PublicMenuView menu={result.menu} tableLabel={table.tableLabel} />
-      <CallBar token={token} />
-    </div>
+    <PublicMenuView menu={result.menu} tableLabel={table.tableLabel} callBar={<CallBar token={token} />} />
   ) : (
     <PublicMenuView menu={result.menu} tableLabel={table.tableActive ? table.tableLabel : null} />
   );

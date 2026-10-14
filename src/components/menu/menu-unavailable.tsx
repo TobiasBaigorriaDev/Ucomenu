@@ -1,17 +1,15 @@
+import { MenuHeader } from "@/components/menu/menu-header";
+
 export function MenuUnavailable({ organizationName }: { organizationName: string }) {
   return (
-    <>
-      <header className="tile-band text-white">
-        <div className="mx-auto max-w-xl px-4 pt-12 pb-8">
-          <h1 className="font-display text-[2.5rem] leading-[1.05] text-balance break-words">{organizationName}</h1>
-        </div>
-      </header>
-      <main className="mx-auto max-w-xl px-4 py-16">
+    <div className="carta">
+      <MenuHeader organizationName={organizationName} />
+      <main className="mx-auto max-w-3xl px-4 pb-16 text-center sm:px-6">
         <p className="font-display text-2xl">Carta temporalmente no disponible</p>
-        <p className="mt-3 leading-relaxed text-muted">
+        <p className="mx-auto mt-3 max-w-[52ch] leading-relaxed text-muted">
           El local está actualizando su servicio. Consultá al personal si querés ver la carta ahora.
         </p>
       </main>
-    </>
+    </div>
   );
 }

@@ -1,33 +1,56 @@
-import { CategoryNav } from "@/components/menu/category-nav";
+import type { ReactNode } from "react";
+import { CategoryBar } from "@/components/menu/category-bar";
+import { CategoryMosaic } from "@/components/menu/category-mosaic";
 import { MenuHeader } from "@/components/menu/menu-header";
 import { MenuSection } from "@/components/menu/menu-section";
 import type { PublicMenu } from "@/lib/public-menu";
 
-/** Carta pública de una sucursal. La comparten `/m/{org}/{sucursal}` y `/t/{token}` (esta con la etiqueta de la mesa). */
-export function PublicMenuView({ menu, tableLabel }: { menu: PublicMenu; tableLabel?: string | null }) {
+/**
+ * Carta pública de una sucursal. La comparten `/m/{org}/{sucursal}` y `/t/{token}` (esta con la etiqueta de la mesa).
+ * `callBar` es la barra fija del llamado: se monta dentro de `.carta` para heredar su paleta y el fondo crema llega
+ * hasta el borde de abajo, con espacio reservado para que la barra no tape el pie.
+ */
+export function PublicMenuView({
+  menu,
+  tableLabel,
+  callBar,
+}: {
+  menu: PublicMenu;
+  tableLabel?: string | null;
+  callBar?: ReactNode;
+}) {
   const { sections } = menu;
 
   return (
-    <>
+    <div className={callBar ? "carta pb-40" : "carta"}>
       <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} />
       {sections.length > 0 ? (
         <>
-          <CategoryNav sections={sections} />
-          <main className="mx-auto max-w-xl px-4 pb-8">
+          <CategoryMosaic sections={sections} />
+          <CategoryBar sections={sections} />
+          <main className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
             {sections.map((section) => (
               <MenuSection key={section.category.id} section={section} />
             ))}
           </main>
         </>
       ) : (
-        <main className="mx-auto max-w-xl px-4 py-16">
+        <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
           <p className="font-display text-2xl">Esta carta todavía no tiene platos.</p>
           <p className="mt-3 text-muted">Volvé a mirar en unos minutos.</p>
         </main>
       )}
-      <footer className="mx-auto max-w-xl border-t border-ink/15 px-4 py-8 text-sm leading-relaxed text-muted">
-        La información de alérgenos de cada plato la declara el local. Ante cualquier duda, consultá al personal.
+      <footer className="mx-auto max-w-3xl px-4 pb-12 text-center sm:px-6">
+        <span aria-hidden="true" className="mb-6 flex justify-center gap-1.5">
+          <i className="size-1.5 rotate-45 bg-[var(--carta-terra)]" />
+          <i className="size-1.5 rotate-45 bg-[var(--carta-green)]" />
+          <i className="size-1.5 rotate-45 bg-[var(--carta-blush)]" />
+        </span>
+        <p className="text-sm leading-relaxed text-muted">
+          La información de alérgenos de cada plato la declara el local. Ante cualquier duda, consultá al personal.
+        </p>
       </footer>
-    </>
+      {callBar}
+    </div>
   );
 }

@@ -5,16 +5,16 @@ import { useFormStatus } from "react-dom";
 import { createWaiterCallAction, type CallState } from "./actions";
 
 const buttonBase =
-  "inline-flex min-h-12 w-full items-center justify-center rounded-md px-3 py-2 text-base font-semibold disabled:opacity-60";
+  "inline-flex min-h-12 w-full items-center justify-center rounded-full px-3 py-2 text-base font-semibold disabled:opacity-60";
 
 function Buttons() {
   const { pending } = useFormStatus();
   return (
     <div className="grid grid-cols-2 gap-3">
-      <button type="submit" name="kind" value="waiter" disabled={pending} className={`${buttonBase} bg-cobalt text-white`}>
+      <button type="submit" name="kind" value="waiter" disabled={pending} className={`${buttonBase} bg-[var(--carta-green)] text-white`}>
         {pending ? "Enviando…" : "Llamar al mozo"}
       </button>
-      <button type="submit" name="kind" value="bill" disabled={pending} className={`${buttonBase} border border-ink/50 text-ink`}>
+      <button type="submit" name="kind" value="bill" disabled={pending} className={`${buttonBase} border-2 border-[var(--carta-green)] text-[var(--carta-green-deep)]`}>
         {pending ? "Enviando…" : "Pedir la cuenta"}
       </button>
     </div>

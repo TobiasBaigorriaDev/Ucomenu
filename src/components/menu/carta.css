@@ -1,0 +1,64 @@
+/*
+ * Estilos propios de la carta pública. Todo cuelga de `.carta` para no tocar el panel, la sala ni el login
+ * (que comparten `globals.css`). La paleta de la carta se define acá, sobrescribiendo las variables de
+ * `globals.css` solo dentro de `.carta`: cuando cada local pueda elegir sus colores, alcanza con
+ * sobrescribir estas mismas variables por organización.
+ *
+ * Dirección: editorial gastronómica. Crema cálido, verde profundo, terracota y rosa pálido; serif pesada para
+ * los nombres y mosaico de categorías en lugar de tarjetas.
+ */
+
+.carta {
+  --porcelain: #f4efe4;
+  --ink: #2a2622;
+  --muted: #655d52;
+  /* El foco global (`:focus-visible`) usa `--cobalt`: dentro de la carta es el verde de la paleta. */
+  --cobalt: #3d5f48;
+  --carta-green: #3d5f48;
+  --carta-green-deep: #2f4a39;
+  --carta-blush: #f3d2c6;
+  --carta-terra: #b4492a;
+  --carta-sand: #e8dcc2;
+  min-height: 100vh;
+  background: var(--porcelain);
+  color: var(--ink);
+}
+
+.carta ::selection {
+  background: var(--carta-green);
+  color: #fff;
+}
+
+/* Nombre del local: crece con la pantalla sin pasar de 5rem. */
+.carta-title {
+  font-size: clamp(2.75rem, 1rem + 9vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+/* Chips de la barra fija: el foco redondo en los botones redondos (el global es de 2px). */
+.carta-bar a:focus-visible {
+  border-radius: 9999px;
+  outline-offset: 2px;
+}
+
+/* Mosaico: el foco sigue la forma del mosaico y se ve sobre fotos y colores. */
+.carta-tile:focus-visible {
+  border-radius: 1.5rem;
+  outline-color: var(--carta-terra);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .carta-bar a {
+    transition:
+      background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .carta-tile img {
+    transition: transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .carta-tile:hover img {
+    transform: scale(1.05);
+  }
+}

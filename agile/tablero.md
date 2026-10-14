@@ -24,10 +24,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 0 — Cimientos
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
+- [M] Identidad del local en la carta: logo y colores por organización (requiere columnas en `organizations` y subida de archivo; los tokens de `globals.css` y `.carta` ya son variables CSS) — pendiente de «Diseño gastronómico de la carta pública»
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
 - [M] Disponibilidad por sucursal: marcar agotado; gestión de sucursales
-- [M] Diseño gastronómico de alto impacto: sistema visual de la carta e identidad del local (logo y colores)
 - [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
@@ -66,6 +66,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [M] Diseño gastronómico de la carta pública (dirección editorial): cabecera centrada, mosaico de categorías, barra fija de categorías, lista de platos sin tarjetas con miniaturas, paleta crema/verde/terracota acotada a `.carta`, barra del llamado con la paleta de la carta — aprobada por Codex (solo lectura) sobre `223a461`, 151 unitarias, 370 de RLS y 121 E2E ×2, integrada a `main` por squash merge (2026-10-14; sin subir). La variante A (`feat/diseno-carta`, `fd238d8`, etiqueta `alt/carta-variante-a-tarjetas`) queda como alternativa histórica → ficha: agile/cambios/diseno-carta.md
 - [M] Panel de sala en tiempo real: llamados pendientes en `/sala/{slug}` por sondeo corto (~3 s, decisión del usuario; ADR 0011), alerta sonora y visual, marcar atendido (política de `UPDATE` solo sobre `status`, solo pendientes de menos de 30 min, y *trigger* que fija hora y persona), recuperación al reconectar y aviso con plan o cuenta que no lo permiten — revisado por Codex (aprobar con cambios; 3 P2 y 2 P3 corregidos y confirmados), integrado a `main` (2026-10-14): 147 unitarias, 370 de RLS, 121 E2E ×2, 39 de 41 mutaciones detectadas (2 equivalentes) → ficha: agile/cambios/panel-de-sala.md · ADR 0011
 - [C] Historial de cambios de precio: tabla `price_history` llenada por trigger `AFTER UPDATE OF price_cents` en la misma transacción (solo cambios efectivos; quién por `auth.uid()`, NULL = actor técnico no identificado), solo se agrega (ni API ni `service_role` ni el dueño de la tabla), lectura de Dueño y Staff, `ON DELETE RESTRICT` en la organización y sin FK en plato y persona (ADR 0012, aceptada) — revisado por Codex (aprobar tras dos P2 sobre el destino de la limpieza de pruebas), 133 unitarias, 346 de RLS, 104 E2E, 15 de 15 mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/historial-de-precios.md
 - [C] Llamado desde la mesa: función de base `create_waiter_call` como única puerta de escritura pública (un pendiente por mesa y tipo, vencimiento derivado a 30 min, cooldown por mesa y tipo, límite por cliente atómico, `unavailable` uniforme) y botones en `/t/{token}` — revisado por Codex (aprobar con cambios; P2 del límite por cliente corregido), 123 unitarias, 310 de RLS, 104 E2E y 44 de 47 mutaciones detectadas (3 equivalentes), integrado a `main` (2026-10-14) → ficha: agile/cambios/llamado-desde-la-mesa.md · ADR 0010
