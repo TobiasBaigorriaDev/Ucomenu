@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Panel de sala en tiempo real: llamados pendientes en `/sala/{slug}` por sondeo corto (~3 s, decisión del usuario; ADR 0011), alerta sonora y visual, marcar atendido (política de `UPDATE` solo sobre `status` y *trigger* que fija hora y persona), recuperación al reconectar y aviso con plan o cuenta que no lo permiten — implementado en `feat/panel-de-sala` (sin integrar): 132 unitarias, 331 de RLS, 119 E2E, 33 de 37 mutaciones detectadas (4 equivalentes); falta la revisión de un segundo agente → ficha: agile/cambios/panel-de-sala.md · ADR 0011
+- [M] Panel de sala en tiempo real: llamados pendientes en `/sala/{slug}` por sondeo corto (~3 s, decisión del usuario; ADR 0011), alerta sonora y visual, marcar atendido (política de `UPDATE` solo sobre `status` y *trigger* que fija hora y persona), recuperación al reconectar y aviso con plan o cuenta que no lo permiten — implementado en `feat/panel-de-sala` (sin integrar): 142 unitarias, 367 de RLS y 119 E2E con `main` (historial de precios) fusionado, 33 de 37 mutaciones detectadas (4 equivalentes); falta la revisión de un segundo agente → ficha: agile/cambios/panel-de-sala.md · ADR 0011
 
 ## Bloqueado
 - (vacío)

@@ -52,6 +52,8 @@ Ejecutadas el 2026-10-14 sobre una base recién reseteada (`pnpm db:reset`, migr
 - Revisión visual a 390 px: tarjetas con mesa, tipo y antigüedad, urgente con borde y texto, aviso de llamado nuevo, aviso de conexión y botones de 44 px.
 - Sin residuos tras las corridas (se limpiaron a mano los de la corrida con el renderer caído).
 
+- **Con `main` fusionado (historial de precios, ADR 0012), 2026-10-14:** typecheck, lint y build OK; `pnpm test` **142/142**; `pnpm test:rls` **367/367** (15 archivos); `pnpm test:e2e` **119/119** en dos corridas completas seguidas; sin residuos `e2e-*`/`tt-*`. La migración del panel (`20261014151013`) queda después de la del historial (`20261014061500`) y no depende de ella.
+
 Pendientes (no ejecutado):
 - **Revisión de un segundo agente (Codex, solo lectura): no pedida todavía.**
 - El sonido real y el *Wake Lock* en un teléfono (Safari/iOS y Android), el tiempo de respuesta con el sondeo en una red móvil real y con el local en producción, lector de pantalla, `pnpm dev` de punta a punta.
@@ -65,4 +67,4 @@ Pendientes (no ejecutado):
 - **La política de `UPDATE` necesitaba una función con `EXECUTE` para `authenticated`** (`can_attend_calls`): `has_feature` no lo tiene a propósito. Entró a la matriz de `acl.rls.test.ts`.
 - **El Staff no recibe el motivo del plan** en el aviso de «no disponible» (igual que el resto del panel): lo decide la pantalla según el rol y lo prueba un E2E.
 - **Estabilidad del E2E:** una corrida terminó con «Page crashed» (renderer de Chromium); sigue la inestabilidad de Windows ya registrada.
-- **ADR:** otro agente tiene un ADR 0010 como *propuesta* en `feat/historial-precios`; el 0010 de `main` es el del llamado. Quien integre esa rama debe renumerar el suyo (este ítem usa 0011 y podría chocar también).
+- **ADR:** el del historial de precios se renumeró a 0012; este ítem conserva el 0011.
