@@ -10,8 +10,7 @@ for (const file of [".env.local", ".env.test.local"]) {
   }
 }
 
-// En un worktree paralelo, E2E_PORT evita chocar con el 3100 de main (ver docs/paralelo.md).
-const PORT = Number(process.env.E2E_PORT ?? 3100);
+const PORT = 3100;
 
 // E2E contra el build de producción y el Supabase LOCAL con supabase/seed.sql.
 // Requisitos: `pnpm db:start`, `pnpm db:reset` y `pnpm build` (o usar `pnpm test:e2e:full`).
