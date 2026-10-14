@@ -35,7 +35,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] Configuración del llamado: UI para el cooldown por sucursal (`branches.waiter_call_cooldown_seconds`) y para silenciar una mesa (`tables.muted_until`); el vencimiento a 30 min ya es derivado y las columnas ya existen
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
+- [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements). **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history`** (hoy `ON DELETE RESTRICT`, ADR 0012)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario — **implementado en `feat/historial-precios`** (worktree `../UcoMenu-precios`, base `da20ffd`), verificado en una instancia aislada; falta correrlo contra la base compartida, revisión de un segundo agente y confirmar los borrados (ADR 0012); la pantalla de consulta es un ítem aparte. Ficha: `agile/cambios/historial-de-precios.md`
 - [S] Purga de `waiter_calls` por antigüedad (propuesta: 30 días) y textos legales sobre el identificador de cliente derivado de la IP — surgido de «Llamado desde la mesa»

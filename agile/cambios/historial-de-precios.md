@@ -13,10 +13,11 @@ Que cada cambio **efectivo** del precio de un plato quede registrado por la base
 4. **Cuándo:** `changed_at = clock_timestamp()` (instante real, no el inicio de la transacción) para ordenar varios cambios de una misma transacción.
 5. **Solo se agrega:** sin políticas ni privilegios de `INSERT/UPDATE/DELETE` para `authenticated`; a `service_role` se le revocan escritura, `TRUNCATE`, `REFERENCES` y `TRIGGER` (conserva `SELECT`); un trigger de solo-agregado rechaza `UPDATE/DELETE/TRUNCATE` incluso al dueño de la tabla (una purga deliberada exige apagar el trigger y una decisión de retención, que no existe).
 6. **Lectura: Dueño y Staff** de la organización (`private.is_org_member`). *Decisión del usuario, 2026-10-14*: no estaba definida en producto ni ADR (`arquitectura.md` solo decía «el Dueño puede auditar»). `anon`: nada. Se lee también con la cuenta en solo lectura o suspendida (es consulta). La pantalla queda para otro ítem.
-7. **Borrados, sin cascada** *(definido acá; **a confirmar**, ver ADR 0012)*:
-   - `organization_id` → clave foránea **`ON DELETE RESTRICT`**: una organización con historial no se puede borrar hasta que haya una decisión aceptada de retención/purga.
+7. **Borrados, sin cascada** *(aceptado por el usuario el 2026-10-14, ADR 0012)*:
+   - `organization_id` → clave foránea **`ON DELETE RESTRICT`**: una organización con historial no se puede borrar hasta que haya una decisión aceptada de retención/purga. **Restricción a resolver antes de implementar el borrado de organizaciones en «SuperAdmin»** (o el de la carta).
    - `product_id` → **sin clave foránea**: borrar un plato (hoy permitido a Dueño y Staff por RLS) no se bloquea y el historial sobrevive. Se probó la alternativa `RESTRICT` y rompía una regla existente (`tenancy.rls`: el miembro edita el precio y borra el plato).
-   - `changed_by` → **sin clave foránea**: dar de baja a una persona borra su usuario de Auth (`personnel.ts`) y no debe bloquearse ni reescribir el historial; la fila conserva el id.
+   - `changed_by` → **sin clave foránea**: dar de baja a una persona borra su usuario de Auth (`personnel.ts`) y no debe bloquearse ni reescribir el historial; la fila conserva el id. El ADR 0012 explica por qué las referencias siguen siendo confiables sin clave foránea (solo las escribe el trigger, la tabla es de solo agregado y los UUID no se reutilizan) y cómo la pantalla futura debe tolerar el faltante.
+   - `changed_by = NULL` significa **«actor técnico no identificado»**: no distingue entre `service_role`, `psql` y el seed, y no se guarda el rol (decisión del usuario).
 8. Claves: `id uuid` (PK), índices `(product_id, changed_at desc)` y `(organization_id, changed_at desc)` para los listados por plato y por local. `check (old <> new)` y ambos `>= 0`.
 9. **Fuera de alcance:** pantalla del historial, variantes/adicionales (`options`; cuando existan llevarán su propio trigger), formularios, diseño de carta, llamados, panel de sala.
 
@@ -85,4 +86,4 @@ Se fusionó `main` (`ca04004`) en esta rama (sin tocar `main`). Conflictos resue
 
 ## (C) Aceptación explícita del riesgo
 - Lectura Dueño y Staff: aceptada por el usuario el 2026-10-14.
-- Borrados (RESTRICT en organización, sin FK en plato y persona) y que la operación técnica quede como NULL: **pendiente de confirmación del usuario** (ADR 0012 en `propuesta`).
+- Borrados (RESTRICT en organización, sin FK en plato y persona) y `changed_by = NULL` para lo técnico: **aceptados por el usuario el 2026-10-14** (ADR 0012 `aceptada`). Queda como restricción abierta: definir retención y purga antes del borrado de organizaciones en «SuperAdmin».
