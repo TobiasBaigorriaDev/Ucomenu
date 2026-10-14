@@ -1,5 +1,5 @@
 # Cambio: Mesas y QR — alta de mesas, token opaco, hoja imprimible, regenerar QR y entrada por `/t/{token}`
-Estado: **para verificar** — implementado y probado en la rama `feat/mesas-y-qr` (sin integrar a `main`); revisión de Codex: *aprobar con cambios* sobre `3057b41` (un P2, corregido)
+Estado: **hecho** — revisado por Codex (*aprobar con cambios* sobre `3057b41`; el P2 se corrigió en `6762c81`) e integrado a `main` el 2026-10-14 por decisión del usuario, **sin** una segunda ronda de Codex que confirme la corrección ni el escaneo con un teléfono real (ambos quedan pendientes)
 Nivel: M (el backlog lo define así: aditivo, sin dinero ni borrados; lo tratamos con rigor extra porque agrega una función pública y un token que más adelante identifica la mesa del llamado — por eso incluye pruebas de base, pruebas adversarias y mutaciones)
 
 ## Objetivo

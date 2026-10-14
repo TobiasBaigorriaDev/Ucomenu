@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Mesas y QR: alta de mesas por sucursal, token opaco generado por la base, hoja imprimible, regenerar QR y entrada pública `/t/{token}` — implementado en `feat/mesas-y-qr` (sin integrar): 107 unitarias, 286 de RLS, 86 E2E, 46 de 51 mutaciones detectadas (5 equivalentes); Codex: aprobar con cambios (P2 corregido, falta su confirmación); falta escanear un QR impreso con un teléfono real → ficha: agile/cambios/mesas-y-qr.md · ADR 0009
+- (vacío)
 
 ## Bloqueado
 - (vacío)
@@ -66,6 +66,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+- [M] Mesas y QR: alta de mesas por sucursal, token opaco generado por la base, hoja imprimible, regenerar QR y entrada pública `/t/{token}` — revisado por Codex (aprobar con cambios; P2 de la sucursal perdida en el login corregido), 107 unitarias, 286 de RLS, 86 E2E y 46 de 51 mutaciones detectadas (5 equivalentes), integrado a `main` (2026-10-14); pendientes: confirmación de Codex del P2 y escaneo con un teléfono real → ficha: agile/cambios/mesas-y-qr.md · ADR 0009
 - [M] Gestión de carta: categorías y platos con foto (Storage), orden y activo/inactivo, mensajes de tope (`53400`) y escrituras bloqueadas por mora — revisado por Codex (aprobar, una observación P3 corregida), 89 unitarias, 257 de RLS, 64 E2E y 32 de 34 mutaciones detectadas (2 equivalentes), integrado a `main` (2026-10-14) → ficha: agile/cambios/gestion-de-carta.md · ADR 0008
 - [C] Acceso del personal: login y sesión (`@supabase/ssr`), `/panel` y `/sala` por rol, selector de local, gestión de personal por el Dueño, regla «una organización no se queda sin owner» en la base y aviso de mora (completo para el Dueño, reducido para el Staff) — revisado por Codex (aprobar), 43 unitarias, 226 de RLS, 46 E2E y 22/22 mutaciones detectadas, integrado a `main` (2026-10-14) → ficha: agile/cambios/acceso-del-personal.md · ADR 0007
 - [C] Planes y entitlements: catálogo parametrizable, mora derivada (bordes al segundo), escrituras bloqueadas en solo lectura y suspendida, límites por plan con trigger, carta suspendida — revisado por Codex (2 rondas, aprobado), 176 pruebas de RLS, 16 E2E y 24 de 26 mutaciones detectadas (2 equivalentes), integrado a `main` (2026-10-14) → ficha: agile/cambios/planes-y-entitlements.md · ADR 0006
