@@ -54,9 +54,19 @@ Contra una **instancia Supabase aislada** (otro `project_id` y puertos, ver abaj
 Se fusionó `main` (`ca04004`) en esta rama (sin tocar `main`). Conflictos resueltos a mano solo en documentación y `tests/rls/helpers.ts` (`deleteOrg` conserva el reintento de `main` y la purga del historial). El ADR de esta rama pasó de 0010 a **0012** (0010 es el del llamado y 0011 el del panel de sala, que está en `feat/panel-de-sala`). Instancia aislada reseteada con las migraciones fusionadas y el seed.
 - `vitest` 123/123 · `eslint` sin hallazgos · `tsc --noEmit` OK.
 - **RLS 346/346** con los tiempos por defecto (ya endurecidos en `main`); sin restos `tt-*` al terminar. Las 5 pruebas de concurrencia que antes agotaban el tiempo pasan.
-- **E2E 102/104** contra un build con webpack de esta rama: fallan `llamados.spec.ts:47` (botón de 24 px en vez de ≥ 44) y `mesas.spec.ts:221` (`print:hidden` sin efecto). Ambas dependen de CSS de Tailwind: el CSS generado en este *worktree* (25 KB) no contiene utilidades como `min-h-12`. Es un defecto del entorno de build —`node_modules` es un enlace al del checkout principal, Turbopack lo rechaza y con webpack Tailwind no escanea las fuentes; agregar `@source` no lo arregló—, no del historial (no se tocó interfaz ni esas pantallas). **Hay que repetir los E2E en un checkout con `node_modules` propio o tras integrar.** `pnpm` no corre en este *worktree* (quiere reinstalar); se usó `node node_modules/...` directo.
+- **Primera pasada (entorno defectuoso, superada):** E2E 102/104 con un build con webpack y `node_modules` enlazado: el CSS salía sin utilidades de Tailwind (`llamados.spec.ts:47` y `mesas.spec.ts:221`). No era del historial.
 - La limpieza de E2E con historial quedó escrita pero ningún E2E de esta rama edita precios todavía: su efecto se probó solo por las pruebas de RLS (`deleteOrg`, `global-setup`).
-- **Sigue pendiente:** corrida en la base compartida (`pnpm db:reset`, `pnpm db:types`, RLS, `pnpm build` + E2E con CSS correcto), revisión de un segundo agente y las decisiones del ADR 0012.
+
+### Verificación final con `node_modules` propio — 2026-10-14
+`node_modules` del *worktree* propio (`pnpm install --frozen-lockfile`, lockfile sin cambios; el del checkout principal intacto) e instancia Supabase aislada (`ucomenu-precios`, reseteada con las migraciones de la rama + seed). La base compartida no se reseteó ni se tocó.
+- `pnpm test` **123/123** · `pnpm lint` sin hallazgos · `pnpm typecheck` OK.
+- `pnpm test:rls` **346/346** con base fresca y tiempos por defecto.
+- `pnpm build` OK (Turbopack). El CSS generado trae `min-h-12` y `print\:hidden`.
+- `pnpm test:e2e` **104/104** (sin restos `e2e-*`/`tt-*` al terminar).
+- **Tipos:** `supabase gen types typescript --local` contra la instancia aislada produce un archivo idéntico (salvo fin de línea) al `database.types.ts` editado a mano: no hay cambios que commitear.
+- Mutaciones: no se repitieron (la migración y las pruebas de `price-history` no cambiaron desde las 15/15 detectadas).
+- **Pendiente:** revisión de un segundo agente (solo lectura). Corrida en la base compartida solo cuando haya ventana y tras integrar (`pnpm db:reset` de quien integre).
+- Límite conocido: ningún E2E edita precios por la interfaz, así que la purga de `createTenant().cleanup()` solo se ejerce por las pruebas de RLS (`deleteOrg`, `global-setup`).
 
 ### Cómo se levantó la instancia aislada
 `supabase start --workdir <carpeta temporal>` con una copia de `supabase/config.toml` con `project_id = "ucomenu-precios"` y puertos 55420–55429 (API 55421, base 55422), `migrations/` como enlace al worktree y copia de `seed.sql`; mismas exclusiones que `pnpm db:start`. Las pruebas se corrieron con `NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:55421`, las claves de esa instancia y `SUPABASE_DB_CONTAINER=supabase_db_ucomenu-precios`. Nada de esto está en el repositorio. Se apagó al terminar (`supabase stop --workdir <carpeta>`); la base compartida siguió encendida y sin cambios.

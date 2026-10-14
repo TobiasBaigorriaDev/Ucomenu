@@ -3,7 +3,7 @@
 > Debe poder leerse **aunque Engram o cualquier memoria falle**. Resumen corto: máximo una pantalla. Actualizar al cerrar cada sesión o antes de cambiar de agente.
 
 - **Última actualización:** 2026-10-14 — agente: Claude Code (worktree `../UcoMenu-precios`)
-- **Objetivo actual:** «Historial de cambios de precio» (`price_history`) implementado en `feat/historial-precios`, **ya con `main` (llamado incluido) fusionado**; verificado en una instancia Supabase aislada. Falta la corrida en la base compartida (ventana exclusiva), la revisión de un segundo agente y que el usuario confirme los borrados (ADR 0012, propuesta). Sin integrar a `main`, sin push
+- **Objetivo actual:** «Historial de cambios de precio» (`price_history`) implementado y **validado** en `feat/historial-precios` (con `main` fusionado, ADR 0012 aceptada). Falta solo la revisión de un segundo agente (Codex, solo lectura); después, integrar y subir. Sin integrar a `main`, sin push
 - **Rama / último commit:** `feat/historial-precios` (base original `da20ffd`; se fusionó `main` `ca04004`). Ver `git log`. Este archivo describe SOLO esta rama; el panel de sala (`feat/panel-de-sala`) y el diseño de la carta (`feat/diseno-carta-editorial`) siguen aparte
 - **Nivel:** C
 - **Ficha relevante:** `agile/cambios/historial-de-precios.md` · ADR 0012 · antes: `agile/cambios/llamado-desde-la-mesa.md` (ADR 0010), `mesas-y-qr.md` (ADR 0009) y `gestion-de-carta.md` (ADR 0008)
@@ -25,8 +25,8 @@
 
 ## Pruebas de esta rama (2026-10-14, instancia aislada `ucomenu-precios`, puertos 55420–55429; la base compartida NO se tocó)
 - Antes de fusionar `main`: typecheck · lint OK · unitarias 107/107 · RLS 322/322 (286 + 35 de `price-history` + 1 de permisos en `acl`) con tiempos de prueba de 90 s. Mutaciones: 15 defensas rotas de a una, 15 detectadas.
-- **Tras fusionar `main` (instancia aislada reseteada):** unitarias 123/123 · lint · typecheck OK · **RLS 346/346** con los tiempos por defecto · E2E 102/104: fallan 2 pruebas que dependen de CSS (`llamados.spec.ts:47`, `mesas.spec.ts:221`) porque el *build* de este *worktree* no genera las utilidades de Tailwind (`node_modules` es un enlace; Turbopack lo rechaza y con webpack no se escanean las fuentes). No es del historial; repetir los E2E en un checkout con `node_modules` propio. `pnpm` no corre acá (quiere reinstalar): se usó `node node_modules/...`.
-- **No ejecutado:** RLS ni E2E contra la base compartida; `pnpm build` y E2E; `pnpm db:types` (tipos editados a mano con el formato del generador); revisión de un segundo agente.
+- **Tras fusionar `main`, con `node_modules` propio e instancia aislada:** `pnpm test` 123/123 · `pnpm lint` · `pnpm typecheck` OK · `pnpm test:rls` **346/346** · `pnpm build` OK con CSS correcto · `pnpm test:e2e` **104/104** · tipos generados idénticos a los del repo. La base compartida no se tocó.
+- **No ejecutado:** RLS ni E2E contra la base compartida (solo tras integrar y con ventana); revisión de un segundo agente (pendiente, solo lectura).
 - La instancia aislada se levanta con `supabase start --workdir <carpeta temporal>` (config copiada con otro `project_id`); se apaga con `supabase stop --workdir <carpeta>`. Las pruebas usan `SUPABASE_DB_CONTAINER=supabase_db_ucomenu-precios`.
 
 ## Para usar la app en local
@@ -62,7 +62,7 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-0. **Historial de precios:** correr en una ventana exclusiva de la base compartida `pnpm db:reset`, `pnpm db:types`, `pnpm test:rls`, `pnpm build` + `pnpm test:e2e`; confirmar los borrados del ADR 0012; ronda de revisión de solo lectura antes de integrar. Al integrar: `git merge` de `main` ya está hecho; queda reconciliar con el panel de sala (migración `20261014151013`, sin dependencia) y con la carta.
+0. **Historial de precios:** pedir a Codex una ronda de revisión de solo lectura sobre `feat/historial-precios`; con su aprobación, integrar a `main`, hacer `pnpm db:reset` + `pnpm db:types` (sin cambios esperados) y correr RLS/E2E en la base compartida; reconciliar con el panel de sala (migración `20261014151013`, sin dependencia). Pendiente de producto: retención y purga antes del borrado de organizaciones en SuperAdmin.
 1. «Panel de sala en tiempo real» está en `feat/panel-de-sala` (no es de esta rama).
 2. Quien integre `feat/diseno-carta-editorial` resuelve el solapamiento con la barra del llamado (`/t/[token]/page.tsx`, `menu-header.tsx`, `public-menu-view.tsx`).
 
