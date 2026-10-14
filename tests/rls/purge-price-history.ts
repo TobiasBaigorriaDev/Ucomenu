@@ -26,31 +26,54 @@ export function esDaemonDockerLocal(host: string): boolean {
   return /^tcp:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?\/?$/.test(h);
 }
 
-/** Daemon que usará `docker` en este proceso: `DOCKER_HOST` manda; si no, el contexto activo (respeta `DOCKER_CONTEXT`). */
-function daemonEfectivo(): string {
-  const deEntorno = process.env.DOCKER_HOST?.trim();
-  if (deEntorno) return deEntorno;
-  return execFileSync("docker", ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"], { encoding: "utf8" }).trim();
+type Entorno = Record<string, string | undefined>;
+/** Devuelve el daemon (`Endpoints.docker.Host`) de un contexto de Docker; sin nombre, el del contexto activo. */
+type InspeccionarContexto = (nombre?: string) => string;
+
+const inspeccionarContextoDeDocker: InspeccionarContexto = (nombre) => {
+  if (nombre?.startsWith("-")) throw new Error(`Nombre de contexto de Docker no válido: ${nombre}`);
+  const args = ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}", ...(nombre ? [nombre] : [])];
+  return execFileSync("docker", args, { encoding: "utf8" }).trim();
+};
+
+/**
+ * Daemon que usará `docker` en este proceso. Precedencia oficial de Docker: `DOCKER_CONTEXT` anula a `DOCKER_HOST`;
+ * sin contexto en el entorno manda `DOCKER_HOST`; sin ninguno, el contexto activo.
+ */
+export function daemonEfectivo(env: Entorno, inspeccionar: InspeccionarContexto): string {
+  const contexto = env.DOCKER_CONTEXT?.trim();
+  if (contexto) return inspeccionar(contexto);
+  const host = env.DOCKER_HOST?.trim();
+  if (host) return host;
+  return inspeccionar();
 }
 
 let destinoVerificado: string | undefined;
 
-/** Lanza si el contenedor no es de pruebas o si Docker apunta a un daemon que no es el local. Se verifica una vez por proceso y contenedor. */
-export function asegurarDestinoLocal(contenedor: string): void {
-  if (destinoVerificado === contenedor) return;
+/**
+ * Lanza si el contenedor no es de pruebas o si Docker apunta a un daemon que no es el local. Con el entorno real se
+ * verifica una vez por proceso y contenedor; `entorno` e `inspeccionar` existen para probarlo sin Docker.
+ */
+export function asegurarDestinoLocal(
+  contenedor: string,
+  entorno: Entorno = process.env,
+  inspeccionar: InspeccionarContexto = inspeccionarContextoDeDocker,
+): void {
+  const real = entorno === process.env && inspeccionar === inspeccionarContextoDeDocker;
+  if (real && destinoVerificado === contenedor) return;
   if (!esContenedorDePruebas(contenedor)) {
     throw new Error(`Se rechaza el contenedor «${contenedor}»: la limpieza de pruebas solo corre en contenedores supabase_db_*.`);
   }
   let host: string;
   try {
-    host = daemonEfectivo();
+    host = daemonEfectivo(entorno, inspeccionar);
   } catch (error) {
     throw new Error(`No se pudo determinar el daemon de Docker; se rechaza la limpieza por seguridad: ${String(error)}`);
   }
   if (!esDaemonDockerLocal(host)) {
     throw new Error(`Se rechaza el daemon de Docker «${host}»: la limpieza de pruebas solo corre contra el Docker local.`);
   }
-  destinoVerificado = contenedor;
+  if (real) destinoVerificado = contenedor;
 }
 
 export function purgePriceHistoryWhere(condicion: string): void {
