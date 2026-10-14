@@ -66,6 +66,10 @@ Se fusionó `main` (`ca04004`) en esta rama (sin tocar `main`). Conflictos resue
 - **Tipos:** `supabase gen types typescript --local` contra la instancia aislada produce un archivo idéntico (salvo fin de línea) al `database.types.ts` editado a mano: no hay cambios que commitear.
 - Mutaciones: no se repitieron (la migración y las pruebas de `price-history` no cambiaron desde las 15/15 detectadas).
 - **Pendiente:** revisión de un segundo agente (solo lectura). Corrida en la base compartida solo cuando haya ventana y tras integrar (`pnpm db:reset` de quien integre).
+### Revisión de Codex (solo lectura, `ca04004..393f0da`) — Aprobar con cambios
+- **P2 corregido:** la purga de pruebas (`tests/rls/purge-price-history.ts`) solo validaba la URL de la API en `global-setup`, no el destino real de Docker. Ahora `asegurarDestinoLocal` rechaza, antes de ejecutar SQL, un contenedor que no sea `supabase_db_*` y un daemon que no sea local (`DOCKER_HOST`, o el contexto activo; `ssh://` y `tcp://` remoto se rechazan). Se aplica también a `sql()` de `tests/rls/helpers.ts`. Prueba sin base: `tests/unit/purge-price-history.test.ts` (6; `vitest.config.mts` incluye `tests/unit`); un mutante (aceptar cualquier daemon) hace fallar 2.
+- Tras la corrección, en la instancia aislada: unitarias **129/129** · lint y typecheck OK · RLS **346/346** · E2E **104/104**.
+
 - Límite conocido: ningún E2E edita precios por la interfaz, así que la purga de `createTenant().cleanup()` solo se ejerce por las pruebas de RLS (`deleteOrg`, `global-setup`).
 
 ### Cómo se levantó la instancia aislada

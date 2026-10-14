@@ -25,7 +25,7 @@
 
 ## Pruebas de esta rama (2026-10-14, instancia aislada `ucomenu-precios`, puertos 55420–55429; la base compartida NO se tocó)
 - Antes de fusionar `main`: typecheck · lint OK · unitarias 107/107 · RLS 322/322 (286 + 35 de `price-history` + 1 de permisos en `acl`) con tiempos de prueba de 90 s. Mutaciones: 15 defensas rotas de a una, 15 detectadas.
-- **Tras fusionar `main`, con `node_modules` propio e instancia aislada:** `pnpm test` 123/123 · `pnpm lint` · `pnpm typecheck` OK · `pnpm test:rls` **346/346** · `pnpm build` OK con CSS correcto · `pnpm test:e2e` **104/104** · tipos generados idénticos a los del repo. La base compartida no se tocó.
+- **Tras fusionar `main`, con `node_modules` propio e instancia aislada:** `pnpm test` 129/129 · `pnpm lint` · `pnpm typecheck` OK · `pnpm test:rls` **346/346** · `pnpm build` OK con CSS correcto · `pnpm test:e2e` **104/104** · tipos generados idénticos a los del repo. La base compartida no se tocó.
 - **No ejecutado:** RLS ni E2E contra la base compartida (solo tras integrar y con ventana); revisión de un segundo agente (pendiente, solo lectura).
 - La instancia aislada se levanta con `supabase start --workdir <carpeta temporal>` (config copiada con otro `project_id`); se apaga con `supabase stop --workdir <carpeta>`. Las pruebas usan `SUPABASE_DB_CONTAINER=supabase_db_ucomenu-precios`.
 

@@ -8,10 +8,54 @@ import { execFileSync } from "node:child_process";
  * contenedor), apagando un momento el trigger de solo-agregado en una sola transacción. `SUPABASE_DB_CONTAINER`
  * apunta a otra instancia local (p. ej. una aislada).
  *
+ * Como apaga una protección, antes de ejecutar SQL comprueba el destino REAL de Docker (no solo la URL de la API):
+ * el daemon tiene que ser local y el contenedor tiene que ser uno de Supabase local (`supabase_db_*`).
+ *
  * `condicion` es SQL propio de la prueba (ids o prefijos de slug de datos de prueba), nunca entrada externa.
  */
+
+/** Contenedores de base de datos del Supabase local (`supabase_db_<project_id>`). */
+export function esContenedorDePruebas(nombre: string): boolean {
+  return /^supabase_db_[a-z0-9][a-z0-9_-]*$/.test(nombre);
+}
+
+/** El daemon es local si habla por pipe/socket del propio equipo o por TCP a la propia máquina. `ssh://`, `tcp://` remoto o vacío: no. */
+export function esDaemonDockerLocal(host: string): boolean {
+  const h = host.trim();
+  if (/^(npipe|unix):\/\//.test(h)) return true;
+  return /^tcp:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?\/?$/.test(h);
+}
+
+/** Daemon que usará `docker` en este proceso: `DOCKER_HOST` manda; si no, el contexto activo (respeta `DOCKER_CONTEXT`). */
+function daemonEfectivo(): string {
+  const deEntorno = process.env.DOCKER_HOST?.trim();
+  if (deEntorno) return deEntorno;
+  return execFileSync("docker", ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"], { encoding: "utf8" }).trim();
+}
+
+let destinoVerificado: string | undefined;
+
+/** Lanza si el contenedor no es de pruebas o si Docker apunta a un daemon que no es el local. Se verifica una vez por proceso y contenedor. */
+export function asegurarDestinoLocal(contenedor: string): void {
+  if (destinoVerificado === contenedor) return;
+  if (!esContenedorDePruebas(contenedor)) {
+    throw new Error(`Se rechaza el contenedor «${contenedor}»: la limpieza de pruebas solo corre en contenedores supabase_db_*.`);
+  }
+  let host: string;
+  try {
+    host = daemonEfectivo();
+  } catch (error) {
+    throw new Error(`No se pudo determinar el daemon de Docker; se rechaza la limpieza por seguridad: ${String(error)}`);
+  }
+  if (!esDaemonDockerLocal(host)) {
+    throw new Error(`Se rechaza el daemon de Docker «${host}»: la limpieza de pruebas solo corre contra el Docker local.`);
+  }
+  destinoVerificado = contenedor;
+}
+
 export function purgePriceHistoryWhere(condicion: string): void {
   const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+  asegurarDestinoLocal(contenedor);
   const consulta =
     `begin; alter table public.price_history disable trigger price_history_no_update_delete; ` +
     `delete from public.price_history where ${condicion}; ` +

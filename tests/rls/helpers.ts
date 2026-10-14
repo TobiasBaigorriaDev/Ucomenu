@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { purgePriceHistoryWhere } from "./purge-price-history";
+import { asegurarDestinoLocal, purgePriceHistoryWhere } from "./purge-price-history";
 
 /**
  * Utilidades compartidas de las pruebas de RLS contra el Supabase LOCAL.
@@ -90,6 +90,7 @@ export const apiKey = publishableKey;
 const dbContainer = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
 
 export function sql(query: string): string[][] {
+  asegurarDestinoLocal(dbContainer); // solo el Docker local y un contenedor supabase_db_*
   let out: string;
   try {
     out = execFileSync("docker", ["exec", dbContainer, "psql", "-U", "postgres", "-At", "-F", "|", "-c", query], {
