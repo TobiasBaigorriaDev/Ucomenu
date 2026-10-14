@@ -185,6 +185,8 @@ export type ResolvedTable = {
   tableLabel: string;
   tableActive: boolean;
   status: "available" | "suspended";
+  /** La base informa que se puede llamar al mozo desde esta mesa (mesa activa, no silenciada, plan y cuenta al día). */
+  callsEnabled: boolean;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -192,16 +194,17 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 /** Lee la respuesta de `resolve_table_qr`. Cualquier forma inesperada es «no existe» (falla cerrado). */
 export function parseResolvedTable(raw: unknown): ResolvedTable | null {
   if (!isRecord(raw)) return null;
-  const { org_slug, org_name, branch_slug, table_label, table_active, status } = raw;
+  const { org_slug, org_name, branch_slug, table_label, table_active, status, calls_enabled } = raw;
   if (
     typeof org_slug !== "string" ||
     typeof org_name !== "string" ||
     typeof branch_slug !== "string" ||
     typeof table_label !== "string" ||
     typeof table_active !== "boolean" ||
+    typeof calls_enabled !== "boolean" ||
     (status !== "available" && status !== "suspended")
   ) {
     return null;
   }
-  return { orgSlug: org_slug, orgName: org_name, branchSlug: branch_slug, tableLabel: table_label, tableActive: table_active, status };
+  return { orgSlug: org_slug, orgName: org_name, branchSlug: branch_slug, tableLabel: table_label, tableActive: table_active, status, callsEnabled: calls_enabled };
 }

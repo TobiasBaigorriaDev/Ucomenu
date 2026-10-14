@@ -159,6 +159,7 @@ describe("parseResolvedTable", () => {
     table_label: "Mesa 1",
     table_active: true,
     status: "available",
+    calls_enabled: true,
   };
 
   it("lee una respuesta válida", () => {
@@ -169,7 +170,9 @@ describe("parseResolvedTable", () => {
       tableLabel: "Mesa 1",
       tableActive: true,
       status: "available",
+      callsEnabled: true,
     });
+    expect(parseResolvedTable({ ...valido, calls_enabled: false })?.callsEnabled).toBe(false);
     expect(parseResolvedTable({ ...valido, status: "suspended" })?.status).toBe("suspended");
   });
 
@@ -179,6 +182,7 @@ describe("parseResolvedTable", () => {
     expect(parseResolvedTable([valido])).toBeNull();
     expect(parseResolvedTable({ ...valido, status: "otro" })).toBeNull();
     expect(parseResolvedTable({ ...valido, table_active: "true" })).toBeNull();
+    expect(parseResolvedTable({ ...valido, calls_enabled: "true" })).toBeNull();
     expect(parseResolvedTable({ ...valido, org_slug: 5 })).toBeNull();
     const sinEtiqueta: Record<string, unknown> = { ...valido };
     delete sinEtiqueta.table_label;

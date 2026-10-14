@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [C] Llamado desde la mesa: función de base `create_waiter_call` como única puerta de escritura pública (un pendiente por mesa y tipo, vencimiento derivado a 30 min, cooldown por mesa y tipo, límite por cliente, `unavailable` uniforme) y botones en `/t/{token}` — implementado en `feat/llamado-desde-la-mesa` (sin integrar): 123 unitarias, 308 de RLS, 104 E2E, 43 de 45 mutaciones detectadas (2 equivalentes); falta la revisión de nivel C por Codex → ficha: agile/cambios/llamado-desde-la-mesa.md · ADR 0010
 
 ## Bloqueado
 - (vacío)
@@ -31,14 +31,14 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
-- [C] Llamado desde la mesa: función de base validada con cooldown y un pendiente por tipo, límite por IP — escritura pública sin sesión (bloqueado por: mesas y QR)
-- [M] Panel de sala en tiempo real: canal privado por sucursal, alerta sonora y visual, marcar atendido, recarga al reconectar (bloqueado por: llamado desde la mesa)
-- [S] Configuración del llamado: cooldown por sucursal, silenciar mesa, vencimiento automático
+- [M] Panel de sala en tiempo real: canal privado por sucursal, alerta sonora y visual, marcar atendido (con su política de `UPDATE`), recarga al reconectar; debe tratar como vencido todo pendiente con más de 30 min (desbloqueado: el llamado ya existe)
+- [S] Configuración del llamado: UI para el cooldown por sucursal (`branches.waiter_call_cooldown_seconds`) y para silenciar una mesa (`tables.muted_until`); el vencimiento a 30 min ya es derivado y las columnas ya existen
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin: alta de organizaciones, asignar/cambiar/suspender plan a mano, registro de pagos, prueba de 14 días, auditoría de cambios (bloqueado por: planes y entitlements)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [S] Historial de cambios de precio por trigger (`price_history`): quién, cuándo, valor anterior y nuevo; aprobado por el usuario (desbloqueado: la gestión de carta ya permite cambiar precios; hasta que exista, el Staff cambia precios sin registro)
+- [S] Purga de `waiter_calls` por antigüedad (propuesta: 30 días) y textos legales sobre el identificador de cliente derivado de la IP — surgido de «Llamado desde la mesa»
 - [M] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [M] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR

@@ -18,6 +18,9 @@ export default defineConfig({
   testDir: "./e2e",
   // Las pruebas largas (varias sesiones, fotos grandes) superaban los 30 s por defecto con todos los workers a la vez.
   timeout: 60_000,
+  // Las aserciones esperan hasta 10 s (5 s por defecto): con ~100 pruebas en paralelo, acciones del servidor como el
+  // cambio de contraseña a veces tardan más de 5 s en una máquina cargada.
+  expect: { timeout: 10_000 },
   fullyParallel: true,
   reporter: [["list"]],
   use: {

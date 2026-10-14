@@ -136,8 +136,9 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 ### Llamado al mozo
 - Requiere plan Pro o superior y suscripción en gracia o activa; si no, el botón no se muestra.
 - Por mesa puede haber **como máximo un llamado pendiente de cada tipo**. Reintentar mientras hay uno pendiente no crea otro: se le informa al comensal que ya fue avisado.
-- **Cooldown de 60 segundos** entre llamados de la misma mesa, configurable por sucursal.
-- Estados: `pendiente` → `atendido` (lo marca el personal) | `vencido` (automático a los **30 minutos**).
+- **Cooldown de 60 segundos** entre llamados del mismo tipo desde la misma mesa, configurable por sucursal (pedir la cuenta justo después de llamar al mozo no se bloquea).
+- **Desde el QR de la mesa** *(ADR 0010)*: en `/t/{token}` el comensal ve «Llamar al mozo» y «Pedir la cuenta» solo si la mesa está activa y no silenciada, el plan es Pro o superior y la cuenta está al día; si no, no hay botones. La respuesta confirma el envío («Avisamos al personal»), avisa si ya había uno pendiente o cuánto esperar, y no dice por qué un llamado no está disponible (plan, mora o silencio). Por conexión hay un tope de **30 avisos cada 10 minutos** (generoso: el Wi-Fi del local es compartido). El comensal no ve el estado posterior; el personal los atiende desde el panel de sala (ítem siguiente).
+- Estados: `pendiente` → `atendido` (lo marca el personal) | `vencido` (automático a los **30 minutos**; se calcula por la antigüedad, sin proceso programado).
 - El personal puede **silenciar una mesa** temporalmente ante abuso.
 - El llamado no se pierde si el panel estaba desconectado: al reconectar aparecen todos los pendientes.
 
