@@ -1,6 +1,7 @@
 "use client";
 
-import { ActionForm, SubmitButton, inputClass, labelClass } from "@/components/panel/action-form";
+import { ActionForm, SubmitButton } from "@/components/panel/action-form";
+import { inputClass, labelClass } from "@/components/panel/styles";
 import { loginAction } from "@/lib/auth/actions";
 
 export function LoginForm({ next }: { next: string | null }) {

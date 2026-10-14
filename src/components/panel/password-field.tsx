@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { inputClass, labelClass, secondaryButtonClass } from "./action-form";
+import { inputClass, labelClass, secondaryButtonClass } from "./styles";
 
 /**
  * Campo de contraseña con «Mostrar». Quien define una contraseña temporal necesita verla para

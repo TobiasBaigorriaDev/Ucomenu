@@ -1,10 +1,13 @@
-import { ActionForm, SubmitButton, dangerButtonClass, secondaryButtonClass } from "@/components/panel/action-form";
+import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { ROLE_LABEL } from "@/components/panel/app-shell";
 import { PasswordField } from "@/components/panel/password-field";
+import { dangerButtonClass, secondaryButtonClass } from "@/components/panel/styles";
 import type { Member } from "@/lib/personnel";
 import { removeMemberAction, resetPasswordAction, setRoleAction } from "./actions";
 
-const summaryClass = `${secondaryButtonClass} cursor-pointer list-none [&::-webkit-details-marker]:hidden`;
+const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
+const summaryClass = `${secondaryButtonClass} ${summaryExtras}`;
+const dangerSummaryClass = `${dangerButtonClass} ${summaryExtras}`;
 
 /** Una persona del equipo con sus acciones. Los formularios llaman a server actions que revalidan el rol. */
 export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string }) {
@@ -48,7 +51,7 @@ export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string
           ) : null}
 
           <details className="w-full sm:w-auto">
-            <summary className={`${summaryClass} border-danger text-danger`}>Quitar</summary>
+            <summary className={dangerSummaryClass}>Quitar</summary>
             <ActionForm action={removeMemberAction} className="mt-3 max-w-md">
               {hidden}
               <p className="text-base leading-relaxed">

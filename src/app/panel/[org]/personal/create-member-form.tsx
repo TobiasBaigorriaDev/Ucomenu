@@ -1,7 +1,8 @@
 "use client";
 
-import { ActionForm, SubmitButton, inputClass, labelClass } from "@/components/panel/action-form";
+import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { PasswordField } from "@/components/panel/password-field";
+import { inputClass, labelClass } from "@/components/panel/styles";
 import { createMemberAction } from "./actions";
 
 export function CreateMemberForm({ orgSlug, canWrite }: { orgSlug: string; canWrite: boolean }) {
