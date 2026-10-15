@@ -132,6 +132,14 @@ describe("placeCall", () => {
     expect(rpc).toHaveBeenLastCalledWith("create_waiter_call", { p_token: TOKEN, p_kind: "bill" });
   });
 
+  it("manda cuándo abrió la carta (informativo) solo si se conoce", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { status: "created" }, error: null });
+    await placeCall(dbCon(rpc), TOKEN, "waiter", null, new Date("2026-10-14T12:00:00.000Z"));
+    expect(rpc).toHaveBeenLastCalledWith("create_waiter_call", { p_token: TOKEN, p_kind: "waiter", p_visit_started_at: "2026-10-14T12:00:00.000Z" });
+    await placeCall(dbCon(rpc), TOKEN, "waiter", null, null);
+    expect(rpc).toHaveBeenLastCalledWith("create_waiter_call", { p_token: TOKEN, p_kind: "waiter" });
+  });
+
   it("un error de la base o una excepción es «no disponible» y el registro no lleva token ni identificador", async () => {
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     const clave = "f".repeat(32);

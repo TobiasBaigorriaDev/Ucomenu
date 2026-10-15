@@ -123,7 +123,7 @@ isOneToOne: false
                     "code"?: string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"yearly_price_usd_cents"?: number
                   }
                   Relationships: [
-
+                    
                   ]
                 },"price_history": {
                   Row: {
@@ -251,14 +251,14 @@ isOneToOne: false
                   ]
                 },"waiter_calls": {
                   Row: {
-                    "attended_at": string | null,"attended_by": string | null,"branch_id": string,"client_key": string | null,"created_at": string,"id": string,"kind": string,"organization_id": string,"status": string,"table_id": string
+                    "attended_at": string | null,"attended_by": string | null,"branch_id": string,"client_key": string | null,"created_at": string,"id": string,"kind": string,"organization_id": string,"status": string,"table_id": string,"visit_started_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "attended_at"?: string | null,"attended_by"?: string | null,"branch_id": string,"client_key"?: string | null,"created_at"?: string,"id"?: string,"kind": string,"organization_id": string,"status"?: string,"table_id": string
+                    "attended_at"?: string | null,"attended_by"?: string | null,"branch_id": string,"client_key"?: string | null,"created_at"?: string,"id"?: string,"kind": string,"organization_id": string,"status"?: string,"table_id": string,"visit_started_at"?: string | null
                   }
                   Update: {
-                    "attended_at"?: string | null,"attended_by"?: string | null,"branch_id"?: string,"client_key"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"organization_id"?: string,"status"?: string,"table_id"?: string
+                    "attended_at"?: string | null,"attended_by"?: string | null,"branch_id"?: string,"client_key"?: string | null,"created_at"?: string,"id"?: string,"kind"?: string,"organization_id"?: string,"status"?: string,"table_id"?: string,"visit_started_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -282,7 +282,7 @@ isOneToOne: false
           }
           Functions: {
             "create_waiter_call":
-{ Args: { "p_client"?: string,"p_kind": string,"p_token": string }; Returns: Json
+{ Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json
                            },
 "org_entitlements":
 { Args: { "p_org": string }; Returns: Json

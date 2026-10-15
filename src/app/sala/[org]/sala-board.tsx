@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  durationLabel,
   elapsedLabel,
+  isStaleVisit,
   isUrgent,
   KIND_LABEL,
   newCalls,
@@ -11,6 +13,7 @@ import {
   pageTitle,
   parseSalaState,
   VISIBLE_POLL_MS,
+  visitAgeMs,
   waitingMs,
   type SalaCall,
   type SalaState,
@@ -364,6 +367,8 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
             const waited = waitingMs(call, now);
             const urgent = isUrgent(waited);
             const isNew = fresh.has(call.id);
+            const visitAge = visitAgeMs(call);
+            const stale = visitAge !== null && isStaleVisit(visitAge);
             return (
               <li
                 key={call.id}
@@ -384,6 +389,12 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
                   {elapsedLabel(waited)}
                   {urgent ? <strong> · Espera hace rato</strong> : null}
                 </p>
+                {visitAge !== null ? (
+                  <p className="mt-1 text-sm text-muted" data-testid="escaneo" data-vieja={stale ? "true" : "false"}>
+                    Escaneó el QR {durationLabel(visitAge)} antes del aviso
+                    {stale ? <strong className="text-ink"> · Hace mucho: confirmá que siga en la mesa</strong> : null}
+                  </p>
+                ) : null}
                 <div className="mt-3">
                   <button
                     type="button"

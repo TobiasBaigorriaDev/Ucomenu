@@ -29,3 +29,10 @@
 - El panel de sala debe tratar como vencido todo pendiente con más de 30 minutos aunque nadie haya llamado de nuevo, y agregar su política de `UPDATE` para «atendido».
 - `waiter_calls` crece con el uso (acotado por el cooldown); la purga es un ítem posterior.
 - Quien agregue otra escritura pública sin sesión debe seguir este patrón: una función con salida mínima, sin permisos de tabla, con resultados uniformes y pruebas de concurrencia.
+
+## Enmienda 2026-10-14 — ticket de visita (ficha `ticket-de-visita.md`)
+- **Problema:** una pestaña de `/t/{token}` que quedó abierta cuando el comensal se fue podía seguir avisando.
+- **Decisión (del usuario):** la página emite un **ticket de visita** firmado (HMAC con el secreto del servidor, atado al token de la mesa, sin estado) y la *server action* lo exige: pasadas **3 horas** (o con un ticket ausente, falso, de otra mesa o del futuro) responde un único «Esta sesión venció, escaneá de nuevo el QR» **sin llegar a la base**. La barra de la pestaña también se apaga sola al cumplirse el plazo.
+- **Se valida en la app, no en la base**, con el mismo criterio que el límite por cliente (punto 5): quien llame a la API directo se lo salta, y el tope duro sigue siendo por mesa. `create_waiter_call` recibe un 4.º parámetro **informativo**, `p_visit_started_at`, que se guarda en `waiter_calls.visit_started_at` solo si es verosímil (últimas 24 horas, no futuro); la sala muestra cuánto hacía que había escaneado cuando llamó.
+- **Límite aceptado:** recargar la URL (p. ej. desde el historial) emite un ticket nuevo, porque un QR estático y un comensal anónimo no permiten distinguirlo de un escaneo. Solo cerrar la mesa a mano o la geolocalización lo evitarían; se descartaron por fricción y privacidad.
+- **`WAITER_CALL_CLIENT_SECRET` pasa a ser requisito de producción:** un ticket que no se puede verificar bloquea al comensal (falla cerrado), y con el secreto efímero los tickets no valdrían entre instancias ni tras un reinicio.

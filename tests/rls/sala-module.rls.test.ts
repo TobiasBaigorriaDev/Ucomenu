@@ -106,6 +106,18 @@ describe("loadSala", () => {
     expect((await loadSala(owner.db, local.id)).calls).toHaveLength(4);
   });
 
+  it("lista cuándo abrió la carta el comensal cuando se sabe, y null cuando no", async () => {
+    const local = await nuevoLocal("tt-salamod-visita");
+    const [a, b] = local.tables;
+    const hace3h = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+    expect((await anonClient().rpc("create_waiter_call", { p_token: a.token, p_kind: "waiter", p_visit_started_at: hace3h })).data).toEqual({ status: "created" });
+    await llamar(b.token, "waiter"); // sin dato (p. ej. un llamado hecho directo por la API)
+    const sala = await loadSala(staff.db, local.id);
+    const porMesa = Object.fromEntries(sala.calls.map((c) => [c.tableLabel, c.visitStartedAt]));
+    expect(Date.parse(porMesa[a.label]!)).toBe(Date.parse(hace3h));
+    expect(porMesa[b.label]).toBeNull();
+  });
+
   it("una sola sucursal: multiBranch es falso", async () => {
     const local = await nuevoLocal("tt-salamod-una");
     await llamar(local.tables[0].token, "waiter");

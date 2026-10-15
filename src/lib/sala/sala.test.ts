@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  durationLabel,
   elapsedLabel,
   EXPIRY_MS,
   HIDDEN_POLL_MS,
+  isStaleVisit,
   isUrgent,
   MAX_BACKOFF_MS,
   newCalls,
@@ -10,8 +12,10 @@ import {
   pageTitle,
   parseSalaState,
   sortOldestFirst,
+  STALE_VISIT_MS,
   URGENT_MS,
   VISIBLE_POLL_MS,
+  visitAgeMs,
   waitingMs,
   type SalaCall,
 } from "./types";
@@ -22,6 +26,7 @@ const call = (id: string, createdAt: string, tableLabel = "Mesa 1", kind: SalaCa
   tableLabel,
   branchName: "Centro",
   createdAt,
+  visitStartedAt: null,
 });
 
 describe("tiempo transcurrido", () => {
@@ -97,12 +102,20 @@ describe("lectura de la respuesta del servidor", () => {
     serverNow: "2026-10-14T12:00:00.000Z",
     enabled: true,
     multiBranch: false,
-    calls: [{ id: "x", kind: "bill", tableLabel: "Mesa 4", branchName: "Centro", createdAt: "2026-10-14T11:58:00.000Z" }],
+    calls: [{ id: "x", kind: "bill", tableLabel: "Mesa 4", branchName: "Centro", createdAt: "2026-10-14T11:58:00.000Z", visitStartedAt: "2026-10-14T11:20:00.000Z" }],
   };
 
   it("lee una respuesta válida", () => {
     expect(parseSalaState(valido)).toEqual(valido);
     expect(parseSalaState({ ...valido, enabled: false, calls: [] })?.calls).toEqual([]);
+  });
+
+  it("el escaneo es opcional: sin la clave, nulo o ilegible se lee como «no se sabe» y no invalida la respuesta", () => {
+    const sinClave = { ...valido, calls: [{ id: "x", kind: "bill", tableLabel: "Mesa 4", branchName: "Centro", createdAt: "2026-10-14T11:58:00.000Z" }] };
+    expect(parseSalaState(sinClave)?.calls[0].visitStartedAt).toBeNull();
+    for (const visitStartedAt of [null, "ayer", 5, {}]) {
+      expect(parseSalaState({ ...valido, calls: [{ ...valido.calls[0], visitStartedAt }] })?.calls[0].visitStartedAt, String(visitStartedAt)).toBeNull();
+    }
   });
 
   it("cualquier forma inesperada es null (la pantalla lo trata como error y reintenta)", () => {
@@ -115,5 +128,29 @@ describe("lectura de la respuesta del servidor", () => {
     }
     // Un solo elemento malo invalida toda la lista (no se muestra a medias).
     expect(parseSalaState({ ...valido, calls: [valido.calls[0], { id: 1 }] })).toBeNull();
+  });
+});
+
+describe("antigüedad del escaneo (ticket de visita)", () => {
+  const con = (createdAt: string, visitStartedAt: string | null) => ({ createdAt, visitStartedAt });
+
+  it("es la diferencia entre el aviso y el escaneo; sin dato es null; nunca negativa", () => {
+    expect(visitAgeMs(con("2026-10-14T12:00:00.000Z", "2026-10-14T11:20:00.000Z"))).toBe(40 * 60_000);
+    expect(visitAgeMs(con("2026-10-14T12:00:00.000Z", null))).toBeNull();
+    expect(visitAgeMs(con("2026-10-14T12:00:00.000Z", "2026-10-14T12:00:30.000Z"))).toBe(0);
+  });
+
+  it("desde 2 horas se considera vieja (el borde cuenta)", () => {
+    expect(STALE_VISIT_MS).toBe(2 * 60 * 60 * 1000);
+    expect(isStaleVisit(STALE_VISIT_MS - 1)).toBe(false);
+    expect(isStaleVisit(STALE_VISIT_MS)).toBe(true);
+  });
+
+  it("la duración se escribe sin «hace»", () => {
+    expect(durationLabel(45_000)).toBe("45 s");
+    expect(durationLabel(120_000)).toBe("2 min");
+    expect(durationLabel(2 * 3600_000 + 40 * 60_000)).toBe("2 h 40 min");
+    expect(durationLabel(3 * 3600_000)).toBe("3 h");
+    expect(elapsedLabel(65 * 60_000)).toBe("hace 1 h 5 min");
   });
 });

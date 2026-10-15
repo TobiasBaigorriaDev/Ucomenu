@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { MenuUnavailable } from "@/components/menu/menu-unavailable";
 import { PublicMenuView } from "@/components/menu/public-menu-view";
 import { CallBar } from "./call-bar";
+import { issueVisitTicket, VISIT_TTL_MS } from "@/lib/llamados/visit-ticket";
 import { resolveTable } from "@/lib/mesas/public-table";
 import { getPublicMenu } from "@/lib/public-menu";
 
@@ -31,9 +32,10 @@ export default async function TablePage({ params }: PageProps<"/t/[token]">) {
 
   // Una mesa desactivada se comporta como el link directo: la carta, sin la etiqueta de mesa ni los botones de llamado.
   // Los botones solo existen si la base informa que se puede llamar (plan, cuenta al día, mesa activa y no silenciada);
-  // aunque alguien fuerce la acción, la función de base responde «no disponible».
+  // aunque alguien fuerce la acción, la función de base responde «no disponible». El ticket de visita (que se emite en cada
+  // carga de la página, nunca desde caché) lo valida la acción: una pestaña vieja deja de poder avisar (ticket-de-visita).
   return table.callsEnabled ? (
-    <PublicMenuView menu={result.menu} tableLabel={table.tableLabel} callBar={<CallBar token={token} />} />
+    <PublicMenuView menu={result.menu} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} />} />
   ) : (
     <PublicMenuView menu={result.menu} tableLabel={table.tableActive ? table.tableLabel : null} />
   );

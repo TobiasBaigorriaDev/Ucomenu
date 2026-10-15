@@ -10,6 +10,10 @@ for (const file of [".env.local", ".env.test.local"]) {
   }
 }
 
+// Secreto fijo para el servidor de pruebas: así las pruebas pueden firmar tickets de visita (vencidos, de otra mesa) con el
+// mismo secreto que usa la app. Es solo de pruebas y no da acceso a nada. Si el entorno ya define uno, se respeta.
+process.env.WAITER_CALL_CLIENT_SECRET ||= "secreto-solo-para-las-pruebas-e2e-0123456789";
+
 const PORT = 3100;
 
 // E2E contra el build de producción y el Supabase LOCAL con supabase/seed.sql.

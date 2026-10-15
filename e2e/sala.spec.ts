@@ -437,7 +437,9 @@ test.describe("acceso", () => {
     expect(propio.headers()["cache-control"]).toContain("no-store");
     const cuerpo = await propio.json();
     expect(Object.keys(cuerpo).sort()).toEqual(["calls", "enabled", "multiBranch", "serverNow"]);
-    expect(Object.keys(cuerpo.calls[0]).sort()).toEqual(["branchName", "createdAt", "id", "kind", "tableLabel"]);
+    expect(Object.keys(cuerpo.calls[0]).sort()).toEqual(["branchName", "createdAt", "id", "kind", "tableLabel", "visitStartedAt"]);
+    // visitStartedAt (cuándo escaneó el comensal) es lo único agregado por el ticket de visita: un instante o null, nunca un id ni la IP.
+    expect(cuerpo.calls[0].visitStartedAt === null || !Number.isNaN(Date.parse(cuerpo.calls[0].visitStartedAt))).toBe(true);
     expect(JSON.stringify(cuerpo)).not.toContain(a.mesas[0].qr_token);
 
     const ajeno = await ctx.request.get(`/sala/${b.t.slug}/estado`);

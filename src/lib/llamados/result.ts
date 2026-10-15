@@ -37,6 +37,9 @@ export function parseCallResult(raw: unknown): CallResult {
 
 export type CallTone = "ok" | "info" | "error";
 
+/** El ticket de visita venció o no es válido (ficha ticket-de-visita): mismo texto para cualquier motivo. */
+export const SESSION_EXPIRED_MESSAGE = "Esta sesión venció. Escaneá de nuevo el QR de tu mesa para avisar al personal.";
+
 export const UNAVAILABLE_MESSAGE = "Por ahora no se puede avisar desde acá. Levantá la mano o buscá al personal.";
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;

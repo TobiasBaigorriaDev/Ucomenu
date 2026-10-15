@@ -10,6 +10,7 @@ import {
   deleteUser,
   serviceClient,
   setSubscription,
+  sql,
   type Db,
   type TestUser,
 } from "./helpers";
@@ -475,5 +476,65 @@ describe("acceso directo a waiter_calls", () => {
     expect((await filas(local.id)).map((f) => f.table_id)).toEqual([local.table2]);
     await service.from("organizations").delete().eq("id", local.id);
     expect(await filas(local.id)).toHaveLength(0);
+  });
+});
+
+describe("cuándo abrió la carta el comensal (ticket de visita, informativo)", () => {
+  const visita = async (local: Local, valor: string | undefined) => {
+    const r = await anonClient().rpc("create_waiter_call", {
+      p_token: local.token,
+      p_kind: "waiter",
+      ...(valor === undefined ? {} : { p_visit_started_at: valor }),
+    });
+    expect(r.error).toBeNull();
+    expect(r.data).toEqual({ status: "created" });
+    const fila = (await filas(local.id)).at(-1)!;
+    await service.from("waiter_calls").delete().eq("id", fila.id); // para repetir sobre la misma mesa sin cooldown
+    return fila.visit_started_at as string | null;
+  };
+
+  it("se guarda cuando es verosímil (de las últimas 24 horas y no del futuro)", async () => {
+    const local = await nuevoLocal("tt-llamado-visita-ok");
+    for (const ms of [0, 5 * MIN, 3 * 60 * MIN, 23 * 60 * MIN]) {
+      const cuando = new Date(Date.now() - ms).toISOString();
+      expect(Date.parse((await visita(local, cuando))!), String(ms)).toBe(Date.parse(cuando));
+    }
+    const casi = new Date(Date.now() + 30 * 1000).toISOString(); // un poco de desfase de reloj
+    expect(await visita(local, casi)).not.toBeNull();
+  });
+
+  it("un valor imposible se guarda como NULL y no rompe el llamado: ausente, de hace más de 24 h o del futuro", async () => {
+    const local = await nuevoLocal("tt-llamado-visita-mal");
+    expect(await visita(local, undefined)).toBeNull();
+    expect(await visita(local, new Date(Date.now() - 25 * 60 * MIN).toISOString())).toBeNull();
+    expect(await visita(local, new Date(Date.now() - 400 * 24 * 60 * MIN).toISOString())).toBeNull();
+    expect(await visita(local, new Date(Date.now() + 5 * MIN).toISOString())).toBeNull();
+    expect(await visita(local, new Date(Date.now() + 400 * 24 * 60 * MIN).toISOString())).toBeNull();
+  });
+
+  it("no cambia ninguna regla: con un dato falso igual rigen el cooldown, el pendiente único y la disponibilidad", async () => {
+    const local = await nuevoLocal("tt-llamado-visita-reglas");
+    const cuando = new Date(Date.now() - MIN).toISOString();
+    const pedir = (kind = "waiter") => anonClient().rpc("create_waiter_call", { p_token: local.token, p_kind: kind, p_visit_started_at: cuando });
+    expect((await pedir()).data).toEqual({ status: "created" });
+    expect((await pedir()).data).toEqual({ status: "already_pending" });
+    await service.from("waiter_calls").update({ status: "attended" }).eq("table_id", local.table);
+    expect((await pedir()).data).toMatchObject({ status: "cooldown" });
+    await service.from("tables").update({ is_active: false }).eq("id", local.table);
+    expect((await pedir("bill")).data).toEqual({ status: "unavailable" });
+  });
+
+  it("la API no escribe esa columna (ni inserta, ni la cambia, ni siquiera el Dueño)", async () => {
+    const local = await nuevoLocal("tt-llamado-visita-cerrada");
+    await llamar(local.token, "waiter");
+    const cambio = await owner.db.from("waiter_calls").update({ visit_started_at: new Date().toISOString() }).eq("table_id", local.table);
+    expect(cambio.error?.code).toBe("42501");
+    const alta = await anonClient().from("waiter_calls").insert({ organization_id: local.id, branch_id: local.branch, table_id: local.table, kind: "bill", visit_started_at: new Date().toISOString() });
+    expect(alta.error).not.toBeNull();
+  });
+
+  it("hay una sola create_waiter_call (la firma anterior no queda como segunda puerta)", () => {
+    const funciones = sql("select pg_get_function_identity_arguments(oid) from pg_proc where proname = 'create_waiter_call' and pronamespace = 'public'::regnamespace");
+    expect(funciones).toEqual([["p_token text, p_kind text, p_client text, p_visit_started_at timestamp with time zone"]]);
   });
 });

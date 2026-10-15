@@ -28,7 +28,7 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
   const since = new Date(now.getTime() - EXPIRY_MS).toISOString();
   const pending = await db
     .from("waiter_calls")
-    .select("id, kind, table_id, branch_id, created_at")
+    .select("id, kind, table_id, branch_id, created_at, visit_started_at")
     .eq("organization_id", orgId)
     .eq("status", "pending")
     .gt("created_at", since)
@@ -53,6 +53,7 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
         tableLabel: tableLabel.get(call.table_id) ?? "Mesa",
         branchName: branchName.get(call.branch_id) ?? "",
         createdAt: call.created_at,
+        visitStartedAt: call.visit_started_at,
       },
     ];
   });
