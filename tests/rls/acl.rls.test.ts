@@ -32,10 +32,13 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
   record_price_change: [true, false, false], // trigger de products: escribe price_history (la API no tiene INSERT)
   price_history_append_only: [false, false, false], // trigger de price_history: rechaza UPDATE, DELETE y TRUNCATE
+  audit_log_append_only: [false, false, false], // trigger de audit_log: rechaza UPDATE, DELETE y TRUNCATE (SuperAdmin)
+  is_platform_admin: [true, false, true], // usada por la política de lectura de audit_log (SuperAdmin)
 };
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
+  admin_create_organization: [false, false], // SuperAdmin (ADR 0013): solo service_role, desde la acción de servidor
   create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],
   public_menu_status: [true, true],
@@ -155,6 +158,30 @@ describe("RLS y permisos de tablas", () => {
     expect(permisos("anon")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
     expect(permisos("authenticated")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
     expect(permisos("service_role")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
+  });
+
+  it("admin_create_organization: solo service_role puede ejecutarla", () => {
+    const filas = sql(`
+      select has_function_privilege('anon', p.oid, 'execute'), has_function_privilege('authenticated', p.oid, 'execute'),
+             has_function_privilege('public', p.oid, 'execute'), has_function_privilege('service_role', p.oid, 'execute')
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname = 'admin_create_organization'`);
+    expect(filas).toEqual([["f", "f", "f", "t"]]);
+  });
+
+  it("platform_admins y audit_log: anon sin permisos; authenticated solo lee; service_role solo lee (nada escribe por la API)", () => {
+    const permisos = (rol: string, tabla: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'public.${tabla}', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    for (const tabla of ["platform_admins", "audit_log"]) {
+      expect(permisos("anon", tabla), `${tabla}: anon`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+      expect(permisos("authenticated", tabla), `${tabla}: authenticated`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
+      expect(permisos("service_role", tabla), `${tabla}: service_role`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
+    }
   });
 
   it("organization_id, id, slug y is_active no son actualizables por la API", () => {

@@ -40,7 +40,7 @@ describe("normalizeEmail", () => {
 
 describe("safeNext", () => {
   it("acepta rutas internas de las áreas con sesión", () => {
-    for (const ok of ["/panel", "/panel/", "/panel/cafe-ejemplo", "/panel/cafe-ejemplo/personal", "/sala/cafe-ejemplo", "/cuenta"]) {
+    for (const ok of ["/panel", "/panel/", "/panel/cafe-ejemplo", "/panel/cafe-ejemplo/personal", "/sala/cafe-ejemplo", "/cuenta", "/admin", "/admin/nueva"]) {
       expect(safeNext(ok), ok).toBe(ok);
     }
   });
@@ -68,7 +68,8 @@ describe("safeNext", () => {
       "/panel//evil.test",
       "/panel?x=1",
       "/panel#frag",
-      "/admin",
+      "/adminx",
+      "/admin?x=1",
       "/m/cafe-ejemplo/centro",
       "panel",
       "/panelx",

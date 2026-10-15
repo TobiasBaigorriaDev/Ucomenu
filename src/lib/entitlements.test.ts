@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moraNotice, parseEntitlements, type Entitlements } from "./entitlements";
+import { billingState, BILLING_STATE_LABEL, moraNotice, parseEntitlements, type Entitlements } from "./entitlements";
 
 const base: Entitlements = { state: "active", canWrite: true, features: [], limits: {}, usage: {} };
 const FIN = "2026-10-01T15:00:00Z";
@@ -92,5 +92,30 @@ describe("moraNotice", () => {
   it("sin fecha de fin (Dueño), no inventa fechas", () => {
     const aviso = moraNotice({ ...base, state: "grace", daysLate: 2 }, "owner");
     expect(aviso?.body).not.toContain("hasta el");
+  });
+});
+
+describe("billingState", () => {
+  const fin = new Date("2026-10-01T15:00:00Z").getTime();
+  const en = (ms: number) => new Date(fin + ms);
+  const HORA = 3600_000;
+
+  it("respeta los bordes inclusivos de la base: activa hasta el fin, gracia hasta +168 h, solo lectura hasta +360 h", () => {
+    expect(billingState(en(0).toISOString(), en(-1000))).toBe("active");
+    expect(billingState(en(0).toISOString(), en(0))).toBe("active");
+    expect(billingState(en(0).toISOString(), en(1000))).toBe("grace");
+    expect(billingState(en(0).toISOString(), en(168 * HORA))).toBe("grace");
+    expect(billingState(en(0).toISOString(), en(168 * HORA + 1000))).toBe("read_only");
+    expect(billingState(en(0).toISOString(), en(360 * HORA))).toBe("read_only");
+    expect(billingState(en(0).toISOString(), en(360 * HORA + 1000))).toBe("suspended");
+  });
+
+  it("sin fecha (o con una fecha ilegible) falla cerrado: suspendida", () => {
+    expect(billingState(null)).toBe("suspended");
+    expect(billingState("no es una fecha")).toBe("suspended");
+  });
+
+  it("todos los estados tienen etiqueta", () => {
+    for (const estado of ["active", "grace", "read_only", "suspended"] as const) expect(BILLING_STATE_LABEL[estado]).toBeTruthy();
   });
 });

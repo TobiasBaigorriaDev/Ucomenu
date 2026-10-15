@@ -6,8 +6,10 @@ import { NavLinks, type NavItem } from "./nav-links";
 
 export const ROLE_LABEL: Record<Role, string> = { owner: "Dueño", staff: "Personal" };
 
+const SECTIONS_LABEL = { panel: "Secciones del panel", sala: "Secciones de la sala", admin: "Secciones de SuperAdmin" } as const;
+
 type Props = {
-  area: "panel" | "sala";
+  area: "panel" | "sala" | "admin";
   /** Organización activa. Sin ella (selector), la cabecera muestra solo la marca. */
   org?: { slug: string; name: string };
   role?: Role;
@@ -37,6 +39,9 @@ export function AppShell({ area, org, role, hasSeveralOrgs, children }: Props) {
       items.push({ href: `/sala/${org.slug}`, label: "Sala en vivo", exact: true });
       items.push({ href: `/panel/${org.slug}`, label: "Panel" });
     }
+  } else if (area === "admin") {
+    items.push({ href: "/admin", label: "Organizaciones", exact: true });
+    items.push({ href: "/admin/nueva", label: "Nueva organización" });
   }
 
   return (
@@ -67,6 +72,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, children }: Props) {
                 ) : null}
               </p>
             ) : null}
+            {area === "admin" ? <p className="mt-0.5 text-sm text-muted">SuperAdmin</p> : null}
           </div>
           <div className="flex items-center gap-1 text-base">
             <Link href="/cuenta" className="inline-flex min-h-11 items-center px-2 text-ink underline underline-offset-2">
@@ -81,7 +87,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, children }: Props) {
         </div>
         {items.length > 0 ? (
           <div className="mt-3">
-            <NavLinks items={items} label={area === "panel" ? "Secciones del panel" : "Secciones de la sala"} />
+            <NavLinks items={items} label={SECTIONS_LABEL[area]} />
           </div>
         ) : null}
       </header>

@@ -105,6 +105,7 @@ insert into public.tables (id, organization_id, branch_id, label, qr_token, is_a
 --   dueno@parrilla-demo.test / mozo@parrilla-demo.test       → Parrilla Demo
 --   dueno@resto-moroso.test / mozo@resto-moroso.test         → Resto Moroso (cuenta vencida)
 --   multi@ucomenu.test                                       → owner en Café Ejemplo y staff en Parrilla Demo
+--   admin@ucomenu.test                                       → SuperAdmin de la plataforma (/admin), sin ninguna organización
 -- ---------------------------------------------------------------------------
 do $$
 declare
@@ -118,7 +119,8 @@ begin
       ('a0000000-0000-4000-8000-000000000004'::uuid, 'mozo@parrilla-demo.test'),
       ('a0000000-0000-4000-8000-000000000005'::uuid, 'dueno@resto-moroso.test'),
       ('a0000000-0000-4000-8000-000000000006'::uuid, 'mozo@resto-moroso.test'),
-      ('a0000000-0000-4000-8000-000000000007'::uuid, 'multi@ucomenu.test')
+      ('a0000000-0000-4000-8000-000000000007'::uuid, 'multi@ucomenu.test'),
+      ('a0000000-0000-4000-8000-000000000008'::uuid, 'admin@ucomenu.test')
     ) as t(id, email)
   loop
     insert into auth.users (
@@ -151,6 +153,9 @@ insert into public.memberships (user_id, organization_id, role) values
   ('a0000000-0000-4000-8000-000000000006', '40000000-0000-4000-8000-000000000001', 'staff'),
   ('a0000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000001', 'owner'),
   ('a0000000-0000-4000-8000-000000000007', '20000000-0000-4000-8000-000000000001', 'staff');
+
+-- SuperAdmin de ejemplo (solo desarrollo y pruebas). En un entorno real lo agrega el operador con SQL (ficha superadmin-alta-de-organizaciones).
+insert into public.platform_admins (user_id) values ('a0000000-0000-4000-8000-000000000008');
 
 -- ---------------------------------------------------------------------------
 -- Historial de precios de ejemplo (ficha historial-de-precios). Se inserta directo: el seed corre como dueño de

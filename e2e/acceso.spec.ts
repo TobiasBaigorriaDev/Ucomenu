@@ -43,7 +43,7 @@ test.describe("sin sesión", () => {
   });
 
   test("un destino externo o malformado en next se ignora", async ({ page }) => {
-    for (const next of ["https://evil.test", "//evil.test", "/admin", "/panel/../admin"]) {
+    for (const next of ["https://evil.test", "//evil.test", "/configuracion", "/panel/../admin"]) {
       await login(page, SEED.duenoCafe, SEED_PASSWORD, next);
       await expect(page).toHaveURL(/\/panel\/cafe-ejemplo$/);
       await page.getByRole("button", { name: "Salir" }).click();
@@ -54,7 +54,7 @@ test.describe("sin sesión", () => {
   test("un next manipulado en el formulario se ignora (la acción vuelve a sanearlo)", async ({ page }) => {
     // Sin red: si la acción redirigiera afuera, la prueba lo vería en la URL sin salir de la máquina.
     await page.route("https://evil.test/**", (route) => route.fulfill({ body: "sitio externo" }));
-    for (const manipulado of ["https://evil.test/robo", "//evil.test", "/admin"]) {
+    for (const manipulado of ["https://evil.test/robo", "//evil.test", "/configuracion"]) {
       await page.goto(`/login?next=${encodeURIComponent("/panel/cafe-ejemplo/personal")}`);
       // El campo oculto solo existe con un destino válido; se lo reemplaza antes de enviar.
       await page.locator('input[name="next"]').evaluate((el: HTMLInputElement, valor) => (el.value = valor), manipulado);

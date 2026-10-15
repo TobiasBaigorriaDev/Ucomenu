@@ -3,6 +3,7 @@ import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements, type Role } from "@/lib/entitlements";
+import { isPlatformAdmin } from "@/lib/admin/organizations";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -79,6 +80,17 @@ export async function requireOwner(slug: string, next: string) {
   const result = await requireMembership(slug, next);
   if (result.membership.role !== "owner") redirect(`/panel/${slug}`);
   return result;
+}
+
+/**
+ * Exige sesión y que la persona sea SuperAdmin (`platform_admins`, comprobado con su propia sesión y RLS en cada
+ * pedido, nunca con el JWT). Cualquier otra persona recibe el mismo 404 que una ruta inexistente: no se revela `/admin`.
+ */
+export async function requirePlatformAdmin(next: string): Promise<User> {
+  const user = await requireUser(next);
+  const session = await createSessionClient();
+  if (!(await isPlatformAdmin({ session, actorId: user.id }))) notFound();
+  return user;
 }
 
 /** Estado de la cuenta (`org_entitlements`). `null` si la base no lo devuelve (falla cerrado en la UI). */

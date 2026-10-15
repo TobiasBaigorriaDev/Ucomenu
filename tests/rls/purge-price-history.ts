@@ -76,6 +76,23 @@ export function asegurarDestinoLocal(
   if (real) destinoVerificado = contenedor;
 }
 
+/** Igual para `audit_log` (SuperAdmin): solo se agrega, así que la limpieza de pruebas apaga su trigger un momento. */
+export function purgeAuditLogWhere(condicion: string): void {
+  const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+  asegurarDestinoLocal(contenedor);
+  const consulta =
+    `begin; alter table public.audit_log disable trigger audit_log_no_update_delete; ` +
+    `delete from public.audit_log where ${condicion}; ` +
+    `alter table public.audit_log enable trigger audit_log_no_update_delete; commit`;
+  try {
+    execFileSync("docker", ["exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c", consulta], {
+      encoding: "utf8",
+    });
+  } catch (error) {
+    throw new Error(`No se pudo limpiar audit_log en el contenedor ${contenedor}: ${String(error)}`);
+  }
+}
+
 export function purgePriceHistoryWhere(condicion: string): void {
   const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
   asegurarDestinoLocal(contenedor);

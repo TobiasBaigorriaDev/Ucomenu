@@ -56,6 +56,30 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const GRACE_DAYS = 7;
 const READ_ONLY_DAYS = 15;
 
+export const BILLING_STATE_LABEL: Record<BillingState, string> = {
+  active: "Al día",
+  grace: "Vencida, en período de gracia",
+  read_only: "Vencida, en solo lectura",
+  suspended: "Suspendida",
+};
+
+/**
+ * Estado de la cuenta a partir del fin del período y un instante: la MISMA regla que `private.billing_state` de la base
+ * (bordes inclusivos: gracia hasta +168 h, solo lectura hasta +360 h; sin fecha, suspendida). La base es la autoridad;
+ * esto existe para pantallas que no pueden preguntarle (p. ej. el listado del SuperAdmin) y una prueba de RLS lo compara
+ * con la función real en los bordes para que no se desvíe.
+ */
+export function billingState(periodEnd: string | Date | null, at: Date = new Date()): BillingState {
+  if (periodEnd === null) return "suspended";
+  const end = new Date(periodEnd).getTime();
+  if (Number.isNaN(end)) return "suspended";
+  const t = at.getTime();
+  if (t <= end) return "active";
+  if (t <= end + GRACE_DAYS * DAY_MS) return "grace";
+  if (t <= end + READ_ONLY_DAYS * DAY_MS) return "read_only";
+  return "suspended";
+}
+
 export type MoraNotice = {
   tone: "grace" | "read_only" | "suspended";
   title: string;

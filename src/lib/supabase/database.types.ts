@@ -37,6 +37,20 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"audit_log": {
+                  Row: {
+                    "action": string,"actor_email": string,"actor_id": string,"after": Json | null,"before": Json | null,"created_at": string,"id": string,"organization_id": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action": string,"actor_email": string,"actor_id": string,"after"?: Json | null,"before"?: Json | null,"created_at"?: string,"id"?: string,"organization_id"?: string | null
+                  }
+                  Update: {
+                    "action"?: string,"actor_email"?: string,"actor_id"?: string,"after"?: Json | null,"before"?: Json | null,"created_at"?: string,"id"?: string,"organization_id"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"branches": {
                   Row: {
                     "created_at": string,"id": string,"name": string,"organization_id": string,"slug": string,"waiter_call_cooldown_seconds": number
@@ -121,6 +135,20 @@ isOneToOne: false
                   }
                   Update: {
                     "code"?: string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"yearly_price_usd_cents"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"platform_admins": {
+                  Row: {
+                    "created_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -281,7 +309,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "create_waiter_call":
+            "admin_create_organization":
+{ Args: { "p_actor": string,"p_billing_cycle": string,"p_name": string,"p_owner": string,"p_period_end": string,"p_plan": string,"p_slug": string }; Returns: string
+                           },
+"create_waiter_call":
 { Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json
                            },
 "org_entitlements":
