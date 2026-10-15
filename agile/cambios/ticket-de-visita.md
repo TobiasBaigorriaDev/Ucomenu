@@ -1,5 +1,5 @@
 # Cambio: Ticket de visita — una pestaña vieja de `/t/{token}` deja de poder avisar, y la sala ve cuánto hacía que el comensal había escaneado
-Estado: **integrado** a `main` por squash merge (2026-10-14, sin subir a GitHub) tras la revisión de Codex en solo lectura sobre `bda19f4`: *aprobar*, sin defectos funcionales en los 26 archivos; la rama `feat/ticket-de-visita` (parte de `61086b2`, independiente de `feat/configuracion-del-llamado`) se conserva
+Estado: **integrado** a `main` por squash merge y subido a GitHub (2026-10-14) tras la revisión de Codex en solo lectura sobre `bda19f4`: *aprobar*, sin defectos funcionales en los 26 archivos; la rama `feat/ticket-de-visita` (parte de `61086b2`) se conserva
 Nivel: **M** (toca la puerta de escritura pública `create_waiter_call` y agrega una columna; no toca dinero, permisos de terceros ni datos existentes)
 
 ## Objetivo

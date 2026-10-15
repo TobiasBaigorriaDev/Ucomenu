@@ -27,6 +27,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, children }: Props) {
       items.push({ href: `/panel/${org.slug}`, label: "Resumen", exact: true });
       items.push({ href: `/panel/${org.slug}/carta`, label: "Carta" });
       items.push({ href: `/panel/${org.slug}/mesas`, label: "Mesas" });
+      items.push({ href: `/panel/${org.slug}/llamados`, label: "Llamados" });
       if (role === "owner") {
         items.push({ href: `/panel/${org.slug}/suscripcion`, label: "Suscripción" });
         items.push({ href: `/panel/${org.slug}/personal`, label: "Personal" });

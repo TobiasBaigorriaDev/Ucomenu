@@ -28,6 +28,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   enforce_table_limit: [true, false, false], // trigger de tables (ADR 0006 / mesas y QR)
   stamp_attended_call: [false, false, false], // trigger de waiter_calls: fija attended_at y attended_by (panel de sala)
   rotate_table_token: [false, false, false], // trigger de tables: regenera qr_token (ADR 0009)
+  limit_table_mute: [false, false, false], // trigger de tables: un silencio dura como máximo 24 horas (configuración del llamado)
   product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
   record_price_change: [true, false, false], // trigger de products: escribe price_history (la API no tiene INSERT)
   price_history_append_only: [false, false, false], // trigger de price_history: rechaza UPDATE, DELETE y TRUNCATE
@@ -167,6 +168,26 @@ describe("RLS y permisos de tablas", () => {
       where has_column_privilege('authenticated', 'public.' || t.tabla, t.columna, 'update')
          or has_column_privilege('anon', 'public.' || t.tabla, t.columna, 'update')`);
     expect(actualizables).toEqual([]);
+  });
+
+  it("las únicas columnas de mesas, sucursales y llamados que la API actualiza son las previstas (configuración del llamado)", () => {
+    const columnas = (rol: string) =>
+      sql(`
+        select table_name, column_name from information_schema.column_privileges
+        where grantee = '${rol}' and privilege_type = 'UPDATE' and table_schema = 'public'
+          and table_name in ('tables', 'branches', 'waiter_calls')
+        order by table_name, column_name`);
+
+    expect(columnas("authenticated")).toEqual([
+      ["branches", "name"],
+      ["branches", "waiter_call_cooldown_seconds"], // solo el Dueño, por la política de branches
+      ["tables", "is_active"],
+      ["tables", "label"],
+      ["tables", "muted_until"], // Dueño y Staff; un trigger limita el silencio a 24 horas
+      ["tables", "qr_token"],
+      ["waiter_calls", "status"], // solo pending → attended, por política
+    ]);
+    expect(columnas("anon")).toEqual([]);
   });
 
   it("anon no tiene ningún permiso de escritura en las tablas de negocio", () => {
