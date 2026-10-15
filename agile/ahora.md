@@ -22,7 +22,7 @@
 
 - **Última actualización:** 2026-10-14 (cierre de la fase «Llamado al mozo») — agente: Claude Code
 - **Objetivo actual:** **Fase 1 «Llamado al mozo» completa en `main` y subida a GitHub** (2026-10-14, con orden del usuario): llamado desde la mesa, panel de sala, **ticket de visita** y **configuración del llamado**, ambos aprobados por Codex. Sin trabajo a medias ni ramas pendientes. Siguiente: elegir el próximo ítem del tablero
-- **Rama / último commit:** `main` = `origin/main` al cerrar (ver `git log`). Las ramas `feat/ticket-de-visita` y `feat/configuracion-del-llamado` se conservan, ya integradas por squash, hasta que el usuario decida borrarlas. Un solo par de agentes por ahora (sin *worktrees*).
+- **Rama / último commit:** `main` = `origin/main` en `6db1c17` al cerrar la fase (ver `git log`; después solo documentación local). Única rama local: `main` (las ramas `feat/ticket-de-visita` y `feat/configuracion-del-llamado` se borraron tras comprobar archivo por archivo que `main` tiene todo su código; la etiqueta `alt/carta-variante-a-tarjetas` se conserva). Un solo par de agentes por ahora (sin *worktrees*).
 - **Nivel:** M
 - **Ficha relevante:** hecho: `configuracion-del-llamado.md` (sin ADR; migración `…190000`), `ticket-de-visita.md` (ADR 0010 enmendada; migración `…200000`), `pantalla-historial-de-precios.md`, `panel-de-sala.md` (ADR 0011), `historial-de-precios.md` (ADR 0012), `llamado-desde-la-mesa.md` (ADR 0010), `mesas-y-qr.md` (ADR 0009), `gestion-de-carta.md` (ADR 0008)
 
@@ -53,13 +53,13 @@
 ## Pruebas de la integración final (2026-10-14, `main` con las dos ramas, base reseteada con todas las migraciones)
 - typecheck · `eslint src e2e tests playwright.config.ts` · build OK · unitarias **217/217** · RLS **409/409** (17 archivos) · E2E **156/156 en dos corridas completas seguidas**. Se resolvieron conflictos solo de documentación (`ahora.md`, `arquitectura.md`).
 
-## Pruebas de «Ticket de visita» (2026-10-14, rama `feat/ticket-de-visita`, base compartida reseteada con su migración)
+## Pruebas de «Ticket de visita» (2026-10-14, en su rama —ya borrada—, base compartida reseteada con su migración)
 - typecheck · `eslint src e2e tests playwright.config.ts` · build OK · unitarias **199/199** · RLS **392/392** (16 archivos) · E2E **138/138** (3 de 4 corridas completas; una tuvo una falla aislada en `mesas.spec.ts` no capturada, la repetición pasó) · **30 de 30 mutaciones detectadas** · sin residuos `tt-*`/`e2e-*`.
 - Ajuste de una prueba existente: la aserción de `sala.spec.ts` sobre las claves de la ruta de consulta ahora incluye `visitStartedAt`.
 - **No ejecutado:** teléfono real (pantalla apagada más de 3 h y volver a la pestaña; pestañas descartadas por el navegador).
 - El servidor E2E usa un secreto fijo para el ticket (`playwright.config.ts`) para poder firmar tickets vencidos en las pruebas.
 
-## Pruebas de «Configuración del llamado» (2026-10-14, rama `feat/configuracion-del-llamado`, base compartida reseteada con la migración nueva)
+## Pruebas de «Configuración del llamado» (2026-10-14, en su rama —ya borrada—, base compartida reseteada con la migración nueva)
 - typecheck · `eslint src e2e tests` · build OK · unitarias **205/205** · RLS **402/402** (17 archivos) · E2E **147/147** (corrección del P2 incluida; de tres corridas, una tuvo una falla aislada que no capturé y la repetición pasó) · sin residuos `tt-*`/`e2e-*`/`rls-*`.
 - Mutaciones: 24 defensas rotas de a una, 23 detectadas y 1 equivalente (permiso de columna a `anon`: sin `SELECT` ni política igual no puede). Detalle en la ficha.
 - Hallazgo: el aviso de «Quitar silencio» se perdía al refrescar (formulario desmontado); corregido con un formulario único por mesa.
@@ -92,7 +92,7 @@
 - **El proxy conserva solo el camino al mandar al login y `safeNext` solo acepta caminos:** una ruta que necesite un dato para renderizar debe llevarlo en el camino, no en una query (aprendido con el P2 de la hoja de QR). `/carta/platos/nuevo?categoria=` pierde la categoría preseleccionada si hubo login en el medio (cosmético).
 - Un QR fotografiado sirve desde afuera del local: se mitiga regenerando, con el cooldown y el pendiente único (y, cuando exista su UI, silenciando la mesa); toda escritura pública futura debe seguir el patrón de ADR 0010 y resolver el token con la función, nunca leyendo `tables` con `anon`.
 - **`WAITER_CALL_CLIENT_SECRET` es obligatorio en producción desde «Ticket de visita»** (si no, los tickets no valen entre instancias ni tras un reinicio y el comensal ve «Esta sesión venció» sin motivo). Va al checklist de «Salida a producción».
-- **Dato derivado de la IP:** `waiter_calls.client_key` (HMAC) se conserva hasta que exista la purga; falta definir `WAITER_CALL_CLIENT_SECRET` en producción y citarlo en los textos legales (ley 25.326).
+- **Dato derivado de la IP:** `waiter_calls.client_key` (HMAC) se conserva hasta que exista la purga; falta definir el `WAITER_CALL_CLIENT_SECRET` de producción (en local ya está) y citarlo en los textos legales (ley 25.326).
 - Sin cuota de almacenamiento por organización; archivos huérfanos acotados a fallas a mitad de camino; las fotos de una organización suspendida siguen accesibles por URL directa.
 - Contraseña temporal sin cambio forzado; sin recupero por correo; restablecer no revoca sesiones abiertas.
 - `org_is_published` se evalúa por fila: medir en «Rendimiento de la carta pública» (las fotos hoy se sirven sin optimizar).
@@ -103,7 +103,7 @@
 - Windows: rutas de más de ~260 caracteres rompen `pnpm test`; `pnpm build` antes de `test:e2e`; `pnpm test:rls` y `test:e2e` comparten base: no correrlos a la vez; un *worker* de Vitest o de Playwright murió a veces con `0xC0000409` (pasa al repetir).
 
 ## Próxima acción probable
-0. **Pendiente de producción (no de código):** definir `WAITER_CALL_CLIENT_SECRET` (obligatorio desde el ticket de visita; sin él los tickets no valen entre instancias). Opcionales: probar en un teléfono real el ticket (pantalla apagada más de 3 h) y la pantalla «Llamados»; borrar las ramas ya integradas.
+0. **Pendiente de producción (no de código):** `WAITER_CALL_CLIENT_SECRET` **ya está definido en `.env.local`** (solo local, ignorado por Git; 32 bytes aleatorios en hex) y las pruebas del llamado pasan con él; **falta el valor propio de producción** cuando exista el hosting (es obligatorio: sin él los tickets no valen entre instancias). Probar en teléfono real el ticket y la pantalla «Llamados» quedó en el backlog (`agile/tablero.md`, «Mejoras y deuda técnica»).
 1. Después, elegir el próximo ítem del tablero. Candidatos: repaso de diseño del historial de precios (S), SuperAdmin (con la retención del historial resuelta), purga de `waiter_calls`; ver también «Mejoras y deuda técnica» en `agile/tablero.md`.
 2. Para probar algo en un teléfono real: receta en «Para usar la app en local» (usar `next dev`, no `next start`).
 3. Flujo habitual: rama `feat/*` desde `main` → `agile-explorar`/`agile-iterar` → Codex revisa un SHA en solo lectura → squash a `main` con orden del usuario.

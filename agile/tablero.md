@@ -35,6 +35,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] `expectNoHorizontalOverflow` (`e2e/support.ts`) da falsos aprobados en móvil (el viewport crece con el contenido): reemplazarlo por la medida de `e2e/historial-precios.spec.ts` y revisar las pruebas que lo usan
 - [S] `pnpm lint` global falla por scripts sin seguimiento en `output/` (diagnósticos de Codex): decidir si se ignora `output/` en Git/ESLint
 - [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta» (B1 del análisis del ticket de visita): invalida los tickets anteriores sin trabajo extra del mozo; depende de «Ticket de visita»
+- [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/ahora.md` («Probar desde un teléfono»)
 - [S] Probar *Wake Lock* del panel de sala: exige HTTPS (túnel o certificado local; herramienta de terceros, requiere aprobación)
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
@@ -49,7 +50,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
 - [S] Textos legales: términos, privacidad y aviso de alérgenos
-- [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos)
+- [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores, **`WAITER_CALL_CLIENT_SECRET` propio de producción (obligatorio por el ticket de visita)** (requiere aprobación: despliegue y planes pagos)
 
 ### Fase 2 — Add-on WebAR
 - [S] Spike descartable: `<model-viewer>` con un plato real en un iPhone y un Android — valida ADR 0002 y el presupuesto de peso
