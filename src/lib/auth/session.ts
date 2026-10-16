@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements, type Role } from "@/lib/entitlements";
 import { isPlatformAdmin } from "@/lib/admin/organizations";
+import { landingPath } from "@/lib/auth/validation";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -91,6 +92,20 @@ export async function requirePlatformAdmin(next: string): Promise<User> {
   const session = await createSessionClient();
   if (!(await isPlatformAdmin({ session, actorId: user.id }))) notFound();
   return user;
+}
+
+/**
+ * Destino después del login (o al abrir `/login` con sesión). `next` ya debe venir de `safeNext`. Solo consulta
+ * `platform_admins` (con la sesión de la persona y RLS, la misma regla de `requirePlatformAdmin`) cuando no hay `next`.
+ */
+export async function postLoginPath(
+  userId: string,
+  next: string | null,
+  session?: Awaited<ReturnType<typeof createSessionClient>>,
+): Promise<string> {
+  if (next) return next;
+  const client = session ?? (await createSessionClient());
+  return landingPath(null, await isPlatformAdmin({ session: client, actorId: userId }));
 }
 
 /** Estado de la cuenta (`org_entitlements`). `null` si la base no lo devuelve (falla cerrado en la UI). */

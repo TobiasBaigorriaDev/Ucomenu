@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { changeOwnPassword, ACCOUNT_ERROR_MESSAGE } from "@/lib/auth/account";
-import { requireUser } from "@/lib/auth/session";
+import { postLoginPath, requireUser } from "@/lib/auth/session";
 import { normalizeEmail, safeNext } from "@/lib/auth/validation";
 import type { FormState } from "@/lib/form-state";
 import { createPublicClient } from "@/lib/supabase/public-client";
@@ -24,7 +24,7 @@ export async function loginAction(_previous: FormState, formData: FormData): Pro
   }
 
   const supabase = await createSessionClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     const limited = error.code === "over_request_rate_limit" || error.status === 429;
@@ -34,7 +34,7 @@ export async function loginAction(_previous: FormState, formData: FormData): Pro
     };
   }
 
-  redirect(next ?? "/panel");
+  redirect(await postLoginPath(data.user.id, next, supabase));
 }
 
 /** Cierra solo esta sesión (otros dispositivos de la persona siguen abiertos). */

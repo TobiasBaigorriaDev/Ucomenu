@@ -39,3 +39,11 @@ export function safeNext(raw: unknown): string | null {
   if (typeof raw !== "string" || raw.length > 200) return null;
   return NEXT_PATTERN.test(raw) ? raw : null;
 }
+
+/**
+ * A dónde va la persona después de autenticarse. Un `next` válido (ya pasado por `safeNext`) manda siempre, también
+ * para un SuperAdmin; sin él, el SuperAdmin entra a `/admin` y el resto a `/panel`.
+ */
+export function landingPath(next: string | null, platformAdmin: boolean): string {
+  return next ?? (platformAdmin ? "/admin" : "/panel");
+}

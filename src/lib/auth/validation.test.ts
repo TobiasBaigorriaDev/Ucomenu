@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeEmail, safeNext, validatePassword } from "./validation";
+import { landingPath, normalizeEmail, safeNext, validatePassword } from "./validation";
 
 describe("validatePassword", () => {
   it("acepta 10 caracteres o más", () => {
@@ -82,5 +82,22 @@ describe("safeNext", () => {
       ["/panel"],
     ];
     for (const malo of malos) expect(safeNext(malo), String(malo)).toBeNull();
+  });
+});
+
+describe("landingPath", () => {
+  it("manda al SuperAdmin a /admin y al resto a /panel cuando no hay next", () => {
+    expect(landingPath(null, true)).toBe("/admin");
+    expect(landingPath(null, false)).toBe("/panel");
+  });
+
+  it("un next válido manda siempre, también para el SuperAdmin", () => {
+    expect(landingPath("/panel/cafe-ejemplo", true)).toBe("/panel/cafe-ejemplo");
+    expect(landingPath("/sala/cafe-ejemplo", false)).toBe("/sala/cafe-ejemplo");
+  });
+
+  it("un next inválido (descartado por safeNext) cae al destino por defecto", () => {
+    expect(landingPath(safeNext("//evil.test"), true)).toBe("/admin");
+    expect(landingPath(safeNext("https://evil.test"), false)).toBe("/panel");
   });
 });
