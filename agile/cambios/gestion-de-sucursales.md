@@ -64,4 +64,4 @@ Revisión visual a 390 px con capturas (lista con alta, tope alcanzado con el av
 
 ## (C) Revisión y aprobación
 - **Ronda 1 (Codex, commit `de1bfce`):** APROBAR CON CAMBIOS. Un hallazgo, real y corregido: `loadSucursales` leía sucursales y mesas sin paginar y PostgREST corta en `max_rows = 1000`, así que con más de 1000 mesas (Premium no tiene tope) los conteos salían bajos. Corrección: `readAllPages` (`src/lib/sucursales/paginar.ts`) pide página por página; prueba de regresión `paginar.test.ts` (falla si el ayudante lee una sola página). E2E de sucursales 15/15 tras el cambio. La política, el `GRANT` y el orden trigger-antes-que-RLS no recibieron objeciones.
-- Falta la ronda de verificación y la aprobación humana de la política.
+- **Ronda 2 (verificación, commit `42edb7d`):** APROBAR, sin hallazgos nuevos. Falta la aprobación humana de la política.
