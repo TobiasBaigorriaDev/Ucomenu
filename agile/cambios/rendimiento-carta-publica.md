@@ -18,7 +18,7 @@ La carta (`/m/{org}/{sucursal}` y `/t/{token}`) carga rápido con datos móviles
 7. **Fuera:** las miniaturas del panel siguen `unoptimized` (no es la carta pública).
 
 ## Aceptación
-- [x] Un cambio hecho en el panel (nombre, precio, categoría, plato nuevo, activar/desactivar, foto subida y quitada) se ve en la carta pública **en la carga siguiente**, aunque la carta ya estuviera en caché; también en `/t/{token}`.
+- [x] Un cambio hecho en el panel (nombre, precio, categoría, plato nuevo, activar/desactivar, foto subida y quitada) se ve en la carta pública **en la carga siguiente**, aunque la carta ya estuviera en caché (**salvo la carrera del punto 4 de las decisiones**: una lectura que ya estaba en vuelo durante la edición puede dejar la carta anterior hasta 60 s); también en `/t/{token}`.
 - [x] La carta sí se sirve de la caché (un cambio hecho directo en la base no se ve hasta vencer el tope): la prueba existe para que las demás no pasen en vacío.
 - [x] Una carta en caché deja de publicarse **apenas** la cuenta se suspende (`/m` y `/t`, con `noindex`) y vuelve al regularizarla; da 404 apenas el local se desactiva.
 - [x] Lo inactivo no se publica ni cuando se cacheó estando activo.
@@ -59,3 +59,6 @@ Sobre la rama `feat/rendimiento-carta` (commit en el pie del informe del agente)
 - **Mutaciones (3, cada defensa rota de a una y detectada):** quitar `updateTag` → fallan 5 de 9 (panel, foto, QR, aislamiento, inactivo); sacar `orgId` de la clave → falla el de aislamiento (y los que comparten tenant por colisión); cachear la carta entera, estado incluido → fallan los dos de suspensión/baja. Las 3 versiones rotas se descartaron.
 - **Imagen de producción:** `docker build` del `Dockerfile` con la configuración final: el modo `standalone` trae `sharp` y su binario de Linux (`@img/sharp-linux-x64`), `sharp` redimensiona dentro del contenedor y `server.js` queda con `remotePatterns` del host de Supabase en `https` y `dangerouslyAllowLocalIP: false`. No se corrió el contenedor contra una Supabase real ni en Fly.
 - No ejecutado: prueba en teléfono real; medición contra staging en Fly (requiere desplegar, no autorizado).
+
+## Revisión y aprobación
+- **Codex, solo lectura, nivel C** (2 rondas): ronda 1 *aprobar con cambios* (2 «Importantes»); ronda 2 de verificación *aprobar con cambios*. El hallazgo de la caché vacía conservada (`NotCacheable`) estaba **real** (reproducido: la renovación fallaba y la carta vieja seguía publicada) y se corrigió con prueba de regresión que falla sin la corrección (comprobado). El de la **lectura concurrente que restaura datos invalidados** es real pero se deja como **límite aceptado** (máximo 60 s; solo si una lectura ya iniciada cruza una edición): cerrarlo exige una versión de la carta en la base. Pendiente de decisión del usuario.
