@@ -5,7 +5,8 @@ Procedimiento ordenado para publicar UcoMenu. La estrategia (planes, hosting, st
 El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/operacion.md` sección 5); la imagen corre igual en cualquier servicio de contenedores. Los comandos de Fly de abajo se ejecutaron y validaron en staging; producción es igual con `fly.toml`.
 
 ## 0. Antes de empezar (el usuario)
-- **Hosting:** decidido (Fly.io, contenedor en São Paulo). Falta aprobar crear la cuenta y la tarjeta, e instalar `flyctl` (herramienta nueva: requiere aprobación).
+- **Hosting:** decidido (Fly.io, contenedor en São Paulo). La cuenta y `flyctl` ya existen (staging).
+- **Un proyecto de Supabase por entorno, no por cliente:** UcoMenu es multi-inquilino (organizaciones y sucursales en las mismas tablas, aisladas por RLS). Cada negocio nuevo se da de alta desde `/admin`; no se crea ningún proyecto. En total: staging y producción.
 - **Dominio:** **pospuesto** (2026-10-16: el usuario no está seguro de `ucomenu.com`; está en el backlog). Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción sí: hay que definirlo **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
 - **Legal** (ficha `agile/cambios/textos-legales.md`): revisión profesional de `/terminos`, `/privacidad` y `/alergenos`, identidad del operador y correo real de contacto.
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
