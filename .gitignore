@@ -43,3 +43,7 @@ next-env.d.ts
 
 # Salidas del navegador automatizado (MCP de Playwright): no son parte del proyecto
 /.playwright-mcp/
+
+# Diagnósticos locales de agentes y referencia visual de terceros (se conservan en disco)
+/output/
+/docs/referencias/HUMM-MENU.png

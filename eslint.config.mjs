@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     ".agents/**",
     ".claude/**",
     ".codex/**",
+    // Diagnósticos locales generados por agentes, ajenos al producto.
+    "output/**",
     "supabase/**",
     // Generado por `pnpm db:types`.
     "src/lib/supabase/database.types.ts",
