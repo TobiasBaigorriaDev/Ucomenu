@@ -226,11 +226,22 @@ describe("RLS y permisos de tablas", () => {
     expect(conEscritura).toEqual([]);
   });
 
-  it("authenticated no puede crear ni borrar organizaciones, sucursales ni membresías", () => {
+  it("authenticated no tiene INSERT ni DELETE de tabla completa en organizaciones, sucursales ni membresías (el alta de sucursales es por columna, abajo)", () => {
     const conPermiso = sql(`
       select t.tabla, p.permiso from (values ('organizations'), ('branches'), ('memberships')) as t(tabla)
       cross join (values ('insert'), ('delete'), ('truncate')) as p(permiso)
       where has_table_privilege('authenticated', 'public.' || t.tabla, p.permiso)`);
     expect(conPermiso).toEqual([]);
+  });
+
+  it("las únicas columnas de sucursales que la API inserta son organization_id, slug y name (gestión de sucursales)", () => {
+    const columnas = (rol: string) =>
+      sql(`
+        select column_name from information_schema.column_privileges
+        where grantee = '${rol}' and privilege_type = 'INSERT' and table_schema = 'public' and table_name = 'branches'
+        order by column_name`);
+
+    expect(columnas("authenticated")).toEqual([["name"], ["organization_id"], ["slug"]]);
+    expect(columnas("anon")).toEqual([]);
   });
 });

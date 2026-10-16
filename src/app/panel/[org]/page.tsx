@@ -52,7 +52,17 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
             ))}
           </ul>
         ) : (
-          <p className="mt-3 max-w-prose text-muted">Este local todavía no tiene sucursales.</p>
+          <>
+            <p className="mt-3 max-w-prose text-muted">Este local todavía no tiene sucursales.</p>
+            {isOwner ? (
+              <Link
+                href={`/panel/${membership.org.slug}/sucursales`}
+                className="mt-3 inline-flex min-h-11 items-center justify-center rounded-md bg-cobalt px-5 py-2 text-base font-medium text-white"
+              >
+                Crear la primera sucursal
+              </Link>
+            ) : null}
+          </>
         )}
       </section>
 

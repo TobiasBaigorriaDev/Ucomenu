@@ -388,21 +388,28 @@ describe("organizaciones y sucursales", () => {
     for (const r of [slug, activa, slugSucursal, mover]) expect(r.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
   });
 
-  it("nadie crea ni borra organizaciones o sucursales por la API", async () => {
+  it("nadie crea ni borra organizaciones, ni borra sucursales, por la API; nadie crea una sucursal que no deba", async () => {
     for (const user of [ownerA, staffA, sinMembresia]) {
       const crearOrg = await user.db.from("organizations").insert({ slug: "tt-nueva", name: "tt-nueva" });
-      const crearSucursal = await user.db
-        .from("branches")
-        .insert({ organization_id: ORG_CAFE, slug: "tt-nueva", name: "tt-nueva" });
       const borrarOrg = await user.db.from("organizations").delete().eq("id", ORG_CAFE);
       const borrarSucursal = await user.db.from("branches").delete().eq("id", BRANCH_CAFE);
 
-      for (const r of [crearOrg, crearSucursal, borrarOrg, borrarSucursal]) {
-        expect(r.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
-      }
+      for (const r of [crearOrg, borrarOrg, borrarSucursal]) expect(r.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
     }
+
+    // Crear sucursales es del Dueño (gestión de sucursales). Café Ejemplo es Básico y ya tiene la suya: el tope del plan
+    // rechaza (53400) a los miembros —el trigger corre antes de la política—, y a quien no es miembro lo rechaza la política.
+    // Las altas válidas del Dueño están en sucursales.rls.test.ts.
+    const intento = (user: typeof ownerA) =>
+      user.db.from("branches").insert({ organization_id: ORG_CAFE, slug: "tt-nueva", name: "tt-nueva" });
+    expect((await intento(ownerA)).error?.code).toBe("53400");
+    expect((await intento(staffA)).error?.code).toBe("53400");
+    expect((await intento(sinMembresia)).error?.code).toBe(INSUFFICIENT_PRIVILEGE);
+
     const intactas = await service.from("branches").select("id").eq("id", BRANCH_CAFE);
     expect(intactas.data).toHaveLength(1);
+    const nuevas = await service.from("branches").select("id").eq("slug", "tt-nueva");
+    expect(nuevas.data).toEqual([]);
   });
 });
 
