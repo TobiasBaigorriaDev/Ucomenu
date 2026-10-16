@@ -1,0 +1,25 @@
+# Nada de secretos, dependencias ni artefactos locales entra al contexto de construcción.
+.env
+.env.*
+!.env.example
+node_modules
+.next
+.git
+.claude
+.agents
+output
+test-results
+playwright-report
+coverage
+supabase
+agile
+docs
+prompts
+memoria
+tests
+e2e
+tools
+*.md
+!README.md
+Dockerfile
+.dockerignore

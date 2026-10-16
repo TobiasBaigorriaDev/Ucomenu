@@ -7,8 +7,8 @@ Propuesta concreta para operar UcoMenu al empezar (estrategia del ADR 0015). Es 
 | Entorno | Para qué | Supabase | Hosting | Datos |
 | --- | --- | --- | --- | --- |
 | Local | Desarrollo y pruebas | Docker (`pnpm db:start`) | `pnpm dev` | Seed ficticio |
-| Staging | Ensayar este procedimiento completo | Proyecto **Free** en una **organización de Supabase aparte** | Proveedor candidato, plan gratuito | Solo ficticios |
-| Producción | Locales reales | Proyecto **Free** al inicio, que sube a **Pro sin crear otro proyecto** | Por decidir (sección 5) | Reales |
+| Staging | Ensayar este procedimiento completo | Proyecto **Free** en una **organización de Supabase aparte** | Fly.io, app `fly.staging.toml` (se apaga sin tráfico) | Solo ficticios |
+| Producción | Locales reales | Proyecto **Free** al inicio, que sube a **Pro sin crear otro proyecto**, en la región de São Paulo | Fly.io, contenedor en `gru` (sección 5) | Reales |
 
 - **Por qué la organización aparte:** en Pro, cada proyecto adicional de la organización paga su cómputo completo. Con staging en otra organización, producción puede pasar a Pro y staging sigue siendo gratis. Verificar al crearlos que el límite de proyectos gratuitos permite tener ambos.
 - **Mismo proyecto al subir de plan:** el cambio Free → Pro es del plan de la organización; la URL, las claves y los datos no cambian. No hace falta migrar nada.
@@ -68,43 +68,52 @@ Límites Free: base de 500 MB, 1 GB de archivos, 5 GB de transferencia por mes, 
 4. **Antes de ampliar** el piloto más allá de los locales conocidos y acompañados (a definir: la propuesta es empezar con pocos).
 El sondeo del panel de sala consume transferencia de Supabase: **estimado** ~1 GB por mes por cada pantalla abierta unas 10 h por día (3 consultas por sondeo, 2–3 KB en total). Con 4 pantallas ya se acerca al límite Free. Medirlo en staging.
 
-### Hosting (candidato: Netlify Free) → plan pago u otro proveedor
-Ver la evaluación en la sección 5. **Subir o cambiar** si cualquiera:
-1. La proyección mensual de créditos supera el 70 % del plan en la revisión semanal (mirar la proyección, no solo lo gastado).
-2. Un local real depende del servicio en horario de atención: el plan Free puede **dar de baja proyectos sin aviso** y no tiene garantías de servicio.
-3. Se agotan los créditos: el proyecto entero **se pausa hasta el próximo ciclo**, incluida la carta pública que ven los comensales.
+### Hosting
+Los criterios para subir de memoria, sumar una segunda máquina o pasar a otro proveedor están en la sección 5.
 
-## 5. Evaluación del hosting: Netlify Free (2026-10-16)
+## 5. Hosting: decisión (2026-10-16)
 
-**Lo que se verificó**
-- **Next.js:** Netlify anuncia soporte de Next.js 16 sin configuración (adaptador de OpenNext, probado en cada versión). La documentación consultada **no menciona `proxy.ts`** (el archivo que en Next 16 reemplaza a `middleware.ts`) y UcoMenu depende de él para renovar la sesión y responder 401 a la sala. **Hay que probarlo en staging antes de decidir.**
-- **Uso comercial:** ni los Términos de uso ni el Acuerdo de suscripción de autoservicio (cuyo texto es de 2020) prohíben el uso comercial del plan gratuito, y el anuncio del plan lo permite. Pero el acuerdo se reserva el derecho de **cerrar proyectos gratuitos sin aviso y por cualquier motivo**, no da garantías de servicio y el plan «está pensado para desarrolladores individuales». Es **viable para staging y para un piloto**, no para un local que dependa de la carta en horario de servicio.
-- **Créditos:** el plan Free tiene **300 créditos por mes** sin recarga; al agotarse, **los proyectos se pausan hasta el próximo ciclo**. Costos según el aviso oficial de precios: 15 créditos por despliegue a producción, 10 por GB transferido, 5 por GB-hora de cómputo y 3 por 10 000 pedidos web. (La página de precios muestra cifras algo distintas —20, 10 y 2— así que hay que confirmarlas en el panel.) Plan Pro: USD 20 por mes con 3 000 créditos.
+**Decisión: un contenedor de Docker en Fly.io, región São Paulo (`gru`), con una máquina de 512 MB siempre encendida para producción y otra app aparte para staging.** El usuario me delegó la elección ("la forma más eficiente y económica, sin que afecte el rendimiento"); es una recomendación mía, reversible porque la imagen corre igual en cualquier servicio de contenedores.
 
-**El problema: el sondeo de la sala.** `GET /sala/{slug}/estado` se consulta cada 3 s con la pestaña visible (ADR 0011). Estimación para **una** pantalla abierta 10 h por día durante 30 días:
+**Por qué.** La app tiene una pantalla que consulta cada 3 s (ADR 0011). Los hostings «serverless» cobran por pedido y por cómputo; un contenedor siempre encendido cobra un precio fijo y el sondeo sale gratis. Además corre `next start` tal cual: `proxy.ts`, las server actions y todo lo demás funcionan sin adaptadores.
 
-| Concepto | Cuenta | Créditos al mes |
-| --- | --- | --- |
-| Pedidos | 1 200 por hora × 10 h × 30 = 360 000 → 36 bloques de 10 000 | ~72 a 108 |
-| Cómputo | 360 000 × ~0,3 s (3 consultas a Supabase) × 1 GB ≈ 30 GB-h | ~150 a 300 |
-| Transferencia | 360 000 × ~1,5 KB ≈ 0,5 GB | ~5 a 11 |
-| **Total por pantalla** | | **~230 a 420** |
+### Comparación (USD por mes, leído en las páginas oficiales el 2026-10-16)
 
-Es **más que todo el plan Free (300)** con una sola pantalla, y el pedido pasa por `proxy.ts`, que podría sumar. Los supuestos (0,3 s por pedido, 1 GB de memoria, tamaño de respuesta) **no se midieron**: medirlos en staging con una pantalla real. El efecto de agotar los créditos es grave: se pausa **todo**, no solo la sala.
+| Opción | Costo base | Costo del sondeo de **una** pantalla de sala (estimado) | Rendimiento | Riesgo / trabajo |
+| --- | --- | --- | --- | --- |
+| Netlify Free | 0 | 230–420 créditos de los 300 mensuales; al agotarse **se pausa todo** | Sin región en América del Sur confirmada | Puede cerrar proyectos gratuitos sin aviso; `proxy.ts` sin documentar. **Descartada** para locales reales |
+| Netlify Pro | 20 (3 000 créditos) | Igual en créditos: ~7 a 13 pantallas por mes | Ídem | `proxy.ts` sin documentar |
+| Vercel Pro | 20 (incluye 20 de uso) | ~1 a 2 (CPU 0,221/h y memoria 0,0183/GB-h en São Paulo): el crédito alcanza para ~10 pantallas | CDN global y región en São Paulo | Ninguno técnico; **la más simple**, pero 3 a 4 veces más cara |
+| Cloudflare Workers (pago) | 5 | Insignificante | Muy bueno (borde) | OpenNext en Workers **no soportaría `proxy.ts`** (fuente no oficial, sin confirmar); habría que migrar. Descartada por ahora |
+| **Fly.io, contenedor en `gru`** | **~5,6** (1 CPU compartida, 512 MB) o ~9,6 con 1 GB | **0** (precio fijo; la salida a América del Sur cuesta 0,04 por GB) | Siempre encendida, sin arranque en frío, junto a Supabase en São Paulo | Operar una máquina: imágenes, actualizaciones, sin vistas previas |
 
-**Opciones para decidir (ninguna implementada)**
-1. **Espaciar el sondeo** a 5–10 s: el costo baja casi en proporción (a 10 s, ~70 a 125 créditos por pantalla). Cuesta latencia en el aviso (hoy ≤3 s). Es un cambio de producto: decide el usuario.
-2. **Sondear solo en el horario del local** (la pantalla deja de consultar fuera de él).
-3. **Recortar el trabajo por pedido** (hoy valida el usuario contra Auth, lee las membresías y lee la sala: tres idas a Supabase).
-4. **Supabase Realtime** en lugar de sondeo (reabre la enmienda al ADR 0007 sobre el token en el navegador; ADR 0011 lo dejó como alternativa).
-5. **Otro proveedor o plan pago** cuya tarifa no cobre por pedido. Candidatos a evaluar, **sin verificar**: Netlify Pro (USD 20 por mes, 3 000 créditos), Vercel Pro (Hobby está descartado para uso comercial), Cloudflare.
+Ahorro frente a Vercel Pro: unos USD 14 por mes (USD 170 por año). **Costos sin medir:** el costo del sondeo en Vercel y en Netlify es una estimación (0,3 s por pedido, 15 ms de CPU, 1 GB); el de Fly no depende del sondeo.
 
-**Recomendación:** usar Netlify Free solo para **staging**, medir el costo real de una pantalla de sala y decidir ahí. Para producción con locales reales no confiar en un plan gratuito de hosting con créditos: combinar la opción 1 o 2 con un plan pago, o elegir otro proveedor. Es una recomendación, no una decisión tomada.
+### Lo que se probó (local, 2026-10-16)
+Se construyó la imagen (`Dockerfile`, Next.js en modo `standalone`, 390 MB, 75 s) y se corrió **toda la suite E2E contra el contenedor**: 179 de 179 pruebas (una falló en una corrida completa por carga y pasó en la repetición, 9 de 9 en su archivo). Eso cubre `proxy.ts` (401 en JSON en la sala, redirección al login), las server actions, la carta pública, el llamado, la sala y el alta de SuperAdmin. Memoria: ~80 MB en reposo, ~420 MB como pico con 11 navegadores en paralelo y ~200 MB al volver al reposo. **No** se probó en Fly (no hay cuenta), ni con la región `gru`, ni con la latencia real.
+
+### Cómo se despliega y qué cuesta operarlo
+- `Dockerfile`, `fly.toml` (producción) y `fly.staging.toml` (staging, se apaga sin tráfico). Las plantillas de Fly **no están validadas con `fly`**.
+- Una imagen por entorno: las variables `NEXT_PUBLIC_*` se incrustan al construir. Los secretos van con `fly secrets set`, nunca en la imagen.
+- Con **una sola máquina**, cada despliegue la reemplaza y hay unos segundos sin servicio; con dos máquinas (el doble de costo) el reemplazo es sin corte. Para el piloto se acepta el corte breve y se despliega fuera del horario de servicio.
+- Las actualizaciones de seguridad de Node y de Next.js se reconstruyen a mano (`fly deploy`).
+- No hay vistas previas por rama: staging es una app aparte.
+
+### Criterios para cambiar de plan o de proveedor
+- **Subir a 1 GB (+USD 4):** memoria sostenida sobre el 80 % o reinicios por falta de memoria.
+- **Segunda máquina:** el primer local que no tolere unos segundos de corte en un despliegue, o un incidente de disponibilidad de la máquina.
+- **Pasar a Vercel Pro:** si operar la máquina consume más tiempo del que vale el ahorro, si hay dos incidentes de disponibilidad atribuibles a Fly en un trimestre, o si se necesitan vistas previas por rama con más gente en el equipo. La migración es cambiar el destino del despliegue; el código no cambia (lo que cambia es que Vercel no usa el `Dockerfile`).
+- **Revisar la decisión** si el sondeo se reemplaza por Realtime o se espacia (ya no importaría el costo por pedido).
+
+Si el sondeo se espaciara (por ejemplo a 5–10 s) o se limitara al horario del local, cualquier hosting por pedido sería más barato; no hace falta para esta decisión y queda como mejora de producto.
 
 ## 6. Monitoreo
 
-Solo los registros del proveedor de hosting y de Supabase (Logs), más la revisión semanal de la sección 3. Sentry u otra herramienta queda **postergada** (ADR 0015). Observación: el plan Free de Netlify guarda 1 día de métricas de observabilidad: si hay un incidente, mirar los registros ese mismo día.
+Solo los registros de Fly (`fly logs`, y el panel de métricas de memoria y CPU) y de Supabase (Logs), más la revisión semanal de la sección 3 (agregar la memoria de la máquina). Sentry u otra herramienta queda **postergada** (ADR 0015). Los registros de Fly no se guardan por mucho tiempo: ante un incidente, mirarlos ese mismo día.
 
 ## Fuentes consultadas (2026-10-16)
 - Supabase: [precios](https://supabase.com/pricing), [respaldos](https://supabase.com/docs/guides/platform/backups), [pausa de proyectos](https://supabase.com/docs/guides/platform/free-project-pausing).
+- Fly.io: [precios](https://fly.io/pricing.md).
+- Vercel: [Pro](https://vercel.com/docs/plans/pro-plan), [precios en São Paulo](https://vercel.com/docs/pricing/regional-pricing/gru1), [precios](https://vercel.com/pricing).
+- Cloudflare: [precios de Workers](https://developers.cloudflare.com/workers/platform/pricing/).
 - Netlify: [precios](https://www.netlify.com/pricing/), [Free vs Pro](https://www.netlify.com/pricing/pro-vs-free.md), [planes por créditos](https://www.netlify.com/changelog/netlify-pricing-update-introducing-credit-based-plans.md), [Next.js 16 en Netlify](https://www.netlify.com/changelog/next-js-16-deploy-on-netlify.md), [Next.js en Netlify](https://docs.netlify.com/build/frameworks/framework-setup-guides/nextjs/overview/), [acuerdo de suscripción](https://www.netlify.com/legal/self-serve-subscription-agreement.md).

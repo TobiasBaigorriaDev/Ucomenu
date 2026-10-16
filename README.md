@@ -34,6 +34,7 @@ Pruebas, lint y demás comandos: sección **Comandos del proyecto** de `AGENTS.m
 | `docs/arquitectura.md` | Stack, módulos, datos, contratos, riesgos |
 | `docs/decisiones/` | ADR breves de decisiones duraderas |
 | `docs/produccion.md` | Procedimiento de salida a producción con sus aprobaciones (`pnpm prod:check` revisa las variables de entorno) |
+| `Dockerfile`, `fly.toml`, `fly.staging.toml` | Imagen de producción (Next.js `standalone`) y plantillas de Fly.io (no validadas con `fly`) |
 | `docs/operacion.md` | Entornos, respaldos (`pnpm respaldo`), seguimiento del consumo y criterios para subir de plan |
 | `agile/tablero.md` | Backlog flexible: prioridad, estado breve y enlace a la ficha |
 | `agile/ahora.md` | Handoff: punto de retomada, bloqueos y próximo paso (una pantalla) |

@@ -1,0 +1,26 @@
+# Plantilla de Fly.io para STAGING (datos ficticios, proyecto de Supabase aparte). Ver fly.toml. NO validada con `fly`.
+# Se apaga sola cuando no hay tráfico: staging casi no cuesta (solo el disco de la imagen).
+app = "ucomenu-staging"
+primary_region = "gru"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "512mb"

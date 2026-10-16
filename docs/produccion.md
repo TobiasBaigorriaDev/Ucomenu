@@ -1,17 +1,17 @@
 # Salida a producción: procedimiento
 
-Procedimiento ordenado para publicar UcoMenu. La estrategia (planes, staging, monitoreo) está decidida en el ADR 0015; los límites, los respaldos y los criterios para subir de plan, en `docs/operacion.md`. Cada paso marca quién lo aprueba. **Nada de esto se ejecutó**: todo lo que toca un servicio remoto, una compra o un dominio necesita aprobación explícita del usuario (`AGENTS.md`, «Límites de autonomía»). Lo único verificable sin salir de la máquina es `pnpm prod:check` y el respaldo local.
+Procedimiento ordenado para publicar UcoMenu. La estrategia (planes, hosting, staging, monitoreo) está decidida en el ADR 0015; los límites, los respaldos y los criterios para subir de plan, en `docs/operacion.md`. Cada paso marca quién lo aprueba. **Nada de esto se ejecutó**: todo lo que toca un servicio remoto, una compra o un dominio necesita aprobación explícita del usuario (`AGENTS.md`, «Límites de autonomía»). Lo único verificable sin salir de la máquina es `pnpm prod:check` y el respaldo local.
 
-El **proveedor de hosting no está decidido** (ADR 0015; Vercel Hobby descartado para uso comercial; se evalúa Netlify). Donde dice «el proveedor de hosting», los pasos valen para cualquiera; el detalle propio de cada uno se agrega al elegirlo.
+El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/operacion.md` sección 5); la imagen corre igual en cualquier servicio de contenedores. Los comandos de Fly de abajo **no se ejecutaron ni se validaron** (no hay cuenta).
 
 ## 0. Antes de empezar (el usuario)
-- **Hosting:** decidirlo después de medir en staging (`docs/operacion.md`, sección 5).
+- **Hosting:** decidido (Fly.io, contenedor en São Paulo). Falta aprobar crear la cuenta y la tarjeta, e instalar `flyctl` (herramienta nueva: requiere aprobación).
 - **Dominio:** `ucomenu.com` **no está comprado**. Comprobar disponibilidad y precio, y definirlo **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
 - **Legal** (ficha `agile/cambios/textos-legales.md`): revisión profesional de `/terminos`, `/privacidad` y `/alergenos`, identidad del operador y correo real de contacto.
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
 
 ## 1. Proyecto de Supabase (aprobación: crea recursos)
-1. Crear el proyecto, en Free al comienzo (ADR 0015). Región cercana a los comensales.
+1. Crear el proyecto, en Free al comienzo (ADR 0015), en la región de **São Paulo** (la misma ciudad que la app en Fly).
 2. Aplicar las migraciones con `supabase link` y `supabase db push`. **Nunca** `db reset` ni el `seed.sql` (son datos ficticios y el reset borra todo).
 3. Configuración de Auth en el panel de Supabase (el `config.toml` solo vale en local): registro público apagado; contraseña mínima de 10; sin proveedores sociales. Las cuentas las crea el servidor (SuperAdmin y Dueño).
 4. Verificar que el bucket `product-images` quedó **público**, con tipos JPEG/PNG/WebP y 2 MB por archivo (ADR 0008; lo crea la migración).
@@ -23,8 +23,8 @@ El **proveedor de hosting no está decidido** (ADR 0015; Vercel Hobby descartado
    `insert into public.platform_admins (user_id) select id from auth.users where email = '<email>';`
 3. Ingresar en `/admin` y crear una organización de ensayo (el alta crea también su primera sucursal).
 
-## 3. Variables de entorno del proveedor de hosting (aprobación: secretos)
-Cargarlas en el entorno de producción del proveedor, **no** en Git. Valores distintos en staging y producción:
+## 3. Variables de entorno (aprobación: secretos)
+Las públicas (`NEXT_PUBLIC_*`) van como argumentos de construcción de la imagen (`fly deploy --build-arg`); las de servidor, como secretos de Fly (`fly secrets set`). **Nunca en Git ni dentro de la imagen.** Valores distintos en staging y producción:
 
 | Variable | Valor |
 | --- | --- |
@@ -37,11 +37,34 @@ Cargarlas en el entorno de producción del proveedor, **no** en Git. Valores dis
 
 Las `NEXT_PUBLIC_*` se incrustan **al construir**: cambiarlas exige un nuevo despliegue. `WAITER_CALL_CLIENT_SECRET` también firma el ticket de visita; si se rota, los tickets abiertos dejan de valer (los comensales vuelven a escanear el QR) y cambian los identificadores de cliente.
 
-Antes de desplegar, con las variables copiadas a un archivo **temporal fuera del repositorio**:
+Antes de desplegar, con las seis variables en un archivo **temporal fuera del repositorio**:
 ```powershell
 pnpm prod:check --env C:\ruta\temporal\produccion.env
 ```
 Tiene que dar 0 errores. Borrar el archivo al terminar.
+
+## 3b. Construir, probar y desplegar la imagen (aprobación: cuenta de Fly, instalar `flyctl`, gasto)
+**Probar la imagen en local** (no necesita Fly; es lo que se hizo el 2026-10-16: 179 de 179 pruebas E2E):
+```powershell
+docker build -t ucomenu:probe `
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=http://host.docker.internal:54321 `
+  --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<clave pública local> `
+  --build-arg NEXT_PUBLIC_SITE_URL=http://localhost:3100 `
+  --build-arg NEXT_PUBLIC_CONTACT_EMAIL=prueba@example.test .
+docker run -d --name ucomenu-probe --add-host host.docker.internal:host-gateway -p 3100:3000 `
+  -e SUPABASE_SERVICE_ROLE_KEY=<clave de servicio local> -e WAITER_CALL_CLIENT_SECRET=<el mismo de .env.local> ucomenu:probe
+$env:E2E_BASE_URL = "http://localhost:3100"; pnpm exec playwright test
+```
+`WAITER_CALL_CLIENT_SECRET` tiene que ser el de `.env.local`: las pruebas firman tickets con ese secreto.
+
+**Desplegar a staging primero** (después de crear la app con `fly apps create ucomenu-staging`; el nombre real es único en toda Fly):
+```powershell
+fly secrets set -c fly.staging.toml SUPABASE_SERVICE_ROLE_KEY=<...> WAITER_CALL_CLIENT_SECRET=<...>
+fly deploy -c fly.staging.toml `
+  --build-arg NEXT_PUBLIC_SUPABASE_URL=<...> --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<...> `
+  --build-arg NEXT_PUBLIC_SITE_URL=<...> --build-arg NEXT_PUBLIC_CONTACT_EMAIL=<...>
+```
+Producción es igual con `fly.toml`. Revisar con `fly config validate` y `fly status`. Con una sola máquina, cada despliegue tiene unos segundos de corte: hacerlo fuera del horario de servicio.
 
 ## 4. Programar la purga de `waiter_calls` (aprobación: infraestructura)
 La función existe (`public.purge_waiter_calls`, ADR 0014) pero nada la ejecuta, y la política de privacidad **ya promete 14 días**: no publicar sin esto. En el proyecto remoto, activar `pg_cron` (Database → Extensions) y programar una tarea diaria que repite hasta que devuelve menos que el lote, a las 03:00 de Argentina (06:00 UTC):
@@ -67,7 +90,7 @@ El bloque se probó a mano en la base local como `postgres` (la extensión no es
 **Comprobación obligatoria antes de publicar** (en staging y de nuevo en producción), después de al menos una ejecución real: `cron.job_run_details` con estado `succeeded` y `select count(*) from public.waiter_calls where created_at < now() - interval '14 days'` igual a 0. Para probar con datos ficticios en staging, insertar llamados con `created_at` viejo y ejecutar el bloque a mano.
 
 ## 5. Dominio (aprobación: compra y DNS)
-1. Comprar el dominio (todavía no está comprado) y agregarlo al proveedor de hosting; apuntar el DNS. Esperar el certificado HTTPS.
+1. Comprar el dominio (todavía no está comprado) y agregarlo a Fly (`fly certs add <dominio>`); apuntar el DNS como indique Fly. Esperar el certificado HTTPS (`fly certs show <dominio>`).
 2. Confirmar que `NEXT_PUBLIC_SITE_URL` coincide y volver a desplegar si se cambió.
 3. Imprimir los QR **después** de este paso: cada QR codifica `{NEXT_PUBLIC_SITE_URL}/t/{token}`.
 
@@ -75,21 +98,21 @@ El bloque se probó a mano en la base local como `postgres` (la extensión no es
 Correr `pnpm respaldo` contra el proyecto y **ensayar la restauración en staging** (`docs/operacion.md`, sección 2). Definir quién lo corre y con qué frecuencia. El plan Free no hace respaldos.
 
 ## 7. Monitoreo de errores
-Inicialmente solo los registros del proveedor de hosting y de Supabase, más la revisión semanal del consumo (`docs/operacion.md`, secciones 3 y 6). Sentry está postergado (ADR 0015).
+Inicialmente solo los registros de Fly (`fly logs`) y de Supabase, más la revisión semanal del consumo (`docs/operacion.md`, secciones 3 y 6). Sentry está postergado (ADR 0015).
 
 ## 8. Comprobación posterior
 Con la app publicada y sin datos reales todavía:
 - `/login` ingresa; `/admin` responde 404 a quien no es SuperAdmin.
 - El alta de una organización de ensayo crea la sucursal y `/m/{org}/{sucursal}` abre con HTTPS.
 - Un QR de mesa abre `/t/{token}`, el llamado llega a la sala y el botón queda en cooldown; el ticket de visita vale desde otra instancia (reabrir tras un nuevo despliegue).
-- **El sondeo de la sala:** con una pantalla abierta un rato, anotar el consumo de pedidos y cómputo del proveedor y proyectarlo al mes (`docs/operacion.md`, sección 5); confirmar que `proxy.ts` responde 401 JSON sin sesión en `/sala/{slug}/estado`.
+- **La máquina:** con una pantalla de sala abierta un rato, anotar la memoria y la CPU de la máquina en el panel de Fly (la imagen midió ~80 MB en reposo; criterios en `docs/operacion.md`, sección 5); confirmar que `/sala/{slug}/estado` responde 401 JSON sin sesión.
 - `/terminos`, `/privacidad` y `/alergenos` abren y el contacto es el real.
 - No hay cookies en la carta pública (`/m/...`).
 - La purga programada corrió y no quedan llamados de más de 14 días (paso 4).
 - Probar en un teléfono real lo pendiente del tablero: ticket de visita con la pantalla apagada y la pantalla «Llamados».
 
 ## Marcha atrás
-- **Aplicación:** volver al despliegue anterior en el proveedor de hosting.
+- **Aplicación:** volver a la versión anterior (`fly releases` y `fly deploy --image <imagen anterior>`).
 - **Base:** las migraciones traen su rollback en el encabezado. No se baja una migración en una base con datos reales sin aprobación; la purga de `waiter_calls` es irreversible y no tiene respaldo (aceptado, ADR 0014).
 - **Purga mal programada:** `cron.unschedule('purge-waiter-calls')`.
 - **Datos perdidos o dañados:** restaurar desde el último respaldo propio (`docs/operacion.md`, sección 2).

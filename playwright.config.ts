@@ -15,6 +15,8 @@ for (const file of [".env.local", ".env.test.local"]) {
 process.env.WAITER_CALL_CLIENT_SECRET ||= "secreto-solo-para-las-pruebas-e2e-0123456789";
 
 const PORT = 3100;
+// Con E2E_BASE_URL las pruebas apuntan a un servidor ya levantado (por ejemplo, el contenedor de Docker) en vez de `next start`.
+const EXTERNAL_BASE_URL = process.env.E2E_BASE_URL;
 
 // E2E contra el build de producción y el Supabase LOCAL con supabase/seed.sql.
 // Requisitos: `pnpm db:start`, `pnpm db:reset` y `pnpm build` (o usar `pnpm test:e2e:full`).
@@ -28,7 +30,7 @@ export default defineConfig({
   fullyParallel: true,
   reporter: [["list"]],
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    baseURL: EXTERNAL_BASE_URL ?? `http://localhost:${PORT}`,
     // Teléfono de referencia del producto: mobile-first, 390 px de ancho.
     viewport: { width: 390, height: 844 },
     isMobile: true,
@@ -38,10 +40,12 @@ export default defineConfig({
     screenshot: "only-on-failure",
   },
   projects: [{ name: "chromium", use: { browserName: "chromium" } }],
-  webServer: {
-    command: `pnpm exec next start -p ${PORT}`,
-    url: `http://localhost:${PORT}`,
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  webServer: EXTERNAL_BASE_URL
+    ? undefined
+    : {
+        command: `pnpm exec next start -p ${PORT}`,
+        url: `http://localhost:${PORT}`,
+        reuseExistingServer: false,
+        timeout: 60_000,
+      },
 });
