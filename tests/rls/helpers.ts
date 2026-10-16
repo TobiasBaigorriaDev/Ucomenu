@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { asegurarDestinoLocal, purgePriceHistoryWhere } from "./purge-price-history";
+import { asegurarDestinoLocal, purgeOrgRecordsWhere, purgePriceHistoryWhere } from "./purge-price-history";
 
 /**
  * Utilidades compartidas de las pruebas de RLS contra el Supabase LOCAL.
@@ -129,7 +129,8 @@ export function purgePriceHistory(orgId: string): void {
 
 export async function deleteOrg(service: Db, orgId: string | undefined): Promise<void> {
   if (!orgId) return;
-  purgePriceHistory(orgId);
+  // El historial de precios y los pagos bloquean el borrado (RESTRICT) y solo se agregan: se purgan juntos.
+  purgeOrgRecordsWhere(`o.id = '${orgId}'`);
   // Con varias bajas concurrentes un borrado puede fallar de forma transitoria: se reintenta y, si no se logra, se avisa
   // (antes el error se perdía y quedaba un resto que rompía la corrida siguiente).
   for (let intento = 1; intento <= 3; intento++) {

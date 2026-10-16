@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
+import { changePlan, registerPayment, setSuspension } from "@/lib/admin/subscriptions";
+import { parseSlug } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import type { FormState } from "@/lib/form-state";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -47,4 +49,75 @@ export async function createOrganizationAction(_previous: FormState, formData: F
     ok: true,
     message: `Listo: «${result.data.slug}» está creada y ${result.data.ownerEmail} ya puede ingresar como Dueño, y su carta queda en /m/${result.data.slug}/${result.data.branchSlug}. Pasale la contraseña temporal.`,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Plan, suspensión y pagos de una organización (ficha superadmin-planes-pagos)
+// ---------------------------------------------------------------------------
+
+/** Prepara el contexto de una acción sobre una organización: SuperAdmin exigido otra vez y organización por slug. */
+async function organizationContext(formData: FormData) {
+  const rawSlug = text(formData, "slug");
+  const slug = parseSlug(rawSlug) ?? "";
+  const user = await requirePlatformAdmin(slug ? `/admin/organizaciones/${slug}` : "/admin");
+  try {
+    const ctx: AdminContext = { session: await createSessionClient(), admin: createAdminClient(), actorId: user.id };
+    return { ctx, slug: rawSlug, page: slug ? `/admin/organizaciones/${slug}` : "/admin" };
+  } catch {
+    return null;
+  }
+}
+
+const NOT_CONFIGURED = "El SuperAdmin no está configurado en este servidor.";
+
+export async function changePlanAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { plan: text(formData, "plan"), billingCycle: text(formData, "billingCycle"), reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await changePlan(prepared.ctx, { slug: prepared.slug, ...values });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  return { ok: true, message: "Listo: el plan quedó cambiado y registrado en los movimientos." };
+}
+
+export async function setSuspensionAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+  const suspend = text(formData, "suspend") === "true";
+
+  const result = await setSuspension(prepared.ctx, { slug: prepared.slug, suspend, reason: values.reason });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  return {
+    ok: true,
+    message: suspend
+      ? "Listo: la organización quedó suspendida. Su carta ya no se muestra."
+      : "Listo: se quitó la suspensión. La cuenta vuelve al estado que indican sus fechas.",
+  };
+}
+
+export async function registerPaymentAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = {
+    amount: text(formData, "amount"),
+    currency: text(formData, "currency"),
+    method: text(formData, "method"),
+    reference: text(formData, "reference"),
+    paidOn: text(formData, "paidOn"),
+    coversUntil: text(formData, "coversUntil"),
+  };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await registerPayment(prepared.ctx, { slug: prepared.slug, ...values });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  return { ok: true, message: "Listo: el pago quedó registrado y la vigencia se actualizó." };
 }

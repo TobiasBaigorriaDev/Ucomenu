@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
-import { formatDateWithYear, PLAN_NAME, type BillingState } from "@/lib/entitlements";
+import { formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL, type BillingState } from "@/lib/entitlements";
 
 export const metadata: Metadata = { title: "Suscripción" };
 
@@ -37,7 +37,13 @@ export default async function SubscriptionPage({ params }: PageProps<"/panel/[or
         <ul className="mt-6 border-t border-ink/15">
           <Row label="Plan">{ent.plan ? (PLAN_NAME[ent.plan] ?? ent.plan) : "Sin datos"}</Row>
           {ent.billingCycle ? <Row label="Facturación">{CYCLE_LABEL[ent.billingCycle] ?? ent.billingCycle}</Row> : null}
-          <Row label="Estado">{STATE_LABEL[ent.state]}</Row>
+          <Row label="Estado">{ent.suspendedManually ? "Suspendida por UcoMenu" : STATE_LABEL[ent.state]}</Row>
+          {ent.trialStatus && ent.trialStatus !== "none" ? (
+            <Row label="Prueba gratuita">
+              {TRIAL_STATUS_LABEL[ent.trialStatus]}
+              {ent.trialStatus !== "converted" && ent.trialEndsAt ? ` · hasta el ${formatDateWithYear(ent.trialEndsAt)}` : ""}
+            </Row>
+          ) : null}
           {ent.periodEnd ? <Row label="Vence">{formatDateWithYear(ent.periodEnd)}</Row> : null}
           {ent.daysLate ? <Row label="Días de atraso">{ent.daysLate}</Row> : null}
         </ul>

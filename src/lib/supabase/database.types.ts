@@ -125,6 +125,32 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"payments": {
+                  Row: {
+                    "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"organization_id": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string | null,"registered_by": string,"subscription_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at"?: string,"currency": string,"id"?: string,"method": string,"organization_id": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference"?: string | null,"registered_by": string,"subscription_id": string
+                  }
+                  Update: {
+                    "amount_cents"?: number,"billing_cycle"?: string,"covers_until"?: string,"created_at"?: string,"currency"?: string,"id"?: string,"method"?: string,"organization_id"?: string,"paid_on"?: string,"plan_code"?: string,"previous_period_end"?: string,"reference"?: string | null,"registered_by"?: string,"subscription_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "payments_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "payments_subscription_id_fkey"
+      columns: ["subscription_id"]
+isOneToOne: false
+      referencedRelation: "subscriptions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"plans": {
                   Row: {
                     "code": string,"created_at": string,"features": (string)[],"max_active_products": number | null,"max_branches": number | null,"max_tables_per_branch": number | null,"monthly_price_usd_cents": number,"name": string,"yearly_price_usd_cents": number
@@ -227,14 +253,14 @@ isOneToOne: false
                   ]
                 },"subscriptions": {
                   Row: {
-                    "billing_cycle": string,"created_at": string,"current_period_end": string | null,"id": string,"notes": string | null,"organization_id": string,"plan_code": string,"trial_ends_at": string | null
+                    "billing_cycle": string,"created_at": string,"current_period_end": string | null,"id": string,"notes": string | null,"organization_id": string,"plan_code": string,"suspended_at": string | null,"trial_ends_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "billing_cycle"?: string,"created_at"?: string,"current_period_end"?: string | null,"id"?: string,"notes"?: string | null,"organization_id": string,"plan_code": string,"trial_ends_at"?: string | null
+                    "billing_cycle"?: string,"created_at"?: string,"current_period_end"?: string | null,"id"?: string,"notes"?: string | null,"organization_id": string,"plan_code": string,"suspended_at"?: string | null,"trial_ends_at"?: string | null
                   }
                   Update: {
-                    "billing_cycle"?: string,"created_at"?: string,"current_period_end"?: string | null,"id"?: string,"notes"?: string | null,"organization_id"?: string,"plan_code"?: string,"trial_ends_at"?: string | null
+                    "billing_cycle"?: string,"created_at"?: string,"current_period_end"?: string | null,"id"?: string,"notes"?: string | null,"organization_id"?: string,"plan_code"?: string,"suspended_at"?: string | null,"trial_ends_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -309,8 +335,17 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_create_organization":
+            "admin_change_plan":
+{ Args: { "p_actor": string,"p_billing_cycle": string,"p_org": string,"p_plan": string,"p_reason": string }; Returns: undefined
+                           },
+"admin_create_organization":
 { Args: { "p_actor": string,"p_billing_cycle": string,"p_branch_name"?: string,"p_branch_slug"?: string,"p_name": string,"p_owner": string,"p_period_end": string,"p_plan": string,"p_slug": string }; Returns: string
+                           },
+"admin_register_payment":
+{ Args: { "p_actor": string,"p_amount_cents": number,"p_covers_until": string,"p_currency": string,"p_method": string,"p_org": string,"p_paid_on": string,"p_reference": string }; Returns: string
+                           },
+"admin_set_suspension":
+{ Args: { "p_actor": string,"p_org": string,"p_reason": string,"p_suspend": boolean }; Returns: undefined
                            },
 "create_waiter_call":
 { Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json

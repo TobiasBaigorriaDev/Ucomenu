@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeEmail, validatePassword, type PasswordProblem } from "@/lib/auth/validation";
-import { billingState, type BillingState } from "@/lib/entitlements";
+import { accountState, trialStatus, type BillingState, type TrialStatus } from "@/lib/entitlements";
 import type { Database } from "@/lib/supabase/database.types";
 import { isBillingCycle, isPlanCode, parseName, parsePeriodEnd, parseSlug } from "./validation";
 
@@ -35,12 +35,26 @@ export type AdminError =
   | "slug_taken"
   | "email_taken" // el email ya tiene cuenta: no se toca
   | "uncertain" // se perdió la respuesta y no se pudo comprobar si el alta quedó hecha
-  | "unexpected";
+  | "unexpected"
+  // Cambio de plan, suspensión y pagos (ficha superadmin-planes-pagos)
+  | "org_not_found"
+  | "invalid_reason"
+  | "invalid_amount"
+  | "invalid_currency"
+  | "invalid_method"
+  | "invalid_reference"
+  | "invalid_paid_on"
+  | "invalid_covers_until"
+  | "plan_unchanged"
+  | "already_suspended"
+  | "not_suspended"
+  | "payment_not_extending"
+  | "uncertain_change"; // se perdió la respuesta de un cambio: pudo quedar hecho
 
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: AdminError };
 
-const ok = <T>(data: T): Result<T> => ({ ok: true, data });
-const fail = (error: AdminError): Result<never> => ({ ok: false, error });
+export const ok = <T>(data: T): Result<T> => ({ ok: true, data });
+export const fail = (error: AdminError): Result<never> => ({ ok: false, error });
 
 export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   blank: "Ingresá una contraseña.",
@@ -61,7 +75,22 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   email_taken: "Ese email ya tiene una cuenta. Por ahora el Dueño inicial tiene que ser una cuenta nueva: usá otro email.",
   uncertain:
     "No pudimos confirmar si el alta quedó hecha. No la repitas: revisá primero la lista de organizaciones (si ya aparece, está creada).",
-  unexpected: "No se pudo completar el alta. No se creó nada; probá de nuevo en unos minutos.",
+  unexpected: "No se pudo completar la operación. No se cambió nada; probá de nuevo en unos minutos.",
+  org_not_found: "No encontramos esa organización.",
+  invalid_reason: "Escribí el motivo del cambio (hasta 200 caracteres).",
+  invalid_amount: "Revisá el importe: un número mayor que cero, con hasta dos decimales (por ejemplo, 20000 o 20.000,50).",
+  invalid_currency: "Elegí la moneda del pago.",
+  invalid_method: "Elegí cómo se pagó.",
+  invalid_reference: "La referencia del pago es demasiado larga (hasta 120 caracteres).",
+  invalid_paid_on: "«Fecha del pago» tiene que ser un día real, no futuro y de hasta un año atrás.",
+  invalid_covers_until: "«Cubre hasta» tiene que ser una fecha futura, de hasta 2 años.",
+  plan_unchanged: "Ese ya es el plan y el ciclo de la organización: no hay nada que cambiar.",
+  already_suspended: "La organización ya está suspendida a mano.",
+  not_suspended: "La organización no está suspendida a mano, así que no hay nada que reactivar.",
+  payment_not_extending:
+    "«Cubre hasta» tiene que ser posterior al vencimiento actual y a hoy. Si ya cargaste este pago, no lo repitas: mirá el historial de pagos.",
+  uncertain_change:
+    "No pudimos confirmar si el cambio quedó hecho. No lo repitas todavía: recargá esta página y mirá el estado y los últimos movimientos.",
 };
 
 /** Prueba de identidad: lo comprueba el cliente de la persona (RLS), no la clave de servicio. */
@@ -208,8 +237,14 @@ export type OrganizationRow = {
   billingCycle: string | null;
   /** Fin efectivo: el mayor entre `current_period_end` y `trial_ends_at`. */
   periodEnd: string | null;
-  /** Estado de la cuenta derivado del fin efectivo (misma regla que la base). */
+  /** Estado de la cuenta: la suspensión manual manda; si no, se deriva del fin efectivo (misma regla que la base). */
   state: BillingState;
+  /** Estado según las fechas solamente (sin la suspensión manual): a qué vuelve la cuenta al reactivarla. */
+  datesState: BillingState;
+  /** Suspendida a mano por el SuperAdmin (distinto de la mora). */
+  suspended: boolean;
+  /** Estado de la prueba gratuita, aparte de la mora. */
+  trial: TrialStatus;
   ownerEmails: string[];
 };
 
@@ -231,7 +266,7 @@ export async function listOrganizations(ctx: AdminContext, now: Date = new Date(
   const [subs, owners] = await Promise.all([
     ctx.admin
       .from("subscriptions")
-      .select("organization_id, plan_code, billing_cycle, trial_ends_at, current_period_end")
+      .select("organization_id, plan_code, billing_cycle, trial_ends_at, current_period_end, suspended_at")
       .in("organization_id", ids),
     ctx.admin.from("memberships").select("organization_id, user_id").eq("role", "owner").in("organization_id", ids),
   ]);
@@ -260,7 +295,10 @@ export async function listOrganizations(ctx: AdminContext, now: Date = new Date(
         plan: sub?.plan_code ?? null,
         billingCycle: sub?.billing_cycle ?? null,
         periodEnd,
-        state: billingState(periodEnd, now),
+        state: accountState(periodEnd, sub?.suspended_at != null, now),
+        datesState: accountState(periodEnd, false, now),
+        suspended: sub?.suspended_at != null,
+        trial: trialStatus(sub?.trial_ends_at ?? null, sub?.current_period_end ?? null, now),
         ownerEmails: owners.data
           .filter((m) => m.organization_id === o.id)
           .map((m) => emailById.get(m.user_id) ?? "(sin email)")
@@ -282,13 +320,18 @@ export type AuditEntry = {
 export const AUDIT_LIMIT = 30;
 
 /** Últimos movimientos de la auditoría. Se lee con la sesión de la persona: la RLS deja pasar solo a los SuperAdmin. */
-export async function listAuditLog(ctx: Pick<AdminContext, "session">): Promise<Result<AuditEntry[]>> {
-  const { data, error } = await ctx.session
+export async function listAuditLog(
+  ctx: Pick<AdminContext, "session">,
+  filter: { organizationId?: string } = {},
+): Promise<Result<AuditEntry[]>> {
+  let query = ctx.session
     .from("audit_log")
     .select("id, created_at, actor_email, action, organization_id, after")
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(AUDIT_LIMIT);
+  if (filter.organizationId) query = query.eq("organization_id", filter.organizationId);
+  const { data, error } = await query;
   if (error) return fail("unexpected");
   return ok(
     data.map((row) => ({

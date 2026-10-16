@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { purgeAuditLogWhere, purgePriceHistoryWhere } from "./purge-price-history";
+import { purgeAuditLogWhere, purgeOrgRecordsWhere } from "./purge-price-history";
 
 /**
  * Limpieza previa de las pruebas de RLS. Si una corrida anterior se interrumpió (o su limpieza final no alcanzó a
@@ -20,8 +20,8 @@ export default async function setup() {
 
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
 
-  // Una organización con historial de precios no se puede borrar (RESTRICT) y el historial solo se agrega: se purga primero.
-  purgePriceHistoryWhere("organization_id in (select id from public.organizations where slug like 'tt-%')");
+  // Una organización con historial de precios o pagos no se puede borrar (RESTRICT) y ambos solo se agregan: se purgan primero.
+  purgeOrgRecordsWhere("o.slug like 'tt-%'");
 
   // La auditoría de SuperAdmin tampoco se borra sola: se purgan los movimientos de las organizaciones de prueba.
   purgeAuditLogWhere("after->>'slug' like 'tt-%'");

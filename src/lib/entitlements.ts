@@ -6,6 +6,15 @@
 export type BillingState = "active" | "grace" | "read_only" | "suspended";
 export type Role = "owner" | "staff";
 
+/**
+ * Estado de la prueba gratuita, aparte de la mora (misma regla que `private.trial_status` de la base):
+ *  - `none`: nunca tuvo prueba, o el alta del SuperAdmin la reemplazó por un plan con fecha.
+ *  - `in_trial`: la prueba corre.
+ *  - `expired`: terminó y nadie asignó ni pagó un período. Desde ahí rige la mora (ADR 0006), que no es otro estado de la prueba.
+ *  - `converted`: ya tiene un período propio (pago o asignación posterior).
+ */
+export type TrialStatus = "none" | "in_trial" | "expired" | "converted";
+
 export type Entitlements = {
   state: BillingState;
   canWrite: boolean;
@@ -15,11 +24,17 @@ export type Entitlements = {
   billingCycle?: string;
   periodEnd?: string;
   daysLate?: number;
+  /** Solo para el Dueño. */
+  trialStatus?: TrialStatus;
+  trialEndsAt?: string;
+  /** Solo para el Dueño: la cuenta la suspendió a mano el equipo de UcoMenu (no es mora). */
+  suspendedManually?: boolean;
   limits: Record<string, number | null>;
   usage: Record<string, number>;
 };
 
 const STATES: readonly BillingState[] = ["active", "grace", "read_only", "suspended"];
+const TRIAL_STATUSES: readonly TrialStatus[] = ["none", "in_trial", "expired", "converted"];
 
 const isRecord = (v: unknown): v is Record<string, unknown> => typeof v === "object" && v !== null && !Array.isArray(v);
 
@@ -41,6 +56,9 @@ export function parseEntitlements(raw: unknown): Entitlements | null {
     billingCycle: typeof raw.billing_cycle === "string" ? raw.billing_cycle : undefined,
     periodEnd: typeof raw.period_end === "string" ? raw.period_end : undefined,
     daysLate: typeof raw.days_late === "number" ? raw.days_late : undefined,
+    trialStatus: TRIAL_STATUSES.find((t) => t === raw.trial_status),
+    trialEndsAt: typeof raw.trial_ends_at === "string" ? raw.trial_ends_at : undefined,
+    suspendedManually: raw.suspended_manually === true ? true : undefined,
     limits: isRecord(raw.limits)
       ? Object.fromEntries(
           Object.entries(raw.limits).filter((e): e is [string, number | null] => e[1] === null || typeof e[1] === "number"),
@@ -79,6 +97,34 @@ export function billingState(periodEnd: string | Date | null, at: Date = new Dat
   if (t <= end + READ_ONLY_DAYS * DAY_MS) return "read_only";
   return "suspended";
 }
+
+/**
+ * Estado de la cuenta con la suspensión manual: manda sobre las fechas (misma regla que `private.org_state`).
+ * Reactivar no extiende nada: sin suspensión, vuelve al estado de las fechas.
+ */
+export function accountState(periodEnd: string | Date | null, suspendedManually: boolean, at: Date = new Date()): BillingState {
+  return suspendedManually ? "suspended" : billingState(periodEnd, at);
+}
+
+/** Misma regla que `private.trial_status` de la base. */
+export function trialStatus(
+  trialEndsAt: string | Date | null,
+  currentPeriodEnd: string | Date | null,
+  at: Date = new Date(),
+): TrialStatus {
+  if (trialEndsAt === null) return "none";
+  if (currentPeriodEnd !== null) return "converted";
+  const end = new Date(trialEndsAt).getTime();
+  if (Number.isNaN(end)) return "expired";
+  return at.getTime() <= end ? "in_trial" : "expired";
+}
+
+export const TRIAL_STATUS_LABEL: Record<TrialStatus, string> = {
+  none: "Sin prueba",
+  in_trial: "En prueba gratuita",
+  expired: "Prueba vencida",
+  converted: "Ya pasó a un período propio",
+};
 
 export type MoraNotice = {
   tone: "grace" | "read_only" | "suspended";
@@ -145,6 +191,14 @@ export function moraNotice(ent: Entitlements | null, role: Role): MoraNotice | n
       tone: "read_only",
       title: "Tu cuenta está en solo lectura",
       body: `Podés ver todo, pero no editar la carta.${hasta} Contactá a UcoMenu para registrar el pago.`,
+    };
+  }
+
+  if (owner && ent.suspendedManually) {
+    return {
+      tone: "suspended",
+      title: "Tu cuenta fue suspendida por UcoMenu",
+      body: "La carta no se muestra a tus clientes. Tus datos están a salvo. Contactá a UcoMenu para saber el motivo y reactivarla.",
     };
   }
 

@@ -64,3 +64,96 @@ export function defaultPeriodDate(now: Date, days = DEFAULT_PERIOD_DAYS): string
     new Date(now.getTime() + days * DAY_MS),
   );
 }
+
+// ---------------------------------------------------------------------------
+// Cambio de plan, suspensión y pagos (ficha superadmin-planes-pagos)
+// ---------------------------------------------------------------------------
+
+export const REASON_MAX_LENGTH = 200;
+export const REFERENCE_MAX_LENGTH = 120;
+/** Mismo tope que la base: 10^11 centavos. */
+export const AMOUNT_MAX_CENTS = 100_000_000_000;
+
+export const CURRENCIES = ["ARS", "USD"] as const;
+export type Currency = (typeof CURRENCIES)[number];
+export const PAYMENT_METHODS = ["transfer", "payment_link", "cash", "other"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const isCurrency = (value: unknown): value is Currency => CURRENCIES.some((c) => c === value);
+export const isPaymentMethod = (value: unknown): value is PaymentMethod => PAYMENT_METHODS.some((m) => m === value);
+
+/** Motivo de un cambio: de 1 a 200 caracteres sin espacios en los bordes. `null` si no sirve. */
+export function parseReason(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const reason = raw.trim();
+  return reason.length > 0 && [...reason].length <= REASON_MAX_LENGTH ? reason : null;
+}
+
+/** Referencia del pago (número de operación): opcional, hasta 120 caracteres. `""` si no hay; `null` si es demasiado larga. */
+export function parseReference(raw: unknown): string | null {
+  if (raw === undefined || raw === null) return "";
+  if (typeof raw !== "string") return null;
+  const reference = raw.trim();
+  return [...reference].length <= REFERENCE_MAX_LENGTH ? reference : null;
+}
+
+/**
+ * Importe escrito por una persona («1234», «1.234,56», «1234.5») a centavos enteros. Acepta coma o punto decimal y
+ * puntos como separador de miles solo si hay coma decimal. Hasta 2 decimales, mayor que cero y hasta el tope. `null` si no sirve.
+ */
+export function parseAmountToCents(raw: unknown): number | null {
+  if (typeof raw !== "string") return null;
+  let text = raw.trim().replace(/\s/g, "");
+  if (text === "") return null;
+  if (text.includes(",")) {
+    // «1.234,56»: los puntos son miles y la coma, decimal.
+    if (!/^\d{1,3}(\.\d{3})*,\d{1,2}$|^\d+,\d{1,2}$/.test(text)) return null;
+    text = text.replace(/\./g, "").replace(",", ".");
+  } else if (!/^\d+(\.\d{1,2})?$/.test(text)) {
+    return null;
+  }
+  const [whole, decimals = ""] = text.split(".");
+  const cents = Number(whole) * 100 + Number(decimals.padEnd(2, "0"));
+  return Number.isSafeInteger(cents) && cents > 0 && cents <= AMOUNT_MAX_CENTS ? cents : null;
+}
+
+/** Hoy en Argentina como `AAAA-MM-DD`. */
+export function todayInArgentina(now: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { year: "numeric", month: "2-digit", day: "2-digit", timeZone: TIME_ZONE }).format(now);
+}
+
+function calendarDay(raw: string): number | null {
+  const match = DATE_ONLY.exec(raw);
+  if (!match) return null;
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return null;
+  return date.getTime();
+}
+
+/** Día en que se recibió el pago: una fecha real, no futura (en Argentina) y de hasta 365 días atrás. `null` si no sirve. */
+export function parsePaidOn(raw: unknown, now: Date): string | null {
+  if (typeof raw !== "string") return null;
+  const day = calendarDay(raw);
+  const today = calendarDay(todayInArgentina(now));
+  if (day === null || today === null) return null;
+  return day <= today && day >= today - 365 * DAY_MS ? raw : null;
+}
+
+/**
+ * Propuesta para «cubre hasta»: un ciclo (un mes o un año) a partir del día más tardío entre el vencimiento actual y hoy,
+ * en el calendario de Argentina. Es solo el valor inicial del campo: la persona lo puede cambiar y la base valida el resto.
+ */
+export function proposeCoversUntil(currentEnd: string | null, cycle: BillingCycle, now: Date): string {
+  const today = todayInArgentina(now);
+  const endDay = currentEnd ? todayInArgentina(new Date(currentEnd)) : today;
+  const base = calendarDay(endDay)! > calendarDay(today)! ? endDay : today;
+  const [year, month, day] = base.split("-").map(Number);
+  const targetMonthIndex = month - 1 + (cycle === "monthly" ? 1 : 12);
+  const targetYear = year + Math.floor(targetMonthIndex / 12);
+  const targetMonth = targetMonthIndex % 12;
+  // Si el mes de destino es más corto (31 de enero + 1 mes), queda en su último día.
+  const lastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${targetYear}-${pad(targetMonth + 1)}-${pad(Math.min(day, lastDay))}`;
+}

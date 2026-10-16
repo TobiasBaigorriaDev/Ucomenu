@@ -93,6 +93,50 @@ export function purgeAuditLogWhere(condicion: string): void {
   }
 }
 
+/** Igual para `payments` (pagos del SuperAdmin): solo se agrega, así que la limpieza de pruebas apaga su trigger un momento. */
+export function purgePaymentsWhere(condicion: string): void {
+  const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+  asegurarDestinoLocal(contenedor);
+  const consulta =
+    `begin; alter table public.payments disable trigger payments_no_update_delete; ` +
+    `delete from public.payments where ${condicion}; ` +
+    `alter table public.payments enable trigger payments_no_update_delete; commit`;
+  try {
+    execFileSync("docker", ["exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c", consulta], {
+      encoding: "utf8",
+    });
+  } catch (error) {
+    throw new Error(`No se pudo limpiar payments en el contenedor ${contenedor}: ${String(error)}`);
+  }
+}
+
+/**
+ * Limpia de una vez lo que bloquea el borrado de una organización de prueba: historial de precios y pagos del
+ * SuperAdmin (ambos RESTRICT y solo-agregado) de las organizaciones que cumplan `condicionOrg` (SQL sobre
+ * `public.organizations o`). Una sola transacción y un solo `docker exec`, con los dos triggers apagados un momento.
+ * La auditoría NO se toca acá: no bloquea el borrado (sin clave foránea) y hay pruebas que comprueban que sobrevive.
+ */
+export function purgeOrgRecordsWhere(condicionOrg: string): void {
+  const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+  asegurarDestinoLocal(contenedor);
+  const orgs = `(select o.id from public.organizations o where ${condicionOrg})`;
+  const consulta =
+    `begin; ` +
+    `alter table public.price_history disable trigger price_history_no_update_delete; ` +
+    `alter table public.payments disable trigger payments_no_update_delete; ` +
+    `delete from public.price_history where organization_id in ${orgs}; ` +
+    `delete from public.payments where organization_id in ${orgs}; ` +
+    `alter table public.price_history enable trigger price_history_no_update_delete; ` +
+    `alter table public.payments enable trigger payments_no_update_delete; commit`;
+  try {
+    execFileSync("docker", ["exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c", consulta], {
+      encoding: "utf8",
+    });
+  } catch (error) {
+    throw new Error(`No se pudo limpiar el historial de la organización en el contenedor ${contenedor}: ${String(error)}`);
+  }
+}
+
 export function purgePriceHistoryWhere(condicion: string): void {
   const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
   asegurarDestinoLocal(contenedor);

@@ -5,65 +5,41 @@ import {
   listAuditLog,
   listOrganizations,
   ORGANIZATIONS_LIMIT,
-  type AuditEntry,
   type OrganizationRow,
 } from "@/lib/admin/organizations";
+import { CYCLE_LABEL } from "@/lib/admin/format";
 import { requirePlatformAdmin } from "@/lib/auth/session";
-import { BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME } from "@/lib/entitlements";
+import { BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
+import { AuditItem } from "./audit";
 
 export const metadata: Metadata = { title: "SuperAdmin" };
-
-const CYCLE_LABEL: Record<string, string> = { monthly: "mensual", yearly: "anual" };
-const ACTION_LABEL: Record<string, string> = { "organization.created": "Alta de organización" };
-
-const dateTime = new Intl.DateTimeFormat("es-AR", {
-  day: "numeric",
-  month: "numeric",
-  year: "numeric",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: "America/Argentina/Buenos_Aires",
-});
 
 function subscriptionLine(org: OrganizationRow): string {
   if (!org.plan) return "Sin suscripción";
   const plan = PLAN_NAME[org.plan] ?? org.plan;
   const cycle = org.billingCycle ? `, ${CYCLE_LABEL[org.billingCycle] ?? org.billingCycle}` : "";
-  const state = BILLING_STATE_LABEL[org.state];
-  if (!org.periodEnd) return `${plan}${cycle} · ${state}`;
-  return `${plan}${cycle} · ${state} · ${org.state === "active" ? "vigente hasta el" : "venció el"} ${formatDateWithYear(org.periodEnd)}`;
+  const state = org.suspended ? "Suspendida a mano" : BILLING_STATE_LABEL[org.state];
+  const trial = org.trial === "in_trial" || org.trial === "expired" ? ` · ${TRIAL_STATUS_LABEL[org.trial]}` : "";
+  if (!org.periodEnd) return `${plan}${cycle} · ${state}${trial}`;
+  const until = org.datesState === "active" ? "vigente hasta el" : "venció el";
+  return `${plan}${cycle} · ${state}${trial} · ${until} ${formatDateWithYear(org.periodEnd)}`;
 }
 
 function OrganizationItem({ org }: { org: OrganizationRow }) {
   return (
     <li className="border-b border-ink/15 py-3" data-testid="organizacion">
       <p className="text-lg break-words">
-        <span className="font-medium">{org.name}</span> <span className="text-muted">({org.slug})</span>
+        <Link href={`/admin/organizaciones/${org.slug}`} className="font-medium underline underline-offset-2">
+          {org.name}
+        </Link>{" "}
+        <span className="text-muted">({org.slug})</span>
         {org.isActive ? null : <span className="text-danger"> – inactiva</span>}
       </p>
       <p className="mt-1 text-base break-words text-muted">{subscriptionLine(org)}</p>
       <p className="mt-1 text-base break-words text-muted">
         Dueño: {org.ownerEmails.length ? org.ownerEmails.join(", ") : "sin Dueño"}
-      </p>
-    </li>
-  );
-}
-
-function AuditItem({ entry }: { entry: AuditEntry }) {
-  const slug = typeof entry.after?.slug === "string" ? entry.after.slug : null;
-  const plan = typeof entry.after?.plan === "string" ? entry.after.plan : null;
-  return (
-    <li className="border-b border-ink/15 py-3" data-testid="auditoria">
-      <p className="text-base break-words">
-        <span className="font-medium">{ACTION_LABEL[entry.action] ?? entry.action}</span>
-        {slug ? ` · ${slug}` : ""}
-        {plan ? ` · ${PLAN_NAME[plan] ?? plan}` : ""}
-      </p>
-      <p className="mt-1 text-sm break-words text-muted">
-        {dateTime.format(new Date(entry.createdAt))} · por {entry.actorEmail}
       </p>
     </li>
   );
