@@ -16,7 +16,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Bloqueado
-- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; falta ejecutarla (bloqueado por: la cuenta de Fly con tarjeta, el dominio —pospuesto, ver su ítem en el Backlog; staging no lo necesita—, crear cuentas y proyectos —staging primero—, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
+- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
 
 ## Backlog
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
@@ -35,6 +35,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] `expectNoHorizontalOverflow` (`e2e/support.ts`) da falsos aprobados en móvil (el viewport crece con el contenido): reemplazarlo por la medida de `e2e/historial-precios.spec.ts` y revisar las pruebas que lo usan
 - [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta» (B1 del análisis del ticket de visita): invalida los tickets anteriores sin trabajo extra del mozo; depende de «Ticket de visita»
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
+- [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`): los **textos legales** (`/terminos`, `/privacidad`, `/alergenos`) y el **alta** de una organización desde `/admin`, además de lo del ítem anterior (pendiente de «Salida a producción»)
+- [S] Restaurar un respaldo en un proyecto de Supabase **nuevo** (en staging solo se vació y restauró el mismo): ensayar con `docs/operacion.md` y repetir una vez al mes; requiere crear un proyecto (aprobación del usuario) → agile/cambios/salida-a-produccion.md
 - [S] Probar *Wake Lock* del panel de sala: exige HTTPS (túnel o certificado local; herramienta de terceros, requiere aprobación)
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
