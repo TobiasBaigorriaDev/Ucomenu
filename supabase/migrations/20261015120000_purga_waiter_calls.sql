@@ -12,6 +12,9 @@
 --  * Piso de retención de 7 días: nada de lo que decide la base (cooldown, límite por cliente de 10 minutos,
 --    vencimiento a 30 minutos) ni lo que lee la sala (últimos 30 minutos) depende de filas más viejas. Una
 --    retención menor, nula o un lote fuera de rango se rechazan con 22023 (no se purga "por las dudas").
+--    El piso se valida sobre la FECHA DE CORTE efectiva (now() - retención), no comparando intervalos: PostgreSQL
+--    compara un mes como 30 días pero lo aplica por calendario, así que `1 month -23 days` pasaría una comparación
+--    de intervalos y dejaría 5 días efectivos, y un intervalo negativo enorme daría un corte en el futuro.
 --  * Por lotes y con `for update skip locked`: acota el tiempo de bloqueo y nunca espera ni compite con
 --    create_waiter_call o con «atender» sobre una misma fila. Devuelve cuántas filas borró; quien la programe
 --    repite hasta que devuelva menos que el lote.
@@ -31,9 +34,19 @@ security definer
 set search_path = ''
 as $$
 declare
+  v_cutoff timestamptz;
   v_deleted integer;
 begin
-  if p_retention is null or p_retention < interval '7 days' then
+  if p_retention is null then
+    raise exception 'invalid_retention' using errcode = '22023';
+  end if;
+  begin
+    v_cutoff := now() - p_retention;
+  exception when datetime_field_overflow then
+    raise exception 'invalid_retention' using errcode = '22023';
+  end;
+  -- Piso sobre el corte efectivo: no se purga nada con menos de 7 días, ni con un corte futuro.
+  if v_cutoff > now() - interval '7 days' then
     raise exception 'invalid_retention' using errcode = '22023';
   end if;
   if p_batch is null or p_batch < 1 or p_batch > 50000 then
@@ -43,7 +56,7 @@ begin
   with viejos as (
     select w.id
     from public.waiter_calls w
-    where w.created_at < now() - p_retention
+    where w.created_at < v_cutoff
     order by w.created_at
     limit p_batch
     for update skip locked

@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -11,7 +12,9 @@ import {
   serviceClient,
   type Db,
   type TestUser,
+  sql,
 } from "./helpers";
+import { asegurarDestinoLocal } from "./purge-price-history";
 
 /**
  * Purga de `waiter_calls` por antigüedad (nivel C; ficha purga-de-waiter-calls, ADR 0014) contra el Supabase local:
@@ -182,6 +185,40 @@ describe("piso y validación", () => {
     expect(await idsDe(local.id)).toEqual([vieja]);
   });
 
+  // PostgreSQL compara un mes como 30 días pero lo aplica por calendario: el piso se valida sobre la fecha de corte efectiva.
+  it.each([
+    ["1 month -26 days", "de 2 a 5 días según el mes (el caso `1 month -23 days` da 5 en febrero, pero 7 en otros meses)"],
+    ["2 months -58 days", "de 1 a 4 días según los meses"],
+    ["-4800 months 144007 days", "corte en el futuro"],
+    ["-1 month", "corte en el futuro"],
+    ["-infinity", "corte en el futuro"],
+    ["1 day 12 hours", "un día y medio"],
+  ])("rechaza la retención mixta %s (%s) con 22023 y no borra nada", async (retencion) => {
+    const local = await nuevoLocal(`tt-purga-mixta-${randomBytes(3).toString("hex")}`);
+    const reciente = await sembrar(local, 60 * 1000, { status: "pending", kind: "bill" });
+    const deCuatroDias = await sembrar(local, 4 * DIA_MS);
+    const { error } = await purgar({ p_retention: retencion });
+    expect(error?.code).toBe("22023");
+    expect(error?.message).toContain("invalid_retention");
+    expect((await idsDe(local.id)).sort()).toEqual([reciente, deCuatroDias].sort());
+  });
+
+  it("un intervalo que desborda las fechas se rechaza con 22023, no con un error interno", async () => {
+    const { error } = await purgar({ p_retention: "2000000000 days" });
+    expect(error?.code).toBe("22023");
+    expect(error?.message).toContain("invalid_retention");
+  });
+
+  it("una retención en meses o años válida (cutoff anterior a 7 días) se acepta y respeta el calendario", async () => {
+    const local = await nuevoLocal("tt-purga-meses");
+    const deCuatroMeses = await sembrar(local, 120 * DIA_MS);
+    const deTresDias = await sembrar(local, 3 * DIA_MS, { kind: "bill" });
+    const { error } = await purgar({ p_retention: "2 months" });
+    expect(error).toBeNull();
+    expect(await idsDe(local.id)).toEqual([deTresDias]);
+    expect(deCuatroMeses).not.toBe(deTresDias);
+  });
+
   it("acepta exactamente 7 días como piso", async () => {
     const local = await nuevoLocal("tt-purga-piso-justo");
     const deSiete = await sembrar(local, 7 * DIA_MS + 60 * 1000);
@@ -260,6 +297,56 @@ describe("convive con los llamados en curso", () => {
     const viejas = (await service.from("waiter_calls").select("id").eq("organization_id", local.id).lt("created_at", "2001-01-01")).data;
     expect(viejas).toEqual([]);
   });
+
+  it("una fila bloqueada por otra transacción se salta sin esperar y se purga cuando se libera", async () => {
+    const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+    asegurarDestinoLocal(contenedor);
+    const local = await nuevoLocal("tt-purga-bloqueo");
+    // Año 2000: son las primeras en salir. La bloqueada es la más vieja; la libre, la siguiente.
+    const bloqueada = await sembrar(local, 0, { fecha: new Date(Date.UTC(2000, 3, 1, 0, 0)) });
+    const libre = await sembrar(local, 0, { fecha: new Date(Date.UTC(2000, 3, 1, 0, 1)), kind: "bill" });
+
+    // Otra transacción retiene el bloqueo de la fila unos segundos (como lo haría un «atender» lento).
+    const SEGUNDOS = 8;
+    const titular = spawn(
+      "docker",
+      [
+        "exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c",
+        `begin; select id from public.waiter_calls where id = '${bloqueada}' for update; select pg_sleep(${SEGUNDOS}); commit;`,
+      ],
+      { stdio: "ignore" },
+    );
+    const termino = new Promise<void>((resolve) => titular.once("close", () => resolve()));
+    try {
+      // Espera a que el bloqueo esté tomado: un intento NOWAIT falla mientras la fila esté retenida.
+      let retenida = false;
+      for (let i = 0; i < 50 && !retenida; i++) {
+        try {
+          sql(`select 1 from public.waiter_calls where id = '${bloqueada}' for update nowait`);
+          await new Promise((r) => setTimeout(r, 100));
+        } catch (error) {
+          if (!String(error).includes("could not obtain lock")) throw error;
+          retenida = true;
+        }
+      }
+      expect(retenida, "el titular no llegó a bloquear la fila").toBe(true);
+
+      const t0 = Date.now();
+      const durante = await purgar({ p_batch: 10 });
+      const tardo = Date.now() - t0;
+      expect(durante.error).toBeNull();
+      expect(tardo, "la purga esperó al bloqueo en vez de saltar la fila").toBeLessThan(4000);
+      // Se llevó la libre y dejó la bloqueada.
+      expect(await idsDe(local.id)).toEqual([bloqueada]);
+      expect(libre).not.toBe(bloqueada);
+    } finally {
+      await termino; // libera el bloqueo (commit) antes de seguir
+    }
+    // Liberada, la siguiente purga ya la borra.
+    const despues = await purgar({ p_batch: 10 });
+    expect(despues.error).toBeNull();
+    expect(await idsDe(local.id)).toEqual([]);
+  }, 30_000);
 
   it("la fila que otra transacción tiene bloqueada se salta, no se espera", async () => {
     // Un UPDATE de «atender» tiene la fila bloqueada un instante: la purga la ignora y sigue (skip locked).
