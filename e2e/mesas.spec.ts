@@ -17,7 +17,7 @@ import {
  */
 
 // Base del QR: NEXT_PUBLIC_SITE_URL si el entorno la define (el servidor de pruebas la hereda); si no, el servidor de las pruebas.
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).origin : "http://localhost:3100";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL).origin : `http://localhost:${process.env.E2E_PORT ?? 3100}`;
 const tenants: Tenant[] = [];
 
 async function nuevoLocal(label: string, estado: Estado = "active") {

@@ -14,7 +14,8 @@ for (const file of [".env.local", ".env.test.local"]) {
 // mismo secreto que usa la app. Es solo de pruebas y no da acceso a nada. Si el entorno ya define uno, se respeta.
 process.env.WAITER_CALL_CLIENT_SECRET ||= "secreto-solo-para-las-pruebas-e2e-0123456789";
 
-const PORT = 3100;
+// `E2E_PORT` permite que dos worktrees corran E2E a la vez (cada uno con su propio Supabase local y su puerto).
+const PORT = Number(process.env.E2E_PORT ?? 3100);
 // Con E2E_BASE_URL las pruebas apuntan a un servidor ya levantado (por ejemplo, el contenedor de Docker) en vez de `next start`.
 const EXTERNAL_BASE_URL = process.env.E2E_BASE_URL;
 

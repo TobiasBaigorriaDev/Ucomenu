@@ -422,7 +422,7 @@ test.describe("acceso", () => {
     const b = await nuevoLocal("sala-ruta-b");
     await llamar(a.mesas[0].qr_token);
 
-    const anonimo = await playwright.request.newContext({ baseURL: "http://localhost:3100" });
+    const anonimo = await playwright.request.newContext({ baseURL: `http://localhost:${process.env.E2E_PORT ?? 3100}` });
     const sinSesion = await anonimo.get(`/sala/${a.t.slug}/estado`, { maxRedirects: 0 });
     expect(sinSesion.status()).toBe(401);
     expect(await sinSesion.json()).toEqual({ error: "no_session" });
