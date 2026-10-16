@@ -16,6 +16,9 @@ Cuando el personal atiende un «Pedir la cuenta», la visita de esa mesa termina
 ## Fricción conocida (decisión de producto, revisable)
 Pasados los 10 minutos de gracia, quien pidió la cuenta y sigue en la mesa ve «escaneá de nuevo» al tocar un botón. La gracia es la constante `interval '10 minutes'` de la función; subirla o bajarla es una migración que la reemplaza. Si hiciera falta, la alternativa es descartar B1.
 
+## Límite aceptado (2026-10-16, decisión del usuario)
+Si la cuenta se pide de palabra y nadie registra «Pedir la cuenta» en la web, la sesión no se cierra por este camino: solo rige el vencimiento del ticket a las 3 horas (y recargar emite uno nuevo). Se deja así; el daño es un aviso falso acotado por el pendiente único, el cooldown y el límite por cliente, y la sala muestra cuánto hacía que escaneó. Si aparecen avisos falsos de mesas vacías, la alternativa es un botón «Liberar mesa» en la sala (B2) o bajar `VISIT_TTL_MS`.
+
 ## Aceptación
 - [x] Un ticket anterior a una cuenta atendida hace más de 10 minutos no llama (ni «mozo» ni «cuenta»), no crea filas y la respuesta no dice más que el estado; con la cuenta atendida hace menos de 10 minutos todavía llama (gracia, probada a 9,5 y 10,5 minutos).
 - [x] Un ticket posterior a la atención llama; el borde es el segundo del ticket (misma emisión: pasa; un segundo después: cierra).
