@@ -1,10 +1,12 @@
--- Cerrar la sesión de la mesa al atender «Pedir la cuenta» (B1 de la ficha ticket-de-visita; ficha
+-- Cerrar la sesión de la mesa 10 minutos después de atender «Pedir la cuenta» (B1 de la ficha ticket-de-visita; ficha
 -- agile/cambios/cerrar-sesion-al-atender-la-cuenta.md).
 --
 -- Reemplaza create_waiter_call (misma firma: sigue habiendo una sola puerta, con los mismos permisos). Agrega una regla:
--- si el personal atendió un «Pedir la cuenta» de la mesa DESPUÉS de emitido el ticket de visita, la función responde
--- 'session_closed' y no crea nada. Quien vuelva a escanear (o recargue) recibe un ticket nuevo, posterior, y llama con
--- normalidad. Sin esquema nuevo: usa waiter_calls.attended_at y el índice (table_id, kind, created_at) que ya existen.
+-- si el personal atendió un «Pedir la cuenta» de la mesa hace MÁS de 10 minutos y DESPUÉS de emitido el ticket de
+-- visita, la función responde 'session_closed' y no crea nada. Los 10 minutos son de gracia: quien pidió la cuenta
+-- puede seguir pagando o pedir un café sin volver a escanear. Quien vuelva a escanear (o recargue) recibe un ticket
+-- nuevo, posterior, y llama con normalidad. Sin esquema nuevo: usa waiter_calls.attended_at y el índice
+-- (table_id, kind, created_at) que ya existen.
 --
 -- Rollback (local): git revert + `pnpm db:reset`. En una base con datos: volver a aplicar create_waiter_call con la
 -- definición de 20261014200000_ticket_de_visita.sql (sin esquema ni datos que deshacer).
@@ -63,15 +65,17 @@ begin
       then p_visit_started_at
   end;
 
-  -- Sesión cerrada: si desde que se emitió el ticket (el ticket guarda segundos enteros: la emisión cae en
-  -- [v_visit, v_visit + 1 s)) el personal atendió un «Pedir la cuenta» de esta mesa, esa visita terminó. Sin ticket
-  -- verosímil no hay nada que comparar (llamar directo a la API se salta esto, como el resto de lo que valida la app).
+  -- Sesión cerrada: si después de emitido el ticket (el ticket guarda segundos enteros: la emisión cae en
+  -- [v_visit, v_visit + 1 s)) el personal atendió un «Pedir la cuenta» de esta mesa y pasaron más de 10 minutos de
+  -- gracia, esa visita terminó. Sin ticket verosímil no hay nada que comparar (llamar directo a la API se salta esto,
+  -- como el resto de lo que valida la app).
   if v_visit is not null and exists (
     select 1 from public.waiter_calls
     where table_id = v_table.id
       and kind = 'bill'
       and status = 'attended'
       and attended_at >= v_visit + interval '1 second'
+      and attended_at <= now() - interval '10 minutes'
   ) then
     return jsonb_build_object('status', 'session_closed');
   end if;
@@ -134,4 +138,4 @@ begin
 end;
 $$;
 comment on function public.create_waiter_call(text, text, text, timestamptz) is
-  'Única puerta de escritura de waiter_calls (ADR 0010). Público: valida token, disponibilidad, sesión cerrada por la cuenta atendida, vencimiento, un pendiente por tipo, límite por cliente y cooldown. p_visit_started_at (ticket de visita): informativo y, si es verosímil, decide el cierre de sesión.';
+  'Única puerta de escritura de waiter_calls (ADR 0010). Público: valida token, disponibilidad, sesión cerrada 10 minutos después de atender la cuenta, vencimiento, un pendiente por tipo, límite por cliente y cooldown. p_visit_started_at (ticket de visita): informativo y, si es verosímil, decide el cierre de sesión.';

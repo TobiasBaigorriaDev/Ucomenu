@@ -156,7 +156,7 @@ test.describe("la cuenta atendida cierra la sesión de la mesa (ficha cerrar-ses
     const { t, branch, mesa1 } = await nuevoLocal("ticket-cuenta");
     await page.goto(`/t/${mesa1.qr_token}`);
     await expect(llamarAlMozo(page)).toBeVisible();
-    await page.waitForTimeout(1200); // el ticket lleva segundos enteros: la atención tiene que ser al menos un segundo después
+    await ponerTicket(page, issueVisitTicket(mesa1.qr_token, Date.now() - 30 * MIN)); // escaneó hace media hora
 
     // El personal atiende la cuenta de la mesa (la base marca `attended_at` al pasar a «atendido»).
     const db = service();
@@ -168,7 +168,16 @@ test.describe("la cuenta atendida cierra la sesión de la mesa (ficha cerrar-ses
     expect(cuenta.error).toBeNull();
     expect((await db.from("waiter_calls").update({ status: "attended" }).eq("id", cuenta.data!.id)).error).toBeNull();
 
-    // La pestaña vieja todavía muestra los botones, pero la acción responde lo mismo que con un ticket vencido.
+    // Dentro de los 10 minutos de gracia la pestaña todavía llama (quien pidió la cuenta puede seguir pidiendo).
+    await llamarAlMozo(page).click();
+    await expect(page.getByTestId("mensaje-llamado")).toContainText("Avisamos al personal");
+    await db.from("waiter_calls").delete().eq("table_id", mesa1.id).eq("kind", "waiter");
+
+    // Pasada la gracia (la atención fue hace 11 minutos) la pestaña vieja todavía muestra los botones, pero la acción
+    // responde lo mismo que con un ticket vencido.
+    expect((await db.from("waiter_calls").update({ attended_at: new Date(Date.now() - 11 * MIN).toISOString() }).eq("id", cuenta.data!.id)).error).toBeNull();
+    await page.reload();
+    await ponerTicket(page, issueVisitTicket(mesa1.qr_token, Date.now() - 30 * MIN));
     await llamarAlMozo(page).click();
     await expect(vencida(page)).toContainText(MENSAJE_VENCIDA);
     await expect(llamarAlMozo(page)).toHaveCount(0);

@@ -71,7 +71,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
-- [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta»: un ticket anterior a la atención responde `session_closed` (2026-10-16; falta aplicarlo en staging/producción y, si se quiere, revisión independiente) → agile/cambios/cerrar-sesion-al-atender-la-cuenta.md · ADR 0010
+- [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta»: un ticket anterior a la atención responde `session_closed` pasados 10 minutos de gracia (2026-10-16; falta aplicarlo en staging/producción y, si se quiere, revisión independiente) → agile/cambios/cerrar-sesion-al-atender-la-cuenta.md · ADR 0010
 - [S] Repaso de diseño del historial de precios: agrupado por día, cambio de precio destacado y etiqueta Sube/Baja; sin tocar datos ni permisos; revisado en capturas a 390 y 1280 px (2026-10-16)
 - [S] `expectNoHorizontalOverflow` mide el borde derecho de cada elemento (ignora lo recortado por un scroll propio) y reemplaza a las copias locales de tres specs; E2E completo en verde (2026-10-16); de paso, la siembra de `ticket-de-visita` ya no depende de los milisegundos
 - [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16) → agile/cambios/textos-legales.md
