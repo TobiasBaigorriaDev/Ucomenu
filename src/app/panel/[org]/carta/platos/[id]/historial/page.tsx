@@ -48,7 +48,7 @@ export default async function ProductPriceHistoryPage({
         Volver al plato
       </Link>
       <h1 className="font-display text-4xl leading-tight break-words">{product ? product.name : "Historial de precios"}</h1>
-      <p className="mt-1 text-lg">Historial de precios</p>
+      <p className="mt-2 max-w-prose text-base text-muted">Historial de precios: de cuánto a cuánto, cuándo y quién lo cambió.</p>
 
       {screen.state === "error" ? (
         <p role="alert" className="mt-8 max-w-prose text-danger" data-testid="historial-error">
