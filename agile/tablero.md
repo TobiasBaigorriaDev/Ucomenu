@@ -27,7 +27,9 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Identidad del local en la carta: logo y colores por organización (requiere columnas en `organizations` y subida de archivo; los tokens de `globals.css` y `.carta` ya son variables CSS) — pendiente de «Diseño gastronómico de la carta pública»
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
-- [M] Disponibilidad por sucursal: marcar agotado; gestión de sucursales
+- [M] Disponibilidad por sucursal: marcar agotado
+- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope (reglas decididas en la ficha; reemplaza `public_menu_status`, `resolve_table_qr`, `create_waiter_call` y `enforce_branch_limit`) → agile/cambios/gestion-de-sucursales.md
+- [S] Corrección del `slug` de una sucursal por SuperAdmin, con redirección (hoy solo por SQL)
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
@@ -69,6 +71,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] Gestión de sucursales en el panel: el Dueño lista, crea y renombra en `/panel/{slug}/sucursales` dentro del tope del plan; política `INSERT` aprobada por el usuario, revisada por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/gestion-de-sucursales.md
 - [M] Rendimiento de la carta pública: fotos reducidas en WebP por `/_next/image` y caché de categorías y platos con invalidación desde el panel; LCP en 4G de 11,3 s a 1,9 s; revisado por Codex, con un límite aceptado (una lectura en vuelo durante una edición puede dejar la carta anterior hasta 60 s) (2026-10-16) → agile/cambios/rendimiento-carta-publica.md
 - [M] Alta guiada del dueño: guía de primeros pasos en el Resumen del panel (carta, mesas, QR), deducida de los datos y sin esquema; pendientes de producto en la ficha: descartar la guía y varias sucursales (2026-10-16) → agile/cambios/alta-guiada-del-dueno.md
 - [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta»: un ticket anterior a la atención responde `session_closed` pasados 10 minutos de gracia (2026-10-16; falta aplicarlo en staging/producción y, si se quiere, revisión independiente) → agile/cambios/cerrar-sesion-al-atender-la-cuenta.md · ADR 0010
