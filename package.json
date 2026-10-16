@@ -17,6 +17,7 @@
     "dev:crear-dueno": "node tools/crear-dueno.mjs",
     "revision:codex": "node tools/revision-codex.mjs",
     "prod:check": "node tools/verificar-produccion.mjs",
+    "respaldo": "node tools/respaldar.mjs",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "test:e2e:full": "next build && playwright test"
   },

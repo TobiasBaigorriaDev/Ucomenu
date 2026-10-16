@@ -5,7 +5,7 @@
  * el valor de un secreto, solo si está bien o qué le pasa.
  *
  * Uso:
- *   pnpm prod:check --env ruta/al/archivo.env     (formato .env; por ejemplo lo que baja `vercel env pull`)
+ *   pnpm prod:check --env ruta/al/archivo.env     (formato .env; las variables del proveedor de hosting copiadas a un archivo temporal)
  *   pnpm prod:check                               (revisa el entorno del proceso)
  * Código de salida: 0 sin errores (puede haber avisos), 1 con errores, 2 si no se pudo leer el archivo.
  *
@@ -108,7 +108,7 @@ export function evaluarEntorno(env) {
     else {
       bien("NEXT_PUBLIC_SITE_URL: https y no local.");
       if (u.pathname !== "/" || u.search || u.hash) aviso("NEXT_PUBLIC_SITE_URL: tiene ruta o parámetros; tiene que ser solo el dominio.");
-      if (/\.vercel\.app$/i.test(u.hostname)) aviso("NEXT_PUBLIC_SITE_URL: es un dominio de vista previa de Vercel; un QR impreso no puede apuntar ahí.");
+      if (/\.(vercel\.app|netlify\.app)$/i.test(u.hostname)) aviso("NEXT_PUBLIC_SITE_URL: es un dominio provisorio del proveedor de hosting; un QR impreso no puede apuntar ahí.");
     }
   }
 

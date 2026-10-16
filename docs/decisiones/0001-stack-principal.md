@@ -1,6 +1,6 @@
 # 0001 — Stack principal: Next.js + Supabase
 
-- Estado: aceptada
+- Estado: aceptada. **Enmendada por la 0015 (2026-10-16): el hosting en Vercel deja de ser el valor por defecto** (Hobby no admite uso comercial) y el proveedor se decide después de evaluarlo; Next.js + Supabase se mantienen.
 - Fecha: 2026-10-13
 
 ## Contexto

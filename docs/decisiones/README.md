@@ -26,3 +26,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0012 | [Historial de precios: trigger en la misma transacción, solo se agrega y sin borrado en cascada](0012-historial-de-precios.md) | aceptada | 2026-10-14 |
 | 0013 | [SuperAdmin: rol de plataforma en tabla, alta de organizaciones en una función de base y auditoría de solo-agregado](0013-superadmin-alta-de-organizaciones-y-auditoria.md) | aceptada | 2026-10-14 |
 | 0014 | [Purga de `waiter_calls`: retención de 14 días, función de base solo para el servidor y piso de 7 días](0014-purga-de-waiter-calls.md) | aceptada | 2026-10-15 |
+| 0015 | [Estrategia de lanzamiento: Supabase Free con respaldos propios, hosting por decidir, staging aparte](0015-estrategia-de-lanzamiento.md) | aceptada (hosting pendiente) | 2026-10-16 |

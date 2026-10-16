@@ -58,7 +58,8 @@ describe("evaluarEntorno", () => {
   it.each([
     ["secreto de entre 16 y 31 caracteres", { WAITER_CALL_CLIENT_SECRET: "d".repeat(20) }, "menos de 32"],
     ["dirección pública con ruta", { NEXT_PUBLIC_SITE_URL: "https://ucomenu.com/panel" }, "ruta o parámetros"],
-    ["dirección de vista previa de Vercel", { NEXT_PUBLIC_SITE_URL: "https://ucomenu-git-main.vercel.app" }, "vista previa"],
+    ["dirección provisoria de Vercel", { NEXT_PUBLIC_SITE_URL: "https://ucomenu-git-main.vercel.app" }, "provisorio"],
+    ["dirección provisoria de Netlify", { NEXT_PUBLIC_SITE_URL: "https://ucomenu.netlify.app" }, "provisorio"],
     ["Supabase fuera de supabase.co", { NEXT_PUBLIC_SUPABASE_URL: "https://db.ucomenu.com" }, ".supabase.co"],
   ])("aviso (no error): %s", (_etiqueta, cambios, texto) => {
     const r = evaluarEntorno(con(cambios));

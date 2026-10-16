@@ -9,7 +9,7 @@
 - **Tiempo real:** el panel de sala se actualiza por sondeo corto al servidor (ADR 0011); Supabase Realtime queda como evolución posible.
 - **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo. **Implementado** (ADR 0007): email y contraseña, sin registro público, sesión por cookies `httpOnly` con `@supabase/ssr` 0.12.7 y sin cliente de Supabase en el navegador.
 - **Archivos:** Supabase Storage (fotos de platos, logos, modelos 3D).
-- **Hosting / despliegue:** Vercel (aplicación) + Supabase Cloud (datos). Desplegar requiere aprobación explícita.
+- **Hosting / despliegue:** proveedor **por decidir** (Vercel Hobby descartado para uso comercial; se evalúa Netlify, ADR 0015) + Supabase Cloud (datos). Desplegar requiere aprobación explícita.
 - **Pruebas (implementado):** unitarias y de RLS con Vitest (RLS contra Supabase local), E2E con Playwright a 390 px contra el build. Comandos en `AGENTS.md`.
 - **Entorno verificado (2026-10-13):** Node 24, pnpm 11, Docker 29, Git, Python 3.12. La CLI de Supabase no estaba instalada; su instalación quedó aprobada por el usuario (ver `agile/herramientas-aprobadas.md`).
 
@@ -164,13 +164,13 @@ Sello (el personal escanea el QR del pase en /sala)
 - **Vencimiento anual del certificado de Apple:** si vence, los pases dejan de actualizarse. Requiere recordatorio operativo.
 - **Staff puede cambiar precios** (decisión de producto). Mitigación: `price_history` por trigger (implementado, ADR 0012); el Dueño y el Staff consultan los cambios en `/panel/{slug}/historial-de-precios` y `/panel/{slug}/carta/platos/{id}/historial` (implementado). La pantalla lee con la sesión de la persona (RLS), trae platos y personas aparte (sin claves foráneas) y filtra los platos por organización (la carta pública hace legibles los activos de cualquier local); solo para el Dueño, `resolveAuthors` (módulo de personal) consulta el email de Auth de quienes siguen siendo miembros de ese local.
 - **Teléfono del socio sin verificar** (fase 3): identifica pero no autentica; alguien podría registrar un número ajeno. Impacto acotado porque los sellos los suma solo el personal. Reevaluar con verificación por código si aparece abuso.
-- **Dependencia de Supabase y Vercel.** Se acepta por velocidad; los datos están en Postgres estándar y son portables.
-- **Límites de los planes gratuitos** (pausa por inactividad, conexiones, almacenamiento): producción necesita plan pago antes del primer cliente real.
+- **Dependencia de Supabase y del proveedor de hosting.** Se acepta por velocidad; los datos están en Postgres estándar y son portables.
+- **Límites de los planes gratuitos** (pausa por inactividad, sin respaldos, almacenamiento y transferencia; en el hosting, créditos por pedido y cómputo que el sondeo del panel de sala puede agotar): se arranca en Supabase Free con respaldos propios y se sube de plan según criterios explícitos (ADR 0015, `docs/operacion.md`). El hosting con créditos gratuitos no se usa para locales reales hasta medir su consumo.
 
 ## Entornos
 - **Desarrollo:** Supabase local (Docker) + Next.js local, con datos semilla ficticios.
-- **Prueba:** despliegues de vista previa contra un proyecto Supabase de staging separado.
-- **Producción:** proyecto Supabase propio y dominio definitivo.
+- **Prueba (staging):** proyecto Supabase gratuito y aparte, en una organización de Supabase distinta, con datos ficticios; ahí se ensaya `docs/produccion.md` completo.
+- **Producción:** proyecto Supabase propio (Free al inicio, el mismo proyecto sube a Pro) y dominio definitivo (todavía no comprado).
 - Los entornos de desarrollo y prueba **nunca** usan datos reales. Las migraciones se versionan en el repo y se aplican en orden; las destructivas requieren aprobación.
 
 > Decisiones duraderas con motivo y alternativas → `docs/decisiones/`.

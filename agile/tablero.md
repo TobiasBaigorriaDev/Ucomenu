@@ -16,7 +16,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Bloqueado
-- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); falta ejecutarla (bloqueado por: aprobación del usuario, cuentas y planes pagos de Vercel y Supabase, dominio `ucomenu.com`, revisión legal de los textos y decisión de monitoreo) → agile/cambios/salida-a-produccion.md
+- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 y propuesta de operación en `docs/operacion.md`; falta ejecutarla (bloqueado por: elegir hosting tras medir el sondeo de la sala, comprar el dominio `ucomenu.com`, crear cuentas y proyectos —staging primero—, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
 
 ## Backlog
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
