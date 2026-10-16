@@ -548,13 +548,19 @@ describe("registrar un pago", () => {
     expect(resultados.filter((r) => r.ok)).toHaveLength(1);
     expect(contar("payments", `organization_id = '${igual.id}'`)).toBe(1);
 
-    const distintos = await crearLocal({ finEnMs: -2 * DIA_MS });
-    await Promise.all([
-      registerPayment(ctx(admin), pago(distintos, { coversUntil: enDias(30) })),
-      registerPayment(ctx(otroAdmin), pago(distintos, { coversUntil: enDias(60) })),
-    ]);
-    expect(new Date((await suscripcion(distintos.id)).current_period_end!).getTime()).toBe(new Date(parsePeriodEnd(enDias(60), new Date())!).getTime());
-    expect(contar("payments", `organization_id = '${distintos.id}'`)).toBeGreaterThanOrEqual(1);
+    // Dos pagos distintos a la vez: sin el lock de la suscripción el que termina último pisaría al otro y acortaría la
+    // vigencia. Es una carrera: se repite en varias organizaciones para que la ausencia del lock se note.
+    const masLejos = new Date(parsePeriodEnd(enDias(60), new Date())!).getTime();
+    for (let ronda = 0; ronda < 8; ronda++) {
+      const distintos = await crearLocal({ finEnMs: -2 * DIA_MS });
+      await Promise.all([
+        registerPayment(ctx(admin), pago(distintos, { coversUntil: enDias(30) })),
+        registerPayment(ctx(otroAdmin), pago(distintos, { coversUntil: enDias(60) })),
+      ]);
+      const fin = new Date((await suscripcion(distintos.id)).current_period_end!).getTime();
+      expect(fin, `ronda ${ronda}: la vigencia nunca se acorta`).toBe(masLejos);
+      expect(contar("payments", `organization_id = '${distintos.id}'`)).toBeGreaterThanOrEqual(1);
+    }
   });
 
   it("importe, moneda, medio, referencia y fechas inválidos: error claro, ni pago ni cambio de vigencia ni auditoría", async () => {

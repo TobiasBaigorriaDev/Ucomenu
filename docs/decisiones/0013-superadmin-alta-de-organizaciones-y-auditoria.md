@@ -28,3 +28,13 @@ Hasta hoy las organizaciones y sus primeros Dueños se crean por script local (`
 - Cada acción nueva de SuperAdmin (cambiar/suspender plan, pagos, add-ons) sigue el mismo patrón: función de base acotada, solo `service_role`, vuelve a comprobar al actor, escribe `audit_log` en la misma transacción; se agrega su valor al `check` de `action`.
 - Lectura de la auditoría por el Dueño de la organización (prevista en `arquitectura.md`): pendiente, cuando haya movimientos que mostrarle.
 - El Dueño inicial es una cuenta nueva con contraseña temporal sin cambio forzado (deuda ya conocida). Sumar una cuenta existente como Dueño de otra organización queda para otro incremento.
+
+## Ampliación (2026-10-17): plan, suspensión y pagos a mano
+Ficha: `agile/cambios/superadmin-planes-pagos.md`. Mismo patrón que el alta; lo nuevo:
+- **Una función de base por acción** (`admin_change_plan`, `admin_set_suspension`, `admin_register_payment`): solo `service_role`, vuelven a comprobar al actor, toman un lock de la fila de la suscripción (`FOR UPDATE`) y escriben `audit_log` en la misma transacción. Los errores tienen un mensaje estable que la aplicación traduce; un error sin SQLSTATE (red cortada) se trata como **resultado incierto**, nunca como éxito ni como fallo seguro.
+- **La suspensión manual es un dato aparte** (`subscriptions.suspended_at`) que manda en `private.org_state` sobre las fechas. No se mezcla con la mora ni mueve fechas.
+- **`payments` solo se agrega** (igual que `audit_log`: trigger y privilegios revocados, también a `service_role`) y la leen solo los SuperAdmin. Sus claves foráneas son `RESTRICT`: una organización con pagos no se borra en cascada. **El borrado de organizaciones, cuando exista, tiene que definir antes la retención de pagos** (igual que `price_history`).
+- **Un pago nunca acorta ni repite la vigencia**: «cubre hasta» debe ser posterior al fin efectivo y a ahora; `unique (subscription_id, covers_until)` es la defensa final contra el doble registro.
+- **La prueba de 14 días tiene estado derivado propio** (`private.trial_status`), separado del de mora; su vencimiento sigue la regla de mora de ADR 0006.
+- El motivo de cada cambio y la acción viajan en `audit_log.after`; la referencia de un pago **no** se copia allí (puede traer datos de terceros en una tabla que no se borra).
+

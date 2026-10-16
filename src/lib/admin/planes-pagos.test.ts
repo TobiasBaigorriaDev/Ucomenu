@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import type { AdminContext } from "./organizations";
+import { changePlan, registerPayment, setSuspension } from "./subscriptions";
 import { accountState, parseEntitlements, trialStatus, moraNotice } from "@/lib/entitlements";
 import { formatMoney } from "./format";
 import {
@@ -198,5 +200,86 @@ describe("formatMoney", () => {
     expect(formatMoney(2_000_000, "ARS")).toMatch(/ARS$/);
     expect(formatMoney(2_000_050, "ARS")).toMatch(/20\.000,50/);
     expect(formatMoney(2000, "USD")).toMatch(/20.*USD$/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cómo traduce la aplicación lo que contesta la base (sin base: clientes simulados)
+// ---------------------------------------------------------------------------
+
+type RpcError = { code?: string; message?: string };
+
+/** Contexto con un SuperAdmin, una organización y una función de base que contesta lo que se le indique. */
+function fakeContext(rpc: { data?: unknown; error?: RpcError | null }): { ctx: AdminContext; llamadas: string[] } {
+  const llamadas: string[] = [];
+  const query = (data: unknown) => {
+    const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data, error: null }) };
+    return q;
+  };
+  const session = { from: () => query({ user_id: "actor" }) };
+  const admin = {
+    from: () => query({ id: "org-1" }),
+    rpc: async (nombre: string) => {
+      llamadas.push(nombre);
+      return { data: rpc.data ?? null, error: rpc.error ?? null };
+    },
+  };
+  return { ctx: { session, admin, actorId: "actor" } as unknown as AdminContext, llamadas };
+}
+
+const cambio = { slug: "local-1", plan: "basic", billingCycle: "monthly", reason: "x" };
+const pagoValido = {
+  slug: "local-1",
+  amount: "100",
+  currency: "ARS",
+  method: "cash",
+  reference: "",
+  paidOn: todayInArgentina(new Date()),
+  coversUntil: new Date(Date.now() + 20 * 86_400_000).toISOString().slice(0, 10),
+};
+
+describe("errores de las funciones de base", () => {
+  it("un error con SQLSTATE y un mensaje conocido se traduce al error de la aplicación", async () => {
+    const casos: Array<[RpcError, string]> = [
+      [{ code: "55000", message: "plan_unchanged" }, "plan_unchanged"],
+      [{ code: "42501", message: "not_platform_admin" }, "forbidden"],
+      [{ code: "22023", message: "invalid_reason" }, "invalid_reason"],
+      [{ code: "P0002", message: "subscription_not_found" }, "org_not_found"],
+    ];
+    for (const [error, esperado] of casos) {
+      const { ctx } = fakeContext({ error });
+      expect(await changePlan(ctx, cambio), esperado).toEqual({ ok: false, error: esperado });
+    }
+  });
+
+  it("un SQLSTATE con un mensaje desconocido es un error genérico (la transacción se revirtió)", async () => {
+    const { ctx } = fakeContext({ error: { code: "XX000", message: "algo inesperado" } });
+    expect(await setSuspension(ctx, { slug: "local-1", suspend: true, reason: "x" })).toEqual({ ok: false, error: "unexpected" });
+  });
+
+  it("sin SQLSTATE (red cortada, tiempo agotado) el resultado es INCIERTO, nunca un fallo seguro", async () => {
+    for (const error of [{ code: "", message: "TypeError: fetch failed" }, { message: "timeout" }, { code: "PGRST000", message: "x" }]) {
+      const { ctx } = fakeContext({ error });
+      expect(await changePlan(ctx, cambio)).toEqual({ ok: false, error: "uncertain_change" });
+      expect(await setSuspension(ctx, { slug: "local-1", suspend: false, reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
+      expect(await registerPayment(ctx, pagoValido)).toEqual({ ok: false, error: "uncertain_change" });
+    }
+  });
+
+  it("un pago que la base dice haber registrado pero sin identificador también es incierto", async () => {
+    const { ctx } = fakeContext({ data: null });
+    expect(await registerPayment(ctx, pagoValido)).toEqual({ ok: false, error: "uncertain_change" });
+    const ok = fakeContext({ data: "pago-1" });
+    expect(await registerPayment(ok.ctx, pagoValido)).toEqual({ ok: true, data: { paymentId: "pago-1" } });
+  });
+
+  it("lo inválido se rechaza antes de llamar a la base", async () => {
+    const { ctx, llamadas } = fakeContext({ data: "pago-1" });
+    expect(await changePlan(ctx, { ...cambio, reason: "  " })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await changePlan(ctx, { ...cambio, plan: "gold" })).toEqual({ ok: false, error: "invalid_plan" });
+    expect(await setSuspension(ctx, { slug: "local-1", suspend: true, reason: "" })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await registerPayment(ctx, { ...pagoValido, amount: "0" })).toEqual({ ok: false, error: "invalid_amount" });
+    expect(await registerPayment(ctx, { ...pagoValido, coversUntil: "2020-01-01" })).toEqual({ ok: false, error: "invalid_covers_until" });
+    expect(llamadas).toEqual([]);
   });
 });
