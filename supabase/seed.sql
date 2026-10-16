@@ -29,6 +29,25 @@ insert into public.products (id, organization_id, category_id, name, description
   ('13000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000001', '12000000-0000-4000-8000-000000000003',
    'Helado de maracuyá (categoría inactiva)', 'No debe verse en la carta pública.', 360000, 1, true);
 
+-- Variantes y adicionales de ejemplo (ficha variantes-y-adicionales). Ids con el prefijo 14 (grupos) y 15 (opciones).
+--   Espresso:  «Tamaño» (variante 1/1: Simple +$ 0, Doble +$ 600, y «Triple (agotado)» inactiva) y «Extras» (0/3: Leche de
+--              almendras +$ 300, Crema +$ 200); «Grupo oculto» inactivo (no debe publicarse).
+--   Plato inactivo (Cold brew): un grupo activo que NO debe publicarse porque el plato no se ve.
+insert into public.option_groups (id, organization_id, product_id, name, min_choices, max_choices, sort_order, is_active) values
+  ('14000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000001', 'Tamaño', 1, 1, 0, true),
+  ('14000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000001', 'Extras', 0, 3, 1, true),
+  ('14000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000001', 'Grupo oculto', 0, 1, 2, false),
+  ('14000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', '13000000-0000-4000-8000-000000000003', 'Tamaño de plato inactivo', 1, 1, 0, true);
+
+insert into public.options (id, organization_id, group_id, name, price_delta_cents, sort_order, is_active) values
+  ('15000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000001', 'Simple', 0, 0, true),
+  ('15000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000001', 'Doble', 60000, 1, true),
+  ('15000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000001', 'Triple (agotado)', 120000, 2, false),
+  ('15000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000002', 'Leche de almendras', 30000, 0, true),
+  ('15000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000002', 'Crema', 20000, 1, true),
+  ('15000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000003', 'Opción de grupo oculto', 10000, 0, true),
+  ('15000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000004', 'Opción de plato inactivo', 10000, 0, true);
+
 -- Organización 2: existe para probar el aislamiento entre tenants.
 insert into public.organizations (id, slug, name) values
   ('20000000-0000-4000-8000-000000000001', 'parrilla-demo', 'Parrilla Demo');
@@ -44,6 +63,13 @@ insert into public.products (id, organization_id, category_id, name, description
    'Entraña', 'Cocción a punto, con papas rústicas.', 1250000, 1, true),
   ('23000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001', '22000000-0000-4000-8000-000000000001',
    'Provoleta', null, 680000, 2, true);
+
+insert into public.option_groups (id, organization_id, product_id, name, min_choices, max_choices, sort_order, is_active) values
+  ('24000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', '23000000-0000-4000-8000-000000000001', 'Punto de cocción', 1, 1, 0, true);
+
+insert into public.options (id, organization_id, group_id, name, price_delta_cents, sort_order, is_active) values
+  ('25000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', '24000000-0000-4000-8000-000000000001', 'A punto', 0, 0, true),
+  ('25000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001', '24000000-0000-4000-8000-000000000001', 'Bien cocida', 0, 1, true);
 
 -- Organización 3: suspendida (is_active = false). Nada de lo que cuelga de ella debe publicarse.
 insert into public.organizations (id, slug, name, is_active) values

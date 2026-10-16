@@ -1,8 +1,6 @@
 "use server";
 
-import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
-import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import {
   cartaErrorMessage,
   createCategory,
@@ -19,49 +17,13 @@ import {
 } from "@/lib/carta/catalog";
 import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
-import { cartaTag } from "@/lib/public-menu";
-import { createSessionClient } from "@/lib/supabase/server";
+import { NOT_FOUND, outcome, prepare, refresh, text } from "./action-helpers";
 
 /**
  * Server actions de la carta. Cada una vuelve a exigir sesión y membresía del local (Dueño o Staff):
  * el `slug` viaja en un campo oculto, pero la autoridad es la membresía de la persona, no el campo. Las
  * escrituras van con el cliente de la persona (RLS): la base decide si la cuenta puede escribir y si hay cupo.
  */
-
-async function prepare(formData: FormData) {
-  const slug = formData.get("org");
-  if (typeof slug !== "string") throw new Error("Falta el local.");
-  const { membership } = await requireMembership(slug, `/panel/${slug}/carta`);
-  return { slug, orgId: membership.org.id, db: await createSessionClient() };
-}
-
-const text = (formData: FormData, key: string) => {
-  const value = formData.get(key);
-  return typeof value === "string" ? value : "";
-};
-
-/**
- * Tras guardar: refresca el panel y vence YA lo cacheado de la carta pública de esta organización (`updateTag`, no
- * `revalidateTag`: no se sirve ni una vez la versión vieja). Toda acción de este archivo que escribe pasa por acá.
- */
-function refresh(slug: string, orgId: string) {
-  revalidatePath(`/panel/${slug}`, "layout");
-  updateTag(cartaTag(orgId));
-}
-
-async function outcome(
-  slug: string,
-  orgId: string,
-  result: Result<unknown>,
-  message: string,
-  values?: Record<string, string>,
-): Promise<FormState> {
-  if (!result.ok) return { error: cartaErrorMessage(result.error, await getEntitlements(orgId)), values };
-  refresh(slug, orgId);
-  return { ok: true, message };
-}
-
-const NOT_FOUND = { error: cartaErrorMessage("not_found", null) } satisfies FormState;
 
 // --- Categorías -------------------------------------------------------------
 

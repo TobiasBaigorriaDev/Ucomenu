@@ -4,6 +4,23 @@ export type MenuCategory = {
   sort_order: number;
 };
 
+export type MenuOption = {
+  id: string;
+  name: string;
+  /** Diferencia sobre el precio base, en centavos (0 = sin diferencia). Solo informativa. */
+  price_delta_cents: number;
+  sort_order: number;
+};
+
+export type MenuOptionGroup = {
+  id: string;
+  name: string;
+  min_choices: number;
+  max_choices: number;
+  sort_order: number;
+  options: MenuOption[];
+};
+
 export type MenuProduct = {
   id: string;
   category_id: string;
@@ -13,6 +30,8 @@ export type MenuProduct = {
   sort_order: number;
   /** Ruta de la foto en Storage (`{organización}/{plato}/{uuid}.{ext}`); nulo = sin foto. */
   image_path?: string | null;
+  /** Variantes y adicionales activos del plato (con al menos una opción activa), en orden. */
+  option_groups?: MenuOptionGroup[];
 };
 
 export type MenuSection = {
@@ -47,4 +66,36 @@ export function groupMenu(categories: MenuCategory[], products: MenuProduct[]): 
         ? [{ category, products: [...list].sort(byOrderThenName) }]
         : [];
     });
+}
+
+type GroupRow = Omit<MenuOptionGroup, "options"> & { product_id: string };
+type OptionRow = MenuOption & { group_id: string };
+
+/**
+ * Cuelga de cada plato sus grupos de opciones. La base ya entrega solo lo activo y publicable; acá se arma la estructura:
+ * una opción cuyo grupo no vino se descarta, y un grupo sin opciones no se muestra (no hay nada que elegir). El resto de
+ * los campos del plato se conserva tal cual.
+ */
+export function attachOptions<P extends MenuProduct>(products: P[], groups: GroupRow[], options: OptionRow[]): P[] {
+  const optionsByGroup = new Map<string, MenuOption[]>();
+  for (const { group_id, ...option } of options) {
+    const list = optionsByGroup.get(group_id);
+    if (list) list.push(option);
+    else optionsByGroup.set(group_id, [option]);
+  }
+
+  const groupsByProduct = new Map<string, MenuOptionGroup[]>();
+  for (const { product_id, ...group } of groups) {
+    const list = optionsByGroup.get(group.id);
+    if (!list || list.length === 0) continue;
+    const entry = { ...group, options: [...list].sort(byOrderThenName) };
+    const siblings = groupsByProduct.get(product_id);
+    if (siblings) siblings.push(entry);
+    else groupsByProduct.set(product_id, [entry]);
+  }
+
+  return products.map((product) => {
+    const list = groupsByProduct.get(product.id);
+    return list ? { ...product, option_groups: [...list].sort(byOrderThenName) } : product;
+  });
 }

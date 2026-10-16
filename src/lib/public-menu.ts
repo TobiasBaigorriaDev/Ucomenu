@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { groupMenu, type MenuSection } from "@/lib/menu";
+import { attachOptions, groupMenu, type MenuSection } from "@/lib/menu";
 import { isValidSlug } from "@/lib/slug";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
@@ -43,25 +43,43 @@ type CartaRows = {
     sort_order: number;
     image_path: string | null;
   }[];
+  /** Variantes y adicionales publicados (la base solo entrega lo activo de platos visibles). */
+  optionGroups: {
+    id: string;
+    product_id: string;
+    name: string;
+    min_choices: number;
+    max_choices: number;
+    sort_order: number;
+  }[];
+  options: { id: string; group_id: string; name: string; price_delta_cents: number; sort_order: number }[];
 };
 
 async function loadRows(orgId: string): Promise<CartaRows> {
   const supabase = createPublicClient();
-  const [categories, products] = await Promise.all([
+  const [categories, products, optionGroups, options] = await Promise.all([
     supabase.from("categories").select("id, name, sort_order").eq("organization_id", orgId),
     supabase
       .from("products")
       .select("id, category_id, name, description, price_cents, sort_order, image_path")
       .eq("organization_id", orgId),
+    supabase
+      .from("option_groups")
+      .select("id, product_id, name, min_choices, max_choices, sort_order")
+      .eq("organization_id", orgId),
+    supabase.from("options").select("id, group_id, name, price_delta_cents, sort_order").eq("organization_id", orgId),
   ]);
 
   if (categories.error) throw new Error(`No se pudieron leer las categorías: ${categories.error.message}`);
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
-  return { categories: categories.data, products: products.data };
+  if (optionGroups.error) throw new Error(`No se pudieron leer los grupos de opciones: ${optionGroups.error.message}`);
+  if (options.error) throw new Error(`No se pudieron leer las opciones: ${options.error.message}`);
+  return { categories: categories.data, products: products.data, optionGroups: optionGroups.data, options: options.data };
 }
 
 /**
- * Categorías y platos publicados de una organización, con caché. Solo se cachea esto, que cambia únicamente cuando el
+ * Categorías, platos y sus variantes/adicionales publicados de una organización, con caché (la clave lleva la versión de
+ * la forma de lo cacheado: al agregar los grupos de opciones pasó a `v2`, para no leer entradas con la forma anterior). Solo se cachea esto, que cambia únicamente cuando el
  * local edita su carta; todo lo que decide si la carta se puede mostrar (que la organización exista y esté activa, que la
  * cuenta no esté suspendida, que la sucursal exista) se consulta SIEMPRE en vivo en `getPublicMenu` antes de llegar acá.
  * Por eso una caché vieja nunca publica la carta de una cuenta suspendida ni de otra organización: la clave lleva el id
@@ -74,7 +92,7 @@ async function loadRows(orgId: string): Promise<CartaRows> {
  * guardar los datos anteriores después de la invalidación; dura como máximo lo mismo (`CARTA_CACHE_SECONDS`).
  */
 function readRows(orgId: string): Promise<CartaRows> {
-  return unstable_cache(() => loadRows(orgId), ["carta-publica", orgId], {
+  return unstable_cache(() => loadRows(orgId), ["carta-publica-v2", orgId], {
     tags: [cartaTag(orgId)],
     revalidate: CARTA_CACHE_SECONDS,
   })();
@@ -103,14 +121,14 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   const branch = org?.branches[0];
   if (!org || !branch) return unavailableOrNull(supabase, orgSlug, branchSlug);
 
-  const { categories, products } = await readRows(org.id);
+  const { categories, products, optionGroups, options } = await readRows(org.id);
 
   return {
     kind: "menu",
     menu: {
       organization: { id: org.id, name: org.name, slug: org.slug },
       branch: { id: branch.id, name: branch.name, slug: branch.slug },
-      sections: groupMenu(categories, products),
+      sections: groupMenu(categories, attachOptions(products, optionGroups, options)),
     },
   };
 });

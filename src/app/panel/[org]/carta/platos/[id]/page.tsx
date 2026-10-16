@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { loadCarta } from "@/lib/carta/catalog";
+import { loadProductOptions } from "@/lib/carta/options";
 import { imageUrl } from "@/lib/carta/images";
 import { writeBlockNotice } from "@/lib/carta/messages";
 import { priceToInput } from "@/lib/carta/price";
@@ -10,6 +11,7 @@ import { asUuid } from "@/lib/carta/validation";
 import { createSessionClient } from "@/lib/supabase/server";
 import { PhotoForm } from "../../photo-form";
 import { ProductForm } from "../../product-form";
+import { OpcionesSection } from "./opciones-section";
 
 export const metadata: Metadata = { title: "Editar plato" };
 
@@ -27,6 +29,8 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   // El plato se busca solo entre los de ESTE local: un id de otro local es un 404, igual que uno inexistente.
   const product = carta.flatMap((category) => category.products).find((p) => p.id === productId);
   if (!product) notFound();
+
+  const groups = await loadProductOptions(db, membership.org.id, product.id);
 
   const canWrite = ent?.canWrite === true;
   const notice = writeBlockNotice(ent);
@@ -75,6 +79,8 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           canWrite={canWrite}
         />
       </section>
+
+      <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} />
 
       <p className="mt-12">
         <Link

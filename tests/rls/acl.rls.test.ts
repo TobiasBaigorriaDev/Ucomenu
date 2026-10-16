@@ -36,6 +36,8 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   is_platform_admin: [true, false, true], // usada por la política de lectura de audit_log y de payments (SuperAdmin)
   payments_append_only: [false, false, false], // trigger de payments: rechaza UPDATE, DELETE y TRUNCATE (SuperAdmin)
   trial_status: [false, false, false], // pura; la usa org_entitlements (estado de la prueba gratuita)
+  enforce_option_group_cap: [false, false, false], // trigger de option_groups: tope técnico de 20 grupos por plato (variantes y adicionales)
+  enforce_option_cap: [false, false, false], // trigger de options: tope técnico de 60 opciones por grupo (variantes y adicionales)
 };
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.
@@ -201,7 +203,9 @@ describe("RLS y permisos de tablas", () => {
         ('organizations', 'id'), ('organizations', 'slug'), ('organizations', 'is_active'),
         ('branches', 'id'), ('branches', 'organization_id'), ('branches', 'slug'),
         ('categories', 'id'), ('categories', 'organization_id'),
-        ('products', 'id'), ('products', 'organization_id'), ('products', 'currency')
+        ('products', 'id'), ('products', 'organization_id'), ('products', 'currency'),
+        ('option_groups', 'id'), ('option_groups', 'organization_id'), ('option_groups', 'product_id'), ('option_groups', 'created_at'),
+        ('options', 'id'), ('options', 'organization_id'), ('options', 'group_id'), ('options', 'created_at')
       ) as t(tabla, columna)
       where has_column_privilege('authenticated', 'public.' || t.tabla, t.columna, 'update')
          or has_column_privilege('anon', 'public.' || t.tabla, t.columna, 'update')`);
@@ -230,7 +234,7 @@ describe("RLS y permisos de tablas", () => {
 
   it("anon no tiene ningún permiso de escritura en las tablas de negocio", () => {
     const conEscritura = sql(`
-      select t.tabla, p.permiso from (values ('organizations'), ('branches'), ('categories'), ('products'), ('memberships')) as t(tabla)
+      select t.tabla, p.permiso from (values ('organizations'), ('branches'), ('categories'), ('products'), ('memberships'), ('option_groups'), ('options')) as t(tabla)
       cross join (values ('insert'), ('update'), ('delete'), ('truncate')) as p(permiso)
       where has_table_privilege('anon', 'public.' || t.tabla, p.permiso)`);
     expect(conEscritura).toEqual([]);

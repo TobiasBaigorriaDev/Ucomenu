@@ -19,10 +19,13 @@ import { validateDescription, validateName } from "./validation";
 
 type Db = SupabaseClient<Database>;
 
+/** Tablas de la carta con `sort_order` e `is_active` que se reordenan con el mismo mecanismo. */
+export type OrderedTable = "categories" | "products" | "option_groups" | "options";
+
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: CartaError };
 
-const ok = <T>(data: T): Result<T> => ({ ok: true, data });
-const fail = (error: CartaError): Result<never> => ({ ok: false, error });
+export const ok = <T>(data: T): Result<T> => ({ ok: true, data });
+export const fail = (error: CartaError): Result<never> => ({ ok: false, error });
 
 export { cartaErrorMessage };
 export type { CartaError };
@@ -101,7 +104,7 @@ async function entitlementsOf(db: Db, orgId: string): Promise<Entitlements | nul
 }
 
 /** Corta antes de escribir si la cuenta está en solo lectura o suspendida (la base también lo impediría). */
-async function guard(db: Db, orgId: string): Promise<CartaError | null> {
+export async function guard(db: Db, orgId: string): Promise<CartaError | null> {
   return writeBlock(await entitlementsOf(db, orgId));
 }
 
@@ -109,7 +112,7 @@ async function guard(db: Db, orgId: string): Promise<CartaError | null> {
  * Una escritura devolvió 0 filas: o el elemento no existe en esta organización, o la base lo bloqueó
  * (cuenta que cambió de estado entre la comprobación y la escritura, por ejemplo). Se distingue leyendo.
  */
-async function explainZeroRows(db: Db, orgId: string, table: "categories" | "products", id: string): Promise<CartaError> {
+export async function explainZeroRows(db: Db, orgId: string, table: OrderedTable, id: string): Promise<CartaError> {
   const { data, error } = await db.from(table).select("id").eq("id", id).eq("organization_id", orgId).maybeSingle();
   if (error) return "unexpected";
   if (!data) return "not_found";
@@ -124,7 +127,7 @@ function writeError(error: NonNullable<PgError>): CartaError {
 }
 
 /** Si la escritura fue rechazada por RLS (42501), la causa más probable es la cuenta: se confirma leyendo el estado. */
-async function writeFailure(db: Db, orgId: string, error: NonNullable<PgError>): Promise<CartaError> {
+export async function writeFailure(db: Db, orgId: string, error: NonNullable<PgError>): Promise<CartaError> {
   const mapped = writeError(error);
   if (mapped === "forbidden") return (await guard(db, orgId)) ?? "forbidden";
   return mapped;
@@ -336,10 +339,10 @@ export async function moveProduct(db: Db, orgId: string, id: string, direction: 
 }
 
 /** Aplica la renumeración. Cada fila se confirma: si alguna no cambió, el orden no se da por guardado. */
-async function applyOrder(
+export async function applyOrder(
   db: Db,
   orgId: string,
-  table: "categories" | "products",
+  table: OrderedTable,
   changes: { id: string; sort_order: number }[],
 ): Promise<Result> {
   const results = await Promise.all(

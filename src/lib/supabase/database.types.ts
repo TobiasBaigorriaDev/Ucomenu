@@ -111,6 +111,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"option_groups": {
+                  Row: {
+                    "created_at": string,"id": string,"is_active": boolean,"max_choices": number,"min_choices": number,"name": string,"organization_id": string,"product_id": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"max_choices"?: number,"min_choices"?: number,"name": string,"organization_id": string,"product_id": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"max_choices"?: number,"min_choices"?: number,"name"?: string,"organization_id"?: string,"product_id"?: string,"sort_order"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "option_groups_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "option_groups_product_id_organization_id_fkey"
+      columns: ["product_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
+                },"options": {
+                  Row: {
+                    "created_at": string,"group_id": string,"id": string,"is_active": boolean,"name": string,"organization_id": string,"price_delta_cents": number,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"group_id": string,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"price_delta_cents"?: number,"sort_order"?: number
+                  }
+                  Update: {
+                    "created_at"?: string,"group_id"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"price_delta_cents"?: number,"sort_order"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "options_group_id_organization_id_fkey"
+      columns: ["group_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "option_groups"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "options_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"organizations": {
                   Row: {
                     "created_at": string,"id": string,"is_active": boolean,"name": string,"slug": string

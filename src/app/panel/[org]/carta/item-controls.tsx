@@ -9,7 +9,7 @@ const smallButton = `${secondaryButtonClass} min-w-11 px-3`;
 
 type Props = {
   orgSlug: string;
-  kind: "category" | "product";
+  kind: "category" | "product" | "group" | "option";
   id: string;
   name: string;
   isActive: boolean;
@@ -17,11 +17,13 @@ type Props = {
   canMoveDown: boolean;
   /** `false` con la cuenta en solo lectura o suspendida: los botones se deshabilitan (la base también lo impide). */
   canWrite: boolean;
+  /** Por defecto, la acción de categorías y platos; variantes y adicionales pasan la suya. */
+  action?: typeof rowAction;
 };
 
 /** Subir, bajar y activar/desactivar un elemento de la carta. Un solo formulario por fila. */
 export function ItemControls(props: Props) {
-  const [state, formAction] = useActionState(rowAction, {});
+  const [state, formAction] = useActionState(props.action ?? rowAction, {});
 
   return (
     <form action={formAction}>

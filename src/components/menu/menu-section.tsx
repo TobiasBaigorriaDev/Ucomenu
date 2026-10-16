@@ -2,6 +2,7 @@ import { formatArs } from "@/lib/money";
 import { imageUrl } from "@/lib/carta/images";
 import type { MenuSection as Section } from "@/lib/menu";
 import { categoryAnchor } from "./anchors";
+import { DishOptions } from "./dish-options";
 import { DishPhoto } from "./dish-photo";
 
 export function MenuSection({ section }: { section: Section }) {
@@ -46,6 +47,9 @@ export function MenuSection({ section }: { section: Section }) {
                   <p className="mt-1.5 max-w-[46ch] text-[0.9375rem] leading-relaxed text-muted [overflow-wrap:anywhere]">
                     {product.description}
                   </p>
+                ) : null}
+                {product.option_groups && product.option_groups.length > 0 ? (
+                  <DishOptions productId={product.id} groups={product.option_groups} />
                 ) : null}
               </div>
             </div>
