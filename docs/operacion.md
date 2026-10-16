@@ -25,7 +25,7 @@ Propuesta concreta para operar UcoMenu al empezar (estrategia del ADR 0015). Es 
 pnpm respaldo --remoto --env C:\secretos\produccion.env --destino D:\respaldos\ucomenu
 ```
 Crea `D:\respaldos\ucomenu\<fecha>\` con `esquema.sql`, `datos.sql`, `storage\…` y `manifiesto.json`, y al terminar **vuelve a leer todo y verifica** tamaños y SHA-256.
-- El archivo de entorno (fuera del repositorio) tiene `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `RESPALDO_DB_URL` (conexión **directa** a la base; la cadena nunca va como argumento).
+- El archivo de entorno (fuera del repositorio) tiene `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `RESPALDO_DB_URL` (cadena de conexión a la base: la **directa** solo funciona con IPv6, así que sin IPv6 usar la del **Session pooler** del panel de Supabase; la cadena nunca va como argumento).
 - Se niega a escribir dentro del repositorio y a mezclar local con remoto. Solo lee.
 - **Qué incluye:** estructura, datos de `public` y las cuentas (`auth.users` y `auth.identities`, para que los Dueños conserven su acceso), y las fotos.
 - **Qué deja afuera a propósito:** sesiones y tokens de Auth, y **`waiter_calls`**: tiene el identificador derivado de la IP, que la política de privacidad promete borrar a los 14 días; copiarlo a un respaldo de meses rompería esa promesa y son avisos efímeros.

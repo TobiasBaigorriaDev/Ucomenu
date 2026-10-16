@@ -6,7 +6,7 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 
 ## 0. Antes de empezar (el usuario)
 - **Hosting:** decidido (Fly.io, contenedor en São Paulo). Falta aprobar crear la cuenta y la tarjeta, e instalar `flyctl` (herramienta nueva: requiere aprobación).
-- **Dominio:** `ucomenu.com` **no está comprado**. Comprobar disponibilidad y precio, y definirlo **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
+- **Dominio:** **pospuesto** (2026-10-16: el usuario no está seguro de `ucomenu.com`; está en el backlog). Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción sí: hay que definirlo **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
 - **Legal** (ficha `agile/cambios/textos-legales.md`): revisión profesional de `/terminos`, `/privacidad` y `/alergenos`, identidad del operador y correo real de contacto.
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
 
@@ -16,6 +16,29 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 3. Configuración de Auth en el panel de Supabase (el `config.toml` solo vale en local): registro público apagado; contraseña mínima de 10; sin proveedores sociales. Las cuentas las crea el servidor (SuperAdmin y Dueño).
 4. Verificar que el bucket `product-images` quedó **público**, con tipos JPEG/PNG/WebP y 2 MB por archivo (ADR 0008; lo crea la migración).
 5. Guardar las claves: la **pública** (publishable) y la de **servicio** (secret), y la **conexión directa** a la base (para `pnpm respaldo`).
+
+## 1b. Staging de Supabase, paso a paso (el usuario; gratis)
+Es el ensayo general: mismo procedimiento que producción, con datos ficticios y en otra organización para que siga gratis cuando producción pase a Pro (ADR 0015).
+
+**En el panel (supabase.com/dashboard)**
+1. **Organización nueva:** *New organization*, nombre `UcoMenu Staging`, plan **Free**. Tiene que ser distinta de la de producción.
+2. **Proyecto nuevo** en esa organización: nombre `ucomenu-staging`, región **South America (São Paulo)**, plan Free. Generar una contraseña de base larga y guardarla en un gestor de contraseñas (no en el repositorio ni en el chat).
+3. Cuando termine de crearse, anotar (también fuera del repositorio): la **Reference ID** (Project Settings → General), la **clave pública** (*publishable*) y la **clave secreta** (*secret*) (Project Settings → API Keys) y la URL `https://<ref>.supabase.co`.
+4. **Auth** (Authentication): apagar *Allow new users to sign up* y poner la contraseña mínima en 10. No hace falta configurar correo: las cuentas las crea el servidor.
+
+**En tu máquina (desde la carpeta del proyecto)**
+```powershell
+pnpm exec supabase login                          # abre el navegador, una sola vez
+pnpm exec supabase link --project-ref <Reference ID>   # pide la contraseña de la base
+pnpm exec supabase db push --dry-run              # muestra qué migraciones aplicaría
+pnpm exec supabase db push                        # las aplica al STAGING
+```
+**Nunca** `db reset` ni `supabase/seed.sql` en un proyecto en la nube: el seed trae cuentas con contraseñas conocidas y el staging es público en internet. El staging se puebla ensayando el procedimiento real: primer SuperAdmin (paso 2) y una organización de ensayo desde `/admin`.
+
+**Comprobar**
+- *Database → Migrations* lista todas las migraciones; *Storage* tiene el bucket `product-images`, público.
+- El SQL de seguimiento de `docs/operacion.md`, sección 3, corre sin errores.
+- Si tu red no tiene IPv6, para `pnpm respaldo` usar la cadena del **Session pooler** (Connect → Session pooler) y no la directa.
 
 ## 2. Primer SuperAdmin (a mano; aprobación: toca producción)
 1. Crear la cuenta en el panel de Auth de Supabase con una contraseña larga. **No** usar las del seed (`admin@ucomenu.test` y similares no existen en producción).
@@ -90,7 +113,7 @@ El bloque se probó a mano en la base local como `postgres` (la extensión no es
 **Comprobación obligatoria antes de publicar** (en staging y de nuevo en producción), después de al menos una ejecución real: `cron.job_run_details` con estado `succeeded` y `select count(*) from public.waiter_calls where created_at < now() - interval '14 days'` igual a 0. Para probar con datos ficticios en staging, insertar llamados con `created_at` viejo y ejecutar el bloque a mano.
 
 ## 5. Dominio (aprobación: compra y DNS)
-1. Comprar el dominio (todavía no está comprado) y agregarlo a Fly (`fly certs add <dominio>`); apuntar el DNS como indique Fly. Esperar el certificado HTTPS (`fly certs show <dominio>`).
+1. Con el dominio ya elegido y comprado (pospuesto), agregarlo a Fly (`fly certs add <dominio>`); apuntar el DNS como indique Fly. Esperar el certificado HTTPS (`fly certs show <dominio>`).
 2. Confirmar que `NEXT_PUBLIC_SITE_URL` coincide y volver a desplegar si se cambió.
 3. Imprimir los QR **después** de este paso: cada QR codifica `{NEXT_PUBLIC_SITE_URL}/t/{token}`.
 

@@ -16,7 +16,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Bloqueado
-- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; falta ejecutarla (bloqueado por: aprobar la cuenta de Fly y `flyctl`, comprar el dominio `ucomenu.com`, crear cuentas y proyectos —staging primero—, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
+- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; falta ejecutarla (bloqueado por: la cuenta de Fly con tarjeta, el dominio —pospuesto, ver su ítem en el Backlog; staging no lo necesita—, crear cuentas y proyectos —staging primero—, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
 
 ## Backlog
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
@@ -47,6 +47,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [C] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
+- [S] Dominio: decidir el nombre definitivo y comprarlo (pospuesto 2026-10-16: el usuario no está seguro de `ucomenu.com`). Bloquea publicar producción e imprimir QR definitivos; staging usa la dirección provisoria de Fly → docs/produccion.md, paso 5
 - [M] Alta guiada del dueño: primera carta y primeros QR (la primera sucursal ya la crea el alta del SuperAdmin; el panel aún no gestiona sucursales)
 
 ### Fase 2 — Add-on WebAR
