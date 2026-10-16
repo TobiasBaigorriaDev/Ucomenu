@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/lib/carta/catalog";
 import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
+import { cartaTag } from "@/lib/public-menu";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -39,8 +40,13 @@ const text = (formData: FormData, key: string) => {
   return typeof value === "string" ? value : "";
 };
 
-function refresh(slug: string) {
+/**
+ * Tras guardar: refresca el panel y vence YA lo cacheado de la carta pública de esta organización (`updateTag`, no
+ * `revalidateTag`: no se sirve ni una vez la versión vieja). Toda acción de este archivo que escribe pasa por acá.
+ */
+function refresh(slug: string, orgId: string) {
   revalidatePath(`/panel/${slug}`, "layout");
+  updateTag(cartaTag(orgId));
 }
 
 async function outcome(
@@ -51,7 +57,7 @@ async function outcome(
   values?: Record<string, string>,
 ): Promise<FormState> {
   if (!result.ok) return { error: cartaErrorMessage(result.error, await getEntitlements(orgId)), values };
-  refresh(slug);
+  refresh(slug, orgId);
   return { ok: true, message };
 }
 
@@ -126,7 +132,7 @@ export async function saveProductAction(_previous: FormState, formData: FormData
 
   const result = await createProduct(db, orgId, { ...input, active: formData.get("active") === "on" });
   if (!result.ok) return outcome(slug, orgId, result, "", { ...values, active: formData.get("active") === "on" ? "on" : "" });
-  refresh(slug);
+  refresh(slug, orgId);
   redirect(`/panel/${slug}/carta/platos/${result.data.id}?nuevo=1`);
 }
 

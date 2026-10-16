@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { groupMenu, type MenuSection } from "@/lib/menu";
 import { isValidSlug } from "@/lib/slug";
@@ -20,6 +21,79 @@ export type PublicMenuResult =
   | { kind: "menu"; menu: PublicMenu }
   | { kind: "unavailable"; organizationName: string }
   | null;
+
+/** Etiqueta de caché de las categorías y platos de una organización. Las acciones del panel la invalidan al guardar. */
+export const cartaTag = (orgId: string) => `carta:${orgId}`;
+
+/**
+ * Tope de antigüedad de lo cacheado. La invalidación normal es por etiqueta (`cartaTag`); este tiempo acota lo que la
+ * etiqueta no ve: un cambio hecho directo en la base y una lectura en vuelo que termina de guardarse justo después de
+ * invalidar.
+ */
+export const CARTA_CACHE_SECONDS = 60;
+
+type CartaRows = {
+  categories: { id: string; name: string; sort_order: number }[];
+  products: {
+    id: string;
+    category_id: string;
+    name: string;
+    description: string | null;
+    price_cents: number;
+    sort_order: number;
+    image_path: string | null;
+  }[];
+};
+
+/** Lo que no se guarda en caché (ver `readRows`); lleva el resultado para devolverlo igual. */
+class NotCacheable extends Error {
+  constructor(readonly rows: CartaRows) {
+    super("not cacheable");
+  }
+}
+
+async function loadRows(orgId: string): Promise<CartaRows> {
+  const supabase = createPublicClient();
+  const [categories, products] = await Promise.all([
+    supabase.from("categories").select("id, name, sort_order").eq("organization_id", orgId),
+    supabase
+      .from("products")
+      .select("id, category_id, name, description, price_cents, sort_order, image_path")
+      .eq("organization_id", orgId),
+  ]);
+
+  if (categories.error) throw new Error(`No se pudieron leer las categorías: ${categories.error.message}`);
+  if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
+  return { categories: categories.data, products: products.data };
+}
+
+/**
+ * Categorías y platos publicados de una organización, con caché. Solo se cachea esto, que cambia únicamente cuando el
+ * local edita su carta; todo lo que decide si la carta se puede mostrar (que la organización exista y esté activa, que la
+ * cuenta no esté suspendida, que la sucursal exista) se consulta SIEMPRE en vivo en `getPublicMenu` antes de llegar acá.
+ * Por eso una caché vieja nunca publica la carta de una cuenta suspendida ni de otra organización: la clave lleva el id
+ * de la organización que ya resolvió la consulta en vivo.
+ *
+ * Una lectura vacía no se guarda: si la cuenta se suspende justo mientras se lee, la base devuelve filas vacías (RLS) y
+ * quedaría «sin platos» hasta que venza el tiempo.
+ */
+async function readRows(orgId: string): Promise<CartaRows> {
+  const cached = unstable_cache(
+    async () => {
+      const rows = await loadRows(orgId);
+      if (rows.categories.length === 0 || rows.products.length === 0) throw new NotCacheable(rows);
+      return rows;
+    },
+    ["carta-publica", orgId],
+    { tags: [cartaTag(orgId)], revalidate: CARTA_CACHE_SECONDS },
+  );
+  try {
+    return await cached();
+  } catch (error) {
+    if (error instanceof NotCacheable) return error.rows;
+    throw error;
+  }
+}
 
 /**
  * Carta pública de una sucursal. Está envuelta en `cache` para que `generateMetadata`
@@ -44,23 +118,14 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   const branch = org?.branches[0];
   if (!org || !branch) return unavailableOrNull(supabase, orgSlug, branchSlug);
 
-  const [categories, products] = await Promise.all([
-    supabase.from("categories").select("id, name, sort_order").eq("organization_id", org.id),
-    supabase
-      .from("products")
-      .select("id, category_id, name, description, price_cents, sort_order, image_path")
-      .eq("organization_id", org.id),
-  ]);
-
-  if (categories.error) throw new Error(`No se pudieron leer las categorías: ${categories.error.message}`);
-  if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
+  const { categories, products } = await readRows(org.id);
 
   return {
     kind: "menu",
     menu: {
       organization: { id: org.id, name: org.name, slug: org.slug },
       branch: { id: branch.id, name: branch.name, slug: branch.slug },
-      sections: groupMenu(categories.data, products.data),
+      sections: groupMenu(categories, products),
     },
   };
 });

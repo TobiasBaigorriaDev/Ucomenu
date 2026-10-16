@@ -6,6 +6,17 @@ import { mosaicLayout, type TileShape } from "./mosaic";
 
 const SPAN: Record<TileShape, string> = { small: "", wide: "col-span-2", tall: "row-span-2" };
 
+/**
+ * Ancho que necesita la foto de cada forma de mosaico (la grilla mide como máximo 48 rem y tiene dos columnas), para su
+ * `sizes`: la ancha ocupa todo el ancho y la chica la mitad. La alta mide dos filas, así que con `object-cover` la foto
+ * (apaisada) tiene que ser ~1,4 veces más ancha que la celda para cubrir el alto.
+ */
+const TILE_SIZES: Record<TileShape, string> = {
+  small: "(min-width: 768px) 24rem, 50vw",
+  tall: "(min-width: 768px) 31rem, 70vw",
+  wide: "(min-width: 768px) 48rem, 100vw",
+};
+
 /** Colores de los mosaicos sin foto: se alternan para que dos vecinos no repitan. */
 const SOLID = [
   "bg-[var(--carta-blush)] text-ink",
@@ -51,9 +62,9 @@ export function CategoryMosaic({ sections }: { sections: MenuSection[] }) {
                       src={photo}
                       alt=""
                       fill
-                      sizes="(min-width: 768px) 24rem, 50vw"
-                      unoptimized
+                      sizes={TILE_SIZES[shapes[i]]}
                       loading={i === firstPhoto ? "eager" : "lazy"}
+                      fetchPriority={i === firstPhoto ? "high" : "auto"}
                       className="object-cover"
                     />
                     <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-black/65 via-black/15 to-black/5" />
