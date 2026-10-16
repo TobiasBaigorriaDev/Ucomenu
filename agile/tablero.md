@@ -72,14 +72,14 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
-- [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16, local sin subir) → agile/cambios/textos-legales.md
-- [M] SuperAdmin: el alta de una organización crea también su primera sucursal y la carta pública se abre de inmediato (2026-10-16, local sin subir) → agile/cambios/alta-con-primera-sucursal.md
+- [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16) → agile/cambios/textos-legales.md
+- [M] SuperAdmin: el alta de una organización crea también su primera sucursal y la carta pública se abre de inmediato (2026-10-16) → agile/cambios/alta-con-primera-sucursal.md
 - [M] Revisión de Codex automatizada desde Claude: `pnpm revision:codex` (Codex CLI en solo lectura, veredicto como código de salida) y skill `ciclo-revision-codex`; probada con Codex real y con un Codex falso (2026-10-16) → tools/revision-codex.mjs
-- [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16, local sin subir) → agile/cambios/purga-de-waiter-calls.md · ADR 0014
+- [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16) → agile/cambios/purga-de-waiter-calls.md · ADR 0014
 - [S] SuperAdmin: quien inicia sesión sin `next` aterriza en `/admin` (y el resto en `/panel`); un `next` válido manda siempre (2026-10-15, `aea92a8`)
 - [M] Simplificación de Agile-SDD: rigor por consecuencias, verificación por impacto, una función por documento, handoff breve, sincronizador acotado a las 4 skills (2026-10-15) → agile/cambios/simplificacion-agile-sdd.md
 - [S] Orden local del repositorio: `output/` excluido de Git y ESLint y `docs/referencias/HUMM-MENU.png` de Git; archivos conservados (2026-10-15)
-- [C] SuperAdmin, alta de organizaciones: `/admin` y `/admin/nueva` crean una organización con su Dueño, plan y auditoría de solo-agregado (integrado a `main` 2026-10-15, sin subir) → agile/cambios/superadmin-alta-de-organizaciones.md · ADR 0013
+- [C] SuperAdmin, alta de organizaciones: `/admin` y `/admin/nueva` crean una organización con su Dueño, plan y auditoría de solo-agregado (integrado a `main` 2026-10-15) → agile/cambios/superadmin-alta-de-organizaciones.md · ADR 0013
 - [M] Configuración del llamado: silenciar mesas y cooldown por sucursal en `/panel/{slug}/llamados` (2026-10-14) → agile/cambios/configuracion-del-llamado.md
 - [M] Ticket de visita: la pestaña de `/t/{token}` vence a las 3 h y la sala muestra cuánto hacía que escaneó (2026-10-14) → agile/cambios/ticket-de-visita.md · ADR 0010
 - [M] Pantalla del historial de precios: por local y por plato, Dueño y Staff (2026-10-14) → agile/cambios/pantalla-historial-de-precios.md
