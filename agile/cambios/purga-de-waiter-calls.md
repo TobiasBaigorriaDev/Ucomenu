@@ -1,5 +1,5 @@
 # Cambio: Purga de `waiter_calls` por antigüedad
-Estado: corregido tras la revisión (aprobar con cambios) — falta confirmar las correcciones y la aprobación del usuario del plazo
+Estado: implementación aprobada por la revisión independiente (`882c094`) — falta la aprobación del usuario del plazo de 30 días
 Nivel: C  <!-- eliminación irreversible de datos que incluyen un identificador derivado de la IP -->
 
 ## Objetivo
@@ -54,5 +54,5 @@ Sobre una base recién reseteada (`pnpm db:reset`, migración `20261015120000`),
 - Revisión independiente (ronda 1, solo lectura, 2026-10-15): **aprobar con cambios**; permisos confirmados (`anon` y `authenticated` no ejecutan ni borran; la función instalada coincide con la migración). Dos hallazgos, ambos corregidos:
   - **Bloqueante — el piso se podía eludir.** PostgreSQL compara un mes como 30 días pero lo aplica por calendario: `1 month -23 days` pasaba la comparación de intervalos y dejaba 5 días efectivos en febrero, y `-4800 months 144007 days` daba un corte en el futuro que alcanzaba llamados recién creados. **Corrección:** la función calcula `v_cutoff = now() - retención`, exige `v_cutoff <= now() - 7 days` y traduce el desborde de fechas a `invalid_retention`. Regresión: 6 casos mixtos/negativos/`-infinity`/desborde (`-4800 months 144007 days` falla sin la corrección). El caso exacto `1 month -23 days` no se fijó porque depende de la fecha (hoy da justo 7 días); se cubre con `1 month -26 days` y `2 months -58 days`.
   - **Importante — `SKIP LOCKED` sin prueba.** Nueva prueba con un bloqueo sostenido de 8 s tomado por otra sesión de `psql`: la purga termina en menos de 4 s, se lleva la fila libre, deja la bloqueada y la borra al liberarse. Quitar `skip locked` ya hace fallar la suite.
-  - Falta que el revisor confirme las correcciones (ronda de verificación, sin ampliar el alcance).
-- Aprobación del usuario del plazo de 30 días y de programar la ejecución: pendiente.
+  - **Ronda de verificación (2026-10-16): implementación aprobada** sobre `882c094`; confirmó ambos hallazgos cerrados.
+- Aprobación del usuario del plazo de 30 días: pendiente. Programar la ejecución: pendiente (despliegue; antes, definir respaldo o aceptar la pérdida).

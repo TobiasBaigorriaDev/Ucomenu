@@ -7,7 +7,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
 ## En curso
-- [C] Purga de `waiter_calls` por antigüedad (30 días, piso de 7; función solo para `service_role`): implementada y probada en local; falta revisión independiente, aprobación del plazo y programarla (despliegue) → ficha: agile/cambios/purga-de-waiter-calls.md · ADR 0014
+- [C] Purga de `waiter_calls` por antigüedad (30 días, piso de 7; función solo para `service_role`): implementada, probada en local y con la revisión independiente aprobada; falta la aprobación del plazo y programarla (despliegue) → ficha: agile/cambios/purga-de-waiter-calls.md · ADR 0014
 
 ## Seleccionado
 - (vacío)
