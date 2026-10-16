@@ -19,4 +19,4 @@ Actualizado: 2026-10-16 (noche) · agente: Claude Code · historial anterior en 
 2. **Decidir:** la caché de la carta puede dejar la versión anterior hasta 60 s si una lectura en vuelo cruza una edición; cerrarlo exige una versión de la carta en la base (ficha `rendimiento-carta-publica`, decisión 4).
 3. **Aplicar en staging** (con aprobación) la migración `20261016140000_cerrar_sesion_al_atender_la_cuenta.sql`, y mirar la memoria de Fly (512 MB) con la reducción de fotos.
 4. **Con el usuario:** teléfono real; dominio, revisión legal y producción; retención de `price_history` (C).
-5. **Sin el usuario:** variantes y adicionales, buscador y filtros, disponibilidad por sucursal, identidad del local (M). Decisiones abiertas de la guía en su ficha. Menor: mencionar las copias de seguridad en la política de privacidad.
+5. **Sin el usuario:** variantes y adicionales, buscador y filtros, disponibilidad por sucursal, identidad del local (M). Decisiones abiertas de la guía en su ficha.
