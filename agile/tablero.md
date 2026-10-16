@@ -7,7 +7,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
 ## En curso
-- [C] Purga de `waiter_calls` por antigüedad (30 días, piso de 7; función solo para `service_role`): implementada, probada en local y con la revisión independiente aprobada; falta la aprobación del plazo y programarla (despliegue) → ficha: agile/cambios/purga-de-waiter-calls.md · ADR 0014
+- (vacío)
 
 ## Seleccionado
 - (vacío)
@@ -49,8 +49,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [C] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
-- [S] Textos legales: términos, privacidad, aviso de alérgenos y el identificador de cliente derivado de la IP de los llamados (30 días de retención, ADR 0014)
-- [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos). Checklist: **`WAITER_CALL_CLIENT_SECRET` propio** (obligatorio por el ticket de visita; sin él los tickets no valen entre instancias), apagar el registro público, contraseña mínima de 10 en Supabase Cloud, verificar el bucket `product-images` y definir `NEXT_PUBLIC_SITE_URL` con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel)
+- [S] Textos legales: términos, privacidad, aviso de alérgenos y el identificador de cliente derivado de la IP de los llamados (14 días de retención, ADR 0014)
+- [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos). Checklist: **programar `purge_waiter_calls` (a diario, repitiendo hasta que devuelva menos que el lote; pérdida sin respaldo aceptada)**, **`WAITER_CALL_CLIENT_SECRET` propio** (obligatorio por el ticket de visita; sin él los tickets no valen entre instancias), apagar el registro público, contraseña mínima de 10 en Supabase Cloud, verificar el bucket `product-images` y definir `NEXT_PUBLIC_SITE_URL` con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel)
 
 ### Fase 2 — Add-on WebAR
 - [S] Spike descartable: `<model-viewer>` con un plato real en un iPhone y un Android — valida ADR 0002 y el presupuesto de peso
@@ -74,6 +74,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16, local sin subir) → agile/cambios/purga-de-waiter-calls.md · ADR 0014
 - [S] SuperAdmin: quien inicia sesión sin `next` aterriza en `/admin` (y el resto en `/panel`); un `next` válido manda siempre (2026-10-15, `aea92a8`)
 - [M] Simplificación de Agile-SDD: rigor por consecuencias, verificación por impacto, una función por documento, handoff breve, sincronizador acotado a las 4 skills (2026-10-15) → agile/cambios/simplificacion-agile-sdd.md
 - [S] Orden local del repositorio: `output/` excluido de Git y ESLint y `docs/referencias/HUMM-MENU.png` de Git; archivos conservados (2026-10-15)

@@ -114,13 +114,13 @@ describe("quién puede purgar", () => {
 });
 
 describe("qué borra", () => {
-  it("borra lo anterior a 30 días (de cualquier estado) y conserva lo posterior; los bordes de 29 y 31 días", async () => {
+  it("borra lo anterior a 14 días (de cualquier estado) y conserva lo posterior; los bordes de 13 y 15 días", async () => {
     const local = await nuevoLocal("tt-purga-bordes");
-    const viejoAtendido = await sembrar(local, 31 * DIA_MS, { status: "attended" });
+    const viejoAtendido = await sembrar(local, 15 * DIA_MS, { status: "attended" });
     const viejoVencido = await sembrar(local, 45 * DIA_MS, { status: "expired", kind: "bill" });
     // Un pendiente de semanas ya está vencido por derivación: no es un aviso vivo, se purga igual.
     const viejoPendiente = await sembrar(local, 90 * DIA_MS, { status: "pending", table: local.table2 });
-    const casiViejo = await sembrar(local, 29 * DIA_MS, { status: "attended", kind: "bill" });
+    const casiViejo = await sembrar(local, 13 * DIA_MS, { status: "attended", kind: "bill" });
     // De otro tipo que el pendiente viejo: el índice único parcial admite un solo pendiente por (mesa, tipo).
     const reciente = await sembrar(local, 60 * 1000, { status: "pending", kind: "bill", table: local.table2 });
     expect(await idsDe(local.id)).toHaveLength(5);

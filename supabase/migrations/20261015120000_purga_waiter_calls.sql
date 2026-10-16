@@ -24,7 +24,7 @@
 create index waiter_calls_created_at_idx on public.waiter_calls (created_at);
 
 create function public.purge_waiter_calls(
-  p_retention interval default interval '30 days',
+  p_retention interval default interval '14 days',
   p_batch integer default 5000
 )
 returns integer
