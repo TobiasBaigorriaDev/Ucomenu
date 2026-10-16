@@ -28,7 +28,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
 - [M] Disponibilidad por sucursal: marcar agotado; gestión de sucursales
-- [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
@@ -70,6 +69,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [M] Rendimiento de la carta pública: fotos reducidas en WebP por `/_next/image` y caché de categorías y platos con invalidación desde el panel; LCP en 4G de 11,3 s a 1,9 s; revisado por Codex, con un límite aceptado (una lectura en vuelo durante una edición puede dejar la carta anterior hasta 60 s) (2026-10-16) → agile/cambios/rendimiento-carta-publica.md
 - [M] Alta guiada del dueño: guía de primeros pasos en el Resumen del panel (carta, mesas, QR), deducida de los datos y sin esquema; pendientes de producto en la ficha: descartar la guía y varias sucursales (2026-10-16) → agile/cambios/alta-guiada-del-dueno.md
 - [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta»: un ticket anterior a la atención responde `session_closed` pasados 10 minutos de gracia (2026-10-16; falta aplicarlo en staging/producción y, si se quiere, revisión independiente) → agile/cambios/cerrar-sesion-al-atender-la-cuenta.md · ADR 0010
 - [S] Repaso de diseño del historial de precios: agrupado por día, cambio de precio destacado y etiqueta Sube/Baja; sin tocar datos ni permisos; revisado en capturas a 390 y 1280 px (2026-10-16)
