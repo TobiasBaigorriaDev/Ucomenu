@@ -36,3 +36,9 @@
 - **Se valida en la app, no en la base**, con el mismo criterio que el límite por cliente (punto 5): quien llame a la API directo se lo salta, y el tope duro sigue siendo por mesa. `create_waiter_call` recibe un 4.º parámetro **informativo**, `p_visit_started_at`, que se guarda en `waiter_calls.visit_started_at` solo si es verosímil (últimas 24 horas, no futuro); la sala muestra cuánto hacía que había escaneado cuando llamó.
 - **Límite aceptado:** recargar la URL (p. ej. desde el historial) emite un ticket nuevo, porque un QR estático y un comensal anónimo no permiten distinguirlo de un escaneo. Solo cerrar la mesa a mano o la geolocalización lo evitarían; se descartaron por fricción y privacidad.
 - **`WAITER_CALL_CLIENT_SECRET` pasa a ser requisito de producción:** un ticket que no se puede verificar bloquea al comensal (falla cerrado), y con el secreto efímero los tickets no valdrían entre instancias ni tras un reinicio.
+
+## Enmienda 2026-10-16 — la cuenta atendida cierra la sesión (ficha `cerrar-sesion-al-atender-la-cuenta.md`)
+- **Decisión:** si el personal atendió un «Pedir la cuenta» de la mesa **después** de emitido el ticket de visita, `create_waiter_call` responde `session_closed` (la app lo muestra como «Esta sesión venció») y no crea nada. Una pestaña abierta durante la comida deja de avisar cuando la cuenta se atiende; escanear o recargar da un ticket nuevo.
+- **`p_visit_started_at` ya no es solo informativo:** si es verosímil decide este cierre; si falta o es imposible no se compara (y llamar directo a la API lo evita, como el resto de lo que valida la app).
+- **Costo aceptado:** quien pide la cuenta y sigue pidiendo debe volver a escanear.
+

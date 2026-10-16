@@ -10,7 +10,9 @@ export type CallResult =
   | { status: "cooldown"; retryAfterSeconds: number }
   | { status: "rate_limited"; retryAfterSeconds: number }
   | { status: "unavailable" }
-  | { status: "not_found" };
+  | { status: "not_found" }
+  /** El personal atendió la cuenta de esta mesa después de emitido el ticket de visita: hay que escanear de nuevo. */
+  | { status: "session_closed" };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -22,6 +24,7 @@ export function parseCallResult(raw: unknown): CallResult {
     case "already_pending":
     case "unavailable":
     case "not_found":
+    case "session_closed":
       return { status: raw.status };
     case "cooldown":
     case "rate_limited": {
@@ -37,7 +40,7 @@ export function parseCallResult(raw: unknown): CallResult {
 
 export type CallTone = "ok" | "info" | "error";
 
-/** El ticket de visita venció o no es válido (ficha ticket-de-visita): mismo texto para cualquier motivo. */
+/** El ticket de visita venció, no es válido o la mesa ya cerró la cuenta (fichas ticket-de-visita y cerrar-sesion-al-atender-la-cuenta): mismo texto. */
 export const SESSION_EXPIRED_MESSAGE = "Esta sesión venció. Escaneá de nuevo el QR de tu mesa para avisar al personal.";
 
 export const UNAVAILABLE_MESSAGE = "Por ahora no se puede avisar desde acá. Levantá la mano o buscá al personal.";
@@ -58,6 +61,8 @@ export function callMessage(kind: CallKind, result: CallResult): { tone: CallTon
       const minutes = Math.max(1, Math.ceil(result.retryAfterSeconds / 60));
       return { tone: "error", text: `Se hicieron demasiados avisos desde tu conexión. Probá de nuevo en ${plural(minutes, "minuto", "minutos")}.` };
     }
+    case "session_closed":
+      return { tone: "error", text: SESSION_EXPIRED_MESSAGE };
     default:
       return { tone: "error", text: UNAVAILABLE_MESSAGE };
   }

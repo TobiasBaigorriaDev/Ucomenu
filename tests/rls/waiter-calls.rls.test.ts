@@ -538,3 +538,96 @@ describe("cuándo abrió la carta el comensal (ticket de visita, informativo)", 
     expect(funciones).toEqual([["p_token text, p_kind text, p_client text, p_visit_started_at timestamp with time zone"]]);
   });
 });
+
+describe("cerrar la sesión de la mesa al atender la cuenta (ficha cerrar-sesion-al-atender-la-cuenta)", () => {
+  const pedir = (token: string, kind: string, visita: string | null) =>
+    anonClient().rpc("create_waiter_call", { p_token: token, p_kind: kind, ...(visita ? { p_visit_started_at: visita } : {}) });
+  /** Un ticket emitido hace `ms` (segundos enteros, como los tickets). */
+  const ticketDeHace = (ms: number) => new Date(Math.floor((Date.now() - ms) / 1000) * 1000).toISOString();
+
+  /** El personal (una sesión real, con RLS) atiende la cuenta de la mesa. */
+  async function atenderCuenta(local: Local, tableId = local.table, token = local.token) {
+    expect(await llamar(token, "bill")).toEqual({ status: "created" });
+    const r = await staff.db.from("waiter_calls").update({ status: "attended" }).eq("table_id", tableId).eq("kind", "bill").select("id");
+    expect(r.error).toBeNull();
+    expect(r.data).toHaveLength(1);
+  }
+  const fijarAtencion = (tableId: string, iso: string) =>
+    sql(`update public.waiter_calls set attended_at = '${iso}'::timestamptz where table_id = '${tableId}' and kind = 'bill'`);
+
+  it("un ticket anterior a la cuenta atendida ya no llama (ni «mozo» ni «cuenta»); no crea nada ni dice más", async () => {
+    const local = await nuevoLocal("tt-sesion-cerrada");
+    const antes = ticketDeHace(10 * MIN);
+    await atenderCuenta(local);
+    const total = (await filas(local.id)).length;
+
+    for (const kind of ["waiter", "bill"]) {
+      const r = await pedir(local.token, kind, antes);
+      expect(r.error).toBeNull();
+      expect(r.data, kind).toEqual({ status: "session_closed" });
+    }
+    expect(await filas(local.id)).toHaveLength(total);
+  });
+
+  it("escanear de nuevo (un ticket posterior a la atención) vuelve a permitir llamar", async () => {
+    const local = await nuevoLocal("tt-sesion-reescaneo");
+    await atenderCuenta(local);
+    await fijarAtencion(local.table, new Date(Date.now() - 10 * MIN).toISOString());
+
+    expect((await pedir(local.token, "waiter", ticketDeHace(5 * MIN))).data).toEqual({ status: "created" });
+  });
+
+  it("el borde es el segundo del ticket: atender dentro del mismo segundo de emisión no lo cierra; un segundo después, sí", async () => {
+    const local = await nuevoLocal("tt-sesion-borde");
+    await atenderCuenta(local);
+    const emitido = Math.floor((Date.now() - 5 * MIN) / 1000) * 1000;
+    const ticket = new Date(emitido).toISOString();
+
+    await fijarAtencion(local.table, new Date(emitido + 999).toISOString());
+    expect((await pedir(local.token, "waiter", ticket)).data).toEqual({ status: "created" });
+    await service.from("waiter_calls").delete().eq("table_id", local.table).eq("kind", "waiter");
+
+    await fijarAtencion(local.table, new Date(emitido + 1000).toISOString());
+    expect((await pedir(local.token, "waiter", ticket)).data).toEqual({ status: "session_closed" });
+  });
+
+  it("solo la cuenta ATENDIDA de ESTA mesa cierra: pendiente, «mozo» atendido, vencida y otra mesa no", async () => {
+    const local = await nuevoLocal("tt-sesion-solo-cuenta");
+    const antes = ticketDeHace(10 * MIN);
+
+    // Cuenta pendiente (sin atender): no cierra.
+    expect(await llamar(local.token, "bill")).toEqual({ status: "created" });
+    expect((await pedir(local.token, "waiter", antes)).data).toEqual({ status: "created" });
+    // «Llamar al mozo» atendido: no cierra.
+    expect((await staff.db.from("waiter_calls").update({ status: "attended" }).eq("table_id", local.table).eq("kind", "waiter")).error).toBeNull();
+    await envejecer(local.table, 2 * MIN);
+    expect((await pedir(local.token, "waiter", antes)).data).toEqual({ status: "created" });
+
+    // Cuenta vencida (no atendida): no cierra.
+    await service.from("waiter_calls").update({ status: "expired" }).eq("table_id", local.table).eq("kind", "bill");
+    expect((await pedir(local.token, "bill", antes)).data).not.toEqual({ status: "session_closed" });
+
+    // La cuenta atendida de OTRA mesa no cierra esta.
+    await atenderCuenta(local, local.table2, local.token2);
+    await service.from("waiter_calls").delete().eq("table_id", local.table).eq("kind", "waiter");
+    expect((await pedir(local.token, "waiter", antes)).data).toEqual({ status: "created" });
+  });
+
+  it("sin ticket verosímil no hay nada que comparar: ausente, de hace más de 24 h o del futuro", async () => {
+    const local = await nuevoLocal("tt-sesion-sin-ticket");
+    await atenderCuenta(local);
+    for (const [i, visita] of [null, new Date(Date.now() - 25 * 60 * MIN).toISOString(), new Date(Date.now() + 5 * MIN).toISOString()].entries()) {
+      const r = await pedir(local.token, "waiter", visita);
+      expect(r.data, String(i)).toEqual({ status: "created" });
+      await service.from("waiter_calls").delete().eq("table_id", local.table).eq("kind", "waiter");
+    }
+  });
+
+  it("la sesión cerrada no revela más que las otras negativas y no salta la disponibilidad", async () => {
+    const local = await nuevoLocal("tt-sesion-disponibilidad");
+    await atenderCuenta(local);
+    // Mesa inactiva: manda «unavailable», no «session_closed» (la disponibilidad se comprueba antes).
+    await service.from("tables").update({ is_active: false }).eq("id", local.table);
+    expect((await pedir(local.token, "waiter", ticketDeHace(10 * MIN))).data).toEqual({ status: "unavailable" });
+  });
+});

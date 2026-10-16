@@ -35,5 +35,6 @@ export async function createWaiterCallAction(_previous: CallState, formData: For
   const clientKey = clientKeyFrom(await headers());
   const result = await placeCall(createPublicClient(), token, kind, clientKey, ticket?.issuedAt ?? null);
   const { tone, text } = callMessage(kind, result);
-  return { kind, tone, message: text };
+  // La cuenta de la mesa ya se atendió después de este ticket: igual que un ticket vencido, hay que escanear de nuevo.
+  return { kind, tone, message: text, ...(result.status === "session_closed" ? { expired: true } : {}) };
 }

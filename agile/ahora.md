@@ -1,6 +1,6 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-16 (noche) · agente: Claude Code · historial anterior en `agile/historial.md` (no leer salvo un detalle puntual).
+Actualizado: 2026-10-16 (tarde-noche) · agente: Claude Code · historial anterior en `agile/historial.md` (no leer salvo un detalle puntual).
 
 ## Punto de retomada
 - Rama `main`, árbol limpio salvo `.claude/worktrees/` (worktree temporal del agente; sin versionar). Todo subido a `origin/main`.
@@ -17,5 +17,6 @@ Actualizado: 2026-10-16 (noche) · agente: Claude Code · historial anterior en 
 
 ## Próximo paso
 1. **Al retomar (mañana):** ver la primera purga real. Consulta de solo lectura con `pnpm exec supabase db query --linked` sobre `cron.job_run_details`; esperado `succeeded`, y sin `waiter_calls` de más de 14 días.
-2. **Con el usuario:** ensayo con teléfono real; luego dominio, revisión legal y producción.
-3. **Sin el usuario** (desbloqueados): repaso de diseño del historial de precios (S), `expectNoHorizontalOverflow` con falsos aprobados (S), variantes y adicionales, buscador y filtros (M). La retención de `price_history` es C: con el usuario presente. Pendiente menor: mencionar las copias de seguridad en la política de privacidad.
+2. **Pendiente de aplicar en staging** (con aprobación): la migración `20261016140000_cerrar_sesion_al_atender_la_cuenta.sql` (ficha `cerrar-sesion-al-atender-la-cuenta`, hecha en local, sin revisión independiente; fricción conocida en la ficha).
+3. **Con el usuario:** ensayo con teléfono real; luego dominio, revisión legal y producción. La retención de `price_history` es C: con el usuario presente.
+4. **Sin el usuario** (desbloqueados): variantes y adicionales, buscador y filtros (M). Pendiente menor: mencionar las copias de seguridad en la política de privacidad.

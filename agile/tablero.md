@@ -31,7 +31,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Rendimiento de la carta pública: caché, imágenes optimizadas, medición contra el objetivo de carga
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
-- [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta» (B1 del análisis del ticket de visita): invalida los tickets anteriores sin trabajo extra del mozo; depende de «Ticket de visita»
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
 - [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`): los **textos legales** (`/terminos`, `/privacidad`, `/alergenos`) y el **alta** de una organización desde `/admin`, además de lo del ítem anterior (pendiente de «Salida a producción»)
 - [S] Restaurar un respaldo en un proyecto de Supabase **nuevo** (en staging solo se vació y restauró el mismo): ensayar con `docs/operacion.md` y repetir una vez al mes; requiere crear un proyecto (aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -72,6 +71,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta»: un ticket anterior a la atención responde `session_closed` (2026-10-16; falta aplicarlo en staging/producción y, si se quiere, revisión independiente) → agile/cambios/cerrar-sesion-al-atender-la-cuenta.md · ADR 0010
 - [S] Repaso de diseño del historial de precios: agrupado por día, cambio de precio destacado y etiqueta Sube/Baja; sin tocar datos ni permisos; revisado en capturas a 390 y 1280 px (2026-10-16)
 - [S] `expectNoHorizontalOverflow` mide el borde derecho de cada elemento (ignora lo recortado por un scroll propio) y reemplaza a las copias locales de tres specs; E2E completo en verde (2026-10-16); de paso, la siembra de `ticket-de-visita` ya no depende de los milisegundos
 - [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16) → agile/cambios/textos-legales.md

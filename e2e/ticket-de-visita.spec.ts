@@ -151,6 +151,37 @@ test.describe("el ticket de visita en la pestaña del comensal", () => {
   });
 });
 
+test.describe("la cuenta atendida cierra la sesión de la mesa (ficha cerrar-sesion-al-atender-la-cuenta)", () => {
+  test("la pestaña abierta antes de que el personal atienda la cuenta deja de poder avisar; escanear de nuevo lo permite", async ({ page }) => {
+    const { t, branch, mesa1 } = await nuevoLocal("ticket-cuenta");
+    await page.goto(`/t/${mesa1.qr_token}`);
+    await expect(llamarAlMozo(page)).toBeVisible();
+    await page.waitForTimeout(1200); // el ticket lleva segundos enteros: la atención tiene que ser al menos un segundo después
+
+    // El personal atiende la cuenta de la mesa (la base marca `attended_at` al pasar a «atendido»).
+    const db = service();
+    const cuenta = await db
+      .from("waiter_calls")
+      .insert({ organization_id: t.orgId, branch_id: branch, table_id: mesa1.id, kind: "bill" })
+      .select("id")
+      .single();
+    expect(cuenta.error).toBeNull();
+    expect((await db.from("waiter_calls").update({ status: "attended" }).eq("id", cuenta.data!.id)).error).toBeNull();
+
+    // La pestaña vieja todavía muestra los botones, pero la acción responde lo mismo que con un ticket vencido.
+    await llamarAlMozo(page).click();
+    await expect(vencida(page)).toContainText(MENSAJE_VENCIDA);
+    await expect(llamarAlMozo(page)).toHaveCount(0);
+    expect(await llamadosDe(t.orgId)).toHaveLength(1); // solo la cuenta ya atendida
+
+    // Quien escanea de nuevo recibe un ticket posterior y llama con normalidad.
+    await page.reload();
+    await llamarAlMozo(page).click();
+    await expect(page.getByTestId("mensaje-llamado")).toContainText("Avisamos al personal");
+    expect(await llamadosDe(t.orgId)).toHaveLength(2);
+  });
+});
+
 test.describe("la sala muestra cuánto hacía que había escaneado", () => {
   /** Llamados cargados con la clave de servicio (lo que se prueba es la pantalla, no la función). */
   async function sembrar(t: Tenant, branch: string, mesaId: string, visitaHace: number | null) {

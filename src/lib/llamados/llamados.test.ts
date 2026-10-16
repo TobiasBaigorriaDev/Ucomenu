@@ -3,7 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { CLIENT_KEY_PATTERN, clientIpFrom, clientKeyFromIp, clientKeyFrom, clientSecret } from "./client-key";
 import { placeCall } from "./place-call";
-import { callMessage, isCallKind, parseCallResult, UNAVAILABLE_MESSAGE, type CallResult } from "./result";
+import { callMessage, isCallKind, parseCallResult, SESSION_EXPIRED_MESSAGE, UNAVAILABLE_MESSAGE, type CallResult } from "./result";
 
 const cabeceras = (valores: Record<string, string>) => ({ get: (nombre: string) => valores[nombre.toLowerCase()] ?? null });
 const TOKEN = "c0ffee01000000000000000000000000";
@@ -68,6 +68,7 @@ describe("resultado de la función", () => {
     expect(parseCallResult({ status: "already_pending" })).toEqual({ status: "already_pending" });
     expect(parseCallResult({ status: "unavailable" })).toEqual({ status: "unavailable" });
     expect(parseCallResult({ status: "not_found" })).toEqual({ status: "not_found" });
+    expect(parseCallResult({ status: "session_closed" })).toEqual({ status: "session_closed" });
     expect(parseCallResult({ status: "cooldown", retry_after_seconds: 12 })).toEqual({ status: "cooldown", retryAfterSeconds: 12 });
     expect(parseCallResult({ status: "rate_limited", retry_after_seconds: 30.2 })).toEqual({ status: "rate_limited", retryAfterSeconds: 31 });
   });
@@ -103,6 +104,12 @@ describe("mensajes al comensal", () => {
     const textos = nada.flatMap((r) => (["waiter", "bill"] as const).map((k) => callMessage(k, r)));
     for (const m of textos) {
       expect(m).toEqual({ tone: "error", text: UNAVAILABLE_MESSAGE });
+    }
+  });
+
+  it("la sesión cerrada por la cuenta dice lo mismo que un ticket vencido: hay que escanear de nuevo", () => {
+    for (const kind of ["waiter", "bill"] as const) {
+      expect(callMessage(kind, { status: "session_closed" })).toEqual({ tone: "error", text: SESSION_EXPIRED_MESSAGE });
     }
   });
 
