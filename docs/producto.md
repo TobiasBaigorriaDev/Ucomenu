@@ -28,6 +28,7 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 - Acceso por **QR único por mesa** o por **link directo** de la sucursal.
 - Catálogo por categorías, buscador rápido, filtros dietarios (sin TACC, vegano, vegetariano, etc.).
 - Detalle de plato con foto, descripción, **variantes** (elección única, p. ej. tamaño) y **adicionales** (elección múltiple con precio).
+  - *Hoy:* la carta pública muestra, bajo cada plato, sus grupos de opciones activos ("Elegí 1", "Opcional · hasta 3") con la diferencia de precio de cada opción ("+ $ 600"); el Dueño y el Staff los gestionan en la pantalla del plato. Es solo informativo: el precio del plato es siempre el base. Una pantalla de detalle propia queda para el ítem del buscador y los filtros.
 - Disponibilidad por sucursal (marcar un plato como agotado sin borrarlo).
 - Identidad visual del local (logo y colores) sobre un diseño gastronómico de alto impacto.
 - Es **solo consulta**: no hay pedidos ni pago online desde el menú.
@@ -129,7 +130,7 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 ### Menú
 - El comensal solo ve categorías y platos **activos**; un plato agotado en la sucursal se muestra como no disponible, no desaparece.
 - Las etiquetas dietarias las declara el local. La carta muestra un aviso de que la información sobre alérgenos es responsabilidad del establecimiento.
-- El precio que se muestra es el precio base del plato; variantes y adicionales muestran su diferencia de precio.
+- El precio que se muestra es el precio base del plato; variantes y adicionales muestran su diferencia de precio. La diferencia de una opción es siempre mayor o igual a cero (sin descuentos por opción) y, por ahora, no deja historial como el precio del plato.
 - **Gestión de la carta** *(Dueño y Staff; ADR 0008)*: categorías y platos se crean, editan, reordenan (subir/bajar) y se activan o desactivan; **no se borran** en esta etapa (desactivar es la baja). Un plato nuevo y una categoría nueva van al final. Cada plato admite **una foto** (JPG, PNG o WebP, hasta 2 MB; la app la reduce antes de subir). El precio se carga en pesos y se guarda en centavos enteros (hasta $ 10.000.000). Si el plan llegó a su tope de platos activos, activar o crear uno activo se rechaza con el número del tope; se puede crear oculto. Con la cuenta en solo lectura o suspendida la carta se ve pero no se edita, y la pantalla lo explica.
 
 ### Mesas y QR
