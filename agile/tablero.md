@@ -43,14 +43,12 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin, siguientes incrementos (el alta de organizaciones con Dueño, plan y auditoría ya está hecha, ver «Hecho»): cambiar/suspender/reactivar plan a mano, registro de pagos, prueba de 14 días como concepto aparte, add-ons, desactivar organizaciones y lectura de la auditoría por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history`** (hoy `ON DELETE RESTRICT`, ADR 0012)
 - [C] SuperAdmin: sumar una cuenta **existente** como Dueño de otra organización (hoy el alta exige un email nuevo) — surgido de «SuperAdmin: alta de organizaciones»
-- [S] SuperAdmin: primera sucursal en el alta (o resolverlo en «Alta guiada del dueño»): hoy una organización recién creada no tiene sucursal, así que no tiene carta pública hasta que alguien la cree por script — surgido de «SuperAdmin: alta de organizaciones»
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [C] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
-- [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
-- [S] Textos legales: términos, privacidad, aviso de alérgenos y el identificador de cliente derivado de la IP de los llamados (14 días de retención, ADR 0014)
-- [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos). Checklist: **programar `purge_waiter_calls` (a diario, repitiendo hasta que devuelva menos que el lote; pérdida sin respaldo aceptada)**, **`WAITER_CALL_CLIENT_SECRET` propio** (obligatorio por el ticket de visita; sin él los tickets no valen entre instancias), apagar el registro público, contraseña mínima de 10 en Supabase Cloud, verificar el bucket `product-images` y definir `NEXT_PUBLIC_SITE_URL` con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel)
+- [M] Alta guiada del dueño: primera carta y primeros QR (la primera sucursal ya la crea el alta del SuperAdmin; el panel aún no gestiona sucursales)
+- [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos). Checklist: **programar `purge_waiter_calls` (a diario, repitiendo hasta que devuelva menos que el lote; pérdida sin respaldo aceptada)**, **`NEXT_PUBLIC_CONTACT_EMAIL`** (contacto de la política de privacidad), **revisión de los textos legales por un abogado/a** (ver ficha), **`WAITER_CALL_CLIENT_SECRET` propio** (obligatorio por el ticket de visita; sin él los tickets no valen entre instancias), apagar el registro público, contraseña mínima de 10 en Supabase Cloud, verificar el bucket `product-images` y definir `NEXT_PUBLIC_SITE_URL` con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel)
 
 ### Fase 2 — Add-on WebAR
 - [S] Spike descartable: `<model-viewer>` con un plato real en un iPhone y un Android — valida ADR 0002 y el presupuesto de peso
@@ -74,6 +72,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16, local sin subir) → agile/cambios/textos-legales.md
+- [M] SuperAdmin: el alta de una organización crea también su primera sucursal y la carta pública se abre de inmediato (2026-10-16, local sin subir) → agile/cambios/alta-con-primera-sucursal.md
 - [M] Revisión de Codex automatizada desde Claude: `pnpm revision:codex` (Codex CLI en solo lectura, veredicto como código de salida) y skill `ciclo-revision-codex`; probada con Codex real y con un Codex falso (2026-10-16) → tools/revision-codex.mjs
 - [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16, local sin subir) → agile/cambios/purga-de-waiter-calls.md · ADR 0014
 - [S] SuperAdmin: quien inicia sesión sin `next` aterriza en `/admin` (y el resto en `/panel`); un `next` válido manda siempre (2026-10-15, `aea92a8`)

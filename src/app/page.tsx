@@ -1,3 +1,5 @@
+import { LegalLinks } from "@/components/legal/legal-links";
+
 export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-4 py-16">
@@ -5,6 +7,7 @@ export default function Home() {
       <p className="mt-4 text-lg leading-relaxed text-muted">
         La carta digital de tu restaurante. Para ver una carta, escaneá el código QR de la mesa.
       </p>
+      <LegalLinks className="mt-12 text-muted" />
     </main>
   );
 }

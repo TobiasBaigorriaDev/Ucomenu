@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { LegalLinks } from "@/components/legal/legal-links";
 import { CategoryBar } from "@/components/menu/category-bar";
 import { CategoryMosaic } from "@/components/menu/category-mosaic";
 import { MenuHeader } from "@/components/menu/menu-header";
@@ -49,6 +50,7 @@ export function PublicMenuView({
         <p className="text-sm leading-relaxed text-muted">
           La información de alérgenos de cada plato la declara el local. Ante cualquier duda, consultá al personal.
         </p>
+        <LegalLinks className="mt-4 flex justify-center text-muted" />
       </footer>
       {callBar}
     </div>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser, postLoginPath } from "@/lib/auth/session";
 import { safeNext } from "@/lib/auth/validation";
+import { LegalLinks } from "@/components/legal/legal-links";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Ingresar", robots: { index: false, follow: false } };
@@ -31,6 +32,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <p className="mt-8 max-w-prose text-sm leading-relaxed text-muted">
           ¿Olvidaste tu contraseña? Pedile al dueño del local que te la cambie. Si sos el dueño, contactá a UcoMenu.
         </p>
+        <LegalLinks className="mt-8 text-muted" />
       </main>
     </>
   );
