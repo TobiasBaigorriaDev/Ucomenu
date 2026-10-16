@@ -88,5 +88,5 @@ Base aislada propia (`ucomenu-admin`, puertos 55xxx; la instancia por defecto no
 - Nada de `/panel/[org]/sucursales` ni de `enforce_branch_limit`.
 
 ## Revisión y aprobación (C)
-- Revisión independiente: **pendiente** (la dispara el agente principal con Codex).
+- **Ronda 1 (Codex, rama contra `main`, commit `89309f7`):** APROBAR CON CAMBIOS. Un hallazgo, real y reproducido: los `<select>` de «Cambiar plan» llevaban una `key` que no cambia tras un éxito, así que el reinicio del formulario devolvía el plan y el ciclo del primer montaje y un envío siguiente podía revertir el plan en silencio. Corrección: la `key` incluye el plan y el ciclo guardados; el E2E «cambia plan y ciclo» ahora comprueba los valores tras guardar (falla sin la corrección). Sin objeciones a permisos, concurrencia, auditoría ni dinero.
 - Aprobación humana de las decisiones A1–A8: **pendiente**.

@@ -15,7 +15,8 @@ const REASON_HINT = "Queda en los movimientos y no se puede borrar. No pongas da
 /*
  * Los <select> llevan `key` según lo devuelto por la acción: React 19 reinicia el formulario al terminar la acción y un
  * <select> no vuelve al valor que se le devolvió en `defaultValue` (quedaría en «Elegí…» y el envío siguiente se bloquearía
- * en silencio). Con otra `key` se vuelve a montar con el valor correcto.
+ * en silencio). Con otra `key` se vuelve a montar con el valor correcto. En el cambio de plan la `key` incluye también el plan y
+ * el ciclo guardados (props): tras un éxito `state.values` no cambia y, sin eso, el reinicio devolvería el valor anterior.
  */
 export function ChangePlanForm({ slug, plan, billingCycle }: { slug: string; plan: string; billingCycle: string }) {
   return (
@@ -27,7 +28,7 @@ export function ChangePlanForm({ slug, plan, billingCycle }: { slug: string; pla
             <label htmlFor="plan-plan" className={labelClass}>
               Plan
             </label>
-            <select key={`plan-${state.values?.plan ?? ""}`} id="plan-plan" name="plan" defaultValue={state.values?.plan || plan} className={`${inputClass} mt-1`}>
+            <select key={`plan-${plan}-${state.values?.plan ?? ""}`} id="plan-plan" name="plan" defaultValue={state.values?.plan || plan} className={`${inputClass} mt-1`}>
               {PLAN_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -40,7 +41,7 @@ export function ChangePlanForm({ slug, plan, billingCycle }: { slug: string; pla
               Facturación
             </label>
             <select
-              key={`ciclo-${state.values?.billingCycle ?? ""}`}
+              key={`ciclo-${billingCycle}-${state.values?.billingCycle ?? ""}`}
               id="plan-ciclo"
               name="billingCycle"
               defaultValue={state.values?.billingCycle || billingCycle}

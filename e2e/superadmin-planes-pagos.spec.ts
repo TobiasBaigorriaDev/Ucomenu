@@ -70,6 +70,11 @@ test.describe("cambiar el plan", () => {
       await form.getByRole("button", { name: "Cambiar plan" }).click();
       await expect(form.getByRole("status")).toContainText("el plan quedó cambiado");
 
+      // Tras guardar, los selectores muestran lo guardado (no vuelven a los valores del primer montaje): si no, el
+      // próximo envío cambiaría solo el ciclo y revertiría el plan en silencio (revisión de Codex).
+      await expect(form.getByLabel("Plan", { exact: true })).toHaveValue("premium");
+      await expect(form.getByLabel("Facturación")).toHaveValue("yearly");
+
       await expect(page.getByTestId("suscripcion")).toContainText("Premium");
       await expect(page.getByTestId("suscripcion")).toContainText("anual");
       const movimiento = page.getByTestId("auditoria").filter({ hasText: "Cambio de plan" });
