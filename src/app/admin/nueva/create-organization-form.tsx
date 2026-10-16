@@ -53,6 +53,42 @@ export function CreateOrganizationForm({ defaultPeriodEnd }: { defaultPeriodEnd:
             </p>
           </div>
           <div>
+            <label htmlFor="org-sucursal" className={labelClass}>
+              Nombre de la primera sucursal
+            </label>
+            <input
+              id="org-sucursal"
+              name="branchName"
+              type="text"
+              required
+              maxLength={80}
+              autoComplete="off"
+              defaultValue={state.values?.branchName ?? ""}
+              className={`${inputClass} mt-1`}
+            />
+          </div>
+          <div>
+            <label htmlFor="org-sucursal-slug" className={labelClass}>
+              Identificador de la sucursal (slug)
+            </label>
+            <input
+              id="org-sucursal-slug"
+              name="branchSlug"
+              type="text"
+              required
+              maxLength={64}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              aria-describedby="org-sucursal-slug-hint"
+              defaultValue={state.values?.branchSlug ?? "principal"}
+              className={`${inputClass} mt-1`}
+            />
+            <p id="org-sucursal-slug-hint" className="mt-1 text-sm text-muted">
+              Va en la dirección pública de la carta: /m/identificador/<strong className="font-semibold">sucursal</strong>.
+            </p>
+          </div>
+          <div>
             <label htmlFor="org-email" className={labelClass}>
               Email del Dueño
             </label>

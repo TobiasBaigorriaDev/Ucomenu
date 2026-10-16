@@ -55,6 +55,8 @@ function entrada(cambios: Partial<CreateOrganizationInput> = {}): CreateOrganiza
     slug: `tt-adm-${sufijo}-${contador}`,
     ownerEmail: email,
     ownerPassword: OWNER_PASSWORD,
+    branchName: "Casa central",
+    branchSlug: "principal",
     plan: "pro",
     billingCycle: "yearly",
     periodEnd: enDias(30),
@@ -162,6 +164,25 @@ describe("alta de una organización", () => {
 
     const cuenta = await service.auth.admin.getUserById(alta.ownerUserId);
     expect(cuenta.data.user?.email).toBe(alta.ownerEmail);
+  });
+
+  it("crea la primera sucursal de la organización, con el nombre y el identificador pedidos, y la carta pública la ve", async () => {
+    const alta = await crearOk({ branchName: "  Sucursal Centro  ", branchSlug: "Centro" });
+    expect(alta.branchSlug).toBe("centro");
+
+    const sucursales = await service.from("branches").select("slug, name").eq("organization_id", alta.orgId);
+    expect(sucursales.data).toEqual([{ slug: "centro", name: "Sucursal Centro" }]);
+
+    // La carta pública resuelve esa sucursal: antes del cambio daba 404 hasta que alguien la creaba por script.
+    const publica = await anonClient().from("branches").select("slug").eq("organization_id", alta.orgId);
+    expect(publica.data).toEqual([{ slug: "centro" }]);
+  });
+
+  it("la sucursal queda en la auditoría de la misma alta (no en una fila aparte)", async () => {
+    const alta = await crearOk({ branchName: "Anexo", branchSlug: "anexo" });
+    const filas = await sql(`select after::text from public.audit_log where organization_id = '${alta.orgId}'`);
+    expect(filas).toHaveLength(1);
+    expect(JSON.parse(filas[0][0])).toMatchObject({ branch: { slug: "anexo", name: "Anexo" } });
   });
 
   it("deja UNA fila de auditoría con quién lo hizo, qué se hizo y cómo quedó, sin el email del Dueño", async () => {
@@ -277,6 +298,10 @@ describe("un alta que falla no deja nada", () => {
     ["nombre vacío", { name: "   " }, "invalid_name"],
     ["slug con espacio", { slug: "Con Espacio" }, "invalid_slug"],
     ["slug con guion doble", { slug: "tt-adm--doble" }, "invalid_slug"],
+    ["sucursal sin nombre", { branchName: "   " }, "invalid_branch_name"],
+    ["sucursal con nombre de más de 80 caracteres", { branchName: "x".repeat(81) }, "invalid_branch_name"],
+    ["sucursal con slug en mayúsculas y espacio", { branchSlug: "Casa Central" }, "invalid_branch_slug"],
+    ["sucursal con slug vacío", { branchSlug: "" }, "invalid_branch_slug"],
     ["email inválido", { ownerEmail: "no-es-un-email" }, "invalid_email"],
     ["contraseña corta", { ownerPassword: "corta" }, "too_short"],
     ["contraseña en blanco", { ownerPassword: "          " }, "blank"],
@@ -327,6 +352,52 @@ describe("un alta que falla no deja nada", () => {
     expect(r.error?.code).toBe("23503");
     expect(await foto()).toEqual(antes);
     expect(contar("subscriptions", `organization_id in (select id from public.organizations where slug = 'tt-adm-${sufijo}-rollback')`)).toBe(0);
+  });
+
+  it("si la sucursal es inválida para la base, no queda ni la organización, ni la suscripción, ni la membresía, ni la auditoría", async () => {
+    const antes = await foto();
+    const slug = `tt-adm-${sufijo}-sucursal`;
+    const base = {
+      p_actor: admin.id,
+      p_slug: slug,
+      p_name: "sucursal rota",
+      p_owner: comun.id,
+      p_plan: "pro",
+      p_billing_cycle: "monthly",
+      p_period_end: new Date(Date.now() + 86_400_000).toISOString(),
+    };
+    // La base valida por sí sola (la aplicación ya filtra antes): slug con mayúsculas, nombre en blanco, una sola de las dos.
+    const casos: [string, Record<string, string | null>, string][] = [
+      ["slug inválido", { p_branch_slug: "Mal Slug", p_branch_name: "x" }, "23514"],
+      ["nombre en blanco", { p_branch_slug: "ok", p_branch_name: "   " }, "23514"],
+      ["solo el slug", { p_branch_slug: "ok", p_branch_name: null }, "22023"],
+      ["solo el nombre", { p_branch_slug: null, p_branch_name: "x" }, "22023"],
+    ];
+    for (const [etiqueta, extra, codigo] of casos) {
+      const r = await service.rpc("admin_create_organization", { ...base, ...extra } as never);
+      expect(r.error?.code, etiqueta).toBe(codigo);
+    }
+    expect(await foto()).toEqual(antes);
+    expect(contar("subscriptions", `organization_id in (select id from public.organizations where slug = '${slug}')`)).toBe(0);
+    expect(contar("memberships", `organization_id in (select id from public.organizations where slug = '${slug}')`)).toBe(0);
+  });
+
+  it("sin sucursal (llamada directa a la función, como antes) el alta sigue valiendo y no crea ninguna", async () => {
+    const slug = `tt-adm-${sufijo}-sin-sucursal`;
+    const r = await service.rpc("admin_create_organization", {
+      p_actor: admin.id,
+      p_slug: slug,
+      p_name: "sin sucursal",
+      p_owner: comun.id,
+      p_plan: "basic",
+      p_billing_cycle: "monthly",
+      p_period_end: new Date(Date.now() + 86_400_000).toISOString(),
+    });
+    expect(r.error).toBeNull();
+    orgsCreadas.push(r.data as string);
+    expect(contar("branches", `organization_id = '${r.data}'`)).toBe(0);
+    const filas = await sql(`select (after ? 'branch') from public.audit_log where organization_id = '${r.data}'`);
+    expect(filas[0][0]).toBe("f");
   });
 
   it("la función de base también valida por sí sola el período y el plan (no depende de la aplicación)", async () => {

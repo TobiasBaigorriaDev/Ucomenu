@@ -24,6 +24,8 @@ export async function createOrganizationAction(_previous: FormState, formData: F
   const values = {
     name: text(formData, "name"),
     slug: text(formData, "slug"),
+    branchName: text(formData, "branchName"),
+    branchSlug: text(formData, "branchSlug"),
     ownerEmail: text(formData, "ownerEmail"),
     plan: text(formData, "plan"),
     billingCycle: text(formData, "billingCycle"),
@@ -43,6 +45,6 @@ export async function createOrganizationAction(_previous: FormState, formData: F
   revalidatePath("/admin");
   return {
     ok: true,
-    message: `Listo: «${result.data.slug}» está creada y ${result.data.ownerEmail} ya puede ingresar como Dueño. Pasale la contraseña temporal.`,
+    message: `Listo: «${result.data.slug}» está creada y ${result.data.ownerEmail} ya puede ingresar como Dueño, y su carta queda en /m/${result.data.slug}/${result.data.branchSlug}. Pasale la contraseña temporal.`,
   };
 }

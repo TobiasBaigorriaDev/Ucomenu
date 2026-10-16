@@ -12,8 +12,8 @@ export default async function NewOrganizationPage() {
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="font-display text-4xl leading-tight">Nueva organización</h1>
       <p className="mt-3 max-w-prose leading-relaxed text-muted">
-        Crea la organización, la cuenta de su Dueño y su suscripción en un solo paso. Queda registrado quién lo hizo. La primera
-        sucursal y la carta las arma después el Dueño.
+        Crea la organización, la cuenta de su Dueño, su suscripción y su primera sucursal en un solo paso. Queda registrado quién lo
+        hizo. La carta y las mesas las arma después el Dueño.
       </p>
       <CreateOrganizationForm defaultPeriodEnd={defaultPeriodDate(new Date())} />
     </main>

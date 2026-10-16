@@ -34,11 +34,21 @@ async function expectContenidoDentroDelTelefono(page: Page) {
 
 async function llenarAlta(
   page: Page,
-  datos: { name: string; slug: string; email: string; password: string; plan?: string; ciclo?: string; hasta?: string },
+  datos: {
+    name: string;
+    slug: string;
+    email: string;
+    password: string;
+    sucursal?: string;
+    plan?: string;
+    ciclo?: string;
+    hasta?: string;
+  },
 ) {
   await page.goto("/admin/nueva");
   await page.getByLabel("Nombre de la organización").fill(datos.name);
   await page.getByLabel("Identificador (slug)").fill(datos.slug);
+  await page.getByLabel("Nombre de la primera sucursal").fill(datos.sucursal ?? "Casa central");
   await page.getByLabel("Email del Dueño").fill(datos.email);
   await page.getByLabel("Contraseña temporal del Dueño").fill(datos.password);
   if (datos.plan) await page.getByLabel("Plan", { exact: true }).selectOption(datos.plan);
@@ -116,7 +126,14 @@ test.describe("alta de una organización", () => {
       await page.getByRole("button", { name: "Crear organización" }).click();
 
       await expect(page.locator("form").getByRole("status")).toContainText(`«${slug}» está creada`);
+      await expect(page.locator("form").getByRole("status")).toContainText(`/m/${slug}/principal`);
       await expect(alerta(page)).toHaveCount(0);
+
+      // La carta pública de la sucursal inicial ya se abre (antes daba 404 hasta crear la sucursal por script).
+      const carta = await page.goto(`/m/${slug}/principal`);
+      expect(carta?.status()).toBe(200);
+      await expect(page.getByText("Casa central").first()).toBeVisible();
+      await page.goto("/admin");
 
       // El listado la muestra con su plan, su vencimiento y su Dueño; la auditoría, con quién la hizo.
       await page.goto("/admin");
@@ -141,6 +158,28 @@ test.describe("alta de una organización", () => {
 
       // Y no tiene acceso a /admin.
       expect((await page.goto("/admin"))?.status()).toBe(404);
+    } finally {
+      await limpiar(slug, [email]);
+    }
+  });
+
+  test("el identificador de la sucursal propone «principal» y uno inválido se rechaza sin crear nada", async ({ page }) => {
+    const slug = `e2e-adm-${rand()}`;
+    const email = `e2e-adm-${rand()}@example.test`;
+    try {
+      await login(page, ADMIN_EMAIL, SEED_PASSWORD, "/admin/nueva");
+      await expect(page.getByLabel("Identificador de la sucursal (slug)")).toHaveValue("principal");
+
+      await llenarAlta(page, { name: "Sucursal mala", slug, email, password: TEST_PASSWORD });
+      await page.getByLabel("Identificador de la sucursal (slug)").fill("Casa Central");
+      await page.getByRole("button", { name: "Crear organización" }).click();
+      await expect(alerta(page)).toContainText("identificador de la sucursal");
+      // Lo escrito se conserva, incluida la sucursal.
+      await expect(page.getByLabel("Nombre de la primera sucursal")).toHaveValue("Casa central");
+
+      expect((await service().from("organizations").select("id").eq("slug", slug)).data).toEqual([]);
+      const cuentas = (await service().auth.admin.listUsers({ perPage: 1000 })).data.users;
+      expect(cuentas.some((u) => u.email === email)).toBe(false);
     } finally {
       await limpiar(slug, [email]);
     }

@@ -310,7 +310,7 @@ isOneToOne: false
           }
           Functions: {
             "admin_create_organization":
-{ Args: { "p_actor": string,"p_billing_cycle": string,"p_name": string,"p_owner": string,"p_period_end": string,"p_plan": string,"p_slug": string }; Returns: string
+{ Args: { "p_actor": string,"p_billing_cycle": string,"p_branch_name"?: string,"p_branch_slug"?: string,"p_name": string,"p_owner": string,"p_period_end": string,"p_plan": string,"p_slug": string }; Returns: string
                            },
 "create_waiter_call":
 { Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json

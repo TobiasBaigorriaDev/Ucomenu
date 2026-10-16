@@ -26,6 +26,8 @@ export type AdminError =
   | "forbidden" // no es SuperAdmin
   | "invalid_name"
   | "invalid_slug"
+  | "invalid_branch_name"
+  | "invalid_branch_slug"
   | "invalid_email"
   | "invalid_plan"
   | "invalid_cycle"
@@ -48,6 +50,9 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   invalid_name: "Ingresá el nombre de la organización (hasta 80 caracteres).",
   invalid_slug:
     "El identificador solo puede tener minúsculas, números y guiones simples (por ejemplo, cafe-del-centro), hasta 64 caracteres.",
+  invalid_branch_name: "Ingresá el nombre de la primera sucursal (hasta 80 caracteres).",
+  invalid_branch_slug:
+    "El identificador de la sucursal solo puede tener minúsculas, números y guiones simples (por ejemplo, principal), hasta 64 caracteres.",
   invalid_email: "Revisá el email del Dueño: no parece válido.",
   invalid_plan: "Elegí un plan válido.",
   invalid_cycle: "Elegí si la facturación es mensual o anual.",
@@ -70,13 +75,22 @@ export type CreateOrganizationInput = {
   slug: unknown;
   ownerEmail: unknown;
   ownerPassword: string;
+  /** Primera sucursal: va en la dirección pública de la carta (`/m/{slug}/{branchSlug}`). */
+  branchName: unknown;
+  branchSlug: unknown;
   plan: unknown;
   billingCycle: unknown;
   /** `AAAA-MM-DD`: vale hasta el final de ese día en Argentina. */
   periodEnd: unknown;
 };
 
-export type CreatedOrganization = { orgId: string; slug: string; ownerUserId: string; ownerEmail: string };
+export type CreatedOrganization = {
+  orgId: string;
+  slug: string;
+  branchSlug: string;
+  ownerUserId: string;
+  ownerEmail: string;
+};
 
 export async function createOrganization(
   ctx: AdminContext,
@@ -90,6 +104,10 @@ export async function createOrganization(
   if (!name) return fail("invalid_name");
   const slug = parseSlug(input.slug);
   if (!slug) return fail("invalid_slug");
+  const branchName = parseName(input.branchName);
+  if (!branchName) return fail("invalid_branch_name");
+  const branchSlug = parseSlug(input.branchSlug);
+  if (!branchSlug) return fail("invalid_branch_slug");
   const email = normalizeEmail(input.ownerEmail);
   if (!email) return fail("invalid_email");
   const weak = validatePassword(input.ownerPassword);
@@ -122,10 +140,12 @@ export async function createOrganization(
     p_plan: input.plan,
     p_billing_cycle: input.billingCycle,
     p_period_end: periodEnd,
+    p_branch_slug: branchSlug,
+    p_branch_name: branchName,
   });
 
   if (!rpc.error && typeof rpc.data === "string") {
-    return ok({ orgId: rpc.data, slug, ownerUserId, ownerEmail: email });
+    return ok({ orgId: rpc.data, slug, branchSlug, ownerUserId, ownerEmail: email });
   }
 
   // Solo un error con SQLSTATE (5 caracteres) vino de Postgres: la transacción se revirtió seguro. Cualquier otro
@@ -134,7 +154,7 @@ export async function createOrganization(
   const rolledBack = typeof rpc.error?.code === "string" && /^[0-9A-Z]{5}$/.test(rpc.error.code);
   if (!rolledBack) {
     const created = await findCreatedOrganization(ctx, slug, ownerUserId);
-    if (created.state === "created") return ok({ orgId: created.orgId, slug, ownerUserId, ownerEmail: email });
+    if (created.state === "created") return ok({ orgId: created.orgId, slug, branchSlug, ownerUserId, ownerEmail: email });
     // No se pudo averiguar: no se toca nada (borrar una cuenta cuyo alta quedó hecha dejaría una organización sin acceso).
     if (created.state === "unknown") return fail("uncertain");
   }
@@ -148,7 +168,7 @@ export async function createOrganization(
     // se confirmó entre la comprobación y el borrado: se vuelve a averiguar antes de decir «no se creó nada».
     if (!rolledBack) {
       const again = await findCreatedOrganization(ctx, slug, ownerUserId);
-      if (again.state === "created") return ok({ orgId: again.orgId, slug, ownerUserId, ownerEmail: email });
+      if (again.state === "created") return ok({ orgId: again.orgId, slug, branchSlug, ownerUserId, ownerEmail: email });
       if (again.state === "unknown") return fail("uncertain");
     }
   }
