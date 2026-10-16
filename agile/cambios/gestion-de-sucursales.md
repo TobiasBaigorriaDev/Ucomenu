@@ -33,11 +33,14 @@ Hasta ahora las sucursales solo existían por script o por el alta del SuperAdmi
 ## Fuera de alcance
 - **Activar/desactivar y borrar sucursales**, dirección y zona horaria (ver pendientes). Cambiar de plan (lo hace UcoMenu a mano). Personal por sucursal. Orden manual de sucursales.
 
-## Decisiones pendientes (para quien integra)
-1. **Desactivar una sucursal** exige decidir qué pasa con su carta pública (¿404 o «no disponible»?), con los QR de sus mesas, con los llamados y la Sala, y si libera cupo del plan (hoy el tope cuenta todas). Implicaría una columna `is_active`, reemplazar `public_menu_status`, `resolve_table_qr`, `create_waiter_call` y `enforce_branch_limit` y el conteo de `org_entitlements`: **nivel C y solape directo con la lógica de planes**; por eso no se hizo. Mientras tanto, un identificador mal escrito o una sucursal de más no tienen salida desde el panel (hay que pedirlo a UcoMenu): el formulario lo advierte antes de crear.
-2. **Corrección del identificador:** hoy inmodificable. Cambiarlo rompería los links públicos (los QR no dependen de él).
-3. **Revisión independiente** de la política `INSERT` (C) y aprobación humana.
-4. **Guía de primeros pasos** (`alta-guiada-del-dueno.md`, pendiente 2): con varias sucursales suma todas (basta que una tenga mesas); no se rediseñó. La «Sala en vivo» y el Staff no se filtran por sucursal (el personal es por local).
+## Decisiones de producto (delegadas por el usuario, 2026-10-16)
+1. **Desactivar una sucursal: fuera de este incremento** (ítem C aparte en el tablero). Regla fijada para cuando se haga: una sucursal inactiva **no cuenta** para el tope (misma regla que platos y mesas, `docs/producto.md`); su carta pública y los QR de sus mesas muestran «no disponible» (no 404, para que un QR impreso no parezca roto); no admite llamados nuevos y sale de la Sala; reactivar respeta el tope. Implica `is_active`, reemplazar `public_menu_status`, `resolve_table_qr`, `create_waiter_call` y `enforce_branch_limit` y el conteo de `org_entitlements`. Mientras tanto, un identificador mal escrito o una sucursal de más se resuelven pidiéndolo a UcoMenu; el formulario lo advierte antes de crear.
+2. **Corrección del identificador:** el Dueño no lo cambia (rompería los links públicos; los QR no dependen de él). Lo corrige UcoMenu por SQL; más adelante, herramienta de SuperAdmin con redirección.
+3. **Dirección y zona horaria: no se agregan ahora.** Dirección y coordenadas llegan con la Fase 3 (geofencing); la zona horaria, cuando haya un cliente fuera de Argentina (hoy, Buenos Aires fijo).
+
+## Pendiente para quien integra
+1. **Aprobación humana** de la política `INSERT` sobre `branches` (C: autorización y tope del plan). La delegación de las decisiones de arriba no la reemplaza.
+2. **Guía de primeros pasos** (`alta-guiada-del-dueno.md`, pendiente 2): con varias sucursales suma todas (basta que una tenga mesas); no se rediseñó. La «Sala en vivo» y el Staff no se filtran por sucursal (el personal es por local).
 
 ## Evidencia (2026-10-16, instancia Supabase aislada `ucomenu-sucursales`, puertos 56xxx; la base compartida no se tocó)
 `pnpm lint` y `pnpm typecheck` limpios · `pnpm test` 347/347 (10 nuevas en `src/lib/sucursales/sucursales.test.ts`) · `pnpm build` · `pnpm test:rls` completo **514/514** tras `db reset` con la migración nueva (12 nuevas en `tests/rls/sucursales.rls.test.ts`; `acl` suma el control de las columnas de `INSERT` de `branches`; `tenancy` cambia una prueba: el alta de sucursales ya no es «nadie», ver abajo) · `pnpm exec playwright test` completo **216/216** (15 nuevas en `e2e/sucursales.spec.ts`, a 390 px) · `database.types.ts` idéntico al generado (el esquema no cambia de columnas).
@@ -60,4 +63,5 @@ Revisión visual a 390 px con capturas (lista con alta, tope alcanzado con el av
 - Alta repetida (doble clic): la segunda falla por `unique (organization_id, slug)`.
 
 ## (C) Revisión y aprobación
-- Pendiente. No se corrió Codex (consigna de la tarea). A revisar: la política y el `GRANT`, el orden trigger-antes-que-RLS para el Staff, y que el `CHECK ... NOT VALID` no deje pasar nombres largos en altas.
+- **Ronda 1 (Codex, commit `de1bfce`):** APROBAR CON CAMBIOS. Un hallazgo, real y corregido: `loadSucursales` leía sucursales y mesas sin paginar y PostgREST corta en `max_rows = 1000`, así que con más de 1000 mesas (Premium no tiene tope) los conteos salían bajos. Corrección: `readAllPages` (`src/lib/sucursales/paginar.ts`) pide página por página; prueba de regresión `paginar.test.ts` (falla si el ayudante lee una sola página). E2E de sucursales 15/15 tras el cambio. La política, el `GRANT` y el orden trigger-antes-que-RLS no recibieron objeciones.
+- Falta la ronda de verificación y la aprobación humana de la política.

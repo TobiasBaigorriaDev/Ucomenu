@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
 import type { Database } from "@/lib/supabase/database.types";
 import { sucursalesErrorMessage, sucursalesWriteBlock, type SucursalesError } from "./messages";
+import { readAllPages } from "./paginar";
 import { validateBranchName, validateBranchSlug } from "./rules";
 
 /**
@@ -37,17 +38,22 @@ const collator = new Intl.Collator("es-AR", { numeric: true, sensitivity: "base"
 /** Las sucursales de la organización (orden natural por nombre) con la cantidad de mesas. */
 export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]> {
   const [branches, tables] = await Promise.all([
-    db.from("branches").select("id, slug, name").eq("organization_id", orgId),
-    db.from("tables").select("branch_id, is_active").eq("organization_id", orgId),
+    readAllPages((from, to) => db.from("branches").select("id, slug, name").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   if (tables.error) throw new Error(`No se pudieron leer las mesas: ${tables.error.message}`);
 
-  return branches.data
-    .map((branch) => {
-      const own = tables.data.filter((table) => table.branch_id === branch.id);
-      return { ...branch, tables: own.length, activeTables: own.filter((table) => table.is_active).length };
-    })
+  const counts = new Map<string, { tables: number; activeTables: number }>();
+  for (const table of tables.data ?? []) {
+    const count = counts.get(table.branch_id) ?? { tables: 0, activeTables: 0 };
+    count.tables += 1;
+    if (table.is_active) count.activeTables += 1;
+    counts.set(table.branch_id, count);
+  }
+
+  return (branches.data ?? [])
+    .map((branch) => ({ ...branch, ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }) }))
     .sort((a, b) => collator.compare(a.name, b.name));
 }
 
