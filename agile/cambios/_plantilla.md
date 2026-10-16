@@ -1,39 +1,28 @@
 # Cambio: [nombre]
 Estado: idea | explorando | en curso | bloqueado | verificado | integrado
-Nivel: S | M | C
+Nivel: M | C  <!-- S no lleva ficha. C si toca autorización, exposición de información, dinero o eliminación irreversible; ver AGENTS.md -->
 
 ## Objetivo
-[Resultado para el usuario]
+[Resultado para el usuario, en una o dos líneas]
 
-## Comportamiento y aceptación
+## Decisiones
+- [Solo las particulares de este cambio; los motivos duraderos van a un ADR]
+
+## Aceptación
 - [ ] Dado [contexto], cuando [acción], entonces [resultado comprobable]
 
-## Alcance / fuera de alcance
-- Incluye:
-- No incluye:
+## Fuera de alcance
+- [Lo que no se hace]
 
-## Dependencias y riesgos
-- [Si aplica]
+## Evidencia
+- [Qué se probó, resultado y commit o diff probado. Lo no ejecutado y por qué.]
 
-## Evidencias de verificación
-- Pruebas ejecutadas:
-- Pendientes:
-
-## Aprendizajes / cambios de decisión
-- [Solo los relevantes]
-
-<!-- SOLO NIVEL C: completar también las secciones siguientes -->
+<!-- SOLO NIVEL C: completar también las secciones siguientes, cada una breve -->
 ## (C) Invariantes
 - [Lo que nunca debe romperse]
 
-## (C) Fallas y manejo de errores
-- [Qué pasa si falla X; idempotencia; reintentos]
+## (C) Fallos y recuperación
+- [Qué pasa si falla X; idempotencia, reintentos, rollback o forma de revertir]
 
-## (C) Seguridad y permisos
-- [Amenazas, quién puede qué]
-
-## (C) Migración y rollback
-- [Cómo se aplica y cómo se revierte; backups]
-
-## (C) Aceptación explícita del riesgo
-- [Quién aprobó, fecha]
+## (C) Revisión y aprobación
+- [Revisión independiente (veredicto) y quién aprobó lo peligroso, con fecha]

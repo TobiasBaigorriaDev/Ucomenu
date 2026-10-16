@@ -13,24 +13,24 @@ Reducir incertidumbres **reales** sin documentar por documentar.
 - Se necesita comparar alternativas técnicas con impacto duradero.
 
 ## Cuándo NO
-- Cambios S (texto, estilo, bug aislado). Ir directo a `agile-iterar`.
+- El alcance ya está claro (típicamente S, o un M con ficha clara): ir directo a `agile-iterar`. La exploración no es un paso obligatorio.
 - Cuando la ficha ya existe y es clara.
 
 ## Procedimiento
-1. Leer `agile/ahora.md` y, si existen, la ficha relevante y las secciones pertinentes de `docs/`.
+1. Leer `agile/ahora.md` y, si existen, la ficha relevante y solo las secciones pertinentes de `docs/`.
 2. Inspeccionar el repo: patrones existentes, módulos afectados, esquema de datos, tests.
 3. Separar **lo verificado** (en código/docs) de **lo supuesto**.
 4. Preguntar al usuario **solo** lo que cambie una decisión importante (negocio, seguridad, dinero, arquitectura). Agrupar las preguntas; no interrogar por detalles que se pueden decidir y revertir.
 5. Para asuntos grandes: presentar 2–3 alternativas con ventajas, riesgos y una recomendación.
 6. Investigar fuentes externas solo si aportan información necesaria o que pudo cambiar; citar la fuente.
-7. Proponer el **alcance mínimo** y el nivel de rigor (S/M/C).
+7. Proponer el **alcance mínimo** y el nivel de rigor **por consecuencias** (autorización, exposición de información, dinero o eliminación irreversible → C; ver `AGENTS.md`).
 
 ## Salida esperada
 - Comprensión del problema y decisiones ya conocidas.
 - Preguntas realmente bloqueantes (si las hay).
 - Alcance propuesto + criterios de aceptación comprobables.
-- Nivel S/M/C justificado por riesgo.
-- Si es M o C: crear/actualizar `agile/cambios/<nombre>.md` desde `_plantilla.md`.
+- Nivel S/M/C justificado por esas consecuencias.
+- Si es M o C: crear/actualizar **una** ficha breve `agile/cambios/<nombre>.md` desde `_plantilla.md`.
 - Registrar en `docs/` y `docs/decisiones/` **solo conclusiones aceptadas por el usuario**.
 
 ## Reglas

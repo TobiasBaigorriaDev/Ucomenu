@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Mantiene sincronizadas las skills de Codex (.agents/skills) y Claude Code (.claude/skills).
+"""Mantiene sincronizadas las cuatro skills Agile entre Codex (.agents/skills) y Claude Code (.claude/skills).
+
+Solo trabaja con las skills de SKILLS. Otras skills o plugins (p. ej. Impeccable) no se comparan, copian ni modifican.
 
 Uso (desde la raíz del proyecto):
     python tools/sincronizar_skills.py --check         # solo comprueba; código de salida 1 si hay divergencias
     python tools/sincronizar_skills.py                  # copia .agents/skills -> .claude/skills (fuente: .agents)
     python tools/sincronizar_skills.py --desde claude   # copia .claude/skills -> .agents/skills
+    python tools/sincronizar_skills.py --raiz <carpeta> # usa otra raíz (p. ej. una copia temporal para probar)
 
-No usa red ni dependencias externas. No borra skills que solo existen en el destino (las informa).
+No usa red ni dependencias externas. No borra archivos que solo existen en el destino (los informa).
 """
 import argparse
 import hashlib
@@ -14,9 +17,8 @@ import shutil
 import sys
 from pathlib import Path
 
+SKILLS = ("agile-explorar", "agile-iterar", "agile-revisar", "agile-descubrir-skills")
 RAIZ = Path(__file__).resolve().parent.parent
-AGENTS = RAIZ / ".agents" / "skills"
-CLAUDE = RAIZ / ".claude" / "skills"
 
 
 def digest(path: Path) -> str:
@@ -24,9 +26,15 @@ def digest(path: Path) -> str:
 
 
 def archivos(base: Path) -> dict:
-    if not base.is_dir():
-        return {}
-    return {p.relative_to(base).as_posix(): p for p in base.rglob("*") if p.is_file()}
+    """Archivos de las skills de SKILLS dentro de base, como {'<skill>/<ruta>': Path}."""
+    res = {}
+    for nombre in SKILLS:
+        carpeta = base / nombre
+        if carpeta.is_dir():
+            for p in carpeta.rglob("*"):
+                if p.is_file():
+                    res[p.relative_to(base).as_posix()] = p
+    return res
 
 
 def comparar(origen: Path, destino: Path):
@@ -41,18 +49,23 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--check", action="store_true", help="solo comprobar, sin copiar")
     ap.add_argument("--desde", choices=["agents", "claude"], default="agents", help="carpeta fuente (por defecto: agents)")
+    ap.add_argument("--raiz", type=Path, default=RAIZ, help="raíz del proyecto (por defecto: la de este script)")
     args = ap.parse_args()
 
-    origen, destino = (AGENTS, CLAUDE) if args.desde == "agents" else (CLAUDE, AGENTS)
-    if not origen.is_dir():
-        print(f"ERROR: no existe la carpeta fuente: {origen}", file=sys.stderr)
+    raiz = args.raiz.resolve()
+    agents, claude = raiz / ".agents" / "skills", raiz / ".claude" / "skills"
+    origen, destino = (agents, claude) if args.desde == "agents" else (claude, agents)
+
+    ausentes = [n for n in SKILLS if not (origen / n).is_dir()]
+    if ausentes:
+        print(f"ERROR: faltan en la carpeta fuente {origen}: {', '.join(ausentes)}", file=sys.stderr)
         return 2
 
     src, faltan, sobran, distintos = comparar(origen, destino)
 
     if args.check:
         if not (faltan or sobran or distintos):
-            print("OK: las skills estan sincronizadas.")
+            print(f"OK: las {len(SKILLS)} skills Agile estan sincronizadas.")
             return 0
         for k in faltan:
             print(f"FALTA en destino: {k}")
