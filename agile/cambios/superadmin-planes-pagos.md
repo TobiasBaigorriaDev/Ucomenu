@@ -90,4 +90,4 @@ Base aislada propia (`ucomenu-admin`, puertos 55xxx; la instancia por defecto no
 ## Revisión y aprobación (C)
 - **Ronda 1 (Codex, rama contra `main`, commit `89309f7`):** APROBAR CON CAMBIOS. Un hallazgo, real y reproducido: los `<select>` de «Cambiar plan» llevaban una `key` que no cambia tras un éxito, así que el reinicio del formulario devolvía el plan y el ciclo del primer montaje y un envío siguiente podía revertir el plan en silencio. Corrección: la `key` incluye el plan y el ciclo guardados; el E2E «cambia plan y ciclo» ahora comprueba los valores tras guardar (falla sin la corrección). Sin objeciones a permisos, concurrencia, auditoría ni dinero.
 - **Ronda 2 (verificación, commit `17c1c2a`):** APROBAR, sin hallazgos nuevos.
-- Aprobación humana de las decisiones A1–A8: **pendiente**.
+- **Aprobación humana de A1–A8: dada por el usuario el 2026-10-16** (tal como están). Integrado a `main`; falta aplicar la migración en staging/producción (con aprobación).

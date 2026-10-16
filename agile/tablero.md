@@ -41,7 +41,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (fase completa: llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»)
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] SuperAdmin, siguientes incrementos (el alta de organizaciones con Dueño, plan y auditoría ya está hecha, ver «Hecho»): cambiar/suspender/reactivar plan a mano, registro de pagos, prueba de 14 días como concepto aparte, add-ons, desactivar organizaciones y lectura de la auditoría por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history`** (hoy `ON DELETE RESTRICT`, ADR 0012)
+- [C] SuperAdmin, incrementos pendientes: add-ons, desactivar organizaciones y lectura de la auditoría y de los pagos por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
 - [C] SuperAdmin: sumar una cuenta **existente** como Dueño de otra organización (hoy el alta exige un email nuevo) — surgido de «SuperAdmin: alta de organizaciones»
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
@@ -71,6 +71,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] SuperAdmin: cambiar plan a mano, suspender y reactivar, registro de pagos de solo-agregado y prueba de 14 días como concepto aparte, con auditoría; reglas A1–A8 aprobadas por el usuario y revisado por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/superadmin-planes-pagos.md · ADR 0013
 - [C] Gestión de sucursales en el panel: el Dueño lista, crea y renombra en `/panel/{slug}/sucursales` dentro del tope del plan; política `INSERT` aprobada por el usuario, revisada por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/gestion-de-sucursales.md
 - [M] Rendimiento de la carta pública: fotos reducidas en WebP por `/_next/image` y caché de categorías y platos con invalidación desde el panel; LCP en 4G de 11,3 s a 1,9 s; revisado por Codex, con un límite aceptado (una lectura en vuelo durante una edición puede dejar la carta anterior hasta 60 s) (2026-10-16) → agile/cambios/rendimiento-carta-publica.md
 - [M] Alta guiada del dueño: guía de primeros pasos en el Resumen del panel (carta, mesas, QR), deducida de los datos y sin esquema; pendientes de producto en la ficha: descartar la guía y varias sucursales (2026-10-16) → agile/cambios/alta-guiada-del-dueno.md
