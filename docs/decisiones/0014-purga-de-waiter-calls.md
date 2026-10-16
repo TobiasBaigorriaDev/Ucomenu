@@ -11,7 +11,7 @@
 
 ## Alternativas consideradas
 - **Constante de 14 días dentro de la función** — cambiar el plazo exigiría una migración; con parámetro y piso se ajusta sin tocar el esquema y sin permitir el error peligroso.
-- **Programarla en una migración con `pg_cron`** — decide infraestructura de producción (extensión, permisos, frecuencia) sin aprobación y no se prueba en local; se deja en el checklist de «Salida a producción».
+- **Programarla en una migración con `pg_cron`** — decide infraestructura de producción (extensión, permisos, frecuencia) sin aprobación y no se prueba en local; se deja en `docs/produccion.md`.
 - **Borrar solo los atendidos o vencidos** — un pendiente de semanas ya está vencido por derivación; conservarlo acumularía el dato que se quiere acotar.
 - **Anonimizar `client_key` antes de los 14 días** — reduce más el dato personal, pero no se pidió y suma una segunda regla; se puede agregar después sin cambiar esta.
 - **Escribir en `audit_log`** — es del SuperAdmin y exige un actor humano; la purga es una tarea técnica.

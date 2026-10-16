@@ -16,7 +16,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Bloqueado
-- (vacío)
+- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); falta ejecutarla (bloqueado por: aprobación del usuario, cuentas y planes pagos de Vercel y Supabase, dominio `ucomenu.com`, revisión legal de los textos y decisión de monitoreo) → agile/cambios/salida-a-produccion.md
 
 ## Backlog
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
@@ -48,7 +48,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [C] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera carta y primeros QR (la primera sucursal ya la crea el alta del SuperAdmin; el panel aún no gestiona sucursales)
-- [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos). Checklist: **programar `purge_waiter_calls` (a diario, repitiendo hasta que devuelva menos que el lote; pérdida sin respaldo aceptada)**, **`NEXT_PUBLIC_CONTACT_EMAIL`** (contacto de la política de privacidad), **revisión de los textos legales por un abogado/a** (ver ficha), **`WAITER_CALL_CLIENT_SECRET` propio** (obligatorio por el ticket de visita; sin él los tickets no valen entre instancias), apagar el registro público, contraseña mínima de 10 en Supabase Cloud, verificar el bucket `product-images` y definir `NEXT_PUBLIC_SITE_URL` con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel)
 
 ### Fase 2 — Add-on WebAR
 - [S] Spike descartable: `<model-viewer>` con un plato real en un iPhone y un Android — valida ADR 0002 y el presupuesto de peso

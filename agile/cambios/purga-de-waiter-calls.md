@@ -11,7 +11,7 @@ Que los llamados al mozo no se acumulen para siempre: una función de base borra
 - **Se borra por `created_at`, sea cual sea el estado.** Un pendiente de más de 30 minutos ya está vencido por derivación (ficha del llamado), así que uno de semanas no es un aviso vivo.
 - **Piso de 7 días, validado sobre la fecha de corte efectiva** (`now() - retención`), no comparando intervalos (ver «Revisión»): nada que decida la base (cooldown ≤ 1 h, límite por cliente de 10 min, vencimiento a 30 min) ni que lea la sala (últimos 30 min) mira filas de más de 1 día. Una retención menor, nula, o un lote fuera de rango (1–50 000) se rechazan con `22023`.
 - **Por lotes con `for update skip locked`:** acota bloqueos y no compite con `create_waiter_call` ni con «atender». Devuelve cuántas borró; quien la programe repite hasta que devuelva menos que el lote.
-- **Solo `service_role` la ejecuta.** Quién la dispara y cuándo (pg_cron, tarea programada o ruta protegida) es configuración de despliegue y queda en el checklist de «Salida a producción»; en local no hay programador.
+- **Solo `service_role` la ejecuta.** Quién la dispara y cuándo (pg_cron, tarea programada o ruta protegida) es configuración de despliegue y queda en `docs/produccion.md`; en local no hay programador.
 - **Sin rastro en `audit_log`** (es del SuperAdmin y exige un actor): el rastro es el conteo que devuelve la función y que registra quien la ejecute.
 
 ## Aceptación

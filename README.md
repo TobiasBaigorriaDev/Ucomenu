@@ -33,6 +33,7 @@ Pruebas, lint y demás comandos: sección **Comandos del proyecto** de `AGENTS.m
 | `docs/producto.md` | Qué se construye y para quién |
 | `docs/arquitectura.md` | Stack, módulos, datos, contratos, riesgos |
 | `docs/decisiones/` | ADR breves de decisiones duraderas |
+| `docs/produccion.md` | Procedimiento de salida a producción con sus aprobaciones (`pnpm prod:check` revisa las variables de entorno) |
 | `agile/tablero.md` | Backlog flexible: prioridad, estado breve y enlace a la ficha |
 | `agile/ahora.md` | Handoff: punto de retomada, bloqueos y próximo paso (una pantalla) |
 | `agile/historial.md` | Archivo del handoff anterior y recetas locales; no se lee al empezar |

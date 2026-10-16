@@ -15,7 +15,7 @@ Tener publicados `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la p
 1. **Revisión de un abogado/a** antes de producción: no soy una fuente legal y el texto es un borrador razonable, no asesoramiento.
 2. **Responsable y contacto reales:** nombre o razón social de quien opera UcoMenu y el email de contacto (`NEXT_PUBLIC_CONTACT_EMAIL`). Si el servicio llegara a estar sujeto a inscripción de bases de datos ante la AAIP, tampoco lo resuelve este cambio.
 3. **Proveedores:** el texto dice «proveedores de infraestructura» sin nombrarlos y avisa que pueden estar fuera de la Argentina; al elegir hosting en «Salida a producción», revisar si hace falta nombrarlos.
-4. **La purga no corre sola:** el texto promete 14 días; hasta programar `purge_waiter_calls` (ya en el checklist) la promesa no se cumple. No publicar a producción antes.
+4. **La purga no corre sola:** el texto promete 14 días; hasta programar `purge_waiter_calls` (paso 4 de `docs/produccion.md`) la promesa no se cumple. No publicar a producción antes.
 5. **Términos comerciales:** precios y condiciones se dicen «acordados al contratar». Si hay un contrato o una página de precios, enlazarla.
 
 ## Aceptación
