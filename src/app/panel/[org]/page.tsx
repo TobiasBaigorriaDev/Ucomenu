@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PrimerosPasos } from "@/components/panel/primeros-pasos";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
+import { buildGuide, loadGuideCounts } from "@/lib/guia/primeros-pasos";
 import { createSessionClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Resumen" };
@@ -15,16 +17,20 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
   const { membership } = await requireMembership(org, `/panel/${org}`);
 
   const supabase = await createSessionClient();
-  const [branches, ent] = await Promise.all([
+  const [branches, ent, counts] = await Promise.all([
     supabase.from("branches").select("id, slug, name").eq("organization_id", membership.org.id).order("name"),
     getEntitlements(membership.org.id),
+    loadGuideCounts(supabase, membership.org.id),
   ]);
 
   const isOwner = membership.role === "owner";
+  const guide = buildGuide({ counts, branchCount: branches.data?.length ?? 0, ent, role: membership.role, slug: membership.org.slug });
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="font-display text-4xl leading-tight">Resumen</h1>
+
+      {guide ? <PrimerosPasos guide={guide} /> : null}
 
       <section aria-labelledby="carta-publica" className="mt-8">
         <h2 id="carta-publica" className="font-display text-2xl">
