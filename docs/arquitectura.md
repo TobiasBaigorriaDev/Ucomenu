@@ -4,7 +4,7 @@
 
 ## Stack acordado
 - **Lenguaje / framework:** TypeScript + Next.js (App Router, Server Components) + Tailwind CSS. → ADR 0001. Implementado (2026-10-13): Next 16.4.0, React 19.3.0, Tailwind 4.3.3, TypeScript 5.9.3; versiones exactas en `pnpm-lock.yaml`.
-  - **Desviación consciente:** `cacheComponents` está **desactivado** (el scaffold lo trae activo). Con él, un 404 real exige prerender por slug y cachear por un slug arbitrario de una ruta pública es riesgoso; sin él, la carta se renderiza por pedido. El caché se diseñará en el ítem «Rendimiento de la carta pública» (ver `agile/cambios/esqueleto-menu-publico.md`).
+  - **Desviación consciente:** `cacheComponents` está **desactivado** (el scaffold lo trae activo). Con él, un 404 real exige prerender por slug y cachear por un slug arbitrario de una ruta pública es riesgoso; sin él, la carta se renderiza por pedido. **Implementado** (ficha `rendimiento-carta-publica`): con `unstable_cache` se cachean solo las categorías y platos de la organización (etiqueta `carta:{id}`, 60 s como tope; el panel la invalida con `updateTag`); la organización, la sucursal y el estado de la cuenta se consultan siempre en vivo, y las fotos pasan por `/_next/image` (solo del bucket `product-images`).
 - **Base de datos:** PostgreSQL gestionado por Supabase, con Row Level Security (RLS) como mecanismo de aislamiento. → ADR 0004
 - **Tiempo real:** el panel de sala se actualiza por sondeo corto al servidor (ADR 0011); Supabase Realtime queda como evolución posible.
 - **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo. **Implementado** (ADR 0007): email y contraseña, sin registro público, sesión por cookies `httpOnly` con `@supabase/ssr` 0.12.7 y sin cliente de Supabase en el navegador.
