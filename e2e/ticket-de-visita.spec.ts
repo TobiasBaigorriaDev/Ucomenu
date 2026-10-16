@@ -173,8 +173,9 @@ test.describe("la sala muestra cuánto hacía que había escaneado", () => {
       .insert({ organization_id: t.orgId, branch_id: branch, label: "Mesa 3" })
       .select("id")
       .single();
-    await sembrar(t, branch, mesa1.id, 40 * MIN); // llamó 40 min después de escanear
-    await sembrar(t, branch, mesa2.id, 2 * HORA + 40 * MIN); // 2 h 40 min: pestaña olvidada
+    // 30 s de margen: la base marca `created_at` unos ms después de `Date.now()` y la pantalla trunca a minutos (daría 39).
+    await sembrar(t, branch, mesa1.id, 40 * MIN + 30_000); // llamó 40 min después de escanear
+    await sembrar(t, branch, mesa2.id, 2 * HORA + 40 * MIN + 30_000); // 2 h 40 min: pestaña olvidada
     await sembrar(t, branch, mesa3.data!.id, null); // sin dato
 
     await login(page, t.staff.email, t.staff.password);

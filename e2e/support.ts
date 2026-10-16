@@ -129,7 +129,33 @@ export async function login(page: Page, email: string, password: string, next?: 
 /** El aviso de error/estado de un formulario (Next tiene su propio role="alert" para anunciar rutas). */
 export const alerta = (page: Page) => page.locator("form").getByRole("alert");
 
+/**
+ * Ningún elemento visible sobrepasa el ancho del teléfono. No se mide `scrollWidth - innerWidth`: en emulación móvil el
+ * viewport crece con el contenido y esa resta da 0 aunque la página se ensanche (falsos aprobados). Se mide el borde
+ * derecho de cada elemento contra el ancho configurado del viewport.
+ */
 export async function expectNoHorizontalOverflow(page: Page) {
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  expect(overflow, "desborde horizontal a 390 px").toBeLessThanOrEqual(0);
+  const ancho = page.viewportSize()?.width ?? 390;
+  const { derecha, elemento } = await page.evaluate(() => {
+    let derecha = 0;
+    let elemento = "";
+    // Lo que vive dentro de un contenedor con scroll horizontal propio (p. ej. las pestañas del panel) no ensancha la página.
+    const recortado = (el: Element) => {
+      for (let p = el.parentElement; p && p !== document.body; p = p.parentElement) {
+        if (getComputedStyle(p).overflowX !== "visible") return true;
+      }
+      return false;
+    };
+    for (const el of document.body.querySelectorAll("*")) {
+      const caja = el.getBoundingClientRect();
+      if (caja.width === 0 || caja.height === 0) continue; // ocultos o sin caja
+      if (recortado(el)) continue;
+      if (caja.right > derecha) {
+        derecha = caja.right;
+        elemento = `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""}${typeof el.className === "string" && el.className ? `.${el.className.trim().split(/\s+/).slice(0, 2).join(".")}` : ""}`;
+      }
+    }
+    return { derecha, elemento };
+  });
+  expect(derecha, `desborde horizontal a ${ancho} px (lo causa «${elemento}»)`).toBeLessThanOrEqual(ancho + 0.5);
 }

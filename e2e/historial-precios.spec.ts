@@ -3,6 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { sql } from "../tests/rls/helpers";
 import {
   createTenant,
+  expectNoHorizontalOverflow,
   login,
   service,
   type Estado,
@@ -61,18 +62,6 @@ async function cambiarPrecio(db: ReturnType<typeof service>, plato: string, cent
   if (r.error || r.data?.length !== 1) throw new Error(`No se pudo cambiar el precio: ${r.error?.message ?? "0 filas"}`);
 }
 
-/**
- * Ningún elemento del contenido sobrepasa el ancho del teléfono (390 px). `expectNoHorizontalOverflow` de `support.ts` no
- * sirve acá: en emulación móvil el viewport crece con el contenido y `scrollWidth - innerWidth` da 0 aunque la página se ensanche.
- */
-async function expectContenidoDentroDelTelefono(page: Page) {
-  const ancho = page.viewportSize()?.width ?? 390;
-  const derecha = await page.evaluate(() =>
-    Math.max(...[...document.querySelectorAll("main, main *")].map((el) => el.getBoundingClientRect().right)),
-  );
-  expect(derecha, "un elemento del contenido sobrepasa el ancho del teléfono").toBeLessThanOrEqual(ancho + 0.5);
-}
-
 const filas = (page: Page) => page.getByTestId("historial-fila");
 
 test.describe("historial del local", () => {
@@ -101,7 +90,7 @@ test.describe("historial del local", () => {
     await expect(filas(dueno).nth(1)).toContainText(`${t.staff.email} (Personal)`);
     await expect(filas(dueno).nth(2)).toContainText("$ 1.000 → $ 1.500");
     await expect(filas(dueno).nth(2).getByTestId("historial-autor")).toHaveText("Vos");
-    await expectContenidoDentroDelTelefono(dueno);
+    await expectNoHorizontalOverflow(dueno);
     await duenoCtx.close();
 
     // Staff
@@ -205,11 +194,11 @@ test.describe("historial del local", () => {
     await login(page, t.owner.email, t.owner.password, `/panel/${t.slug}/historial-de-precios`);
     await expect(filas(page)).toHaveCount(1);
     await expect(filas(page).getByTestId("historial-autor")).toContainText(email);
-    await expectContenidoDentroDelTelefono(page);
+    await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: "test-results/historial-largo-local.png", fullPage: true });
     await page.goto(`/panel/${t.slug}/carta/platos/${plato}/historial`);
     await expect(filas(page)).toHaveCount(1);
-    await expectContenidoDentroDelTelefono(page);
+    await expectNoHorizontalOverflow(page);
     await page.screenshot({ path: "test-results/historial-largo-plato.png", fullPage: true });
     await service().auth.admin.deleteUser(largo.id);
   });

@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { expectNoHorizontalOverflow } from "./support";
 
 const MENU = "/m/cafe-ejemplo/centro";
 
@@ -27,11 +28,7 @@ test.describe("carta pública de Café Ejemplo (390 px)", () => {
   test("no se desborda horizontalmente", async ({ page }) => {
     await page.goto(MENU);
 
-    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
-      scrollWidth: document.documentElement.scrollWidth,
-      clientWidth: document.documentElement.clientWidth,
-    }));
-    expect(scrollWidth).toBeLessThanOrEqual(clientWidth);
+    await expectNoHorizontalOverflow(page);
   });
 
   test("no publica lo inactivo ni lo de otras organizaciones", async ({ page }) => {
@@ -87,8 +84,7 @@ test.describe("cuenta suspendida por mora", () => {
   test("no se desborda horizontalmente", async ({ page }) => {
     await page.goto("/m/resto-moroso/unica");
 
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
+    await expectNoHorizontalOverflow(page);
   });
 });
 

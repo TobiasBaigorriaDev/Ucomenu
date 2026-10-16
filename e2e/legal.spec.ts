@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { expectNoHorizontalOverflow } from "./support";
 
 /**
  * Textos legales (ficha textos-legales): las tres páginas son públicas, se llega a ellas desde la portada, el login y la
@@ -17,11 +18,7 @@ for (const { path, heading } of PAGES) {
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(heading);
     await expect(page.getByText(/Actualizado el \d{1,2} de \w+ de \d{4}/)).toBeVisible();
-    // Sin la medida de `expectNoHorizontalOverflow` (da falsos aprobados en móvil): ningún elemento pasa del ancho.
-    const derecha = await page.evaluate(() =>
-      Math.max(...[...document.querySelectorAll("main, main *")].map((el) => el.getBoundingClientRect().right)),
-    );
-    expect(derecha).toBeLessThanOrEqual((page.viewportSize()?.width ?? 390) + 0.5);
+    await expectNoHorizontalOverflow(page);
   });
 }
 

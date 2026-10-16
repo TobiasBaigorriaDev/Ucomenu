@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { purgeAuditLogWhere } from "../tests/rls/purge-price-history";
-import { SEED, SEED_PASSWORD, TEST_PASSWORD, alerta, deleteAccountsByEmail, login, service } from "./support";
+import { SEED, SEED_PASSWORD, TEST_PASSWORD, alerta, deleteAccountsByEmail, expectNoHorizontalOverflow, login, service } from "./support";
 import { sql } from "../tests/rls/helpers"; // después de ./support: este carga las variables de entorno
 
 /**
@@ -18,18 +18,6 @@ async function limpiar(slug: string, emails: string[]) {
   purgeAuditLogWhere(`after->>'slug' = '${slug}'`);
   if (org.data) await db.from("organizations").delete().eq("id", org.data.id);
   await deleteAccountsByEmail(emails);
-}
-
-/**
- * Ningún elemento del contenido sobrepasa el ancho del teléfono (390 px). `expectNoHorizontalOverflow` de `support.ts` no
- * sirve: en emulación móvil el viewport crece con el contenido y `scrollWidth - innerWidth` da 0 aunque la página se ensanche.
- */
-async function expectContenidoDentroDelTelefono(page: Page) {
-  const ancho = page.viewportSize()?.width ?? 390;
-  const derecha = await page.evaluate(() =>
-    Math.max(...[...document.querySelectorAll("main, main *")].map((el) => el.getBoundingClientRect().right)),
-  );
-  expect(derecha, "un elemento del contenido sobrepasa el ancho del teléfono").toBeLessThanOrEqual(ancho + 0.5);
 }
 
 async function llenarAlta(
@@ -281,10 +269,10 @@ test.describe("alta de una organización", () => {
   test("el formulario y el listado caben en 390 px", async ({ page }) => {
     await login(page, ADMIN_EMAIL, SEED_PASSWORD, "/admin/nueva");
     await expect(page.getByRole("heading", { name: "Nueva organización" })).toBeVisible();
-    await expectContenidoDentroDelTelefono(page);
+    await expectNoHorizontalOverflow(page);
     await page.goto("/admin");
     await expect(page.getByRole("heading", { name: "Organizaciones" })).toBeVisible();
-    await expectContenidoDentroDelTelefono(page);
+    await expectNoHorizontalOverflow(page);
   });
 
   test("un identificador de 64 caracteres sin guiones y el estado de la cuenta se ven bien en 390 px", async ({ page }) => {
@@ -304,7 +292,7 @@ test.describe("alta de una organización", () => {
       await expect(org).toContainText("Al día");
       await expect(org).toContainText("vigente hasta el");
       await expect(page.getByTestId("auditoria").filter({ hasText: slug })).toBeVisible();
-      await expectContenidoDentroDelTelefono(page);
+      await expectNoHorizontalOverflow(page);
 
       // Vencida hace 10 días: el listado dice el estado, no solo «venció el».
       const db = service();
@@ -317,7 +305,7 @@ test.describe("alta de una organización", () => {
       await expect(org).toContainText("Vencida, en solo lectura");
       await expect(org).toContainText("venció el");
       await expect(org).not.toContainText("Al día");
-      await expectContenidoDentroDelTelefono(page);
+      await expectNoHorizontalOverflow(page);
     } finally {
       await limpiar(slug, [email]);
     }
