@@ -42,6 +42,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],
   public_menu_status: [true, true],
+  purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
 };
 

@@ -321,6 +321,9 @@ isOneToOne: false
 "public_menu_status":
 { Args: { "p_branch_slug": string,"p_org_slug": string }; Returns: string
                            },
+"purge_waiter_calls":
+{ Args: { "p_batch"?: number,"p_retention"?: string }; Returns: number
+                           },
 "resolve_table_qr":
 { Args: { "p_token": string }; Returns: Json
                            }

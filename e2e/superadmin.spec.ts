@@ -69,6 +69,28 @@ test.describe("quién entra a /admin", () => {
     });
   }
 
+  test("al iniciar sesión sin next, el SuperAdmin aterriza en /admin, también al abrir /login con sesión", async ({ page }) => {
+    await login(page, ADMIN_EMAIL, SEED_PASSWORD);
+    await expect(page).toHaveURL(/\/admin$/);
+    await expect(page.getByRole("heading", { name: "Organizaciones" })).toBeVisible();
+    // Con sesión abierta, /login no muestra el formulario y lleva al mismo destino.
+    await page.goto("/login");
+    await expect(page).toHaveURL(/\/admin$/);
+  });
+
+  test("un next válido manda también para el SuperAdmin; uno inválido cae al destino por defecto", async ({ page }) => {
+    await login(page, ADMIN_EMAIL, SEED_PASSWORD, "/panel/cafe-ejemplo");
+    await expect(page).toHaveURL(/\/panel\/cafe-ejemplo/);
+    await page.goto("/login?next=%2F%2Fevil.test");
+    await expect(page).toHaveURL(/\/admin$/);
+  });
+
+  test("el Dueño que inicia sesión sin next sigue yendo a /panel", async ({ page }) => {
+    await login(page, SEED.duenoCafe, SEED_PASSWORD);
+    await expect(page).toHaveURL(/\/panel/);
+    await expect(page).not.toHaveURL(/\/admin/);
+  });
+
   test("el SuperAdmin entra, ve las organizaciones y la auditoría, y navega entre las dos pantallas", async ({ page }) => {
     await login(page, ADMIN_EMAIL, SEED_PASSWORD, "/admin");
     await expect(page).toHaveURL(/\/admin$/);
@@ -156,6 +178,7 @@ test.describe("alta de una organización", () => {
       expect((await service().from("organizations").select("id").eq("slug", slug)).data).toEqual([]);
       // La cuenta existente conserva su contraseña.
       await page.getByRole("button", { name: "Salir" }).click();
+      await expect(page).toHaveURL(/\/login/); // sin esto, /login se abre con la sesión del SuperAdmin aún viva
       await login(page, SEED.mozoCafe, SEED_PASSWORD);
       await expect(page).toHaveURL(/\/panel\/cafe-ejemplo$/);
     } finally {

@@ -7,7 +7,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
 ## En curso
-- (vacío)
+- [C] Purga de `waiter_calls` por antigüedad (30 días, piso de 7; función solo para `service_role`): implementada y probada en local; falta revisión independiente, aprobación del plazo y programarla (despliegue) → ficha: agile/cambios/purga-de-waiter-calls.md · ADR 0014
 
 ## Seleccionado
 - (vacío)
@@ -44,14 +44,12 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] SuperAdmin, siguientes incrementos (el alta de organizaciones con Dueño, plan y auditoría ya está hecha, ver «Hecho»): cambiar/suspender/reactivar plan a mano, registro de pagos, prueba de 14 días como concepto aparte, add-ons, desactivar organizaciones y lectura de la auditoría por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history`** (hoy `ON DELETE RESTRICT`, ADR 0012)
 - [C] SuperAdmin: sumar una cuenta **existente** como Dueño de otra organización (hoy el alta exige un email nuevo) — surgido de «SuperAdmin: alta de organizaciones»
 - [S] SuperAdmin: primera sucursal en el alta (o resolverlo en «Alta guiada del dueño»): hoy una organización recién creada no tiene sucursal, así que no tiene carta pública hasta que alguien la cree por script — surgido de «SuperAdmin: alta de organizaciones»
-- [S] SuperAdmin: entrada a `/admin` para quien inicia sesión sin `next` (hoy cae en `/panel` y un SuperAdmin sin local ve «tu cuenta no tiene ningún local») — surgido de «SuperAdmin: alta de organizaciones»
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
-- [C] Purga de `waiter_calls` por antigüedad (propuesta: 30 días; bajar a M si se define un respaldo que la haga recuperable) y textos legales sobre el identificador de cliente derivado de la IP — surgido de «Llamado desde la mesa»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [C] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»
 - [M] Alta guiada del dueño: primera sucursal, primera carta, primeros QR
-- [S] Textos legales: términos, privacidad y aviso de alérgenos
+- [S] Textos legales: términos, privacidad, aviso de alérgenos y el identificador de cliente derivado de la IP de los llamados (30 días de retención, ADR 0014)
 - [M] Salida a producción: entornos de staging y producción, dominio, monitoreo de errores (requiere aprobación: despliegue y planes pagos). Checklist: **`WAITER_CALL_CLIENT_SECRET` propio** (obligatorio por el ticket de visita; sin él los tickets no valen entre instancias), apagar el registro público, contraseña mínima de 10 en Supabase Cloud, verificar el bucket `product-images` y definir `NEXT_PUBLIC_SITE_URL` con el dominio definitivo (si no, el QR impreso apunta al dominio desde el que se abrió el panel)
 
 ### Fase 2 — Add-on WebAR
@@ -76,6 +74,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [S] SuperAdmin: quien inicia sesión sin `next` aterriza en `/admin` (y el resto en `/panel`); un `next` válido manda siempre (2026-10-15, `aea92a8`)
 - [M] Simplificación de Agile-SDD: rigor por consecuencias, verificación por impacto, una función por documento, handoff breve, sincronizador acotado a las 4 skills (2026-10-15) → agile/cambios/simplificacion-agile-sdd.md
 - [S] Orden local del repositorio: `output/` excluido de Git y ESLint y `docs/referencias/HUMM-MENU.png` de Git; archivos conservados (2026-10-15)
 - [C] SuperAdmin, alta de organizaciones: `/admin` y `/admin/nueva` crean una organización con su Dueño, plan y auditoría de solo-agregado (integrado a `main` 2026-10-15, sin subir) → agile/cambios/superadmin-alta-de-organizaciones.md · ADR 0013
