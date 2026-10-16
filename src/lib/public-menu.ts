@@ -45,13 +45,6 @@ type CartaRows = {
   }[];
 };
 
-/** Lo que no se guarda en caché (ver `readRows`); lleva el resultado para devolverlo igual. */
-class NotCacheable extends Error {
-  constructor(readonly rows: CartaRows) {
-    super("not cacheable");
-  }
-}
-
 async function loadRows(orgId: string): Promise<CartaRows> {
   const supabase = createPublicClient();
   const [categories, products] = await Promise.all([
@@ -74,25 +67,17 @@ async function loadRows(orgId: string): Promise<CartaRows> {
  * Por eso una caché vieja nunca publica la carta de una cuenta suspendida ni de otra organización: la clave lleva el id
  * de la organización que ya resolvió la consulta en vivo.
  *
- * Una lectura vacía no se guarda: si la cuenta se suspende justo mientras se lee, la base devuelve filas vacías (RLS) y
- * quedaría «sin platos» hasta que venza el tiempo.
+ * Se guarda TODO resultado, también el vacío: `unstable_cache` renueva en segundo plano al vencer y, si esa renovación
+ * falla (p. ej. porque se negara a guardar un resultado vacío), conserva el valor anterior para siempre. Costo aceptado: si
+ * la cuenta se suspende justo mientras se lee, la base devuelve filas vacías (RLS) y la carta de esa cuenta queda «sin
+ * platos» hasta 60 s después de regularizarla. Otro límite aceptado: una lectura en vuelo mientras alguien edita puede
+ * guardar los datos anteriores después de la invalidación; dura como máximo lo mismo (`CARTA_CACHE_SECONDS`).
  */
-async function readRows(orgId: string): Promise<CartaRows> {
-  const cached = unstable_cache(
-    async () => {
-      const rows = await loadRows(orgId);
-      if (rows.categories.length === 0 || rows.products.length === 0) throw new NotCacheable(rows);
-      return rows;
-    },
-    ["carta-publica", orgId],
-    { tags: [cartaTag(orgId)], revalidate: CARTA_CACHE_SECONDS },
-  );
-  try {
-    return await cached();
-  } catch (error) {
-    if (error instanceof NotCacheable) return error.rows;
-    throw error;
-  }
+function readRows(orgId: string): Promise<CartaRows> {
+  return unstable_cache(() => loadRows(orgId), ["carta-publica", orgId], {
+    tags: [cartaTag(orgId)],
+    revalidate: CARTA_CACHE_SECONDS,
+  })();
 }
 
 /**

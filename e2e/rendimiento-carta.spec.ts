@@ -76,6 +76,23 @@ test.describe("caché de la carta pública", () => {
     expect(segunda).not.toContain("Milanesa editada");
   });
 
+  test("lo cacheado vence a los 60 s aunque la carta haya quedado vacía por un cambio hecho fuera de la app", async ({ page }) => {
+    test.setTimeout(150_000);
+    const t = await nuevoLocal("rend-vence");
+    const ids = await sembrar(t, "Platos", [{ nombre: "Milanesa" }]);
+    expect((await publica(page, t)).texto).toContain("Milanesa");
+
+    // Se apaga el único plato directo en la base: sin invalidar nada, solo el vencimiento puede sacarlo de la carta.
+    expect((await service().from("products").update({ is_active: false }).eq("id", ids.Milanesa)).error).toBeNull();
+    expect((await publica(page, t)).texto).toContain("Milanesa"); // todavía en caché (antes de vencer)
+
+    await page.waitForTimeout(62_000);
+    // Tras vencer, la primera carga puede servir lo viejo mientras se renueva; la siguiente ya no.
+    await expect
+      .poll(async () => (await publica(page, t)).texto.includes("Milanesa"), { timeout: 20_000, intervals: [1_000] })
+      .toBe(false);
+  });
+
   test("lo que se guarda en el panel se ve en la carta pública enseguida, aunque ya estuviera en caché", async ({ page }) => {
     const t = await nuevoLocal("rend-panel");
     await sembrar(t, "Platos", [{ nombre: "Milanesa" }, { nombre: "Ravioles" }]);
