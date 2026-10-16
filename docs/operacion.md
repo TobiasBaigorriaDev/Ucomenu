@@ -38,7 +38,7 @@ Crea `D:\respaldos\ucomenu\<fecha>\` con `esquema.sql`, `datos.sql`, `storage\�
 2. `datos.sql` se carga con `session_replication_role = replica` (ya viene en el archivo) después de vaciar las tablas con datos propios de la migración (`plans`, `addons`) y las de `public` y `auth`: el archivo trae todas.
 3. Subir las fotos de `storage\` al bucket `product-images` con la misma ruta (la base guarda solo la ruta).
 4. Comprobar: recuento de filas por tabla, ingresar con una cuenta de prueba, abrir una carta con fotos.
-- **Ensayo local hecho (2026-10-16):** se vaciaron las tablas y se cargó `datos.sql` sobre la misma base local; volvieron los mismos recuentos y los mismos hashes de contraseña. **No** se probó restaurar en un proyecto nuevo de Supabase: queda pendiente para staging y hay que repetirlo una vez al mes.
+- **Ensayo local hecho (2026-10-16):** se vaciaron las tablas y se cargó `datos.sql` sobre la misma base local; volvieron los mismos recuentos y los mismos hashes de contraseña. **Ensayo en staging hecho (2026-10-16):** se vació el proyecto de staging y se cargó `datos.sql` con `psql` en una sola transacción (sin `psql` en Windows: `docker exec -i supabase_db_ucomenu psql "<cadena del Session pooler>" -v ON_ERROR_STOP=1 -1 -f -`, con el `TRUNCATE` y `datos.sql` por la entrada estándar); los recuentos coincidieron y la foto se restauró con la API de Storage y el mismo SHA-256. **No** se probó restaurar en un proyecto *nuevo*; repetir el ensayo una vez al mes.
 - Un proyecto Free pausado se puede reanudar durante un tiempo limitado (la página de pausa dice hasta 1 año; otra referencia habla de 90 días). No contar con eso como respaldo.
 
 ## 3. Seguimiento del consumo

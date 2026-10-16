@@ -1,8 +1,8 @@
 # Salida a producción: procedimiento
 
-Procedimiento ordenado para publicar UcoMenu. La estrategia (planes, hosting, staging, monitoreo) está decidida en el ADR 0015; los límites, los respaldos y los criterios para subir de plan, en `docs/operacion.md`. Cada paso marca quién lo aprueba. **Nada de esto se ejecutó**: todo lo que toca un servicio remoto, una compra o un dominio necesita aprobación explícita del usuario (`AGENTS.md`, «Límites de autonomía»). Lo único verificable sin salir de la máquina es `pnpm prod:check` y el respaldo local.
+Procedimiento ordenado para publicar UcoMenu. La estrategia (planes, hosting, staging, monitoreo) está decidida en el ADR 0015; los límites, los respaldos y los criterios para subir de plan, en `docs/operacion.md`. Cada paso marca quién lo aprueba. **Staging ya se ejecutó (2026-10-16, ficha `agile/cambios/salida-a-produccion.md`); producción no.** Todo lo que toca un servicio remoto, una compra o un dominio necesita aprobación explícita del usuario (`AGENTS.md`, «Límites de autonomía»). Lo único verificable sin salir de la máquina es `pnpm prod:check` y el respaldo local.
 
-El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/operacion.md` sección 5); la imagen corre igual en cualquier servicio de contenedores. Los comandos de Fly de abajo **no se ejecutaron ni se validaron** (no hay cuenta).
+El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/operacion.md` sección 5); la imagen corre igual en cualquier servicio de contenedores. Los comandos de Fly de abajo se ejecutaron y validaron en staging; producción es igual con `fly.toml`.
 
 ## 0. Antes de empezar (el usuario)
 - **Hosting:** decidido (Fly.io, contenedor en São Paulo). Falta aprobar crear la cuenta y la tarjeta, e instalar `flyctl` (herramienta nueva: requiere aprobación).
