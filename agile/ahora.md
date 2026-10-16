@@ -5,6 +5,7 @@ Actualizado: 2026-10-16 · agente: Claude Code · historial anterior en `agile/h
 ## Punto de retomada
 - Rama `main`, árbol limpio salvo `.claude/worktrees/` (worktree temporal del agente; sin versionar). `origin/main` sigue en `7240d0e`: subir solo cuando el usuario lo pida. Hay varios commits locales por subir.
 - **Hechos esta sesión:** (1) purga de `waiter_calls` (nivel C): `purge_waiter_calls`, **14 días** por defecto, piso de 7, solo `service_role`; ficha `agile/cambios/purga-de-waiter-calls.md`, ADR 0014 aceptada. El usuario fijó los 14 días y **aceptó la pérdida sin respaldo** (2026-10-16). (2) SuperAdmin sin `next` aterriza en `/admin` (`aea92a8`).
+- **Revisión de Codex automatizada** (2026-10-16): `pnpm revision:codex` + skill `ciclo-revision-codex` (ver `AGENTS.md`, «Calidad, memoria y multi-agente»). El revisor corre en solo lectura; en nivel C su veredicto no reemplaza la aprobación del usuario.
 - Medición del flujo nuevo en el primer cambio C: 1 escritor, 2 rondas de revisión (la 1.ª, «aprobar con cambios»: un bloqueante y un importante; la 2.ª, aprobada), 1 corrida completa de verificación más repeticiones filtradas. Un agente aparte hizo la tarea S en un worktree sin tocar la base.
 
 ## Bloqueos y riesgos

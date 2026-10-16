@@ -15,6 +15,7 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset --local",
     "dev:crear-dueno": "node tools/crear-dueno.mjs",
+    "revision:codex": "node tools/revision-codex.mjs",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "test:e2e:full": "next build && playwright test"
   },

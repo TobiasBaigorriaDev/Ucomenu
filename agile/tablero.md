@@ -74,6 +74,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [M] Revisión de Codex automatizada desde Claude: `pnpm revision:codex` (Codex CLI en solo lectura, veredicto como código de salida) y skill `ciclo-revision-codex`; probada con Codex real y con un Codex falso (2026-10-16) → tools/revision-codex.mjs
 - [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16, local sin subir) → agile/cambios/purga-de-waiter-calls.md · ADR 0014
 - [S] SuperAdmin: quien inicia sesión sin `next` aterriza en `/admin` (y el resto en `/panel`); un `next` válido manda siempre (2026-10-15, `aea92a8`)
 - [M] Simplificación de Agile-SDD: rigor por consecuencias, verificación por impacto, una función por documento, handoff breve, sincronizador acotado a las 4 skills (2026-10-15) → agile/cambios/simplificacion-agile-sdd.md

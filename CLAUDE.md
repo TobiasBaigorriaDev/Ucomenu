@@ -7,3 +7,4 @@
 - Rol habitual (no exclusivo): explorar, definir problemas complejos y revisar. Podés también implementar si el usuario te lo pide.
 - Las cuatro skills Agile están en `.claude/skills/` (copia de `.agents/skills/`; no las edites solo en una carpeta: `python tools/sincronizar_skills.py`). Las demás skills y plugins (Impeccable, etc.) no se sincronizan.
 - Revisiones: en modo solo lectura (plan mode o permisos restrictivos) siempre que sea posible.
+- Revisión de Codex automatizada: skill `ciclo-revision-codex` (`pnpm revision:codex --commit HEAD --ficha … --nivel C`, luego `--verificar --hallazgos <informe>`). Solo de Claude; no se sincroniza.
