@@ -6,7 +6,7 @@ const linkButtonClass =
 
 const ZONA = "America/Argentina/Buenos_Aires";
 const diaClave = new Intl.DateTimeFormat("en-CA", { timeZone: ZONA });
-const diaTitulo = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", timeZone: ZONA });
+const diaTitulo = new Intl.DateTimeFormat("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: ZONA });
 const horaFormato = new Intl.DateTimeFormat("es-AR", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: ZONA });
 
 /** Agrupa filas consecutivas por día (hora de Argentina). El orden de entrada, más nuevo primero, no cambia. */

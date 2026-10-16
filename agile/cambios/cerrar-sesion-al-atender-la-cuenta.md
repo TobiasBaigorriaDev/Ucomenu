@@ -1,5 +1,5 @@
 # Cambio: Cerrar la sesión de la mesa al atender «Pedir la cuenta» (B1 de ticket-de-visita)
-Estado: **hecho; revisión independiente de Codex pedida antes del push** (ver «Evidencias»)
+Estado: **hecho y revisado por Codex (aprobar); sin subir a GitHub**
 Nivel: **M** con revisión independiente (pedida por el usuario): endurece la puerta pública `create_waiter_call` sin dinero, permisos de terceros ni datos existentes; no hay esquema nuevo.
 
 ## Objetivo
@@ -25,7 +25,11 @@ Pasados los 10 minutos de gracia, quien pidió la cuenta y sigue en la mesa ve �
 
 ## Evidencias (2026-10-16, base reseteada con la migración nueva, `pnpm build` previo)
 - (Versión final con gracia; ver la línea de «Revisión» más abajo.) `pnpm test` **321/321** (+2 en `llamados.test.ts`) · `pnpm test:rls` **501/501** (+7 en `waiter-calls.rls.test.ts`; una sesión real de Staff atiende la cuenta) · `pnpm exec playwright test` **180/180** (+1 en `ticket-de-visita.spec.ts`) · `pnpm lint` y `pnpm typecheck` OK.
-- No ejecutado: mutaciones de la defensa; prueba en un teléfono real.
+- **Mutaciones** (función cambiada en la base local, `pnpm test:rls waiter-calls`; todas restauradas): sin la gracia de 10 min → 1 prueba falla; sin comparar con el ticket → 2 fallan; cualquier tipo de llamado cierra → 1 falla. «Cualquier estado cierra» **sobrevive**, pero es un mutante equivalente: `attended_at` solo se fija al atender, así que la condición de los 10 minutos ya excluye pendientes y vencidos.
+- No ejecutado: prueba en un teléfono real.
+
+## Revisión y aprobación
+- **Codex, solo lectura, nivel C, sobre `b0ec58d`** (los 4 commits sin subir: helper E2E, historial, cierre de sesión y gracia): **APROBAR**, sin hallazgos bloqueantes ni importantes. Una sugerencia, válida y aplicada: el título de cada día del historial no mostraba el año. No ejecutó pruebas ni mutaciones (las mutaciones las hice yo, arriba).
 
 ## Migración y rollback
 - `20261016140000_cerrar_sesion_al_atender_la_cuenta.sql`: solo reemplaza la función; sin esquema ni datos. Solo local; nada contra remotos. **En staging/producción hay que aplicarla con las demás migraciones** (con aprobación).
