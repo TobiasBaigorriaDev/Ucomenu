@@ -1,6 +1,6 @@
 # Cambio: rediseño del panel del Dueño y de SuperAdmin
 
-Estado: **Hecho y revisado**; integrado a `main` local por pedido del usuario el 2026-10-17 (fast-forward de `feat/ui-panel`, sin subir a `origin`); revisión de Codex al final. Nivel **M**: solo presentación; el único dato nuevo que se lee es `menu_palette` y `logo_path` de la organización del propio miembro (ya legibles por RLS). Sin cambios de esquema, permisos ni reglas.
+Estado: **Hecho y revisado**; integrado a `main` por pedido del usuario el 2026-10-17 (fast-forward de `feat/ui-panel`) y subido a `origin`; revisión de Codex al final. Nivel **M**: solo presentación; el único dato nuevo que se lee es `menu_palette` y `logo_path` de la organización del propio miembro (ya legibles por RLS). Sin cambios de esquema, permisos ni reglas.
 
 ## Objetivo y decisiones (2026-10-17, del usuario)
 Llevar el estilo de la carta pública (Gloock + Schibsted Grotesk, papel y tinta, celdas de 24 px con filete, bandas de tono) al panel del Dueño y al de SuperAdmin. Contexto durable en [`PRODUCT.md`](../../PRODUCT.md), [`DESIGN.md`](../../DESIGN.md) (ahora con la sección del panel) y el contrato de dirección en `.impeccable/surfaces/src-app-panel-org-page-tsx.md`.
