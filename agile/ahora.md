@@ -4,18 +4,18 @@ Actualizado: 2026-10-17 · agente saliente: Codex · historial anterior en `agil
 
 ## Punto de retomada
 
-Objetivo de esta sesión: registrar la aprobación explícita del usuario y dejar desactivar sucursales como «Hecho». El usuario confirmó el cierre después de recibir la verificación de staging. La [ficha](cambios/desactivar-sucursales.md) conserva aceptación, evidencia y aprobación; el tablero refleja el cierre. No queda una aprobación pendiente para esta tarea. Los límites de las comprobaciones anteriores permanecen documentados, sin convertirlos en pruebas nuevas ni extender la autorización a operaciones remotas.
+Objetivo de esta sesión: subir el trabajo anterior y ejecutar los ensayos de restauración en un proyecto nuevo y Wake Lock del panel de sala. El push de `feat/revision-claude` hasta `3451851` terminó correctamente. Los ensayos se trabajaron en `chore/ensayo-restauracion-y-wake-lock`, desde ese commit. Ambas tareas están en «Hecho»; resultados y límites están en las fichas de [salida a producción](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17) y [panel de sala](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17).
 
-Rama actual `feat/revision-claude`; evidencia remota registrada en `8a8db88`. Las consultas previas usaron la CLI autenticada existente y el proyecto enlazado, previamente identificado como staging. Solo se consultaron metadatos, catálogos y el historial de migraciones; no se leyeron datos de negocio, no se ejecutaron migraciones ni se modificaron datos. El SQL de comprobación se conserva en `output/verificacion-staging-desactivar.sql`, ignorado por Git. Este cierre solo modifica documentación local.
+El usuario autorizó crear el destino de ensayo y eligió un recordatorio mensual, sin restauraciones automáticas. Se creó `ucomenu-restore-20261017` en el plan Free existente y se ensayó el respaldo remoto conservado fuera del repositorio. El staging compartido no recibió escrituras y el enlace original de Supabase se conservó. El proyecto de ensayo quedó pausado, estado `INACTIVE`; staging sigue `ACTIVE_HEALTHY`. Las credenciales nuevas se guardaron protegidas con DPAPI fuera de Git.
 
-La integración de revisiones sigue en esta rama local, pendiente de incorporarse a `main` antes de abrir otra rama desde allí. El procedimiento en ambos sentidos está en la [guía](../docs/revision-entre-agentes.md); la skill de revisión de Claude permanece exclusiva de tareas C, conforme al ADR 0019.
+Wake Lock se probó mediante HTTPS local y Chrome aislado, sin cambiar la aplicación. Se eliminaron la organización local efímera, las cookies de ensayo y el certificado temporal, y se cerraron los servidores y navegadores usados. `tools/recordar-restauracion.ps1` queda como fuente del aviso mensual; la tarea instalada usa una copia en LocalAppData.
 
 ## Bloqueos y riesgos
 
-Esta comprobación confirma la base de staging; no verifica el despliegue de la app en Fly ni el flujo desde su interfaz. El despliegue figuraba pendiente en el estado heredado. Producción continúa fuera de alcance: [ficha de salida](cambios/salida-a-produccion.md), ADR 0015.
+Flyctl sigue bloqueado por Application Control de Windows; no se cambió esa política ni se desplegó nada. Producción y las pruebas físicas de pantalla, batería e iOS/Android siguen fuera de estos ensayos. La integración de revisiones todavía debe incorporarse a `main` antes de crear una rama desde allí.
 
-Siguen pendientes la comprobación en teléfono real y el posible rediseño de login, sala y cuenta.
+El recordatorio requiere sesión de Windows iniciada; cada mes el responsable ejecuta el ensayo y registra la evidencia según `docs/operacion.md`.
 
 ## Próximo paso
 
-Elegir la próxima tarea del backlog según valor y riesgo. Para otra tarea local, conservar la configuración de revisiones al elegir la rama de partida. Si se retoma el despliegue o la validación remota de la interfaz, confirmar primero la versión publicada y las autorizaciones correspondientes.
+Elegir otra tarea desbloqueada del backlog, conservando la configuración de revisiones al crear la próxima rama. La revisión automática de Claude continúa reservada a tareas críticas C.

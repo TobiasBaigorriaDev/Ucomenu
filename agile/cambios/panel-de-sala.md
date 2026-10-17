@@ -79,3 +79,15 @@ Pendientes (no ejecutado):
   - **P3 — error de membresías fuera del manejo de 503:** la identidad y las membresías están dentro del `try`; prueba unitaria de la ruta (`tests/unit/sala-estado-route.test.ts`).
   - Verificación tras las correcciones (base reseteada, build final): typecheck, lint y build OK; unitarias **147/147**; RLS **370/370**; E2E **121/121** en dos corridas completas.
   - Sobre `main` ya integrado (base reseteada, build final): typecheck, lint y build OK; unitarias 147/147; RLS 370/370; E2E 121/121 en dos corridas.
+
+## Ensayo de Wake Lock nativo con HTTPS (2026-10-17)
+
+Base `3451851`, rama `chore/ensayo-restauracion-y-wake-lock`. Sin cambios de aplicación. Chrome **155.0.8059.84** en Windows, perfil aislado, HTTPS en `https://localhost:3443` con certificado temporal y proxy hacia Next dev. Sesión Staff del seed y organización Pro efímera propia; la organización se eliminó al terminar, sin resetear la base compartida.
+
+- `isSecureContext=true`; «Activar alertas» adquirió un `WakeLockSentinel` real, `released=false`.
+- Al minimizar la ventana, `document.visibilityState=hidden` y el sentinel pasó a `released=true`.
+- Al restaurar la ventana, `visibilityState=visible` y la app solicitó un segundo lock, activo.
+- «Silenciar alertas» liberó los locks. Sin mocks de Wake Lock, audio ni visibilidad; el observador de `request()` delegó en la implementación nativa.
+- Evidencia: `output/playwright/verify-native-wake.js`, capturas `wake-activo.png` y `wake-silenciado.png`. La ejecución con Playwright CLI devolvió los cuatro estados esperados.
+
+Límites y entorno: Playwright iniciado normalmente emula foco y mantiene `visible` aun minimizado; esa corrida no validaba el segundo plano. Se repitió conectando por CDP a Chrome sin esos overrides (`noDefaults=true`), con visibilidad nativa. El proxy HTTPS de Next dev necesita reenviar WebSocket HMR para completar la hidratación. Flyctl estaba bloqueado por Application Control de Windows; no se modificó esa política ni se desplegó una app. No se comprobó el apagado físico de una pantalla, iOS/Android ni batería baja; esas condiciones siguen siendo pruebas manuales de dispositivo.
