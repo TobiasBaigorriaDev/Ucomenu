@@ -20,4 +20,4 @@ Orden sugerido; ninguna dependencia técnica obliga a seguirlo. Antes de integra
 
 
 1. Revisión independiente C de búsqueda/disponibilidad (sesión limpia o `pnpm revision:codex` cuando vuelva la cuota) y `db:reset` local para comprobar el seed.
-2. Con el usuario: probar la corrección de slug desde `/admin` sobre un local de demo; luego integrar la rama y retomar staging.
+2. Con el usuario: integrar la rama y retomar staging. La prueba manual de la corrección de slug desde `/admin` ya la hizo el usuario y funciona.

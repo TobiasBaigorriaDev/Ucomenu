@@ -36,3 +36,5 @@ Reversión: conservar columna y trigger evita perder enlaces aunque se retire la
 
 ## Verificación posterior (Claude Code, 2026-10-17)
 Relectura independiente del diff y repetición sobre `8e50471`, sin cambios de código: `pnpm test` **443/443**; RLS de `branch-slugs`, `acl`, `sucursales` y `tables` **53/53**; build nuevo + `e2e/branch-slugs`, `menu` y `sucursales` **33/33**. El filtro `.or` de `getPublicMenu` solo recibe slugs ya validados por `isValidSlug`. El 308 hacia la dirección vigente responde `Cache-Control: private, no-cache, no-store`: un navegador no lo conserva, así que volver a un identificador anterior no genera bucles en visitantes con redirecciones previas. No se encontraron defectos.
+
+Prueba manual del usuario (2026-10-17): recorrió la corrección desde `/admin` sobre su demo local y confirmó que funciona.
