@@ -10,6 +10,7 @@ import {
   deleteUser,
   serviceClient,
   setSubscription,
+  sql,
   type Db,
   type PlanCode,
   type TestUser,
@@ -291,18 +292,34 @@ describe("llamados y mesas", () => {
   it("carrera: un llamado que esperaba el lock de la mesa no usa un estado viejo de la sucursal (revisión de Codex, ronda 1)", async () => {
     const local = await nuevoLocal("tt-des-carrera-llamado");
     const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
-    // Otra transacción retiene el lock de la mesa 2,5 s: el llamado se frena justo antes de mirar el estado de la sucursal.
-    const retenedor = spawn("docker", [
-      "exec", contenedor, "psql", "-U", "postgres", "-c",
-      `begin; select pg_advisory_xact_lock(hashtextextended('waiter_call:${local.table}', 0)); select pg_sleep(2.5); commit;`,
-    ], { stdio: "ignore" });
+    // Otra transacción retiene el lock de la mesa hasta que la prueba la libera por stdin (sin tiempos fijos: el rol anon
+    // corta cualquier sentencia a los pocos segundos).
+    const retenedor = spawn("docker", ["exec", "-i", contenedor, "psql", "-U", "postgres", "-q"], { stdio: ["pipe", "ignore", "ignore"] });
+    retenedor.stdin.write(`begin; select pg_advisory_xact_lock(hashtextextended('waiter_call:${local.table}', 0));${String.fromCharCode(10)}`);
     const terminado = new Promise((resolve) => retenedor.on("close", resolve));
-    await new Promise((r) => setTimeout(r, 1200));
+    // Sin esperas a ciegas: se avanza solo cuando pg_locks muestra que el retenedor TIENE el lock y que el llamado ESPERA.
+    const hasta = async (descripcion: string, consulta: string) => {
+      for (let i = 0; i < 100; i++) {
+        if (sql(consulta)[0]?.[0] === "1") return;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error(`No se alcanzó: ${descripcion}`);
+    };
+    // El lock advisory de 64 bits se parte en classid (32 altos) y objid (32 bajos) en pg_locks: se identifica por su clave exacta.
+    const lockDeLaMesa = (granted: boolean) =>
+      `select (count(*) > 0)::int from pg_locks l,
+         (select hashtextextended('waiter_call:${local.table}', 0) as k) h
+       where l.locktype = 'advisory' and l.granted = ${granted}
+         and l.classid::bigint = ((h.k >> 32) & 4294967295) and l.objid::bigint = (h.k & 4294967295)`;
+    await hasta("el retenedor tiene el lock de la mesa", lockDeLaMesa(true));
 
-    const llamado = llamar(local.token, "waiter").then((r) => r); // el builder es perezoso: .then() lo envía ya; queda esperando el lock
-    await new Promise((r) => setTimeout(r, 400));
-    await service.from("branches").update({ is_active: false }).eq("id", local.branch); // se confirma mientras espera
-    expect((await llamado).data).toEqual({ status: "unavailable" });
+    const llamado = llamar(local.token, "waiter").then((r) => r); // el builder es perezoso: .then() lo envía ya
+    await hasta("el llamado espera el lock de la mesa", lockDeLaMesa(false));
+    await service.from("branches").update({ is_active: false }).eq("id", local.branch); // se confirma mientras el llamado espera
+    retenedor.stdin.end(`commit;${String.fromCharCode(10)}`); // libera el lock (y cierra psql al llegar al fin de la entrada)
+    const respuesta = await llamado;
+    expect(respuesta.error, JSON.stringify(respuesta.error)).toBeNull();
+    expect(respuesta.data).toEqual({ status: "unavailable" });
     await terminado;
     expect((await service.from("waiter_calls").select("id").eq("table_id", local.table)).data).toEqual([]);
   });
