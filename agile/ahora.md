@@ -1,23 +1,21 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-16 · agente saliente: Codex · historial anterior en `agile/historial.md` (consultar solo por un detalle puntual).
+Actualizado: 2026-10-16 · agente saliente: Codex.
 
 ## Punto de retomada
 
-- Retomada en `main`, con integración local por avance directo de `feat/identidad-local`. Incluye la paginación S cerrada, identidad (`db4ab29`, `a781fc8`) y ajustes menores (`9df251d`). El commit que incorpora este handoff cierra la documentación; sin subir ni desplegar.
-- Identidad cerrada: Apariencia del Dueño, logo y paletas cerradas elegidas por el usuario. Revisión comunicada por el usuario sin bloqueantes; tipado y prueba de coherencia CSS ajustados. Aceptación, evidencia y límites de Storage en [su ficha](cambios/identidad-del-local.md). Tablero **Hecho**.
-- Prueba manual: servidor `pnpm dev --hostname 127.0.0.1` en puerto 3000 y Supabase local activos. Chrome queda con Apariencia del Café Ejemplo, sesión Dueño de demo iniciada, y carta pública abiertas. Sin reiniciar la base ni cambiar colores o archivos.
+El usuario pidió implementar los dos ítems restantes de carta del MVP: buscador con filtros dietarios y disponibilidad por sucursal. Trabajo en `feat/busqueda-y-disponibilidad`, creada desde `main` en `dc4d102`. Búsqueda, etiquetas y detalle están en `ead868e`; disponibilidad se incorpora en el siguiente commit de la rama. No se integró a main, subió ni desplegó.
+
+Las dos entregas tienen rigor C técnico por ampliar permisos de columna y agregar una tabla con RLS, aunque el alcance de producto sigue siendo M. El tablero las mantiene en **Para verificar**. El usuario elige manualmente el revisor: no se invocaron otros agentes. La aceptación y evidencia están en las fichas de [búsqueda](cambios/buscador-y-filtros-dietarios.md) y [disponibilidad](cambios/disponibilidad-por-sucursal.md); consultar allí los comandos, resultados y límites de reversión.
+
+Las migraciones aditivas se aplicaron solo en Supabase local y se regeneraron los tipos. No se reseteó ni resembró la base que el usuario tenía abierta para probar identidad; las pruebas nuevas crean sus propios locales. Se conservaron las preferencias de trabajar con comandos sin confirmaciones y un solo escritor. La configuración de acceso completo de Codex venía preparada de la sesión anterior; no se modificó durante esta tarea.
 
 ## Bloqueos y riesgos
 
-- Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015. Solo el usuario puede crear su proyecto de Supabase, comprar dominio, elegir correo de contacto y contratar revisión legal.
-- Staging: `https://ucomenu-staging.fly.dev`; último despliegue informado desde `main`. La migración de identidad se aplicó solo en local; falta probar con sesión SuperAdmin, sucursales y variantes en staging.
-- Material sensible del ensayo fuera del repo: `C:\Users\tobib\staging.env` y `C:\Users\tobib\respaldos-ucomenu`; limpieza pendiente.
-- No imprimir QR hasta tener dominio. Siguen pendientes teléfono real y decisiones de variantes. RLS y E2E comparten base: no ejecutarlos simultáneamente.
-- Compilar en Windows fuera del sandbox cuando deniegue el TCP local de los workers; diagnóstico en la ficha de paginación. No hay bloqueo de compilación pendiente.
+Falta revisión independiente de los cambios C y aprobación humana antes de integrar sus permisos o aplicarlos en remoto. ADR 0016 describe las decisiones técnicas, todavía como propuesta implementada localmente.
+
+Producción continúa bloqueada por las decisiones del usuario sobre dominio, proyecto de Supabase, contacto y revisión legal: [ficha](cambios/salida-a-produccion.md). Identidad y las nuevas migraciones de carta siguen sin aplicar en staging. No imprimir QR definitivos antes de resolver dominio. RLS y E2E comparten base y deben correr secuencialmente.
 
 ## Próximo paso
 
-1. Elegir con el usuario la próxima tarea desbloqueada: buscador/filtros dietarios o disponibilidad por sucursal. Crear su rama desde `main` antes de implementar.
-2. El usuario puede seguir probando Apariencia y recargando la carta. Si el servidor se detiene, iniciarlo con `pnpm dev`; Docker debe seguir encendido.
-3. Aplicar migraciones remotas y desplegar solo con autorización. Retomar staging, purga, dominio y producción con el usuario.
+Entregar esta rama al revisor elegido, usando las fichas y el diff contra `dc4d102`. Corregir solo hallazgos comprobados y actualizar su evidencia. Después de la aprobación, integrar localmente y decidir con el usuario el ensayo remoto. Para probar las funciones, editar un plato en Carta; la carta pública muestra los cambios al recargar.

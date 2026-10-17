@@ -4,6 +4,7 @@ import { attachOptions, groupMenu, type MenuSection } from "@/lib/menu";
 import { isPalette, type Palette } from "@/lib/identidad/palettes";
 import { readAllPages } from "@/lib/paginar";
 import { isValidSlug } from "@/lib/slug";
+import { loadSoldOutProducts } from "@/lib/carta/availability";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
 export type PublicMenu = {
@@ -155,7 +156,10 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   const branch = org?.branches[0];
   if (!org || !branch) return unavailableOrNull(supabase, orgSlug, branchSlug);
 
-  const { categories, products, optionGroups, options } = await readRows(org.id);
+  const [{ categories, products, optionGroups, options }, soldOut] = await Promise.all([
+    readRows(org.id),
+    loadSoldOutProducts(supabase, org.id, branch.id),
+  ]);
 
   return {
     kind: "menu",
@@ -166,7 +170,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
         logo_path: org.logo_path,
       },
       branch: { id: branch.id, name: branch.name, slug: branch.slug },
-      sections: groupMenu(categories, attachOptions(products, optionGroups, options)),
+      sections: groupMenu(categories, attachOptions(products.map((product) => ({ ...product, is_available: !soldOut.has(product.id) })), optionGroups, options)),
     },
   };
 });

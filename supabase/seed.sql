@@ -77,6 +77,10 @@ insert into public.options (id, organization_id, group_id, name, price_delta_cen
   ('25000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', '24000000-0000-4000-8000-000000000001', 'A punto', 0, 0, true),
   ('25000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000001', '24000000-0000-4000-8000-000000000001', 'Bien cocida', 0, 1, true);
 
+-- Estado explícito de ejemplo: disponible. Los platos sin fila también están disponibles.
+insert into public.product_availability (organization_id, branch_id, product_id, is_available) values
+  ('20000000-0000-4000-8000-000000000001', '21000000-0000-4000-8000-000000000001', '23000000-0000-4000-8000-000000000002', true);
+
 -- Organización 3: suspendida (is_active = false). Nada de lo que cuelga de ella debe publicarse.
 insert into public.organizations (id, slug, name, is_active) values
   ('30000000-0000-4000-8000-000000000001', 'bar-inactivo', 'Bar Inactivo', false);

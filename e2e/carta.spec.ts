@@ -478,13 +478,15 @@ test.describe("cuenta que no puede escribir", () => {
         await page.goto(`/panel/${t.slug}/carta/platos/${ids.Milanesa}`);
         await expect(page.getByTestId("carta-bloqueada")).toContainText(texto);
         await expect(page.getByLabel("Precio en pesos")).toBeDisabled();
-        await page.locator("form fieldset").first().evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
+        await page.locator("form").filter({ has: page.getByRole("button", { name: "Guardar cambios", exact: true }) })
+          .locator("fieldset").first().evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
         await page.getByLabel("Precio en pesos").fill("99999");
         await page.getByRole("button", { name: "Guardar cambios" }).click();
         await expect(alerta(page)).toContainText(texto);
 
         // Y subiendo una foto.
-        await page.locator("form fieldset").nth(1).evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
+        await page.locator("form").filter({ has: page.getByRole("button", { name: "Guardar foto", exact: true }) })
+          .locator("fieldset").first().evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
         await page.getByLabel("Elegir una foto").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG_1X1 });
         await page.getByRole("button", { name: "Guardar foto" }).click();
         await expect(alerta(page).last()).toContainText(texto);

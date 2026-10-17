@@ -9,6 +9,7 @@ Nivel: **M de producto, C técnico** por ampliar los permisos de columna del cat
 - Alta y edición de etiquetas en Datos del plato, para Dueño y Staff con la cuenta editable. Vacío significa sin declaración, nunca una certificación.
 - Detalle del plato en una ficha superpuesta accesible, conservando búsqueda, filtros, mesa y barra de llamado al volver. Foto, descripción, precio base, etiquetas y opciones informativas.
 - Migración aditiva; mismos roles, RLS y restricciones por mora de products. Se cambia la versión de caché y se usa la invalidación existente.
+- El catálogo global inicialmente bosquejado se simplifica a tres declaraciones cerradas en el plato, sin administración global nueva: [ADR 0016](../../docs/decisiones/0016-etiquetas-y-disponibilidad-de-carta.md).
 
 ## Aceptación
 - [x] Dueño y Staff guardan etiquetas válidas; se conservan ante errores y aparecen en la carta directa y por QR.
@@ -28,6 +29,6 @@ Diff probado: unidad de búsqueda/etiquetas que incorpora este documento, sobre 
 - `pnpm exec playwright test e2e/buscador.spec.ts e2e/menu.spec.ts e2e/opciones.spec.ts --workers=2`: **25/25**. Después de corregir el singular del contador y ampliar la prueba de conservación ante error, build nuevo + `e2e/buscador.spec.ts --workers=1`: **1/1**.
 - `pnpm typecheck`, `pnpm lint`, `pnpm build` y `git diff --check`: correctos. Inspección visual de capturas a 390 y 1280 px: sin defectos detectados.
 - Base local existente: `pnpm db:start`, migración aditiva con `supabase migration up --local` y `pnpm db:types`. **No se ejecutó db:reset** para preservar el estado de la prueba manual del usuario; las pruebas nuevas usan organizaciones propias. Cambios de seed revisados, sin resembrar.
-- Sin RLS/E2E completos todavía: la entrega conjunta con disponibilidad registra su comprobación final. Revisión independiente y aprobación humana C pendientes; no se invocaron otros agentes. Sin cambios remotos ni despliegue.
+- La entrega conjunta con disponibilidad registra la comprobación completa y las correcciones de integración en [su ficha](disponibilidad-por-sucursal.md). Revisión independiente y aprobación humana C pendientes; no se invocaron otros agentes. Sin cambios remotos ni despliegue.
 
 Límite de reversión: esta unidad completa (columna, formularios, búsqueda y detalle); la disponibilidad es otra unidad. La retirada SQL con datos requiere revisión y respaldo. Tamaño autoral mayor a 400 líneas: se mantiene la unidad funcional local; al abrir PR, separar contratos de persistencia y experiencia de carta en una cadena revisable, sin recortar pruebas.

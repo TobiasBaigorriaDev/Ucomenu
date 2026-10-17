@@ -28,6 +28,7 @@ export function DishDetail({ product, onClose }: { product: MenuProduct; onClose
       <p className="mt-2 text-xl font-semibold text-[var(--carta-terra)]">{formatArs(product.price_cents)}</p>
       {product.description ? <p className="mt-4 leading-relaxed [overflow-wrap:anywhere]">{product.description}</p> : null}
       <DietaryLabels tags={product.dietary_tags} />
+      {product.is_available === false ? <p className="mt-3 font-semibold text-[var(--carta-terra)]">Agotado en esta sucursal</p> : null}
       {product.option_groups?.length ? <div className="mt-6"><DishOptions productId={`detalle-${product.id}`} groups={product.option_groups} /></div> : null}
       <p className="mt-6 text-sm leading-relaxed text-muted">La información de alérgenos la declara el local. Ante cualquier duda, consultá al personal.</p>
     </dialog>

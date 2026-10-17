@@ -32,6 +32,8 @@ export type MenuProduct = {
   image_path?: string | null;
   /** Declaraciones del local; vacío no afirma nada sobre la dieta del plato. */
   dietary_tags?: string[];
+  /** Disponibilidad de ESTA sucursal; omitido equivale a disponible. */
+  is_available?: boolean;
   /** Variantes y adicionales activos del plato (con al menos una opción activa), en orden. */
   option_groups?: MenuOptionGroup[];
 };

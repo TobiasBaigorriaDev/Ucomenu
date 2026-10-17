@@ -37,7 +37,7 @@ export function MenuSection({ section, onSelect }: { section: Section; onSelect?
               <div className="min-w-0 flex-1">
                 {/* Nombre y precio en una fila; si el nombre es largo y no entran los dos, el precio baja a su propia línea (a la derecha). */}
                 <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                  <h3 className="min-w-40 flex-1 font-display text-[1.25rem] leading-snug hyphens-auto [overflow-wrap:anywhere]">
+                  <h3 aria-label={product.name} className="min-w-40 flex-1 font-display text-[1.25rem] leading-snug hyphens-auto [overflow-wrap:anywhere]">
                     {onSelect ? <button type="button" onClick={() => onSelect(product)} className="min-h-11 text-left hover:underline decoration-[var(--carta-terra)] underline-offset-4" aria-label={`Ver detalle de ${product.name}`}>{product.name}</button> : product.name}
                   </h3>
                   <p className="ml-auto shrink-0 text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums">
@@ -50,6 +50,7 @@ export function MenuSection({ section, onSelect }: { section: Section; onSelect?
                   </p>
                 ) : null}
                 <DietaryLabels tags={product.dietary_tags} />
+                {product.is_available === false ? <p className="mt-2 text-sm font-semibold text-[var(--carta-terra)]">Agotado</p> : null}
                 {product.option_groups && product.option_groups.length > 0 ? (
                   <DishOptions productId={product.id} groups={product.option_groups} />
                 ) : null}

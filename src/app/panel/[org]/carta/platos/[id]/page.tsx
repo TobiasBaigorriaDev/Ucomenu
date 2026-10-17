@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { loadCarta } from "@/lib/carta/catalog";
 import { loadProductOptions } from "@/lib/carta/options";
+import { loadProductAvailability } from "@/lib/carta/availability";
 import { imageUrl } from "@/lib/carta/images";
 import { writeBlockNotice } from "@/lib/carta/messages";
 import { priceToInput } from "@/lib/carta/price";
@@ -12,6 +13,7 @@ import { createSessionClient } from "@/lib/supabase/server";
 import { PhotoForm } from "../../photo-form";
 import { ProductForm } from "../../product-form";
 import { OpcionesSection } from "./opciones-section";
+import { AvailabilityForms } from "../../availability-forms";
 
 export const metadata: Metadata = { title: "Editar plato" };
 
@@ -30,7 +32,10 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   const product = carta.flatMap((category) => category.products).find((p) => p.id === productId);
   if (!product) notFound();
 
-  const groups = await loadProductOptions(db, membership.org.id, product.id);
+  const [groups, availability] = await Promise.all([
+    loadProductOptions(db, membership.org.id, product.id),
+    loadProductAvailability(db, membership.org.id, product.id),
+  ]);
 
   const canWrite = ent?.canWrite === true;
   const notice = writeBlockNotice(ent);
@@ -82,6 +87,8 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       </section>
 
       <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} />
+
+      <AvailabilityForms orgSlug={membership.org.slug} productId={product.id} branches={availability} canWrite={canWrite} />
 
       <p className="mt-12">
         <Link

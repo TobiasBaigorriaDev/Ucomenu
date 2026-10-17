@@ -251,6 +251,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"product_availability": {
+                  Row: {
+                    "branch_id": string,"is_available": boolean,"organization_id": string,"product_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"is_available"?: boolean,"organization_id": string,"product_id": string
+                  }
+                  Update: {
+                    "branch_id"?: string,"is_available"?: boolean,"organization_id"?: string,"product_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "product_availability_branch_id_organization_id_fkey"
+      columns: ["branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "product_availability_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "product_availability_product_id_organization_id_fkey"
+      columns: ["product_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
                 },"products": {
                   Row: {
                     "category_id": string,"created_at": string,"currency": string,"description": string | null,"dietary_tags": (string)[],"id": string,"image_path": string | null,"is_active": boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order": number
