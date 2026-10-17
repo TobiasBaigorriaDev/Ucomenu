@@ -11,10 +11,11 @@ import { DishOptions } from "./dish-options";
 /** El diálogo nativo contiene el foco, admite Escape y devuelve el foco al plato al cerrar. */
 export function DishDetail({ product, onClose }: { product: MenuProduct; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
+  // Sin `close()` en la limpieza: StrictMode (desarrollo) desmonta y remonta el efecto, y ese cierre disparaba `onClose`
+  // y desmontaba el detalle recién abierto. Al desmontarse, el elemento sale del DOM y del top layer por sí solo.
   useEffect(() => {
     const dialog = ref.current;
-    dialog?.showModal();
-    return () => dialog?.close();
+    if (dialog && !dialog.open) dialog.showModal();
   }, []);
   const photo = imageUrl(product.image_path);
   return (
