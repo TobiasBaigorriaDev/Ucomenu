@@ -4,20 +4,18 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-`main` contiene el rediseño de la carta pública. Integrado también (a `main` y subido a `origin`) está el rediseño del panel del Dueño y de SuperAdmin con el mismo lenguaje (riel lateral en escritorio y chips en celular, celdas con filete, Gloock + Schibsted; el Dueño con la paleta de su local, SuperAdmin con la de UcoNext). Revisado de forma independiente y por Codex (aprobado); evidencia y decisiones en la [ficha](cambios/ui-panel-dueno-y-superadmin.md). `DESIGN.md` y `.impeccable/design.json` describen ahora los dos mundos (carta y panel).
+Integrado a `main` local (rama `feat/desactivar-sucursales`, aprobado por el usuario el 2026-10-17; sin subir a `origin`): el Dueño desactiva y reactiva sucursales desde `/panel/{slug}/sucursales`. La inactiva no cuenta para el tope del plan, su carta, su alias y los QR de sus mesas dicen «no disponible», no admite llamados nuevos y sale de Mesas, Llamados, Sala y Resumen; reactivar respeta el tope. Migración `20261023100000_desactivar_sucursales.sql`. Implementación, invariantes, evidencia (RLS 628/628, E2E con dos fallos ajenos que pasan al repetir) y las dos rondas de Codex están en la [ficha](cambios/desactivar-sucursales.md).
 
-La demo se llena con `pnpm db:demo` (`--sin-fotos` y `--sin-logo` para el peor caso). Antes de correr RLS o E2E hay que volver al seed limpio: `pnpm db:reset` o `pnpm db:demo --quitar` (la base quedó en seed limpio al cerrar esta sesión). Detener `pnpm dev` antes de `pnpm build` o de los E2E y reiniciarlo después: compilar con el servidor vivo le deja el CSS desactualizado.
+Nivel C: Codex revisó dos rondas (un hallazgo real de carrera en `create_waiter_call`, corregido y con prueba que falla sin la corrección; otro sobre la robustez de esa prueba, también corregido). La aprobación humana de permisos y tope está dada.
+
+La base local quedó en seed limpio. `carta.spec.ts` «tope de platos activos» cae bajo carga paralela y pasa solo (ajeno a este cambio).
 
 ## Bloqueos y riesgos
 
-- El login, la sala en vivo y `/cuenta` (solo su contenido) conservan el estilo anterior: tras entrar, el cambio de lenguaje es visible. El login no se tocó por alcance.
-- No se corrió `rendimiento-carta` ni RLS en esta ronda (sin cambios de esquema ni de la carta pública).
-- Dos corridas completas de E2E seguidas se cayeron en una verificación anterior por el servidor de prueba; correr por tandas si vuelve a pasar.
-- Pendiente de la carta: la ficha de detalle no se rehízo como bento. Las migraciones de identidad, carta, disponibilidad y slugs existen solo en local; ensayo remoto requiere autorización. Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015.
+- La migración existe solo en local; aplicarla en staging/producción requiere autorización. Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015.
+- No se probó en un teléfono real. Login, sala en vivo y `/cuenta` conservan el estilo anterior; la ficha de detalle del plato no se rehízo como bento.
 
 ## Próximo paso
 
-1. Que el usuario mire el panel y SuperAdmin en el navegador (`pnpm dev`) y decidir si se sigue con el login y la sala.
-2. Opcional: rehacer el login y la sala en vivo con el mismo lenguaje, y la ficha de detalle del plato como bento.
-3. Si no, retomar «Desactivar sucursales» ([ficha](cambios/desactivar-sucursales.md)), con sus cinco decisiones ya aprobadas.
-4. Con autorización: aplicar migraciones a staging, desplegar `main` y probar con sesión SuperAdmin, sucursales y la carta en un teléfono real.
+1. Con autorización: subir `main` a `origin`; aplicar migraciones a staging, desplegar `main` y probar con sesión SuperAdmin, sucursales y la carta en un teléfono real.
+3. Opcional: rehacer login y sala con el lenguaje del panel; SuperAdmin podría reactivar/desactivar en el futuro (hoy solo el Dueño).

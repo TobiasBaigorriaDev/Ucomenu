@@ -5,7 +5,7 @@ import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { inputClass, labelClass } from "@/components/panel/styles";
 import { BRANCH_NAME_MAX, suggestSlug } from "@/lib/sucursales/rules";
 import { SLUG_MAX_LENGTH } from "@/lib/slug";
-import { createBranchAction, renameBranchAction } from "./actions";
+import { createBranchAction, renameBranchAction, setBranchActiveAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 const summaryButtonClass =
@@ -121,5 +121,61 @@ export function RenameBranchForm({
         )}
       </ActionForm>
     </details>
+  );
+}
+
+/**
+ * Desactivar / reactivar. El mismo formulario sigue montado al cambiar el estado (así el aviso de la acción no se pierde al
+ * refrescar la lista). Desactivar pide una confirmación que explica qué pasa; si es la última activa, avisa que el local
+ * queda sin carta pública. Reactivar es un solo botón: si no hay cupo en el plan, la base lo rechaza y la pantalla lo explica.
+ */
+export function ToggleBranchActiveForm({
+  orgSlug,
+  id,
+  name,
+  isActive,
+  isLastActive,
+  canWrite,
+}: {
+  orgSlug: string;
+  id: string;
+  name: string;
+  isActive: boolean;
+  isLastActive: boolean;
+  canWrite: boolean;
+}) {
+  return (
+    <ActionForm action={setBranchActiveAction} className="max-w-md">
+      {() => (
+        <fieldset disabled={!canWrite} className="grid gap-3">
+          <input type="hidden" name="org" value={orgSlug} />
+          <input type="hidden" name="id" value={id} />
+          <input type="hidden" name="active" value={isActive ? "false" : "true"} />
+          {isActive ? (
+            <details>
+              <summary className={`${summaryButtonClass} ${summaryExtras}`} aria-label={`Desactivar ${name}`}>
+                Desactivar
+              </summary>
+              <div className="mt-3 grid gap-3">
+                <p className="max-w-prose text-base" data-testid="aviso-desactivar">
+                  {isLastActive
+                    ? "Es la única sucursal activa: si la desactivás, tu local queda sin carta pública hasta que reactives una. "
+                    : ""}
+                  Su carta y los QR de sus mesas dirán «no disponible» y no se podrá llamar al mozo desde ellas. Las mesas y sus QR
+                  se conservan, y la sucursal deja de contar para el tope de tu plan. Podés reactivarla cuando quieras.
+                </p>
+                <div>
+                  <SubmitButton pendingLabel="Desactivando…">Sí, desactivar {name}</SubmitButton>
+                </div>
+              </div>
+            </details>
+          ) : (
+            <div>
+              <SubmitButton pendingLabel="Reactivando…">Reactivar</SubmitButton>
+            </div>
+          )}
+        </fieldset>
+      )}
+    </ActionForm>
   );
 }

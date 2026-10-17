@@ -210,7 +210,7 @@ test.describe("quién entra", () => {
     // 2) En mi local, el id de una sucursal del otro.
     await page.goto(`/panel/${a.slug}/sucursales`);
     await sucursal(page, "Centro").locator("summary", { hasText: "Renombrar" }).click();
-    await sucursal(page, "Centro").locator('input[name="id"]').evaluate((el: HTMLInputElement, id) => (el.value = id), branchB);
+    await sucursal(page, "Centro").locator('input[name="id"]').first().evaluate((el: HTMLInputElement, id) => (el.value = id), branchB);
     await sucursal(page, "Centro").getByLabel("Nombre nuevo").fill("Robada");
     await sucursal(page, "Centro").getByRole("button", { name: "Guardar nombre" }).click();
     await expect(sucursal(page, "Centro").getByRole("alert")).toContainText("No encontramos esa sucursal");

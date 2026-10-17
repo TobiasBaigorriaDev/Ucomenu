@@ -41,10 +41,10 @@ export type BranchWithTables = { id: string; slug: string; name: string; tables:
 
 const TABLE_COLUMNS = "id, branch_id, label, qr_token, is_active";
 
-/** Las sucursales de la organización con sus mesas (orden natural por nombre). */
+/** Las sucursales ACTIVAS de la organización con sus mesas (orden natural por nombre). Las inactivas conservan sus mesas pero no se gestionan acá. */
 export async function loadMesas(db: Db, orgId: string): Promise<BranchWithTables[]> {
   const [branches, tables] = await Promise.all([
-    db.from("branches").select("id, slug, name").eq("organization_id", orgId).order("name"),
+    db.from("branches").select("id, slug, name").eq("organization_id", orgId).eq("is_active", true).order("name"),
     db.from("tables").select(TABLE_COLUMNS).eq("organization_id", orgId),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
@@ -115,7 +115,7 @@ export async function createTable(
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
 
-  const branch = await db.from("branches").select("id").eq("id", input.branchId).eq("organization_id", orgId).maybeSingle();
+  const branch = await db.from("branches").select("id").eq("id", input.branchId).eq("organization_id", orgId).eq("is_active", true).maybeSingle();
   if (branch.error) return fail("unexpected");
   if (!branch.data) return fail("branch_invalid");
 
@@ -184,7 +184,7 @@ export type ResolvedTable = {
   branchSlug: string;
   tableLabel: string;
   tableActive: boolean;
-  status: "available" | "suspended";
+  status: "available" | "suspended" | "inactive"; // inactive = la sucursal está desactivada (ficha desactivar-sucursales)
   /** La base informa que se puede llamar al mozo desde esta mesa (mesa activa, no silenciada, plan y cuenta al día). */
   callsEnabled: boolean;
 };
@@ -202,7 +202,7 @@ export function parseResolvedTable(raw: unknown): ResolvedTable | null {
     typeof table_label !== "string" ||
     typeof table_active !== "boolean" ||
     typeof calls_enabled !== "boolean" ||
-    (status !== "available" && status !== "suspended")
+    (status !== "available" && status !== "suspended" && status !== "inactive")
   ) {
     return null;
   }

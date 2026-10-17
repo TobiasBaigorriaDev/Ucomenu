@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
-import { createBranch, renameBranch, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
+import { createBranch, renameBranch, setBranchActive, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -53,4 +53,14 @@ export async function renameBranchAction(_previous: FormState, formData: FormDat
   const name = text(formData, "name");
   if (!id) return { error: sucursalesErrorMessage("not_found", null), values: { name } };
   return outcome(slug, orgId, await renameBranch(db, orgId, id, name), "Nombre guardado.", { name });
+}
+
+export async function setBranchActiveAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  // Estado deseado explícito: dos pestañas o un reintento nunca alternan a ciegas.
+  const desired = formData.get("active");
+  if (!id || (desired !== "true" && desired !== "false")) return { error: sucursalesErrorMessage("not_found", null) };
+  const active = desired === "true";
+  return outcome(slug, orgId, await setBranchActive(db, orgId, id, active), active ? "Sucursal reactivada." : "Sucursal desactivada.");
 }

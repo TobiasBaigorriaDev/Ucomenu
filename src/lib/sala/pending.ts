@@ -19,7 +19,8 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
   if (ent.error) throw new Error(`No se pudo leer el estado de la cuenta: ${ent.error.message}`);
   const enabled = parseEntitlements(ent.data)?.features.includes("waiter_call") === true;
 
-  const branches = await db.from("branches").select("id, name").eq("organization_id", orgId);
+  // Solo las sucursales activas: una desactivada sale de la Sala (sus llamados pendientes no se borran; vencen solos a los 30 minutos).
+  const branches = await db.from("branches").select("id, name").eq("organization_id", orgId).eq("is_active", true);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   const multiBranch = branches.data.length > 1;
 
@@ -46,6 +47,7 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
 
   const calls: SalaCall[] = pending.data.flatMap((call) => {
     if (call.kind !== "waiter" && call.kind !== "bill") return [];
+    if (!branchName.has(call.branch_id)) return [];
     return [
       {
         id: call.id,

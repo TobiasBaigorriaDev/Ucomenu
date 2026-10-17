@@ -8,7 +8,7 @@ export type BranchAvailability = { id: string; name: string; is_available: boole
 
 export async function loadProductAvailability(db: Db, orgId: string, productId: string): Promise<BranchAvailability[]> {
   const [branches, states] = await Promise.all([
-    readAllPages((from, to) => db.from("branches").select("id, name").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("branches").select("id, name").eq("organization_id", orgId).eq("is_active", true).order("id").range(from, to)),
     readAllPages((from, to) => db.from("product_availability").select("branch_id, is_available").eq("organization_id", orgId).eq("product_id", productId).order("branch_id").range(from, to)),
   ]);
   if (branches.error || states.error) throw new Error("No se pudo leer la disponibilidad por sucursal.");

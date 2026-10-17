@@ -16,13 +16,15 @@ export type PublicMenu = {
 /**
  * Resultado de pedir una carta pública:
  *  - `menu`: la carta publicada;
- *  - `unavailable`: la organización existe pero su cuenta está suspendida por mora (se muestra
- *    «Carta temporalmente no disponible»; los datos siguen intactos);
+ *  - `unavailable`: la organización existe pero su cuenta está suspendida por mora (`reason: "suspended"`) o la sucursal
+ *    está desactivada (`reason: "branch_inactive"`): se muestra «no disponible» y los datos siguen intactos;
  *  - `null`: no existe o no es publicable (RLS la oculta) -> 404.
  */
+export type UnavailableReason = "suspended" | "branch_inactive";
+
 export type PublicMenuResult =
   | { kind: "menu"; menu: PublicMenu }
-  | { kind: "unavailable"; organizationName: string }
+  | { kind: "unavailable"; organizationName: string; reason: UnavailableReason }
   | null;
 
 /** Etiqueta de caché de las categorías y platos de una organización. Las acciones del panel la invalidan al guardar. */
@@ -176,8 +178,8 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 });
 
 /**
- * Una organización suspendida oculta sus sucursales (RLS), así que desde la consulta principal
- * se ve igual que una inexistente. Solo en ese camino se pregunta el estado público.
+ * Una organización suspendida y una sucursal desactivada quedan ocultas (RLS), así que desde la consulta principal
+ * se ven igual que una inexistente. Solo en ese camino se pregunta el estado público.
  */
 async function unavailableOrNull(
   supabase: ReturnType<typeof createPublicClient>,
@@ -187,9 +189,11 @@ async function unavailableOrNull(
   // La función exige que la sucursal exista: una inventada sigue siendo 404 aunque la cuenta esté suspendida.
   const status = await supabase.rpc("public_menu_status", { p_org_slug: orgSlug, p_branch_slug: branchSlug });
   if (status.error) throw new Error(`No se pudo leer el estado de la carta: ${status.error.message}`);
-  if (status.data !== "suspended") return null;
+  const reason: UnavailableReason | null =
+    status.data === "suspended" ? "suspended" : status.data === "inactive" ? "branch_inactive" : null;
+  if (!reason) return null;
 
   const org = await supabase.from("organizations").select("name").eq("slug", orgSlug).maybeSingle();
   if (org.error) throw new Error(`No se pudo leer la organización: ${org.error.message}`);
-  return org.data ? { kind: "unavailable", organizationName: org.data.name } : null;
+  return org.data ? { kind: "unavailable", organizationName: org.data.name, reason } : null;
 }

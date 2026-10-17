@@ -189,23 +189,28 @@ export async function loadGuideCounts(db: Db, orgId: string): Promise<GuideCount
       .eq("is_active", true)
       .eq("categories.is_active", true);
 
-  const [categories, products, withoutPhoto, tables] = await Promise.all([
+  const [categories, products, withoutPhoto, tables, branches] = await Promise.all([
     db.from("categories").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
     visible(),
     visible().is("image_path", null),
     db.from("tables").select("branch_id, is_active").eq("organization_id", orgId),
+    db.from("branches").select("id").eq("organization_id", orgId).eq("is_active", true),
   ]);
   if (categories.error) throw new Error(`No se pudo leer el avance del local: ${categories.error.message}`);
   if (products.error) throw new Error(`No se pudo leer el avance del local: ${products.error.message}`);
   if (withoutPhoto.error) throw new Error(`No se pudo leer el avance del local: ${withoutPhoto.error.message}`);
   if (tables.error) throw new Error(`No se pudo leer el avance del local: ${tables.error.message}`);
+  if (branches.error) throw new Error(`No se pudo leer el avance del local: ${branches.error.message}`);
 
-  const active = tables.data.filter((table) => table.is_active);
+  // Las mesas de una sucursal desactivada no cuentan para la guía: su carta no está publicada.
+  const activeBranchIds = new Set(branches.data.map((branch) => branch.id));
+  const ofActiveBranches = tables.data.filter((table) => activeBranchIds.has(table.branch_id));
+  const active = ofActiveBranches.filter((table) => table.is_active);
   return {
     categories: categories.count ?? 0,
     visibleProducts: products.count ?? 0,
     visibleWithoutPhoto: withoutPhoto.count ?? 0,
-    tables: tables.data.length,
+    tables: ofActiveBranches.length,
     activeTables: active.length,
     branchIdsWithActiveTables: [...new Set(active.map((table) => table.branch_id))],
   };

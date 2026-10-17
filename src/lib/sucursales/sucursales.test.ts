@@ -71,6 +71,17 @@ describe("mensajes", () => {
     expect(branchLimitMessage(ent())).toContain("contactá a UcoMenu");
   });
 
+  it("reactivar sin cupo explica la salida (desactivar otra) con el número del plan y dice que no se reactivó", () => {
+    const uno = sucursalesErrorMessage("limit_reactivate", ent({ limits: { branches: 1 } }));
+    expect(uno).toContain("incluye 1 sucursal activa y");
+    expect(uno).toContain("desactivá otra");
+    expect(uno).toContain("No se reactivó");
+    expect(sucursalesErrorMessage("limit_reactivate", ent({ limits: { branches: 2 } }))).toContain("incluye 2 sucursales activas y");
+    expect(sucursalesErrorMessage("limit_reactivate", null)).toContain("tope de sucursales activas");
+    // Al crear, el tope también sugiere desactivar una.
+    expect(branchLimitMessage(ent())).toContain("desactivá una");
+  });
+
   it("todos los errores tienen mensaje propio", () => {
     for (const error of [
       "name_blank",
@@ -79,6 +90,7 @@ describe("mensajes", () => {
       "slug_invalid",
       "slug_duplicate",
       "limit",
+      "limit_reactivate",
       "blocked_read_only",
       "blocked_suspended",
       "forbidden",
