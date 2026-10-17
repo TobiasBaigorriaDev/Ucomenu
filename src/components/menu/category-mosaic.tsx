@@ -3,6 +3,7 @@ import { imageUrl } from "@/lib/carta/images";
 import type { MenuSection } from "@/lib/menu";
 import { categoryAnchor, MOSAIC_ID } from "./anchors";
 import { mosaicLayout, type TileShape } from "./mosaic";
+import { toneFor } from "./tones";
 
 const SPAN: Record<TileShape, string> = { small: "", wide: "col-span-2", tall: "row-span-2" };
 
@@ -16,14 +17,6 @@ const TILE_SIZES: Record<TileShape, string> = {
   tall: "(min-width: 768px) 31rem, 70vw",
   wide: "(min-width: 768px) 48rem, 100vw",
 };
-
-/** Colores de los mosaicos sin foto: se alternan para que dos vecinos no repitan. */
-const SOLID = [
-  "bg-[var(--carta-blush)] text-ink",
-  "bg-[var(--carta-green)] text-white",
-  "bg-[var(--carta-sand)] text-ink ring-1 ring-inset ring-ink/15",
-  "bg-[var(--carta-terra)] text-white",
-];
 
 /** Tamaño del nombre según la forma de la celda; los nombres largos bajan un escalón para que entren sin partirse a mitad de palabra. */
 function nameSize(name: string, shape: TileShape): string {
@@ -56,7 +49,7 @@ export function CategoryMosaic({ sections }: { sections: MenuSection[] }) {
               <a
                 href={`#${categoryAnchor(category.id)}`}
                 className={`carta-tile relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-3xl p-4 sm:p-5 ${
-                  photo ? "bg-[var(--carta-green-deep)] text-white" : SOLID[i % SOLID.length]
+                  photo ? "bg-[var(--carta-green-deep)] text-white" : toneFor(i)
                 }`}
               >
                 {photo ? (

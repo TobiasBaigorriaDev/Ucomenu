@@ -1,6 +1,7 @@
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
 import { categoryAnchor } from "./anchors";
 import { DishCard, type CardSpan } from "./dish-card";
+import { toneFor } from "./tones";
 
 /**
  * Forma de cada card en la grilla de 2 columnas (3 en escritorio): si el primer plato de la categoría tiene foto y hay al
@@ -23,18 +24,22 @@ export function MenuSection({ section, index, onSelect }: { section: Section; in
   const spans = cardSpans(products);
 
   return (
-    <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="scroll-mt-20 pt-14 sm:pt-20">
-      {/* Cabecera editorial: filete, número del índice (el mismo del bento), nombre en display y cantidad de platos. */}
-      <div className="flex items-baseline gap-3 border-t-[1.5px] border-ink pt-3">
-        <span aria-hidden="true" className="text-sm font-semibold text-[var(--carta-terra)] tabular-nums">
-          {String(index + 1).padStart(2, "0")}
-        </span>
-        <h2 id={headingId} className="min-w-0 font-display text-[2.5rem] leading-none text-[var(--carta-green)] [overflow-wrap:anywhere] sm:text-6xl">
-          {category.name}
-        </h2>
-        <p className="ml-auto shrink-0 text-sm text-muted">{products.length === 1 ? "1 plato" : `${products.length} platos`}</p>
+    <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="mt-14 scroll-mt-16 sm:mt-20">
+      {/* Banda de la sección: queda pegada bajo la barra de categorías mientras se recorren sus platos, con el color de su
+          celda en el bento. Así siempre se ve en qué categoría se está. La franja de fondo sólido evita que las cards se
+          asomen por las esquinas redondeadas (z-[5]: por encima de las cards, debajo de la barra, que es z-10). */}
+      <div className="sticky top-16 z-[5] -mx-4 bg-porcelain px-4 py-2 sm:-mx-6 sm:px-6">
+        <div className={`flex items-baseline gap-3 rounded-2xl px-4 py-2.5 ${toneFor(index)}`}>
+          <span aria-hidden="true" className="text-sm font-semibold tabular-nums">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <h2 id={headingId} className="min-w-0 font-display text-[2rem] leading-none [overflow-wrap:anywhere] sm:text-5xl">
+            {category.name}
+          </h2>
+          <p className="ml-auto shrink-0 text-sm font-medium">{products.length === 1 ? "1 plato" : `${products.length} platos`}</p>
+        </div>
       </div>
-      <ul className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+      <ul className="mt-2 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         {products.map((product, i) => (
           <DishCard key={product.id} product={product} span={spans[i]} onSelect={onSelect} />
         ))}
