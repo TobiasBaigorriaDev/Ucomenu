@@ -20,7 +20,9 @@ describe("paletas de la carta", () => {
     expect(contrast("#ffffff", p.accent)).toBeGreaterThanOrEqual(4.5);
     expect(contrast("#ffffff", p.deep)).toBeGreaterThanOrEqual(4.5);
     expect(contrast("#ffffff", p.terra)).toBeGreaterThanOrEqual(4.5);
-    expect(contrast(p.terra, p.background)).toBeGreaterThanOrEqual(3);
+    // El precio y las diferencias de opciones van en terracota y texto chico, sobre el fondo y sobre las cards sin foto (arena).
+    expect(contrast(p.terra, p.background)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(p.terra, p.sand)).toBeGreaterThanOrEqual(4.5);
   });
   it("solo admite las paletas conocidas y recupera la predeterminada ante datos desconocidos", () => {
     for (const value of ["__proto__", "toString", "#ffffff", "otra", null]) expect(isPalette(value)).toBe(false);

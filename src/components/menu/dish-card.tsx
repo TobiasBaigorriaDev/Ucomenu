@@ -80,7 +80,7 @@ export function DishCard({ product, span, onSelect }: { product: MenuProduct; sp
           type="button"
           onClick={() => onSelect(product)}
           aria-label={`Ver detalle de ${product.name}`}
-          className="text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
+          className="scroll-mt-40 scroll-mb-32 text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
         >
           {product.name}
         </button>
@@ -119,7 +119,7 @@ export function DishCard({ product, span, onSelect }: { product: MenuProduct; sp
           <DietaryLabels tags={product.dietary_tags} />
           {product.option_groups && product.option_groups.length > 0 ? (
             <div className="mt-auto pt-1">
-              <DishOptions productId={product.id} groups={product.option_groups} />
+              <DishOptions productId={product.id} groups={product.option_groups} maxRows={span === "normal" ? 6 : undefined} />
             </div>
           ) : null}
         </div>

@@ -10,10 +10,10 @@ export const LEGAL_PAGES = [
 export function LegalLinks({ className = "" }: { className?: string }) {
   return (
     <nav aria-label="Información legal" className={className}>
-      <ul className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
+      <ul className="flex flex-wrap gap-x-5 text-sm">
         {LEGAL_PAGES.map((page) => (
           <li key={page.href}>
-            <Link href={page.href} className="underline underline-offset-2">
+            <Link href={page.href} className="inline-flex min-h-11 items-center underline underline-offset-2">
               {page.label}
             </Link>
           </li>

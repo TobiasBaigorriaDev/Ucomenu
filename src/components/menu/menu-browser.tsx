@@ -24,7 +24,7 @@ export function MenuBrowser({ sections }: { sections: Section[] }) {
         <label htmlFor="menu-search" className="block text-base font-medium">Buscar platos</label>
         <input id="menu-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
           placeholder="Nombre o descripción" autoComplete="off" maxLength={200}
-          className="mt-2 min-h-12 w-full rounded-lg border border-ink/40 bg-transparent px-4 text-base placeholder:text-muted" />
+          className="mt-2 min-h-12 w-full rounded-lg border border-ink/60 bg-transparent px-4 text-base placeholder:text-muted" />
         <fieldset className="mt-4">
           <legend className="mb-2 text-sm text-muted">Etiquetas declaradas por el local</legend>
           <div className="flex flex-wrap gap-2">

@@ -44,6 +44,7 @@ export function PublicMenuView({
           La información de alérgenos de cada plato la declara el local. Ante cualquier duda, consultá al personal.
         </p>
         <LegalLinks className="mt-4 flex justify-center text-muted" />
+        <p className="mt-5 text-sm text-muted">Hecho con UcoMenu</p>
       </footer>
       {callBar}
     </div>

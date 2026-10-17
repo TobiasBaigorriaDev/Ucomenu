@@ -1,6 +1,6 @@
 # Cambio: rediseño de la interfaz de la carta pública
 
-Estado: **En curso (iterando con el usuario)**. Nivel **M**: varias piezas de presentación, sin consecuencias C (no toca autorización, datos expuestos, dinero ni borrados). Rama `feat/ui-carta`, desde `main`.
+Estado: **Hecho y revisado**; listo para integrar a `main` (aprobado por el usuario el 2026-10-17: «me gustó la UI»). Nivel **M**: solo presentación, sin cambios de datos, permisos ni reglas. Rama `feat/ui-carta`, desde `main`.
 
 ## Objetivo y método
 Modificar la UI de la carta pública (`/m/{org}/{sucursal}` y `/t/{token}`) según lo que el usuario vaya pidiendo y comentando. Se itera en vivo con `pnpm dev` y recarga en caliente; cada ronda es un cambio pequeño que el usuario ve, aprueba o corrige. Se usan los skills de frontend (`impeccable`, `frontend-design`).
@@ -31,9 +31,14 @@ Contexto durable en [`PRODUCT.md`](../../PRODUCT.md) y en el surface brief con e
 
 **Ronda 4 (2026-10-17), feedback del usuario:** al bajar se perdía el nombre de la categoría. La cabecera de cada sección pasa a ser una **banda pegajosa** (`sticky top-16`, debajo de la barra de categorías) con el color de su celda en el bento (`tones.ts` compartido entre el bento y la sección: rosa, verde, arena y terracota, ya con contraste AA). Una franja de fondo sólido detrás evita que las cards se asomen por las esquinas redondeadas; al entrar en la sección siguiente, su banda empuja a la anterior. Verificado: typecheck, lint, 448 unitarias, build y 115 E2E sobre seed limpio; capturas a 390 y 1280 px con scroll. **Nota de proceso:** correr `pnpm build` mientras `pnpm dev` está vivo en el mismo proyecto dejó al servidor de desarrollo con el CSS desactualizado (faltaban clases nuevas): detener `pnpm dev` antes de compilar o correr E2E, y reiniciarlo después.
 
-## Aceptación
-- [ ] Los cambios pedidos por el usuario están hechos y aprobados por él en el navegador.
-- [ ] Móvil (390 px) y escritorio (1280 px) sin desborde; contraste y foco intactos en las cuatro paletas.
-- [ ] `pnpm typecheck`, `pnpm lint`, `pnpm build` y los E2E de carta (`menu`, `buscador`, `disponibilidad`, `identidad`, `rendimiento-carta`) en verde; ajustar los E2E que dependan de textos o estructura que cambien por decisión de diseño.
+## Revisión final y cierre (2026-10-17)
+Inspección en lote a 390 y 1440 px (más el primer viewport de `/t/{token}`), detector de diseño sin hallazgos y **revisión independiente** con el revisor del skill: disposición inicial **fix** con ocho fixes materiales, todos aplicados en un lote y puntuados **resueltos** en la pasada de veredicto (**ship**, alcance: esos ocho). Los fixes: (1) faltaba la firma «Hecho con UcoMenu» al pie, confirmada por el usuario: agregada, sin enlace; (2) **contraste**: en Oliva el precio terracota sobre arena daba 3,93:1: la terracota de Oliva pasa de `#b4492a` a `#a43f22` (cambio visible y mínimo de una paleta; las otras tres ya cumplían) y `palettes.test.ts` exige ahora terra ≥ 4,5 sobre fondo y sobre arena; (3) scrim fuerte y sombra de texto en las celdas del bento con foto clara; (4) `scroll-margin` para que el foco no quede bajo la barra y la banda fijas; (5) el número de las celdas con foto va en una píldora con el tono de su banda; (6) borde del buscador a ≥ 3:1; (7) las cards de media columna muestran hasta 6 filas de opciones y «N opciones más en el detalle» (`limitOptionGroups`, con prueba); (8) franja lateral de las opciones a 1 px y enlaces legales de 44 px. El contrato de dirección se alineó con lo construido (sin kickers sobre los títulos; cards destacada, normal y de cola, y la sin foto como variante teñida con inicial). `DESIGN.md` y `.impeccable/design.json` los escribió el documentador del skill a partir de la build.
 
-Evidencia: pendiente.
+**Evidencia final** (sobre seed limpio, build propio): typecheck, lint, `pnpm test` **451/451**, `pnpm test:rls` **607/607** y E2E completos **246 pasaron, 1 omitida (el spec solo de desarrollo), 0 fallos**, corridos en tres tandas en primer plano (acceso a historial, identidad a opciones, rendimiento a ticket). Dos corridas completas seguidas se cayeron por el servidor de prueba, que desapareció a mitad de camino sin dejar error en su log (`ERR_CONNECTION_REFUSED` en todo lo posterior); no se diagnosticó la causa del entorno y el historial del proyecto ya registra caídas esporádicas de procesos de prueba. Sin cambios de esquema ni de permisos: el RLS se corrió igual por completitud.
+
+## Aceptación
+- [x] Los cambios pedidos por el usuario están hechos y aprobados por él en el navegador.
+- [x] Móvil (390 px) y escritorio (1280 y 1440 px) sin desborde; contraste y foco intactos en las cuatro paletas.
+- [x] `pnpm typecheck`, `pnpm lint`, `pnpm build` y los E2E de carta (`menu`, `buscador`, `disponibilidad`, `identidad`, `rendimiento-carta`) en verde; ajustar los E2E que dependan de textos o estructura que cambien por decisión de diseño.
+
+Evidencia: ver «Revisión final y cierre».

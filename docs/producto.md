@@ -33,6 +33,7 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 - Disponibilidad por sucursal (marcar un plato como agotado sin borrarlo).
   - Dueño y Staff la gestionan en la pantalla del plato. Agotado permanece visible con su aviso; el resto de las sucursales conserva su estado y no cambia la activación del plato. Aceptación y evidencia en [la ficha](../agile/cambios/disponibilidad-por-sucursal.md).
 - Identidad visual del local (logo y colores) sobre un diseño gastronómico de alto impacto.
+  - **Presentación:** la carta pública se rediseñó como Bento + Editorial + Cards (índice de categorías en bento, banda de sección pegajosa con el color de su celda, platos como cards con o sin foto, dock de llamado en la carta de mesa). Contexto en [`PRODUCT.md`](../PRODUCT.md) y sistema de diseño en [`DESIGN.md`](../DESIGN.md).
   - **Implementado en local:** el Dueño elige una paleta de contraste comprobado (Oliva, Azul, Vino o Cacao) y sube o quita el logo desde `/panel/{slug}/apariencia`. Se aplica a la carta de todas las sucursales y a los QR; la configuración predeterminada conserva el diseño actual. Incluida en todos los planes; con la cuenta en solo lectura o suspendida se consulta pero no se edita.
 - Es **solo consulta**: no hay pedidos ni pago online desde el menú.
 

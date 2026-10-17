@@ -50,3 +50,9 @@ next-env.d.ts
 
 # Fotos de la demo local (tools/sembrar-demo.mjs): se descargan de Unsplash, no se versionan.
 /.demo-cache/
+
+# Capturas y estado de trabajo de Impeccable (no son fuente de verdad)
+/.impeccable/review/
+/.impeccable/live/
+/.impeccable/build/
+/.impeccable/mocks/

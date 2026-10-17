@@ -4,20 +4,19 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-Rama `feat/ui-carta`, desde `main` (subido a `origin/main`). Tarea en curso: [rediseño de la UI de la carta pública](cambios/ui-carta-publica.md), nivel M, iterada en vivo con el usuario. Ya están el contexto de diseño [`PRODUCT.md`](../PRODUCT.md) y el contrato de dirección en `.impeccable/surfaces/src-app-m-org-branch-page-tsx.md`: Bento + Editorial + Card-based, fijada por el usuario, con las cuatro paletas por local sin cambios. Hechas las rondas 1 (tipografía, encabezado y bento de categorías), 2 (logo junto al nombre, avisos fuera del inicio, dock de llamado) y 3 (secciones editoriales y cards de plato en bento); falta el feedback del usuario sobre la 3. `DESIGN.md` no existe a propósito: lo escribe el documentador al cerrar la primera iteración construida.
+`main` contiene ahora el rediseño de la carta pública (Bento + Editorial + Cards, Gloock + Schibsted, bandas de categoría pegajosas, cards de plato, dock de llamado), aprobado por el usuario y revisado de forma independiente. Evidencia en la [ficha](cambios/ui-carta-publica.md). El contexto de diseño vive en [`PRODUCT.md`](../PRODUCT.md) y [`DESIGN.md`](../DESIGN.md) (con su sidecar `.impeccable/design.json`); el contrato de dirección, en `.impeccable/surfaces/`.
 
-La demo está llena con `pnpm db:demo` (fotos, 7 categorías por local, logo; ver README). Antes de correr RLS o E2E hay que volver al seed limpio con `pnpm db:reset` o `pnpm db:demo --quitar`.
-
-El servidor de desarrollo corre en `http://localhost:3000/m/cafe-ejemplo/centro` (`pnpm dev`, recarga en caliente); `parrilla-demo/sur` sirve para la paleta Cacao.
+La demo se llena con `pnpm db:demo` (fotos, 7 categorías por local, logo, plan Pro; `--sin-fotos` y `--sin-logo` para el peor caso). Antes de correr RLS o E2E hay que volver al seed limpio: `pnpm db:reset` o `pnpm db:demo --quitar`. Detener `pnpm dev` antes de `pnpm build` o de los E2E y reiniciarlo después: compilar con el servidor vivo le deja el CSS desactualizado.
 
 ## Bloqueos y riesgos
 
-- Falta que el usuario apruebe el **par tipográfico nuevo** antes de aplicarlo. Tampoco está activado el modo en vivo de `impeccable` (inyecta un script temporal): requiere su aprobación.
-- Los E2E de carta (`menu`, `buscador`, `disponibilidad`, `identidad`, `rendimiento-carta`) pueden depender de textos o estructura que cambien: ajustarlos por decisión de diseño, no por accidente. Contraste AA de las cuatro paletas: `src/lib/identidad/palettes.test.ts`.
-- Producción sigue bloqueada ([ficha](cambios/salida-a-produccion.md), ADR 0015); migraciones solo en local. «Desactivar sucursales» quedó en el backlog con sus decisiones aprobadas.
+- En la última verificación, dos corridas completas de E2E seguidas se cayeron porque el servidor de prueba desapareció sin error; en tres tandas en primer plano la suite pasó entera. Causa del entorno sin diagnosticar: si vuelve a pasar, correr por tandas.
+- La terracota de Oliva pasó a `#a43f22` por contraste; el resto de las paletas no cambió.
+- Pendiente de la revisión de la carta: la ficha de detalle no se rehízo como bento y sigue con radios y estructura anteriores; el tope de 6 opciones en cards chicas solo tiene prueba unitaria (el seed no tiene un plato con más).
+- Las migraciones de identidad, carta, disponibilidad y slugs existen solo en local; ensayo remoto requiere autorización. Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015.
 
 ## Próximo paso
 
-1. Proponer 2–3 pares tipográficos fuera de la lista de fuentes por defecto del skill, con su motivo; el usuario elige.
-2. Construir la primera ronda: encabezado editorial y bento de categorías; luego cards de plato y listado. Registrar cada ronda en la ficha.
-3. Al cerrar la primera iteración: revisión final del skill, `DESIGN.md` y `.impeccable/design.json`, luego typecheck, lint, build y E2E de carta.
+1. Elegir del backlog el ítem desbloqueado de mayor valor. Está listo para retomar «Desactivar sucursales» ([ficha](cambios/desactivar-sucursales.md)), con sus cinco decisiones ya aprobadas por el usuario.
+2. Cuando haya autorización: aplicar migraciones a staging, desplegar `main` y probar con sesión SuperAdmin, sucursales, disponibilidad y la carta nueva en un teléfono real.
+3. Opcional: rehacer la ficha de detalle del plato como bento.

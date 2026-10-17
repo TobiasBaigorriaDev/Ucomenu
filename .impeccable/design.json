@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-17T12:00:00.000Z",
+  "title": "Design System: UcoMenu, carta pública",
+  "extensions": {
+    "colorMeta": {
+      "porcelain": { "role": "neutral", "displayName": "Porcelana", "canonical": "#f4efe4", "tonalRamp": ["#494844", "#7a7872", "#aba7a0", "#dcd7cd", "#f5f1e7", "#f8f5ee", "#fbf9f4", "#fdfdfb"] },
+      "ink": { "role": "neutral", "displayName": "Tinta", "canonical": "#2a2622", "tonalRamp": ["#0d0b0a", "#151311", "#1d1b18", "#26221f", "#44403d", "#787573", "#abaaa8", "#dfdede"] },
+      "muted": { "role": "neutral", "displayName": "Gris cálido", "canonical": "#655d52", "tonalRamp": ["#1e1c19", "#332f29", "#474139", "#5b544a", "#787167", "#9d9891", "#c3bfbb", "#e8e7e5"] },
+      "carta-green": { "role": "primary", "displayName": "Verde del local", "canonical": "#3d5f48", "tonalRamp": ["#121d16", "#1f3024", "#2b4332", "#375641", "#55725e", "#84998b", "#b3c0b7", "#e2e7e4"] },
+      "carta-green-deep": { "role": "primary", "displayName": "Verde profundo", "canonical": "#2f4a39", "tonalRamp": ["#0e1611", "#18251d", "#213428", "#2a4333", "#486051", "#7b8c81", "#adb8b1", "#e0e4e1"] },
+      "carta-terra": { "role": "secondary", "displayName": "Terracota", "canonical": "#a43f22", "tonalRamp": ["#31130a", "#522011", "#732c18", "#94391f", "#af563d", "#c58573", "#dbb4a8", "#f1e2de"] },
+      "carta-blush": { "role": "tertiary", "displayName": "Rosa pálido", "canonical": "#f3d2c6", "tonalRamp": ["#493f3b", "#7a6963", "#aa938b", "#dbbdb2", "#f4d7cd", "#f7e2db", "#faede9", "#fdf8f6"] },
+      "carta-sand": { "role": "tertiary", "displayName": "Arena", "canonical": "#e8dcc2", "tonalRamp": ["#46423a", "#746e61", "#a29a88", "#d1c6af", "#ebe0c9", "#f0e9d8", "#f6f1e7", "#fcfaf6"] }
+    },
+    "typographyMeta": {
+      "display-title": { "displayName": "Título del local", "purpose": "Nombre del local en la cabecera; Gloock 400." },
+      "section": { "displayName": "Sección", "purpose": "Nombre de categoría en la banda pegajosa." },
+      "dish-name": { "displayName": "Nombre de plato", "purpose": "Títulos de cards y ficha." },
+      "body": { "displayName": "Texto", "purpose": "Descripciones y avisos; Schibsted Grotesk." },
+      "price": { "displayName": "Precio", "purpose": "Importes en terracota, tabulares." },
+      "label": { "displayName": "Etiqueta", "purpose": "Chips de la barra de categorías." }
+    },
+    "shadows": [
+      { "name": "dock", "value": "0 10px 28px -10px rgb(0 0 0 / 0.4)", "purpose": "Única sombra del sistema: el dock flotante de llamado." },
+      { "name": "hairline", "value": "inset 0 0 0 1px rgb(42 38 34 / 0.15)", "purpose": "Filete de celdas y cards en lugar de sombra." }
+    ],
+    "motion": [
+      { "name": "ease-carta", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Chips 180 ms, zoom de foto 500 ms; solo con prefers-reduced-motion: no-preference." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Celda de categoría",
+      "kind": "card",
+      "refersTo": "category-tile",
+      "description": "Celda del bento con índice, nombre en display y cantidad.",
+      "html": "<a class=\"ds-tile\" href=\"#\"><span class=\"ds-tile-n\">01</span><span><span class=\"ds-tile-name\">Entradas</span><span class=\"ds-tile-count\">6 platos</span></span></a>",
+      "css": ".ds-tile{--ink:#2a2622;--carta-terra:#a43f22;--carta-blush:#f3d2c6;color:var(--ink);font-family:Schibsted Grotesk,system-ui,sans-serif;display:flex;flex-direction:column;justify-content:space-between;gap:24px;min-height:136px;width:220px;box-sizing:border-box;padding:16px;border-radius:24px;background:var(--carta-blush);text-decoration:none}.ds-tile-n{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}.ds-tile-name{display:block;font-family:Gloock,Georgia,serif;font-weight:400;font-size:30px;line-height:1.05}.ds-tile-count{display:block;margin-top:6px;font-size:14px;font-weight:500}.ds-tile:focus-visible{outline:2px solid var(--carta-terra);outline-offset:3px}"
+    },
+    {
+      "name": "Banda de sección",
+      "kind": "custom",
+      "refersTo": "section-band",
+      "description": "Banda pegajosa con el tono de su celda.",
+      "html": "<div class=\"ds-band\"><span class=\"ds-band-n\">02</span><h2 class=\"ds-band-h\">Principales</h2><p class=\"ds-band-c\">9 platos</p></div>",
+      "css": ".ds-band{--carta-green:#3d5f48;font-family:Schibsted Grotesk,system-ui,sans-serif;display:flex;align-items:baseline;gap:12px;padding:10px 16px;border-radius:16px;background:var(--carta-green);color:#fff}.ds-band-n{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}.ds-band-h{margin:0;font-family:Gloock,Georgia,serif;font-weight:400;font-size:32px;line-height:1}.ds-band-c{margin:0 0 0 auto;font-size:14px;font-weight:500}"
+    },
+    {
+      "name": "Card de plato sin foto",
+      "kind": "card",
+      "refersTo": "dish-card-sin-foto",
+      "description": "Card tipográfica sobre arena con inicial editorial.",
+      "html": "<article class=\"ds-dish\"><span class=\"ds-dish-i\" aria-hidden=\"true\">M</span><h3 class=\"ds-dish-n\">Milanesa napolitana</h3><p class=\"ds-dish-p\">$ 12.500</p><p class=\"ds-dish-d\">Con jamón, salsa y queso gratinado.</p></article>",
+      "css": ".ds-dish{--ink:#2a2622;--muted:#655d52;--carta-terra:#a43f22;--carta-sand:#e8dcc2;color:var(--ink);font-family:Schibsted Grotesk,system-ui,sans-serif;position:relative;overflow:hidden;width:240px;box-sizing:border-box;padding:16px;border-radius:24px;background:var(--carta-sand);box-shadow:inset 0 0 0 1px rgb(42 38 34/.15)}.ds-dish-i{position:absolute;right:-4px;bottom:-16px;font-family:Gloock,Georgia,serif;font-size:112px;line-height:1;color:rgb(61 95 72/.1)}.ds-dish-n{position:relative;margin:0;font-family:Gloock,Georgia,serif;font-weight:400;font-size:21px;line-height:1.05}.ds-dish-p{position:relative;margin:8px 0 0;font-size:16px;font-weight:600;color:var(--carta-terra);font-variant-numeric:tabular-nums}.ds-dish-d{position:relative;margin:8px 0 0;font-size:14px;line-height:1.6;color:var(--muted)}"
+    },
+    {
+      "name": "Chip de categoría",
+      "kind": "chip",
+      "refersTo": "chip-category",
+      "description": "Chip de la barra fija; el activo va en verde.",
+      "html": "<a class=\"ds-chip\" href=\"#\">Postres</a> <a class=\"ds-chip\" aria-current=\"true\" href=\"#\">Pastas</a>",
+      "css": ".ds-chip{--ink:#2a2622;--carta-green:#3d5f48;--carta-blush:#f3d2c6;--carta-sand:#e8dcc2;color:var(--ink);font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:9999px;background:var(--carta-blush);font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;text-decoration:none}.ds-chip:hover{background:var(--carta-sand)}.ds-chip[aria-current=true]{background:var(--carta-green);color:#fff}.ds-chip:focus-visible{outline:2px solid var(--carta-green);outline-offset:2px}"
+    },
+    {
+      "name": "Chip de dieta",
+      "kind": "chip",
+      "refersTo": "chip-dieta",
+      "description": "Filtro dietario con estado presionado.",
+      "html": "<button class=\"ds-diet\" type=\"button\">Vegano</button> <button class=\"ds-diet\" type=\"button\" aria-pressed=\"true\">Sin TACC</button>",
+      "css": ".ds-diet{--carta-green:#3d5f48;--carta-sand:#e8dcc2;font-family:Schibsted Grotesk,system-ui,sans-serif;min-height:44px;padding:0 16px;border-radius:9999px;border:1px solid var(--carta-green);background:transparent;color:var(--carta-green);font-size:14px;font-weight:500}.ds-diet:hover{background:var(--carta-sand)}.ds-diet[aria-pressed=true]{background:var(--carta-green);color:#fff}.ds-diet:focus-visible{outline:2px solid var(--carta-green);outline-offset:2px}"
+    },
+    {
+      "name": "Buscador",
+      "kind": "input",
+      "refersTo": "buscador",
+      "description": "Campo de búsqueda de platos.",
+      "html": "<label class=\"ds-l\" for=\"ds-s\">Buscar platos</label><input id=\"ds-s\" class=\"ds-in\" type=\"search\" placeholder=\"Nombre o descripción\">",
+      "css": ".ds-l{--ink:#2a2622;color:var(--ink);font-family:Schibsted Grotesk,system-ui,sans-serif;display:block;font-size:16px;font-weight:500}.ds-in{--carta-green:#3d5f48;font-family:Schibsted Grotesk,system-ui,sans-serif;color:#2a2622;display:block;margin-top:8px;width:100%;box-sizing:border-box;min-height:48px;padding:0 16px;border:1px solid rgb(42 38 34/.6);border-radius:8px;background:transparent;font-size:16px}.ds-in:focus-visible{outline:2px solid var(--carta-green);outline-offset:2px}"
+    },
+    {
+      "name": "Dock de llamado",
+      "kind": "nav",
+      "refersTo": "dock-llamar",
+      "description": "Dock flotante con dos celdas; única sombra del sistema.",
+      "html": "<div class=\"ds-dock\"><button class=\"ds-d1\" type=\"button\">Llamar al mozo</button><button class=\"ds-d2\" type=\"button\">Pedir la cuenta</button></div>",
+      "css": ".ds-dock{--ink:#2a2622;--carta-green:#3d5f48;--carta-blush:#f3d2c6;font-family:Schibsted Grotesk,system-ui,sans-serif;display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:420px;padding:8px;border-radius:28px;background:rgb(244 239 228/.95);box-shadow:0 10px 28px -10px rgb(0 0 0/.4),inset 0 0 0 1px rgb(42 38 34/.15)}.ds-d1,.ds-d2{min-height:56px;border:0;border-radius:24px;font:inherit;font-size:16px;font-weight:600}.ds-d1{background:var(--carta-green);color:#fff}.ds-d2{background:var(--carta-blush);color:var(--ink)}.ds-d1:focus-visible,.ds-d2:focus-visible{outline:2px solid var(--carta-green);outline-offset:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "La revista de bolsillo del local",
+    "overview": "La carta se lee como un número de revista armado en celdas: una cabecera editorial con el nombre del local en display grande, un índice de categorías en bento y, debajo, secciones con banda de color y cards de plato de escala variable. El local es el protagonista; la plataforma firma discretamente al pie. Papel cálido, tinta oscura, un verde profundo como voz principal y terracota solo para precios y detalles.",
+    "keyCharacteristics": [
+      "Colores solo desde los ocho roles de la paleta del local",
+      "Gloock en un único peso para títulos; Schibsted Grotesk para el resto",
+      "Celdas de radio 24 px con filete ink/15 en vez de sombra",
+      "Número de índice repetido en la celda del bento y en la banda de su sección",
+      "Funciona con y sin fotos y con y sin logo"
+    ],
+    "rules": [
+      { "name": "The Roles Only Rule", "body": "Todo color sale de un rol de la paleta del local; un componente nuevo elige un rol, no un hex.", "section": "colors" },
+      { "name": "The Tone Pairing Rule", "body": "Tinta sobre rosa y arena, blanco sobre verde y terracota.", "section": "colors" },
+      { "name": "The Same Tone Rule", "body": "La celda de una categoría y la banda de su sección usan el mismo tono.", "section": "colors" },
+      { "name": "The One Weight Rule", "body": "Gloock solo existe a peso 400: nunca negrita en títulos.", "section": "typography" },
+      { "name": "The Tabular Money Rule", "body": "Precios, índices y cantidades en tabular-nums.", "section": "typography" },
+      { "name": "The No Gap Rule", "body": "Toda grilla completa sus filas; la última celda sobrante se ensancha.", "section": "layout" },
+      { "name": "The Hairline Not Shadow Rule", "body": "Una celda se separa con color o filete ink/15, jamás con sombra; la excepción es el dock.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do elegir cada color de uno de los ocho roles de la paleta.",
+      "Do usar Gloock a peso 400 para títulos y Schibsted Grotesk para el resto.",
+      "Do separar superficies con color de celda o filete ink/15, radio 24 px.",
+      "Do mantener el número de índice igual en la celda y en la banda.",
+      "Do mantener 44 px de objetivo táctil mínimo y tabular-nums en importes.",
+      "Do probar con y sin foto, con y sin logo y con nombres largos."
+    ],
+    "donts": [
+      "Don't usar sombras fuera del dock de llamado.",
+      "Don't aplicar negrita a Gloock ni usar las fuentes del panel ni el azul cobalto dentro de la carta.",
+      "Don't escribir un hex suelto en un componente de la carta.",
+      "Don't volver a la lista plana, a celdas uniformes ni a un encabezado centrado.",
+      "Don't reordenar los platos ni dejar huecos en las grillas.",
+      "Don't extender este sistema al panel, la sala o el login."
+    ]
+  }
+}

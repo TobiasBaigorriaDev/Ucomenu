@@ -63,16 +63,19 @@ export function CategoryMosaic({ sections }: { sections: MenuSection[] }) {
                       fetchPriority={i === firstPhoto ? "high" : "auto"}
                       className="object-cover"
                     />
-                    <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/75" />
+                    <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-black/85" />
                   </>
                 ) : null}
                 <span aria-hidden="true" className="relative flex items-start justify-between">
-                  <span className="text-sm font-semibold tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                  {/* Con foto, el número lleva el tono de su banda de sección: así se reconoce la categoría al bajar. */}
+                  <span className={`text-sm font-semibold tabular-nums ${photo ? `rounded-full px-2.5 py-0.5 ${toneFor(i)}` : ""}`}>
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
                   <svg viewBox="0 0 24 24" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M7 7l10 10M17 8v9H8" />
                   </svg>
                 </span>
-                <span className="relative">
+                <span className={`relative ${photo ? "[text-shadow:0_1px_10px_rgb(0_0_0/0.6)]" : ""}`}>
                   <span className={`block font-display leading-[1.05] hyphens-auto [overflow-wrap:anywhere] ${nameSize(category.name, shapes[i])}`}>
                     {category.name}
                   </span>
