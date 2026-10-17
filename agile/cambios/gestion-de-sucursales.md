@@ -1,5 +1,5 @@
 # Cambio: gestión de sucursales en el panel del Dueño
-Estado: implementado y verificado en local (2026-10-16), commiteado en `worktree-agent-a694228a3ab6a9f22`, sin integrar. **Activar/desactivar NO se hizo** (ver «Decisiones pendientes»)
+Estado: **Integrado a `main`** (implementado y verificado en local, 2026-10-16). **Activar/desactivar NO se hizo**: es el ítem C [desactivar sucursales](desactivar-sucursales.md); ver «Decisiones pendientes».
 Nivel: **C en rigor** (abre `INSERT` de `branches` a la API con una política nueva: toca autorización y, por el tope, dinero). Se mantuvo el diseño mínimo y conservador. Pendiente la revisión independiente que pide AGENTS.md (no se ejecutó Codex por consigna de esta tarea) y la aprobación humana de la política nueva.
 
 ## Objetivo

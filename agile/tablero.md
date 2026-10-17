@@ -10,7 +10,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- (vacío)
+- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope. Reglas decididas en [gestión de sucursales](cambios/gestion-de-sucursales.md); ficha propia con las decisiones abiertas → [ficha](cambios/desactivar-sucursales.md)
 
 ## Para verificar
 - (vacío)
@@ -24,7 +24,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 0 — Cimientos
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
-- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope (reglas decididas en la ficha; reemplaza `public_menu_status`, `resolve_table_qr`, `create_waiter_call` y `enforce_branch_limit`) → agile/cambios/gestion-de-sucursales.md
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
@@ -65,10 +64,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
+> Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 - [M] Corrección del slug de sucursal por SuperAdmin con históricos reservados y redirección a la dirección vigente → [ficha](cambios/correccion-slug-sucursal.md)
 - [M · C técnico] Buscador y filtros dietarios con aviso de alérgenos junto a los filtros; integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/buscador-y-filtros-dietarios.md)
 - [M · C técnico] Disponibilidad por sucursal (agotado visible, lectura en vivo); integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/disponibilidad-por-sucursal.md)
-> Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 - [C] Identidad del local: logo y cuatro paletas; revisión recibida sin bloqueantes, límites registrados y ajustes menores atendidos (2026-10-16) → agile/cambios/identidad-del-local.md
 - [S] Categorías y platos de la carta pública paginados; cerrado sin revisión independiente por su nivel (2026-10-16) → agile/cambios/paginacion-carta-publica.md
 - [M] Variantes y adicionales: grupos de opciones por plato (variante 1/1, adicionales 0/N) en el panel y bajo cada plato de la carta pública; lectura anónima solo de lo activo; revisado por Codex en dos rondas (2026-10-17; falta aplicar la migración y confirmar las decisiones de la ficha) → agile/cambios/variantes-y-adicionales.md

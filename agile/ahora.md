@@ -4,17 +4,15 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-`main` contiene ahora todo el trabajo local: buscador y filtros dietarios con su aviso de alérgenos, disponibilidad por sucursal, corrección de slug por SuperAdmin y el arreglo del detalle del plato en desarrollo. Integración por avance rápido, decidida por el usuario; sin push ni despliegue. Aceptación y evidencia, en las fichas de [buscador](cambios/buscador-y-filtros-dietarios.md), [disponibilidad](cambios/disponibilidad-por-sucursal.md) y [slug](cambios/correccion-slug-sucursal.md). No se copian resultados aquí.
+`main` contiene todo el trabajo local hasta ahora: identidad del local, paginación de la carta, buscador y filtros dietarios con su aviso de alérgenos, disponibilidad por sucursal y corrección de slug por SuperAdmin. Sin push ni despliegue: `main` va por delante de `origin/main`. Evidencia en las fichas respectivas del tablero; no se copia aquí.
+
+## Siguiente tarea (seleccionada)
+
+**[C] Desactivar sucursales**, ficha [desactivar-sucursales](cambios/desactivar-sucursales.md). Las reglas ya están decididas; la ficha trae puntos de partida verificados (qué versión de cada función de base reemplazar, qué lecturas hoy no distinguen sucursales activas) y **cinco decisiones abiertas** para confirmar con el usuario antes de escribir código. Crear la rama `feat/desactivar-sucursales` desde `main`. Rigor C: ficha con invariantes, pruebas de RLS y E2E, revisión independiente y aprobación humana.
 
 ## Bloqueos y riesgos
 
-- La revisión independiente C de búsqueda y disponibilidad no se hizo en sesión limpia; se integró por decisión del usuario tras una lectura de Claude Code sin hallazgos bloqueantes. Si se desea, hacerla después con `pnpm revision:codex` sobre `dc4d102..HEAD`.
-- Las migraciones de identidad, carta, disponibilidad y slugs existen solo en local; ensayo en staging y producción requiere autorización. No se hizo `db:reset` para preservar la demo; conviene hacerlo en algún momento para probar el seed de cero.
-- La demo local quedó con la sucursal `centro` y `central` como alias reservado (inofensivo). El slug de una sucursal no se puede liberar una vez usado.
-- Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015. RLS y E2E comparten base: ejecutar en secuencia.
-
-## Próximo paso
-
-1. Elegir del backlog el ítem desbloqueado de mayor valor; los pendientes grandes (staging, purga, dominio, producción) dependen de decisiones del usuario.
-2. Cuando haya autorización: aplicar las migraciones al staging, desplegar `main` y probar con sesión SuperAdmin, sucursales, variantes, disponibilidad y el aviso de alérgenos.
-3. Opcional: `db:reset` local y revisión independiente con Codex cuando vuelva la cuota.
+- La revisión independiente C de búsqueda y disponibilidad no se hizo en sesión limpia; se integró por decisión del usuario. Opcional: `pnpm revision:codex` sobre `dc4d102..HEAD` cuando vuelva la cuota de Codex.
+- Las migraciones de identidad, carta, disponibilidad y slugs existen solo en local; aplicarlas a staging o producción requiere autorización. Nunca se hizo `db:reset`, para preservar la demo (sucursal `centro` con `central` como alias reservado).
+- Producción sigue bloqueada por dominio, Supabase de producción, contacto y revisión legal: [ficha](cambios/salida-a-produccion.md), ADR 0015. RLS y E2E comparten base: no ejecutarlos a la vez.
+- Los E2E contra `pnpm dev` usan `e2e/detalle-plato-dev.spec.ts` (variables en el propio archivo); la suite normal corre contra el build.
