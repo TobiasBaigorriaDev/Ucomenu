@@ -36,3 +36,6 @@ Límite de reversión: esta unidad completa (columna, formularios, búsqueda y d
 ## Corrección posterior: detalle del plato en desarrollo (2026-10-17)
 Con `pnpm dev` el detalle no quedaba abierto: StrictMode remontaba el efecto de `DishDetail` y su `dialog.close()` de limpieza disparaba `onClose`. Se abre ahora solo si no está abierto y se elimina el cierre en la limpieza. Regresión `e2e/detalle-plato-dev.spec.ts`, solo contra servidor de desarrollo (`E2E_DEV_SERVER=1 E2E_BASE_URL=http://localhost:3055`, comando en el archivo): **falló antes del arreglo y pasa después**. En producción se omite, porque el build no duplica efectos. Typecheck, lint, build y `buscador`, `disponibilidad` y `menu` en el build: **20/20** (1 omitida).
 
+## Aviso de alérgenos junto a los filtros (2026-10-17)
+El bloque de búsqueda muestra siempre, antes de filtrar, que las etiquetas las declara el local y no son una certificación, con enlace a `/alergenos`; ya no depende de abrir el detalle. Aserción nueva en `e2e/buscador.spec.ts` (falló antes del cambio). Typecheck, lint, build y `buscador`, `disponibilidad`, `menu`, `legal` y `rendimiento-carta`: **38/38**. Captura a 390 px revisada: sin desborde.
+

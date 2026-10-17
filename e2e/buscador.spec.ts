@@ -38,6 +38,10 @@ test("Staff declara etiquetas; búsqueda combinada y detalle conservan el contex
   if (table.error) throw table.error;
   for (const route of [menu, `/t/${table.data.qr_token}`]) {
     await page.goto(route);
+    // El aviso acompaña a los filtros desde el principio, sin depender de abrir un plato.
+    const search = page.getByRole("search", { name: "Buscar y filtrar la carta" });
+    await expect(search).toContainText("no son una certificación");
+    await expect(search.getByRole("link", { name: "Aviso de alérgenos" })).toHaveAttribute("href", "/alergenos");
     await page.getByRole("searchbox", { name: "Buscar platos" }).fill("CAFE almendras");
     await page.getByRole("button", { name: "Vegano", exact: true }).click();
     await page.getByRole("button", { name: "Sin TACC", exact: true }).click();

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { DIETARY_LABEL, DIETARY_TAGS, filterMenu, type DietaryTag } from "@/lib/carta/dietary";
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
@@ -35,6 +36,10 @@ export function MenuBrowser({ sections }: { sections: Section[] }) {
           </div>
         </fieldset>
         <p className="mt-3 text-sm text-muted">Al combinar filtros, los platos deben tener todas las etiquetas elegidas.</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Las etiquetas las declara el local y no son una certificación. Si tenés alergias o celiaquía, confirmalo con el personal antes de pedir.{" "}
+          <Link href="/alergenos" className="font-medium text-[var(--carta-green)] underline underline-offset-4">Aviso de alérgenos</Link>
+        </p>
         <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4">
           <p role="status" aria-live="polite" className="text-sm text-muted">{count === 1 ? "1 plato" : `${count} platos`}{filtering ? (count === 1 ? " encontrado" : " encontrados") : " en la carta"}</p>
           {filtering ? <button type="button" onClick={clear} className="min-h-11 text-sm font-medium text-[var(--carta-green)] underline underline-offset-4">Limpiar búsqueda y filtros</button> : null}
