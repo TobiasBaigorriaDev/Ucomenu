@@ -1,8 +1,9 @@
 import { MenuHeader } from "@/components/menu/menu-header";
+import { cartaFontClass } from "./carta-fonts";
 
 export function MenuUnavailable({ organizationName }: { organizationName: string }) {
   return (
-    <div className="carta">
+    <div className={`${cartaFontClass} carta`}>
       <MenuHeader organizationName={organizationName} />
       <main className="mx-auto max-w-3xl px-4 pb-16 text-center sm:px-6">
         <p className="font-display text-2xl">Carta temporalmente no disponible</p>

@@ -1,13 +1,10 @@
 import "./carta.css";
 import Image from "next/image";
 
-/** Cuadraditos girados sobre el título (como confeti): quedan fuera de la fila de sucursal y mesa. */
-const CONFETTI = [
-  "left-[6%] top-[9%] size-3 bg-[var(--carta-blush)]",
-  "right-[8%] top-[7%] size-2.5 bg-[var(--carta-green)]",
-  "left-[24%] top-[15%] size-2 bg-[var(--carta-terra)]",
-];
-
+/**
+ * Cabecera editorial: nombre del local en display grande, alineado a la izquierda; debajo, un filete y la línea de
+ * sucursal y mesa (datos reales, no una etiqueta decorativa).
+ */
 export function MenuHeader({
   organizationName,
   branchName,
@@ -22,17 +19,22 @@ export function MenuHeader({
   logo?: string | null;
 }) {
   return (
-    <header className="relative overflow-hidden">
-      {CONFETTI.map((position) => (
-        <span key={position} aria-hidden="true" className={`pointer-events-none absolute rotate-45 ${position}`} />
-      ))}
-      <div className="relative mx-auto max-w-3xl px-4 pt-16 pb-10 text-center sm:px-6 sm:pt-24 sm:pb-14">
-        {logo ? <Image src={logo} alt={`Logo de ${organizationName}`} width={192} height={112} className="mx-auto mb-6 h-24 w-48 object-contain sm:h-28" /> : null}
+    <header>
+      <div className="mx-auto max-w-3xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 sm:pb-12">
+        {logo ? (
+          <Image
+            src={logo}
+            alt={`Logo de ${organizationName}`}
+            width={192}
+            height={112}
+            className="mb-6 h-14 w-auto max-w-[12rem] object-contain object-left sm:h-16"
+          />
+        ) : null}
         <h1 className="carta-title font-display text-balance text-[var(--carta-green)] [overflow-wrap:anywhere]">
           {organizationName}
         </h1>
         {branchName || tableLabel ? (
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-3">
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t-[1.5px] border-ink pt-3">
             {branchName ? (
               <p className="flex items-center gap-2 text-base text-muted">
                 <svg

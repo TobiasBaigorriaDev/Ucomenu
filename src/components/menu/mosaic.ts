@@ -3,16 +3,17 @@ export type TileShape = "small" | "wide" | "tall";
 /**
  * Forma de cada mosaico de categoría en una grilla de 2 columnas. Se arma con bloques que siempre
  * completan sus filas, así que nunca quedan huecos:
- *  - A: dos chicos (una fila)
  *  - B: uno ancho (una fila)
  *  - C: uno alto a la izquierda y dos chicos a la derecha (dos filas)
- * Se repite A, B, C. Si sobran menos de los que pide el bloque, el resto se completa con un ancho (1) o con A (2).
+ *  - A: dos chicos (una fila)
+ * Se repite B, C, A: la primera celda es siempre ancha y hace de portada del índice. Si sobran menos de los que pide el
+ * bloque, el resto se completa con un ancho (1) o con A (2).
  */
 export function mosaicLayout(count: number): TileShape[] {
   const units: TileShape[][] = [
-    ["small", "small"],
     ["wide"],
     ["tall", "small", "small"],
+    ["small", "small"],
   ];
   const shapes: TileShape[] = [];
   let turn = 0;
@@ -20,7 +21,7 @@ export function mosaicLayout(count: number): TileShape[] {
     const remaining = count - shapes.length;
     const unit = units[turn % units.length];
     if (unit.length <= remaining) shapes.push(...unit);
-    else shapes.push(...(remaining === 1 ? units[1] : units[0]));
+    else shapes.push(...(remaining === 1 ? units[0] : units[2]));
     turn++;
   }
   return shapes;

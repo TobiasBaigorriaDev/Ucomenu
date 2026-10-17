@@ -4,8 +4,9 @@
  * `globals.css` solo dentro de `.carta`: cuando cada local pueda elegir sus colores, alcanza con
  * sobrescribir estas mismas variables por organización.
  *
- * Dirección: editorial gastronómica. Crema cálido, verde profundo, terracota y rosa pálido; serif pesada para
- * los nombres y mosaico de categorías en lugar de tarjetas.
+ * Dirección: Bento + Editorial + Card-based (ver PRODUCT.md y el contrato en `.impeccable/surfaces`). Los colores salen de
+ * la paleta del local; la tipografía es Gloock (display, un solo peso) + Schibsted Grotesk (texto), cargadas solo para la
+ * carta desde `carta-fonts.ts`.
  */
 
 .carta {
@@ -22,6 +23,13 @@
   min-height: 100vh;
   background: var(--porcelain);
   color: var(--ink);
+  font-family: var(--font-schibsted), system-ui, sans-serif;
+}
+
+/* `font-display` del tema es global (Young Serif); dentro de la carta manda Gloock, que solo existe en peso normal. */
+.carta .font-display {
+  font-family: var(--font-gloock), Georgia, serif;
+  font-weight: 400;
 }
 
 .carta ::selection {
@@ -33,11 +41,11 @@
   background: rgb(42 38 34 / 55%);
 }
 
-/* Nombre del local: crece con la pantalla sin pasar de 5rem. */
+/* Nombre del local: crece con la pantalla sin pasar de 6rem. */
 .carta-title {
-  font-size: clamp(2.75rem, 1rem + 9vw, 5rem);
-  line-height: 1;
-  letter-spacing: -0.01em;
+  font-size: clamp(3.25rem, 0.75rem + 14vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.015em;
 }
 
 /* Chips de la barra fija: el foco redondo en los botones redondos (el global es de 2px). */

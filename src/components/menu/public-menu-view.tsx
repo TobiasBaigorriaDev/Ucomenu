@@ -5,6 +5,7 @@ import { MenuBrowser } from "@/components/menu/menu-browser";
 import type { PublicMenu } from "@/lib/public-menu";
 import { logoUrl } from "@/lib/identidad/logos";
 import { paletteStyle } from "@/lib/identidad/palettes";
+import { cartaFontClass } from "./carta-fonts";
 
 /**
  * Carta pública de una sucursal. La comparten `/m/{org}/{sucursal}` y `/t/{token}` (esta con la etiqueta de la mesa).
@@ -23,7 +24,7 @@ export function PublicMenuView({
   const { sections } = menu;
 
   return (
-    <div className={callBar ? "carta pb-40" : "carta"} style={paletteStyle(menu.organization.menu_palette)}>
+    <div className={`${cartaFontClass} ${callBar ? "carta pb-40" : "carta"}`} style={paletteStyle(menu.organization.menu_palette)}>
       <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} />
       {sections.length > 0 ? (
         <MenuBrowser sections={sections} />

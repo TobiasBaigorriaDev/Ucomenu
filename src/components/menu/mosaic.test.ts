@@ -24,8 +24,12 @@ describe("mosaicLayout", () => {
 
   it("casos chicos", () => {
     expect(mosaicLayout(1)).toEqual(["wide"]);
-    expect(mosaicLayout(2)).toEqual(["small", "small"]);
-    expect(mosaicLayout(3)).toEqual(["small", "small", "wide"]);
-    expect(mosaicLayout(6)).toEqual(["small", "small", "wide", "tall", "small", "small"]);
+    expect(mosaicLayout(2)).toEqual(["wide", "wide"]);
+    expect(mosaicLayout(3)).toEqual(["wide", "small", "small"]);
+    expect(mosaicLayout(6)).toEqual(["wide", "tall", "small", "small", "small", "small"]);
+  });
+
+  it("la primera celda es siempre ancha: portada del índice", () => {
+    for (let n = 1; n <= 30; n++) expect(mosaicLayout(n)[0], `n=${n}`).toBe("wide");
   });
 });

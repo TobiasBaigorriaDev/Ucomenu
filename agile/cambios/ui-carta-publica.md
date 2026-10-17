@@ -17,10 +17,11 @@ Contexto durable en [`PRODUCT.md`](../../PRODUCT.md) y en el surface brief con e
 - **Dirección fijada por el usuario:** Bento + Editorial + Card-based.
 - **Bento:** portada y categorías, platos destacados y todo el listado. **Editorial:** jerarquía de revista y asimetría con quiebres de grilla.
 - **Fotos:** mezcla; las cards funcionan con y sin foto. **Marca:** el local manda, con firma discreta «Hecho con UcoMenu» al pie. **Voz:** voseo cercano.
-- **Tipografía nueva:** se propone en el chat con motivos y la aprueba el usuario antes de aplicarla (pendiente). Paletas sin cambios.
+- **Tipografía:** el usuario eligió el par A: **Gloock** (display, un solo peso) + **Schibsted Grotesk** (texto), cargadas solo para la carta desde `src/components/menu/carta-fonts.ts`; el panel conserva Young Serif + Hanken. Paletas sin cambios.
+- **Kickers y numeración:** el skill los desaconseja por decorativos; el usuario los pidió, así que llevan información real (el número es el índice de la categoría; la línea de sucursal y mesa es dato real).
 
 ## Rondas
-(vacío; se registran aquí las peticiones y decisiones de cada ronda)
+**Ronda 1 (2026-10-17):** tipografía Gloock + Schibsted aplicada a la carta; encabezado editorial alineado a la izquierda, con filete y línea de sucursal y mesa (se quitó el confeti); categorías como bento: la primera celda siempre ancha, cada celda con índice, nombre y cantidad de platos, y foto con scrim o bloque de color de la paleta. Verificado: typecheck, lint y `pnpm test` 444/444. E2E de carta pendientes hasta cerrar la iteración. Falta el feedback del usuario sobre esta ronda.
 
 ## Aceptación
 - [ ] Los cambios pedidos por el usuario están hechos y aprobados por él en el navegador.

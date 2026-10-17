@@ -8,6 +8,7 @@ import type { FormState } from "@/lib/form-state";
 import { MAX_LOGO_BYTES } from "@/lib/identidad/logos";
 import { isPalette, PALETTES, paletteStyle } from "@/lib/identidad/palettes";
 import "@/components/menu/carta.css";
+import { cartaFontClass } from "@/components/menu/carta-fonts";
 import { paletteAction, removeLogoAction, uploadLogoAction } from "./actions";
 
 type Props = { orgSlug: string; canWrite: boolean; name: string };
@@ -32,7 +33,7 @@ export function PaletteForm({ orgSlug, canWrite, name, palette }: Props & { pale
             </label>
           ))}
         </div>
-        <div className="carta mt-5 rounded-xl px-5 py-6" style={{ ...paletteStyle(selected), minHeight: 0 }} data-testid="apariencia-preview">
+        <div className={`${cartaFontClass} carta mt-5 rounded-xl px-5 py-6`} style={{ ...paletteStyle(selected), minHeight: 0 }} data-testid="apariencia-preview">
           <p className="font-display text-3xl break-words text-[var(--carta-green)]">{name}</p>
           <p className="mt-2 text-base text-muted">Así se verá la paleta en tu carta.</p>
           <span className="mt-4 inline-block rounded-full bg-[var(--carta-green)] px-4 py-2 text-base font-medium text-white">Carta del local</span>
