@@ -1,6 +1,6 @@
 # Cambio: login y sala en vivo con el lenguaje del panel
 
-Estado: **Hecho** (rama `feat/ui-login-y-sala`, desde `main`; sin integrar). Nivel **M**: solo presentación; ni esquema, ni permisos, ni reglas. Cierra el pendiente de [rediseño del panel](ui-panel-dueno-y-superadmin.md).
+Estado: **Hecho e integrado a `main`** (aprobado por el usuario el 2026-10-17; desplegado en staging). Nivel **M**: solo presentación; ni esquema, ni permisos, ni reglas. Cierra el pendiente de [rediseño del panel](ui-panel-dueno-y-superadmin.md).
 
 ## Objetivo y decisiones
 - **Login:** pasa a `.panel` con la paleta de UcoNext (`platformStyle()`) y la tipografía de la carta. Todavía no se sabe el local, así que no usa la paleta de ninguno; no usa Geist porque entran dueños y personal. Dos celdas (marca y formulario); apiladas en celular. Textos, etiquetas, botón y encabezado («Ingresá a tu cuenta») no cambian: los E2E y la accesibilidad dependen de ellos. `Mark` (los rombos) se extrae a `src/components/panel/mark.tsx` para compartirla con el riel.
