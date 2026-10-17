@@ -38,6 +38,8 @@ export type AdminError =
   | "invalid_period"
   | "slug_taken"
   | "email_taken" // el email ya tiene cuenta: no se toca
+  | "account_not_found" // sumar un Dueño existente: no hay cuenta con ese email
+  | "already_owner" // sumar un Dueño existente: ya lo es de esta organización
   | "uncertain" // se perdió la respuesta y no se pudo comprobar si el alta quedó hecha
   | "unexpected"
   // Cambio de plan, suspensión y pagos (ficha superadmin-planes-pagos)
@@ -80,7 +82,10 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   invalid_cycle: "Elegí si la facturación es mensual o anual.",
   invalid_period: "«Vigente hasta» tiene que ser una fecha futura, de hasta 2 años.",
   slug_taken: "Ya existe una organización con ese identificador.",
-  email_taken: "Ese email ya tiene una cuenta. Por ahora el Dueño inicial tiene que ser una cuenta nueva: usá otro email.",
+  email_taken: "Ese email ya tiene una cuenta. El Dueño inicial tiene que ser una cuenta nueva: creá la organización con otro email y después sumá la cuenta existente como Dueño desde su ficha.",
+  account_not_found:
+    "No hay ninguna cuenta con ese email. Si la persona todavía no tiene cuenta, creá la organización con ese email (el alta crea la cuenta).",
+  already_owner: "Esa cuenta ya es Dueño de esta organización: no hay nada que cambiar.",
   uncertain:
     "No pudimos confirmar si el alta quedó hecha. No la repitas: revisá primero la lista de organizaciones (si ya aparece, está creada).",
   unexpected: "No se pudo completar la operación. No se cambió nada; probá de nuevo en unos minutos.",

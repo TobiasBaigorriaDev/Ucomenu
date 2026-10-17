@@ -2,7 +2,7 @@
 
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { dangerButtonClass, inputClass, labelClass } from "@/components/panel/styles";
-import { changePlanAction, registerPaymentAction, setSuspensionAction } from "../../actions";
+import { addExistingOwnerAction, changePlanAction, registerPaymentAction, setSuspensionAction } from "../../actions";
 
 const PLAN_OPTIONS = [
   { value: "basic", label: "Básico" },
@@ -225,6 +225,56 @@ export function PaymentForm({ slug, today, proposedCoversUntil }: { slug: string
           </div>
         </>
       )}
+    </ActionForm>
+  );
+}
+
+/**
+ * Sumar un Dueño que ya tiene cuenta. Dos envíos: el primero busca la cuenta y muestra dónde trabaja; el segundo, con la
+ * casilla marcada, la suma. El email queda fijo entre los dos pasos para que la confirmación sea sobre la cuenta que se vio.
+ */
+export function AddOwnerForm({ slug }: { slug: string }) {
+  return (
+    <ActionForm action={addExistingOwnerAction} className="mt-4 grid max-w-md gap-4">
+      {(state) => {
+        const confirming = state.values?.step === "confirm";
+        return (
+          <>
+            <input type="hidden" name="slug" value={slug} />
+            <div>
+              <label htmlFor="dueno-email" className={labelClass}>
+                Email de la cuenta
+              </label>
+              <input
+                id="dueno-email"
+                name="email"
+                type="email"
+                required
+                maxLength={254}
+                autoComplete="off"
+                readOnly={confirming}
+                defaultValue={state.values?.email ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+            </div>
+            {confirming ? (
+              <div className="grid gap-3">
+                <p className="max-w-prose text-base leading-relaxed" data-testid="aviso-dueno-existente">
+                  Sumar un Dueño le da control total sobre este local. Confirmá solo si es la misma persona: si la cuenta era de Personal
+                  de otro local, el Dueño de ese local pudo haber elegido su contraseña.
+                </p>
+                <label className="flex min-h-11 items-start gap-3 text-base">
+                  <input type="checkbox" name="confirmed" required className="mt-1 size-5 shrink-0" />
+                  <span>Confirmo que {state.values?.email} es la persona que va a ser Dueño de esta organización.</span>
+                </label>
+              </div>
+            ) : null}
+            <div>
+              <SubmitButton pendingLabel={confirming ? "Sumando…" : "Buscando…"}>{confirming ? "Sumar como Dueño" : "Buscar cuenta"}</SubmitButton>
+            </div>
+          </>
+        );
+      }}
     </ActionForm>
   );
 }

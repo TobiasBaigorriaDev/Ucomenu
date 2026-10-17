@@ -8,6 +8,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "subscription.suspended": "Suspensión a mano",
   "subscription.reactivated": "Reactivación a mano",
   "payment.registered": "Pago registrado",
+  "owner.added": "Dueño sumado",
 };
 
 const dateTime = new Intl.DateTimeFormat("es-AR", {

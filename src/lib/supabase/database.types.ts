@@ -419,7 +419,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_change_plan":
+            "admin_add_owner":
+{ Args: { "p_actor": string,"p_confirmed": boolean,"p_email": string,"p_org": string }; Returns: Json
+                           },
+"admin_change_plan":
 { Args: { "p_actor": string,"p_billing_cycle": string,"p_org": string,"p_plan": string,"p_reason": string }; Returns: undefined
                            },
 "admin_create_organization":

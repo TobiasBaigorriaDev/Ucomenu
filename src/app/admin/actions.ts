@@ -5,6 +5,7 @@ import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/li
 import { changePlan, registerPayment, setSuspension } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
+import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import type { FormState } from "@/lib/form-state";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -142,4 +143,41 @@ export async function registerPaymentAction(_previous: FormState, formData: Form
   revalidatePath("/admin");
   revalidatePath(prepared.page);
   return { ok: true, message: "Listo: el pago quedó registrado y la vigencia se actualizó." };
+}
+
+// ---------------------------------------------------------------------------
+// Sumar una cuenta existente como Dueño (ficha dueno-existente)
+// ---------------------------------------------------------------------------
+
+const ROLE_LABEL = { owner: "Dueño", staff: "Personal" } as const;
+
+function describeAffiliations(others: Affiliation[]): string {
+  if (others.length === 0) return "Todavía no trabaja en ningún otro local.";
+  return `Hoy trabaja en: ${others.map((a) => `«${a.name}» (${ROLE_LABEL[a.role]})`).join(", ")}.`;
+}
+
+/** Dos pasos con la misma acción: sin la casilla solo informa dónde trabaja la cuenta; con la casilla suma el rol de Dueño. */
+export async function addExistingOwnerAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { email: text(formData, "email") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await addExistingOwner(prepared.ctx, { slug: prepared.slug, email: values.email, confirmed: text(formData, "confirmed") === "on" });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  if (result.data.status === "needs_confirmation") {
+    const here = result.data.currentRole === "staff" ? " Ya es Personal de esta organización: se la asciende a Dueño." : "";
+    return {
+      message: `Encontramos la cuenta ${values.email}. ${describeAffiliations(result.data.others)}${here}`,
+      values: { ...values, step: "confirm" },
+    };
+  }
+
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  return {
+    ok: true,
+    message: `Listo: ${values.email} ahora es Dueño de esta organización. Conserva su contraseña y sus otros locales; el movimiento quedó registrado.`,
+  };
 }
