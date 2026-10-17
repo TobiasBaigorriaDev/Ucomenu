@@ -57,18 +57,28 @@ type CartaRows = {
 };
 
 /**
- * Lee las filas de la organización. Los grupos y las opciones se leen PÁGINA POR PÁGINA (`readAllPages`, orden estable
- * por id): PostgREST corta cada lectura en `max_rows` (1000) sin avisar y una carta con muchos platos supera ese número
- * de opciones (200 platos × 6 opciones ya son 1200). Exportada solo para probarla contra la base.
+ * Lee todas las filas de la organización PÁGINA POR PÁGINA (`readAllPages`, orden estable por id): PostgREST corta cada
+ * lectura en `max_rows` (1000) sin avisar. Exportada para probar la lectura sin pasar por la caché.
  */
 export async function loadRows(orgId: string): Promise<CartaRows> {
   const supabase = createPublicClient();
   const [categories, products, optionGroups, options] = await Promise.all([
-    supabase.from("categories").select("id, name, sort_order").eq("organization_id", orgId),
-    supabase
-      .from("products")
-      .select("id, category_id, name, description, price_cents, sort_order, image_path")
-      .eq("organization_id", orgId),
+    readAllPages((from, to) =>
+      supabase
+        .from("categories")
+        .select("id, name, sort_order")
+        .eq("organization_id", orgId)
+        .order("id")
+        .range(from, to),
+    ),
+    readAllPages((from, to) =>
+      supabase
+        .from("products")
+        .select("id, category_id, name, description, price_cents, sort_order, image_path")
+        .eq("organization_id", orgId)
+        .order("id")
+        .range(from, to),
+    ),
     readAllPages((from, to) =>
       supabase
         .from("option_groups")
@@ -91,7 +101,12 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
   if (optionGroups.error) throw new Error(`No se pudieron leer los grupos de opciones: ${optionGroups.error.message}`);
   if (options.error) throw new Error(`No se pudieron leer las opciones: ${options.error.message}`);
-  return { categories: categories.data, products: products.data, optionGroups: optionGroups.data ?? [], options: options.data ?? [] };
+  return {
+    categories: categories.data ?? [],
+    products: products.data ?? [],
+    optionGroups: optionGroups.data ?? [],
+    options: options.data ?? [],
+  };
 }
 
 /**

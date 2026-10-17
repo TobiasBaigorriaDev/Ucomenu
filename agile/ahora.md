@@ -1,22 +1,24 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en `agile/historial.md` (no leer salvo un detalle puntual).
+Actualizado: 2026-10-16 · agente saliente: Codex · historial anterior en `agile/historial.md` (consultar solo por un detalle puntual).
 
 ## Punto de retomada
-- Rama `main`, árbol limpio y **subida**. Integrado y revisado por Codex: variantes y adicionales, SuperAdmin (plan, suspensión, pagos, prueba), gestión de sucursales, cierre de sesión por cuenta atendida, guía de primeros pasos y rendimiento de la carta.
-- **Relevo de roles:** implementa **Codex**; revisa **Claude Code** en sesión limpia y solo lectura (`agile-revisar`). Una tarea por vez. Para nivel C, la revisión de Claude no reemplaza la aprobación del usuario.
-- **Salida a producción** (`agile/cambios/salida-a-produccion.md`, «Bloqueado»; ADR 0015). Staging: `https://ucomenu-staging.fly.dev`. Un proyecto de Supabase por entorno, no por cliente.
+
+- Rama `fix/paginacion-carta-publica`, creada desde `main` en `27b4fb1`. La entrega local es el commit que incorpora este handoff; todavía no está integrada ni subida.
+- Incremento S implementado: paginación de categorías y platos de la carta pública. Aceptación, decisiones y evidencia están en [su ficha](cambios/paginacion-carta-publica.md). El tablero lo deja **Para verificar** para el relevo acordado.
+- **Relevo de roles:** implementa Codex; revisa Claude Code en sesión limpia y solo lectura mediante `agile-revisar`. Una tarea por vez. El próximo agente debe revisar el commit de esta rama, sin incluir nuevamente las funcionalidades ya revisadas en `main`.
+- `main` ya incluye variantes y adicionales, SuperAdmin de planes y pagos, sucursales, cierre de sesión por cuenta atendida, alta guiada y rendimiento de carta.
 
 ## Bloqueos y riesgos
-- **Solo el usuario puede:** crear el proyecto de Supabase de producción, comprar el dominio, elegir el correo de contacto y contratar la revisión legal. `flyctl` (no `fly`) tiene sesión.
-- **Archivos con claves y datos del staging:** `C:\Users\tobib\staging.env` y `C:\Users\tobib\respaldos-ucomenu`; borrarlos al terminar el ensayo.
-- **Staging:** migraciones hasta `20261019100000` aplicadas y `main` desplegado en Fly el 2026-10-17 (la máquina estaba detenida y se reemplazó; chequeo de salud en verde; `/`, `/login` y textos legales dan 200). Sin probar con sesión: SuperAdmin de planes, sucursales y variantes.
-- **No imprimir QR** hasta tener el dominio. Sin probar en teléfono real.
-- RLS y E2E comparten base: no correrlas a la vez.
-- Decisiones de producto abiertas: ficha de variantes.
+
+- La salida a producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015. Solo el usuario puede crear el proyecto de Supabase de producción, comprar el dominio, elegir el correo de contacto y contratar la revisión legal.
+- Staging: `https://ucomenu-staging.fly.dev`; último despliegue informado desde `main`, con migraciones aplicadas. Falta probar con sesión SuperAdmin, sucursales y variantes. La corrección de esta rama queda local.
+- Material sensible del ensayo fuera del repo: `C:\Users\tobib\staging.env` y `C:\Users\tobib\respaldos-ucomenu`; limpieza pendiente al terminar el ensayo.
+- No imprimir QR hasta tener dominio. Siguen pendientes teléfono real y decisiones de producto de la ficha de variantes. RLS y E2E comparten base y no deben ejecutarse simultáneamente.
+- La compilación tiene una limitación de entorno documentada en la ficha de paginación; resolverla antes de intentar desplegar esta entrega.
 
 ## Próximo paso
-1. **Primera tarea sugerida para Codex (S):** paginar las lecturas de `categories` y `products` de la carta pública (ver `src/lib/paginar.ts`).
-2. **Siguientes (M), por valor:** buscador y filtros dietarios (el modelo `dietary_tags` aún no existe); disponibilidad por sucursal; identidad del local. **C:** desactivar sucursales (reglas ya decididas en su ficha); retención de `price_history` y `payments`.
-3. **Al terminar Codex:** commit + ficha con evidencia, actualizar este archivo y pedir a Claude Code revisar el commit.
-4. **Con el usuario:** probar en staging lo nuevo con sesión, ver la primera purga real (`cron.job_run_details`), teléfono real, dominio y producción.
+
+1. Claude Code: revisar el commit de esta rama contra la ficha y actualizar su veredicto antes de integrar.
+2. Elegir luego entre los ítems M desbloqueados: buscador y filtros dietarios, disponibilidad por sucursal o identidad del local. Los ítems C requieren su flujo correspondiente.
+3. Con el usuario: completar las pruebas de staging con sesión, comprobar la primera purga programada y retomar dominio y producción.
