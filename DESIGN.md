@@ -251,9 +251,10 @@ components:
 Alcance: este documento describe dos superficies del mismo mundo.
 
 - **Carta pública** (`/m/{org}/{sucursal}` y `/t/{token}`): todo lo que cuelga de `.carta` (`src/components/menu/carta.css`).
-- **Panel** (panel del Dueño `/panel/{org}`, SuperAdmin `/admin` y el marco compartido `AppShell`): todo lo que cuelga de `.panel` (`src/components/panel/panel.css`, `app-shell.tsx`, `nav-links.tsx`, `nav-icons.tsx`, `styles.ts`). La sala (`/sala`) y `/cuenta` heredan este marco, tipografía y botones; su layout no se rehizo y no se documenta acá.
+- **Panel** (panel del Dueño `/panel/{org}`, SuperAdmin `/admin` y el marco compartido `AppShell`): todo lo que cuelga de `.panel` (`src/components/panel/panel.css`, `app-shell.tsx`, `nav-links.tsx`, `nav-icons.tsx`, `styles.ts`). La sala (`/sala/{org}`) usa el mismo marco y arma sus llamados como tarjetas (ver «Sala en vivo»); `/cuenta` hereda marco, tipografía y botones, y su contenido no se rehizo.
+- **Login** (`/login`): usa `.panel` con la paleta de UcoNext (`platformStyle()`, como SuperAdmin) y la tipografía de la carta (Gloock + Schibsted Grotesk, no Geist: lo usan dueños y personal, no solo la plataforma). Todavía no se sabe de qué local es la persona, así que no lleva la paleta de ninguno. Dos celdas: una de marca en verde profundo (marca de rombos, titular en display y dos rombos decorativos arriba a la derecha, nunca detrás del texto) y una celda de trabajo con el formulario; apiladas en celular, lado a lado desde `lg`.
 
-Fuera de ambos queda el login y cualquier ruta que no use `.carta` ni `.panel`: siguen con los tokens de `src/app/globals.css` (Young Serif, Hanken Grotesk, azul cobalto) sin cambios. Esos tokens siguen existiendo en `globals.css`; `.carta` y `.panel` los sobrescriben solo dentro de su elemento (`.panel .font-display` fuerza Gloock 400) y no los heredan como identidad. Los colores funcionales de gravedad (`--grace-*`, `--readonly-*`, `--suspended-*`, `--danger`) viven en `globals.css` y se usan tal cual en el panel. Los valores de la paleta de arriba son los de Oliva, la paleta por defecto; cada local elige una de cuatro y los mismos roles cambian de valor. SuperAdmin usa una paleta propia de la plataforma (`platform-*`).
+Fuera de ambos queda cualquier ruta que no use `.carta` ni `.panel` (hoy, la portada y los textos legales): siguen con los tokens de `src/app/globals.css` (Young Serif, Hanken Grotesk, azul cobalto) sin cambios. Esos tokens siguen existiendo en `globals.css`; `.carta` y `.panel` los sobrescriben solo dentro de su elemento (`.panel .font-display` fuerza Gloock 400) y no los heredan como identidad. Los colores funcionales de gravedad (`--grace-*`, `--readonly-*`, `--suspended-*`, `--danger`) viven en `globals.css` y se usan tal cual en el panel. Los valores de la paleta de arriba son los de Oliva, la paleta por defecto; cada local elige una de cuatro y los mismos roles cambian de valor. SuperAdmin usa una paleta propia de la plataforma (`platform-*`).
 
 ## Overview
 
@@ -419,6 +420,9 @@ Tres celdas de tono, radio 24 px: «Carta pública» (verde del local, texto bla
 ### Insignias de estado
 Píldora de 0,875rem 500, padding 2px 10px: rosa con tinta para el rol, `bg-brand` con blanco para «hecho», blanco al 70 % con tinta para «pendiente». Los avisos de mora, solo lectura y suspensión usan sus colores funcionales (fondo, tinta y borde propios).
 
+### Sala en vivo
+Los llamados pendientes son tarjetas en una cuadrícula (1 columna en celular, 2 desde `sm`, 3 desde `2xl`), pensadas para una tablet o pantalla fija que se lee a distancia: banda superior con el tipo de aviso (verde del local para «Llama al mozo», rosa con tinta para «Pide la cuenta»), nombre de mesa en display de 2,75 rem, tiempo de espera en 1,25 rem y el botón «Atendido» de 44 px o más. El estado se dice con borde y con texto, nunca solo con color: un llamado nuevo lleva borde de 4 px del verde del local y el prefijo «Nuevo»; uno urgente, borde de 4 px del rojo de suspensión y «Espera hace rato». Los avisos de conexión y de sesión son celdas con los colores funcionales de gravedad. La barra de alertas y el estado vacío son celdas del panel.
+
 ### Botones y campos del panel
 Definidos en `styles.ts`, sin `"use client"` para poder importarse desde servidor. Todos de 44 px de alto mínimo, 1rem 500. **Primario**: píldora `--cobalt` (el acento del local) con blanco, padding 8×20 px, hover verde profundo. **Secundario**: píldora transparente con borde `ink/40` y tinta, hover `ink/5`. **Peligro**: píldora con borde y texto `--danger`, hover `danger/5`. Deshabilitados al 60 %. **Campo**: radio 8 px, borde `ink/60`, fondo blanco, padding 8×12 px, 1rem, marcador al 70 % de gris cálido; etiqueta de 0,875rem 500 encima.
 
@@ -445,4 +449,5 @@ Transiciones de 180 ms (chips) a 500 ms (zoom de foto) con `cubic-bezier(0.22, 1
 - **Don't** reordenar los platos ni dejar huecos en las grillas.
 - **Don't** usar el verde vivo de la plataforma (#4a9e38) como fondo de texto: no alcanza AA con blanco.
 - **Don't** teñir con la paleta del local los avisos de mora, solo lectura, suspensión ni el botón de peligro.
-- **Don't** extender este sistema al login ni a rutas que no cuelguen de `.carta` o `.panel`.
+- **Don't** extender este sistema a rutas que no cuelguen de `.carta` o `.panel` sin decidirlo: la portada y los textos legales siguen con los tokens de `globals.css`.
+- **Don't** poner los rombos decorativos del login detrás del titular: el verde vivo no da contraste con texto blanco.

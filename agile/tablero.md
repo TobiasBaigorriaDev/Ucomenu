@@ -64,6 +64,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 - [S] Restauración ensayada en un proyecto Supabase nuevo; repetición manual con recordatorio mensual configurado (2026-10-17) → [ficha](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17)
 - [S] Wake Lock nativo del panel de sala comprobado con HTTPS en Chrome de Windows (2026-10-17) → [ficha](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17)
+- [M] Login y sala en vivo con el lenguaje del panel; integrado a `main` y desplegado en staging (2026-10-17) → [ficha](cambios/ui-login-y-sala.md)
 - [C] SuperAdmin suma una cuenta existente como Dueño de otra organización; integrado a `main`, migración aplicada en staging y aprobado por el usuario (2026-10-17) → [ficha](cambios/dueno-existente.md)
 - [C] Desactivar y reactivar sucursales; integrado a `main`, migración confirmada en staging y cierre aprobado por el usuario (2026-10-17) → [ficha](cambios/desactivar-sucursales.md)
 - [M] Rediseño del panel del Dueño y de SuperAdmin con el lenguaje de la carta (riel lateral, celdas, paleta del local y paleta UcoNext); revisado de forma independiente y por Codex; integrado a `main` y subido a `origin` (2026-10-17) → [ficha](cambios/ui-panel-dueno-y-superadmin.md)
