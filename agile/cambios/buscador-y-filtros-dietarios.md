@@ -23,7 +23,7 @@ Nivel: **M de producto, C técnico** por ampliar los permisos de columna del cat
 No se amplían organizaciones visibles ni se modifica precio, límites o publicación. La escritura usa el cliente de la persona y confirma filas afectadas. Error de lectura no entrega resultados parciales. Revertir código y retirar la columna/permisos mediante una migración revisada; no ejecutar retirada con datos sin respaldo. En local descartable, restaurar desde migraciones y seed.
 
 ## Evidencia
-Diff probado: unidad de búsqueda/etiquetas que incorpora este documento, sobre `dc4d102`, rama `feat/busqueda-y-disponibilidad`.
+Diff probado y confirmado en **`ead868e`**, sobre `dc4d102`, rama `feat/busqueda-y-disponibilidad`. Las correcciones de integración están en `7be826f`, con evidencia enlazada abajo.
 - `pnpm test`: **436/436**; focalizadas previas: **65/65**.
 - `pnpm test:rls tests/rls/dietary.rls.test.ts tests/rls/carta.rls.test.ts tests/rls/acl.rls.test.ts`: **38/38**.
 - `pnpm exec playwright test e2e/buscador.spec.ts e2e/menu.spec.ts e2e/opciones.spec.ts --workers=2`: **25/25**. Después de corregir el singular del contador y ampliar la prueba de conservación ante error, build nuevo + `e2e/buscador.spec.ts --workers=1`: **1/1**.

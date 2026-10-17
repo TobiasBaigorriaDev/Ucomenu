@@ -23,7 +23,7 @@ Nivel: **M de producto, C técnico** por tabla y políticas nuevas.
 No cambia precio, cupos, publicación ni permisos de otras tablas. La base es autoridad; formulario no concede permisos. Toda escritura confirma fila y estado; error no se anuncia como éxito. La lectura pública se pagina y falla completa si hay error. Revertir UI/lectura devuelve la presentación anterior; conservar la tabla preserva estados. Retirar la tabla requeriría una migración revisada y respaldo. Solo base local durante este incremento.
 
 ## Evidencia
-Base de esta unidad: `ead868e` en `feat/busqueda-y-disponibilidad`; el commit que incorpora esta ficha contiene el diff de disponibilidad y las correcciones de integración.
+Diff probado y confirmado en **`7be826f`**, sobre `ead868e` en `feat/busqueda-y-disponibilidad`: disponibilidad y correcciones de integración. El cierre documental posterior no modifica ese código.
 - `pnpm test:rls tests/rls/availability.rls.test.ts`: **8/8**, incluidos seis escritores simultáneos sobre una fila inexistente, inmutabilidad de claves, referencias cruzadas y bloqueo por mora.
 - `pnpm test`: **441/441**. `pnpm test:rls` completo: **600/600** en 25 archivos, secuencialmente antes de E2E.
 - `pnpm typecheck`, `pnpm lint`, `pnpm build` y `git diff --cached --check`: correctos, incluyendo build nuevo después de corregir el encabezado accesible.
