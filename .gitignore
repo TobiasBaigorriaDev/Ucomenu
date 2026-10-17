@@ -23,6 +23,7 @@ Thumbs.db
 
 # Estado local de agentes (no versionar)
 .claude/settings.local.json
+/.atl/
 
 # Next.js
 /.next/

@@ -24,13 +24,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 0 — Cimientos
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
-- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope. Integrado a `main` (revisado por Codex en 2 rondas y aprobado por el usuario el 2026-10-17); falta aplicar la migración en staging → agile/cambios/desactivar-sucursales.md
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
 - [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`): los **textos legales** (`/terminos`, `/privacidad`, `/alergenos`) y el **alta** de una organización desde `/admin`, además de lo del ítem anterior (pendiente de «Salida a producción»)
-- [S] Restaurar un respaldo en un proyecto de Supabase **nuevo** (en staging solo se vació y restauró el mismo): ensayar con `docs/operacion.md` y repetir una vez al mes; requiere crear un proyecto (aprobación del usuario) → agile/cambios/salida-a-produccion.md
-- [S] Probar *Wake Lock* del panel de sala: exige HTTPS (túnel o certificado local; herramienta de terceros, requiere aprobación)
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
 - (fase completa: llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»)
@@ -66,6 +63,9 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [S] Restauración ensayada en un proyecto Supabase nuevo; repetición manual con recordatorio mensual configurado (2026-10-17) → [ficha](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17)
+- [S] Wake Lock nativo del panel de sala comprobado con HTTPS en Chrome de Windows (2026-10-17) → [ficha](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17)
+- [C] Desactivar y reactivar sucursales; integrado a `main`, migración confirmada en staging y cierre aprobado por el usuario (2026-10-17) → [ficha](cambios/desactivar-sucursales.md)
 - [M] Rediseño del panel del Dueño y de SuperAdmin con el lenguaje de la carta (riel lateral, celdas, paleta del local y paleta UcoNext); revisado de forma independiente y por Codex; integrado a `main` y subido a `origin` (2026-10-17) → [ficha](cambios/ui-panel-dueno-y-superadmin.md)
 - [M] Rediseño de la carta pública: Bento + Editorial + Cards (Gloock + Schibsted, bento de categorías, bandas pegajosas, cards de plato, dock de llamado); revisado de forma independiente; `PRODUCT.md` y `DESIGN.md` del sistema (2026-10-17) → [ficha](cambios/ui-carta-publica.md)
 - [M] Corrección del slug de sucursal por SuperAdmin con históricos reservados y redirección a la dirección vigente → [ficha](cambios/correccion-slug-sucursal.md)
@@ -84,6 +84,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16) → agile/cambios/textos-legales.md
 - [M] SuperAdmin: el alta de una organización crea también su primera sucursal y la carta pública se abre de inmediato (2026-10-16) → agile/cambios/alta-con-primera-sucursal.md
 - [M] Revisión de Codex automatizada desde Claude: `pnpm revision:codex` (Codex CLI en solo lectura, veredicto como código de salida) y skill `ciclo-revision-codex`; probada con Codex real y con un Codex falso (2026-10-16) → tools/revision-codex.mjs
+- [M] Revisión de Claude desde Codex; procedimiento en ambos sentidos y skill exclusiva de tareas críticas C (2026-10-17) → [ficha](cambios/revision-claude-desde-codex.md)
 - [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16) → agile/cambios/purga-de-waiter-calls.md · ADR 0014
 - [S] SuperAdmin: quien inicia sesión sin `next` aterriza en `/admin` (y el resto en `/panel`); un `next` válido manda siempre (2026-10-15, `aea92a8`)
 - [M] Simplificación de Agile-SDD: rigor por consecuencias, verificación por impacto, una función por documento, handoff breve, sincronizador acotado a las 4 skills (2026-10-15) → agile/cambios/simplificacion-agile-sdd.md

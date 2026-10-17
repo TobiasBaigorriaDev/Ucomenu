@@ -1,21 +1,21 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en `agile/historial.md`.
+Actualizado: 2026-10-17 · agente saliente: Codex · historial anterior en `agile/historial.md`.
 
 ## Punto de retomada
 
-Integrado a `main` local (rama `feat/desactivar-sucursales`, aprobado por el usuario el 2026-10-17, ya subido a `origin`): el Dueño desactiva y reactiva sucursales desde `/panel/{slug}/sucursales`. La inactiva no cuenta para el tope del plan, su carta, su alias y los QR de sus mesas dicen «no disponible», no admite llamados nuevos y sale de Mesas, Llamados, Sala y Resumen; reactivar respeta el tope. Migración `20261023100000_desactivar_sucursales.sql`. Implementación, invariantes, evidencia (RLS 628/628, E2E con dos fallos ajenos que pasan al repetir) y las dos rondas de Codex están en la [ficha](cambios/desactivar-sucursales.md).
+Objetivo de esta sesión: subir el trabajo anterior y ejecutar los ensayos de restauración en un proyecto nuevo y Wake Lock del panel de sala. El push de `feat/revision-claude` hasta `3451851` terminó correctamente. Los ensayos se trabajaron en `chore/ensayo-restauracion-y-wake-lock`, desde ese commit. Ambas tareas están en «Hecho»; resultados y límites están en las fichas de [salida a producción](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17) y [panel de sala](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17).
 
-Nivel C: Codex revisó dos rondas (un hallazgo real de carrera en `create_waiter_call`, corregido y con prueba que falla sin la corrección; otro sobre la robustez de esa prueba, también corregido). La aprobación humana de permisos y tope está dada.
+El usuario autorizó crear el destino de ensayo y eligió un recordatorio mensual, sin restauraciones automáticas. Se creó `ucomenu-restore-20261017` en el plan Free existente y se ensayó el respaldo remoto conservado fuera del repositorio. El staging compartido no recibió escrituras y el enlace original de Supabase se conservó. El proyecto de ensayo quedó pausado, estado `INACTIVE`; staging sigue `ACTIVE_HEALTHY`. Las credenciales nuevas se guardaron protegidas con DPAPI fuera de Git.
 
-La base local quedó en seed limpio. `carta.spec.ts` «tope de platos activos» cae bajo carga paralela y pasa solo (ajeno a este cambio).
+Wake Lock se probó mediante HTTPS local y Chrome aislado, sin cambiar la aplicación. Se eliminaron la organización local efímera, las cookies de ensayo y el certificado temporal, y se cerraron los servidores y navegadores usados. `tools/recordar-restauracion.ps1` queda como fuente del aviso mensual; la tarea instalada usa una copia en LocalAppData.
 
 ## Bloqueos y riesgos
 
-- Las migraciones están aplicadas en **staging** (2026-10-17, `supabase db push`: identidad, etiquetas, disponibilidad, slugs y desactivar sucursales; `dry-run` posterior: al día). La app desplegada en Fly de staging **no se actualizó** (falta desplegar `main`). Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015.
-- No se probó en un teléfono real. Login, sala en vivo y `/cuenta` conservan el estilo anterior; la ficha de detalle del plato no se rehízo como bento.
+Flyctl sigue bloqueado por Application Control de Windows; no se cambió esa política ni se desplegó nada. Producción y las pruebas físicas de pantalla, batería e iOS/Android siguen fuera de estos ensayos. La integración de revisiones todavía debe incorporarse a `main` antes de crear una rama desde allí.
+
+El recordatorio requiere sesión de Windows iniciada; cada mes el responsable ejecuta el ensayo y registra la evidencia según `docs/operacion.md`.
 
 ## Próximo paso
 
-1. Con autorización: desplegar `main` en staging y probar con sesión SuperAdmin, sucursales y la carta en un teléfono real.
-2. Opcional: rehacer login y sala con el lenguaje del panel; SuperAdmin podría reactivar/desactivar en el futuro (hoy solo el Dueño).
+Elegir otra tarea desbloqueada del backlog, conservando la configuración de revisiones al crear la próxima rama. La revisión automática de Claude continúa reservada a tareas críticas C.

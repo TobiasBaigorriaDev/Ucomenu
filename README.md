@@ -4,6 +4,8 @@ SaaS multi-tenant de **menú digital interactivo** para restaurantes, bares y ca
 
 Proyecto creado con la plantilla **Agile SDD 1.1.1**: desarrollo guiado por especificaciones vivas, en iteraciones pequeñas y verificables, con Codex CLI y Claude Code elegidos manualmente.
 
+El procedimiento de [implementación y revisión funciona en ambos sentidos](docs/revision-entre-agentes.md): Claude puede implementar y Codex revisar, o Codex implementar y Claude revisar. La skill de revisión automática de Claude se reserva a tareas críticas de nivel C.
+
 ## Cómo trabajar
 1. Leé `AGENTS.md` y `agile/ahora.md` (en qué quedó la última sesión y cuál es el próximo paso).
 2. Elegí un incremento pequeño y verificable del `agile/tablero.md` y trabajalo con `agile-iterar` (Codex o Claude); si el tema no está claro, `agile-explorar` primero.
