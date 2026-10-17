@@ -1,6 +1,6 @@
 # Cambio: disponibilidad por sucursal — marcar agotado
 
-Estado: implementado y verificado en local. Revisión independiente pendiente, elegida manualmente por el usuario; sin integrar ni desplegar.
+Estado: **Integrado a `main` (local)**. Integrado a `main` el 2026-10-17 por decisión explícita del usuario, con la comprobación completa de la entrega (ver «Integración»). La revisión independiente C en sesión limpia no se hizo: solo hubo la lectura de Claude Code del 2026-10-17, sin hallazgos bloqueantes. Sin push ni despliegue.
 Nivel: **M de producto, C técnico** por tabla y políticas nuevas.
 
 ## Decisiones y alcance
@@ -34,3 +34,6 @@ Diff probado y confirmado en **`7be826f`**, sobre `ead868e` en `feat/busqueda-y-
 - Revisión independiente y aprobación humana C pendientes. Sin cambios remotos ni despliegue.
 
 Límite de reversión: disponibilidad completa (tabla, lectura por sucursal, formulario y estado en carta/detalle). No requiere revertir búsqueda ni etiquetas de `ead868e`. Tamaño autoral mayor a 400 líneas: la unidad funcional queda en un commit local; antes de abrir PR, dividir contratos de persistencia y recorrido del panel/carta en una cadena revisable, conservando pruebas.
+
+## Integración (2026-10-17)
+Avance rápido de `main` (`dc4d102`) a la rama de trabajo, 11 commits lineales (búsqueda, disponibilidad, corrección de slug, arreglo del detalle y aviso de alérgenos). Comprobación completa sobre ese estado: `pnpm test` **443/443**; `pnpm test:rls` completo **607/607**; `pnpm exec playwright test --workers=2` completo **246 pasaron, 1 omitida** (el spec solo de desarrollo), 0 fallos. Una primera corrida completa tuvo una cascada de fallos desde la prueba ~195, con tiempos de ~1 s; no se repitió ni se diagnosticó y la segunda corrida completa salió limpia. Una prueba RLS del seed falló antes por el estado de la demo local (la sucursal había quedado como `central`, con `centro` como alias tras la prueba manual del slug); se restauró el slug con un `UPDATE` normal y pasó. No se ejecutó `db:reset`.

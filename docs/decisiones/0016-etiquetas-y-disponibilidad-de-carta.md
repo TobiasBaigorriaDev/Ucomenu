@@ -1,6 +1,6 @@
 # 0016 — Declaraciones dietarias cerradas y disponibilidad por sucursal en vivo
 
-- Estado: propuesta, implementada en local; revisión independiente C pendiente.
+- Estado: aceptada al integrarse a `main` por decisión del usuario (2026-10-17); la revisión independiente C en sesión limpia no se realizó.
 - Fecha: 2026-10-16
 
 ## Contexto

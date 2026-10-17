@@ -1,6 +1,6 @@
 # Cambio: buscador y filtros dietarios en la carta pública
 
-Estado: implementado y verificado en local. Revisión independiente pendiente, elegida manualmente por el usuario; sin integrar ni desplegar.
+Estado: **Integrado a `main` (local)**. Integrado a `main` el 2026-10-17 por decisión explícita del usuario, con la comprobación completa de la entrega (ver «Integración»). La revisión independiente C en sesión limpia no se hizo: solo hubo la lectura de Claude Code del 2026-10-17, sin hallazgos bloqueantes. Sin push ni despliegue.
 Nivel: **M de producto, C técnico** por ampliar los permisos de columna del catálogo.
 
 ## Decisiones y alcance

@@ -1,23 +1,20 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-17 · agente saliente: Claude Code (Codex sin cuota; el usuario eligió que Claude implemente y pruebe) · historial anterior en `agile/historial.md`.
+Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en `agile/historial.md`.
 
 ## Punto de retomada
 
-Corregido el detalle del plato en `pnpm dev` (evidencia en la ficha del buscador). Rama `feat/correccion-slug-sucursal`, desde `5331d0d`; commits de código `6a6a0aa` y cierre documental `8e50471`. La corrección del identificador de una sucursal por SuperAdmin está terminada y verificada de nuevo por Claude Code, sin defectos. Aceptación, comandos y evidencia en [su ficha](cambios/correccion-slug-sucursal.md); motivos en ADR 0017. No se copian resultados aquí.
-
-La rama contiene también búsqueda/filtros dietarios y disponibilidad por sucursal (`ead868e`, `7be826f`, `5331d0d`). Siguen **Para verificar** por revisión independiente C y aprobación humana; esta tarea no las aprueba.
+`main` contiene ahora todo el trabajo local: buscador y filtros dietarios con su aviso de alérgenos, disponibilidad por sucursal, corrección de slug por SuperAdmin y el arreglo del detalle del plato en desarrollo. Integración por avance rápido, decidida por el usuario; sin push ni despliegue. Aceptación y evidencia, en las fichas de [buscador](cambios/buscador-y-filtros-dietarios.md), [disponibilidad](cambios/disponibilidad-por-sucursal.md) y [slug](cambios/correccion-slug-sucursal.md). No se copian resultados aquí.
 
 ## Bloqueos y riesgos
 
-- Aviso de alérgenos solo dentro del detalle; el listado filtrado no lo repite. Decidir si se muestra junto a los filtros.
-- Las migraciones de identidad, carta, disponibilidad y slugs se aplicaron solo en local; ensayo remoto requiere autorización. Nunca se hizo `db:reset` para preservar la demo manual.
+- La revisión independiente C de búsqueda y disponibilidad no se hizo en sesión limpia; se integró por decisión del usuario tras una lectura de Claude Code sin hallazgos bloqueantes. Si se desea, hacerla después con `pnpm revision:codex` sobre `dc4d102..HEAD`.
+- Las migraciones de identidad, carta, disponibilidad y slugs existen solo en local; ensayo en staging y producción requiere autorización. No se hizo `db:reset` para preservar la demo; conviene hacerlo en algún momento para probar el seed de cero.
+- La demo local quedó con la sucursal `centro` y `central` como alias reservado (inofensivo). El slug de una sucursal no se puede liberar una vez usado.
 - Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015. RLS y E2E comparten base: ejecutar en secuencia.
 
 ## Próximo paso
 
-Orden sugerido; ninguna dependencia técnica obliga a seguirlo. Antes de integrar, conviene que la revisión C de búsqueda y disponibilidad esté resuelta, porque esta rama la contiene.
-
-
-1. Revisión independiente C de búsqueda/disponibilidad (sesión limpia o `pnpm revision:codex` cuando vuelva la cuota) y `db:reset` local para comprobar el seed.
-2. Con el usuario: integrar la rama y retomar staging. La prueba manual de la corrección de slug desde `/admin` ya la hizo el usuario y funciona.
+1. Elegir del backlog el ítem desbloqueado de mayor valor; los pendientes grandes (staging, purga, dominio, producción) dependen de decisiones del usuario.
+2. Cuando haya autorización: aplicar las migraciones al staging, desplegar `main` y probar con sesión SuperAdmin, sucursales, variantes, disponibilidad y el aviso de alérgenos.
+3. Opcional: `db:reset` local y revisión independiente con Codex cuando vuelva la cuota.
