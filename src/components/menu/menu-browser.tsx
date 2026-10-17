@@ -52,7 +52,7 @@ export function MenuBrowser({ sections }: { sections: Section[] }) {
         <CategoryMosaic sections={visible} />
         <CategoryBar sections={visible} />
         <main className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
-          {visible.map((section) => <MenuSection key={section.category.id} section={section} onSelect={setSelected} />)}
+          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={setSelected} />)}
         </main>
       </> : <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
         <h2 className="font-display text-2xl">No encontramos platos con esa búsqueda.</h2>

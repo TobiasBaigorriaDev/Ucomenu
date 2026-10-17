@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { createTenant, login, service, type Tenant } from "./support";
+import { createTenant, FOTO_PNG, login, service, type Tenant } from "./support";
 
 /**
  * Rendimiento de la carta pública (ficha rendimiento-carta-publica): la carta guarda en caché las categorías y los platos,
@@ -8,10 +8,6 @@ import { createTenant, login, service, type Tenant } from "./support";
  * sirven reducidas y solo las de nuestro bucket. Cada prueba trabaja sobre locales propios y los borra al terminar.
  */
 
-const PNG_1X1 = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
-  "base64",
-);
 
 const tenants: Tenant[] = [];
 
@@ -149,7 +145,7 @@ test.describe("caché de la carta pública", () => {
     expect(await page.getByRole("img", { name: "Foto de Milanesa" }).count()).toBe(0);
 
     await page.goto(`/panel/${t.slug}/carta/platos/${ids.Milanesa}`);
-    await page.getByLabel("Elegir una foto").setInputFiles({ name: "milanesa.png", mimeType: "image/png", buffer: PNG_1X1 });
+    await page.getByLabel("Elegir una foto").setInputFiles({ name: "milanesa.png", mimeType: "image/png", buffer: FOTO_PNG });
     await page.getByRole("button", { name: "Guardar foto" }).click();
     await expect(estado(page)).toHaveText("Foto guardada.");
 
@@ -284,7 +280,7 @@ test.describe("fotos optimizadas", () => {
     const ids = await sembrar(t, "Platos", [{ nombre: "Milanesa" }]);
     const ruta = `${t.orgId}/${ids.Milanesa}/${crypto.randomUUID()}.png`;
     const db = service();
-    expect((await db.storage.from("product-images").upload(ruta, PNG_1X1, { contentType: "image/png" })).error).toBeNull();
+    expect((await db.storage.from("product-images").upload(ruta, FOTO_PNG, { contentType: "image/png" })).error).toBeNull();
     expect((await db.from("products").update({ image_path: ruta }).eq("id", ids.Milanesa)).error).toBeNull();
 
     await page.goto(`/m/${t.slug}/centro`);
@@ -294,10 +290,12 @@ test.describe("fotos optimizadas", () => {
 
     const src = (await foto.getAttribute("src"))!;
     expect(src).toContain("/_next/image?url=");
-    expect(await foto.getAttribute("srcset")).toMatch(/w=96&q=75 1x, .*w=192&q=75 2x/);
-    // Con el tamaño fijado en el HTML la lista no salta al cargar la foto.
-    expect(await foto.getAttribute("width")).toBe("96");
-    expect(await foto.getAttribute("height")).toBe("96");
+    // La foto se pide a varios anchos según el espacio que ocupa la card (un solo plato: card de cola, ancho completo en el celular).
+    expect(await foto.getAttribute("srcset")).toMatch(/w=\d+&q=75 \d+w/);
+    expect(await foto.getAttribute("sizes")).toBe("(min-width: 768px) 33vw, 100vw");
+    // Con la proporción y el tamaño fijados en el HTML la grilla no salta al cargar la foto.
+    expect(await foto.getAttribute("width")).toBe("384");
+    expect(await foto.getAttribute("height")).toBe("288");
 
     const reducida = await request.get(src, { headers: { Accept: "image/webp,image/*,*/*;q=0.8" } });
     expect(reducida.status()).toBe(200);

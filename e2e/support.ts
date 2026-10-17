@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, type Page } from "@playwright/test";
+import { deflateSync, crc32 } from "node:zlib";
 import { purgeOrgRecordsWhere } from "../tests/rls/purge-price-history";
 
 /**
@@ -159,3 +160,31 @@ export async function expectNoHorizontalOverflow(page: Page) {
   });
   expect(derecha, `desborde horizontal a ${ancho} px (lo causa «${elemento}»)`).toBeLessThanOrEqual(ancho + 0.5);
 }
+
+/**
+ * Foto de prueba de tamaño real (480×300, un color liso) para subir como imagen de un plato. Una imagen de 1×1 píxel no es un
+ * caso realista y el navegador no la decodifica de forma confiable con los tamaños que pide la carta.
+ */
+export const FOTO_PNG = (() => {
+  const [width, height] = [480, 300];
+  const chunk = (type: string, data: Buffer) => {
+    const body = Buffer.concat([Buffer.from(type, "ascii"), data]);
+    const out = Buffer.alloc(12 + data.length);
+    out.writeUInt32BE(data.length, 0);
+    body.copy(out, 4);
+    out.writeUInt32BE(crc32(body), 8 + data.length);
+    return out;
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8); // 8 bits por canal, RGB, sin entrelazado
+  const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(width * 3, Buffer.from([0xc0, 0x6a, 0x3a]))]);
+  const rows = Buffer.concat(Array.from({ length: height }, () => row));
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk("IHDR", header),
+    chunk("IDAT", deflateSync(rows)),
+    chunk("IEND", Buffer.alloc(0)),
+  ]);
+})();

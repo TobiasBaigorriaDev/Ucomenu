@@ -20,7 +20,7 @@ export function DishOptions({ productId, groups }: { productId: string; groups: 
             </p>
             <ul aria-labelledby={titleId} className="mt-1">
               {group.options.map((option) => (
-                <li key={option.id} className="flex items-baseline justify-between gap-x-4 py-0.5 text-[0.9375rem] leading-snug">
+                <li key={option.id} className="flex flex-wrap items-baseline justify-between gap-x-3 py-0.5 text-[0.9375rem] leading-snug">
                   <span className="min-w-0 [overflow-wrap:anywhere]">{option.name}</span>
                   {option.price_delta_cents > 0 ? (
                     <span className="shrink-0 whitespace-nowrap text-[var(--carta-terra)] tabular-nums">

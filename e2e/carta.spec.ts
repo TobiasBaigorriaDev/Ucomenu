@@ -3,6 +3,7 @@ import {
   alerta,
   createTenant,
   expectNoHorizontalOverflow,
+  FOTO_PNG,
   login,
   service,
   type Estado,
@@ -16,10 +17,6 @@ import {
  * Cada prueba trabaja sobre un local propio y lo borra al terminar.
  */
 
-const PNG_1X1 = Buffer.from(
-  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
-  "base64",
-);
 
 /** BMP sin comprimir (24 bits) con un degradé: pesa varios MB y el navegador lo decodifica. */
 function bmp(width: number, height: number): Buffer {
@@ -274,7 +271,7 @@ test.describe("fotos", () => {
     const fotoActual = async () =>
       (await service().from("products").select("image_path").eq("id", ids.Milanesa).single()).data?.image_path ?? null;
 
-    await page.getByLabel("Elegir una foto").setInputFiles({ name: "milanesa.png", mimeType: "image/png", buffer: PNG_1X1 });
+    await page.getByLabel("Elegir una foto").setInputFiles({ name: "milanesa.png", mimeType: "image/png", buffer: FOTO_PNG });
     await expect(page.getByText("Foto lista")).toBeVisible();
     await page.getByRole("button", { name: "Guardar foto" }).click();
     await expect(estado(page)).toHaveText("Foto guardada.");
@@ -294,7 +291,7 @@ test.describe("fotos", () => {
 
     // Reemplazarla deja una sola foto.
     await page.goto(`/panel/${t.slug}/carta/platos/${ids.Milanesa}`);
-    await page.getByLabel("Reemplazar la foto").setInputFiles({ name: "otra.png", mimeType: "image/png", buffer: PNG_1X1 });
+    await page.getByLabel("Reemplazar la foto").setInputFiles({ name: "otra.png", mimeType: "image/png", buffer: FOTO_PNG });
     await page.getByRole("button", { name: "Guardar foto" }).click();
     await expect(estado(page)).toHaveText("Foto guardada.");
     const segunda = await fotoActual();
@@ -487,7 +484,7 @@ test.describe("cuenta que no puede escribir", () => {
         // Y subiendo una foto.
         await page.locator("form").filter({ has: page.getByRole("button", { name: "Guardar foto", exact: true }) })
           .locator("fieldset").first().evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
-        await page.getByLabel("Elegir una foto").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG_1X1 });
+        await page.getByLabel("Elegir una foto").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: FOTO_PNG });
         await page.getByRole("button", { name: "Guardar foto" }).click();
         await expect(alerta(page).last()).toContainText(texto);
 
