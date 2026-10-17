@@ -37,5 +37,14 @@ El alta de una organización sigue exigiendo un Dueño inicial con **cuenta nuev
 - Respuesta perdida: reintentar es seguro (idempotente); la pantalla de la organización muestra los Dueños actuales.
 - Sumada por error: el Dueño de la organización puede quitarla desde «Personal» (la guarda del último Dueño protege el caso límite) o SuperAdmin por SQL; la auditoría conserva el rastro.
 
-## Evidencia
-Pendiente.
+## Decisiones de implementación (a raíz de la revisión)
+- **La confirmación está atada a la cuenta mostrada:** el primer paso devuelve el `user_id`; el segundo lo manda como `p_expected_user` y, si el email ahora resuelve a otra cuenta (borrada y recreada entre los dos pasos), la base responde `55000 account_changed` y no escribe nada.
+- **Ascenso sin falso éxito:** la membresía se lee `FOR UPDATE` y se comprueba que el `UPDATE` afectó una fila (`55000 membership_changed`).
+
+## Evidencia (2026-10-17, base local; código en `56dc48a`, más el ajuste de `acl.rls.test.ts` del commit siguiente)
+`pnpm lint` y `pnpm typecheck` limpios · `pnpm test` 471/471 · `pnpm build` · `pnpm test:rls` completo: **644 pasaron y 2 de `acl.rls` fallaron** por no conocer la función nueva (se registró `admin_add_owner` como función de SuperAdmin solo para `service_role`; `acl.rls` 16/16 después) · `pnpm exec playwright test` completo **257 verdes, 1 omitido** (5 nuevas en `e2e/dueno-existente.spec.ts`, a 390 px) · `database.types.ts` regenerado con `pnpm db:types`. Pruebas nuevas: 16 en `tests/rls/dueno-existente.rls.test.ts`.
+Mutaciones en la base (una a la vez, restauradas): sin comprobar al actor SuperAdmin → falla; ignorar la confirmación → falla; sin la auditoría → fallan 5; sin atar la confirmación a la cuenta → fallan 2; sin `FOR UPDATE` → falla la carrera del ascenso. **No detectadas, por equivalentes:** quitar el *lock* advisory (la restricción `unique (user_id, organization_id)` protege los datos igual; solo cambiaría la respuesta de quien pierde la carrera) y quitar la comprobación de filas del `UPDATE` con `FOR UPDATE` (queda como defensa en profundidad).
+**No ejecutado:** teléfono real; aplicar la migración en staging.
+
+## Revisión y aprobación
+- **Ronda 1 (Codex, `8b4caaf`):** RECHAZAR, dos hallazgos, **ambos reales y corregidos** en `56dc48a`. (1) *Bloqueante:* la confirmación no se ataba a la cuenta que se había mostrado, así que, si un Dueño de otro local daba de baja a esa cuenta y creaba otra con el mismo email entre los dos pasos, el rol de Dueño iba a la cuenta nueva. Corregido con `p_expected_user`; prueba de regresión (cuenta reemplazada entre pasos) que falla sin la corrección. (2) *Importante:* un ascenso podía informar `promoted` y auditar sin crear ningún Dueño si la membresía se borraba en paralelo. Corregido con `FOR UPDATE` y comprobación de filas; prueba de carrera sincronizada con `pg_stat_activity` (sin esperas fijas) que falla sin la corrección.
