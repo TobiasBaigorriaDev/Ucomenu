@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps<"/t/[token]">): Pro
   const table = await resolveTable(token);
   const base = { robots: { index: false, follow: false }, referrer: "no-referrer" } as const;
   if (!table) return { ...base, title: "Carta no encontrada" };
-  if (table.status === "suspended") return { ...base, title: `${table.orgName} · Carta no disponible` };
+  if (table.status !== "available") return { ...base, title: `${table.orgName} · Carta no disponible` };
   return { ...base, title: `Carta de ${table.orgName}` };
 }
 
@@ -24,11 +24,13 @@ export default async function TablePage({ params }: PageProps<"/t/[token]">) {
   const { token } = await params;
   const table = await resolveTable(token);
   if (!table) notFound();
-  if (table.status === "suspended") return <MenuUnavailable organizationName={table.orgName} />;
+  if (table.status !== "available") {
+    return <MenuUnavailable organizationName={table.orgName} reason={table.status === "inactive" ? "branch_inactive" : "suspended"} />;
+  }
 
   const result = await getPublicMenu(table.orgSlug, table.branchSlug);
   if (!result) notFound();
-  if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} />;
+  if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} reason={result.reason} />;
 
   // Una mesa desactivada se comporta como el link directo: la carta, sin la etiqueta de mesa ni los botones de llamado.
   // Los botones solo existen si la base informa que se puede llamar (plan, cuenta al día, mesa activa y no silenciada);

@@ -31,14 +31,14 @@ const INSUFFICIENT_PRIVILEGE = "42501";
 // Lectura
 // ---------------------------------------------------------------------------
 
-export type Sucursal = { id: string; slug: string; name: string; tables: number; activeTables: number };
+export type Sucursal = { id: string; slug: string; name: string; isActive: boolean; tables: number; activeTables: number };
 
 const collator = new Intl.Collator("es-AR", { numeric: true, sensitivity: "base" });
 
-/** Las sucursales de la organización (orden natural por nombre) con la cantidad de mesas. */
+/** Las sucursales de la organización, activas e inactivas (orden natural por nombre), con la cantidad de mesas. */
 export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]> {
   const [branches, tables] = await Promise.all([
-    readAllPages((from, to) => db.from("branches").select("id, slug, name").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active").eq("organization_id", orgId).order("id").range(from, to)),
     readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
@@ -53,7 +53,7 @@ export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]>
   }
 
   return (branches.data ?? [])
-    .map((branch) => ({ ...branch, ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }) }))
+    .map(({ is_active, ...branch }) => ({ ...branch, isActive: is_active, ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }) }))
     .sort((a, b) => collator.compare(a.name, b.name));
 }
 
@@ -125,4 +125,24 @@ export async function renameBranch(db: Db, orgId: string, id: string, rawName: s
     return fail(exists.data ? "forbidden" : "not_found");
   }
   return ok(undefined);
+}
+
+/**
+ * Desactiva o reactiva una sucursal (ficha desactivar-sucursales). Solo el Dueño y con la cuenta al día: lo imponen la
+ * política UPDATE de `branches` y el privilegio por columna `is_active`. Reactivar respeta el tope de sucursales ACTIVAS
+ * del plan (trigger de la base, 53400); desactivar nunca se bloquea por el tope. Desactivar la última activa está permitido
+ * (la pantalla avisa antes): la carta pública del local queda «no disponible» hasta reactivar. Las mesas no se tocan.
+ */
+export async function setBranchActive(db: Db, orgId: string, id: string, active: boolean): Promise<Result> {
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+
+  const { data, error } = await db.from("branches").update({ is_active: active }).eq("id", id).eq("organization_id", orgId).select("id, is_active");
+  if (error) return fail(error.code === LIMIT_EXCEEDED && active ? "limit_reactivate" : await writeFailure(db, orgId, error));
+  if (data.length === 0) {
+    const exists = await db.from("branches").select("id").eq("id", id).eq("organization_id", orgId).maybeSingle();
+    if (exists.error) return fail("unexpected");
+    return fail(exists.data ? "forbidden" : "not_found");
+  }
+  return data[0].is_active === active ? ok(undefined) : fail("unexpected");
 }

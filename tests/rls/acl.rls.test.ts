@@ -223,6 +223,7 @@ describe("RLS y permisos de tablas", () => {
         order by table_name, column_name`);
 
     expect(columnas("authenticated")).toEqual([
+      ["branches", "is_active"], // solo el Dueño y con la cuenta al día, por la política de branches (ficha desactivar-sucursales)
       ["branches", "name"],
       ["branches", "waiter_call_cooldown_seconds"], // solo el Dueño, por la política de branches
       ["tables", "is_active"],

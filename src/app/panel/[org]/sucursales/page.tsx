@@ -4,7 +4,7 @@ import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { loadSucursales } from "@/lib/sucursales/branches";
 import { branchLimitMessage, sucursalesBlockNotice } from "@/lib/sucursales/messages";
 import { createSessionClient } from "@/lib/supabase/server";
-import { CreateBranchForm, RenameBranchForm } from "./branch-forms";
+import { CreateBranchForm, RenameBranchForm, ToggleBranchActiveForm } from "./branch-forms";
 
 export const metadata: Metadata = { title: "Sucursales" };
 
@@ -22,14 +22,16 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
   const canWrite = ent?.canWrite === true;
   const notice = sucursalesBlockNotice(ent);
   const limit = ent?.limits.branches;
-  const used = ent?.usage.branches ?? branches.length;
+  // «Usadas» = activas: las desactivadas no cuentan para el tope del plan.
+  const activeCount = branches.filter((branch) => branch.isActive).length;
+  const used = ent?.usage.branches ?? activeCount;
   const atLimit = typeof limit === "number" && used >= limit;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Sucursales</h1>
       <p className="mt-2 max-w-prose text-base text-muted">
-        Cada sucursal tiene su dirección de carta, sus mesas y su QR. La carta es la misma para todo el local.
+        Cada sucursal tiene su dirección de carta, sus mesas y su QR. La carta es la misma para todo el local. Una sucursal desactivada no cuenta para el tope de tu plan y su carta y sus QR dicen «no disponible».
       </p>
       {ent ? null : (
         <p className="mt-2 text-base text-muted">No pudimos comprobar el estado de la cuenta, así que la edición está desactivada.</p>
@@ -41,7 +43,7 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
       ) : null}
 
       <p className="mt-4 text-lg" data-testid="sucursales-uso">
-        Sucursales:{" "}
+        Sucursales activas:{" "}
         <span className="font-medium tabular-nums">{typeof limit === "number" ? `${used} de ${limit}` : `${used}, sin tope`}</span>
       </p>
 
@@ -54,23 +56,47 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
         ) : (
           <ul className="mt-3 panel-list">
             {branches.map((branch) => (
-              <li key={branch.id} className="border-b border-ink/15 py-4" data-testid="sucursal" data-name={branch.name}>
-                <p className="text-lg font-medium break-words">{branch.name}</p>
+              <li
+                key={branch.id}
+                className="border-b border-ink/15 py-4"
+                data-testid="sucursal"
+                data-name={branch.name}
+                data-active={branch.isActive ? "true" : "false"}
+              >
+                <p className="text-lg font-medium break-words">
+                  {branch.name}
+                  {branch.isActive ? null : (
+                    <span className="ml-2 rounded-full border border-ink/40 px-2 py-0.5 text-sm font-medium" data-testid="sucursal-desactivada">
+                      Desactivada
+                    </span>
+                  )}
+                </p>
                 <p className="mt-1 text-base text-muted break-all">
                   Dirección de la carta: /m/{membership.org.slug}/{branch.slug}
+                  {branch.isActive ? "" : " (hoy dice «no disponible»)"}
                 </p>
                 <p className="mt-1 text-base text-muted" data-testid="sucursal-mesas">
                   {branch.activeTables === 1 ? "1 mesa activa" : `${branch.activeTables} mesas activas`}
                   {branch.tables > branch.activeTables ? ` (${branch.tables} en total)` : ""}
                 </p>
                 <div className="mt-3 flex flex-wrap items-start gap-2">
-                  <Link href={`/m/${membership.org.slug}/${branch.slug}`} className={linkButtonClass} aria-label={`Ver la carta de ${branch.name}`}>
-                    Ver la carta
-                  </Link>
+                  {branch.isActive ? (
+                    <Link href={`/m/${membership.org.slug}/${branch.slug}`} className={linkButtonClass} aria-label={`Ver la carta de ${branch.name}`}>
+                      Ver la carta
+                    </Link>
+                  ) : null}
                   <Link href={`/panel/${membership.org.slug}/mesas`} className={linkButtonClass} aria-label={`Mesas de ${branch.name}`}>
                     Mesas
                   </Link>
                   <RenameBranchForm orgSlug={membership.org.slug} id={branch.id} name={branch.name} canWrite={canWrite} />
+                  <ToggleBranchActiveForm
+                    orgSlug={membership.org.slug}
+                    id={branch.id}
+                    name={branch.name}
+                    isActive={branch.isActive}
+                    isLastActive={branch.isActive && activeCount === 1}
+                    canWrite={canWrite}
+                  />
                 </div>
               </li>
             ))}

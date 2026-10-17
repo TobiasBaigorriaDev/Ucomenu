@@ -33,10 +33,10 @@ const INVALID_PARAMETER = "22023"; // el silencio pasa del tope de 24 horas
 export type ConfigTable = { id: string; label: string; is_active: boolean; muted_until: string | null };
 export type ConfigBranch = { id: string; name: string; cooldown: number; tables: ConfigTable[] };
 
-/** Las sucursales de la organización con su cooldown y sus mesas (orden natural por nombre). */
+/** Las sucursales ACTIVAS de la organización con su cooldown y sus mesas (orden natural por nombre). */
 export async function loadLlamadoConfig(db: Db, orgId: string): Promise<ConfigBranch[]> {
   const [branches, tables] = await Promise.all([
-    db.from("branches").select("id, name, waiter_call_cooldown_seconds").eq("organization_id", orgId).order("name"),
+    db.from("branches").select("id, name, waiter_call_cooldown_seconds").eq("organization_id", orgId).eq("is_active", true).order("name"),
     db.from("tables").select("id, branch_id, label, is_active, muted_until").eq("organization_id", orgId),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);

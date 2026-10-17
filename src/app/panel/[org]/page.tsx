@@ -18,13 +18,16 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
 
   const supabase = await createSessionClient();
   const [branches, ent, counts] = await Promise.all([
-    supabase.from("branches").select("id, slug, name").eq("organization_id", membership.org.id).order("name"),
+    supabase.from("branches").select("id, slug, name, is_active").eq("organization_id", membership.org.id).order("name"),
     getEntitlements(membership.org.id),
     loadGuideCounts(supabase, membership.org.id),
   ]);
 
   const isOwner = membership.role === "owner";
-  const guide = buildGuide({ counts, branchCount: branches.data?.length ?? 0, ent, role: membership.role, slug: membership.org.slug });
+  // Las desactivadas no publican carta: el Resumen enlaza solo las activas y avisa si no queda ninguna.
+  const activeBranches = (branches.data ?? []).filter((branch) => branch.is_active);
+  const allInactive = activeBranches.length === 0 && (branches.data?.length ?? 0) > 0;
+  const guide = buildGuide({ counts, branchCount: activeBranches.length, ent, role: membership.role, slug: membership.org.slug });
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
@@ -37,9 +40,9 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
           <h2 id="carta-publica" className="font-display text-2xl">
             Carta pública
           </h2>
-          {branches.data && branches.data.length > 0 ? (
+          {activeBranches.length > 0 ? (
             <ul className="mt-3 divide-y divide-white/25 border-t border-white/25">
-              {branches.data.map((branch) => (
+              {activeBranches.map((branch) => (
                 <li key={branch.id}>
                   <Link
                     href={`/m/${membership.org.slug}/${branch.slug}`}
@@ -54,13 +57,17 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
             </ul>
           ) : (
             <>
-              <p className="mt-3 max-w-prose">Este local todavía no tiene sucursales.</p>
+              <p className="mt-3 max-w-prose" data-testid="resumen-sin-sucursales-activas">
+                {allInactive
+                  ? "Todas las sucursales están desactivadas: la carta pública no está disponible."
+                  : "Este local todavía no tiene sucursales."}
+              </p>
               {isOwner ? (
                 <Link
                   href={`/panel/${membership.org.slug}/sucursales`}
                   className="mt-3 inline-flex min-h-11 items-center justify-center rounded-full bg-porcelain px-5 py-2 text-base font-medium text-ink"
                 >
-                  Crear la primera sucursal
+                  {allInactive ? "Reactivar una sucursal" : "Crear la primera sucursal"}
                 </Link>
               ) : null}
             </>

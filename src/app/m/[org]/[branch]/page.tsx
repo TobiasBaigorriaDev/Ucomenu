@@ -18,7 +18,7 @@ export default async function PublicMenuPage({ params }: PageProps<"/m/[org]/[br
   const { org, branch } = await params;
   const result = await getPublicMenu(org, branch);
   if (!result) notFound();
-  if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} />;
+  if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} reason={result.reason} />;
   if (result.menu.branch.slug !== branch) permanentRedirect(`/m/${org}/${result.menu.branch.slug}`);
 
   return <PublicMenuView menu={result.menu} />;
