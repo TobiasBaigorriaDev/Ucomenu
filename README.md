@@ -24,7 +24,7 @@ pnpm db:demo         # opcional: demo completa (más platos, fotos y logo) en ca
 ```
 Cartas de ejemplo del seed: `/m/cafe-ejemplo/centro`, `/m/parrilla-demo/sur` y `/m/resto-moroso/unica` (cuenta suspendida por mora: muestra «Carta temporalmente no disponible»).
 
-La demo completa (`pnpm db:demo`, solo local; necesita internet la primera vez para bajar las fotos) sirve para ver y diseñar la carta con material real; `pnpm db:demo --quitar` la deshace. **Antes de correr RLS o E2E, volvé al seed limpio** con `pnpm db:reset` (o `pnpm db:demo --quitar`): las pruebas asumen esos datos. La carta pública cachea hasta 60 s, así que un cambio hecho directo en la base tarda ese tiempo en verse.
+La demo completa (`pnpm db:demo`, solo local; necesita internet la primera vez para bajar las fotos) sirve para ver y diseñar la carta con material real; `pnpm db:demo --quitar` la deshace. La demo pasa ambos locales al plan Pro para que se vean los botones de llamado en la carta de mesa: `/t/c0ffee01000000000000000000000000` (Café Ejemplo) y `/t/fa11a001000000000000000000000000` (Parrilla Demo). **Antes de correr RLS o E2E, volvé al seed limpio** con `pnpm db:reset` (o `pnpm db:demo --quitar`): las pruebas asumen esos datos. La carta pública cachea hasta 60 s, así que un cambio hecho directo en la base tarda ese tiempo en verse.
 
 Pruebas, lint y demás comandos: sección **Comandos del proyecto** de `AGENTS.md`. Las pruebas de RLS necesitan Docker encendido y la base reseteada (`pnpm db:reset`).
 

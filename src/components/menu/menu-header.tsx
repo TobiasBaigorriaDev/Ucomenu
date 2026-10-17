@@ -2,8 +2,8 @@ import "./carta.css";
 import Image from "next/image";
 
 /**
- * Cabecera editorial: nombre del local en display grande, alineado a la izquierda; debajo, un filete y la línea de
- * sucursal y mesa (datos reales, no una etiqueta decorativa).
+ * Cabecera editorial: logo y nombre del local lado a lado, en display grande y alineados a la izquierda; debajo, un
+ * filete y la línea de sucursal y mesa (datos reales, no una etiqueta decorativa).
  */
 export function MenuHeader({
   organizationName,
@@ -21,18 +21,22 @@ export function MenuHeader({
   return (
     <header>
       <div className="mx-auto max-w-3xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 sm:pb-12">
-        {logo ? (
-          <Image
-            src={logo}
-            alt={`Logo de ${organizationName}`}
-            width={192}
-            height={112}
-            className="mb-6 h-14 w-auto max-w-[12rem] object-contain object-left sm:h-16"
-          />
-        ) : null}
-        <h1 className="carta-title font-display text-balance text-[var(--carta-green)] [overflow-wrap:anywhere]">
-          {organizationName}
-        </h1>
+        <div className="flex items-center gap-4 sm:gap-6">
+          {logo ? (
+            <Image
+              src={logo}
+              alt={`Logo de ${organizationName}`}
+              width={192}
+              height={192}
+              className="size-16 shrink-0 object-contain sm:size-24"
+            />
+          ) : null}
+          <h1
+            className={`carta-title ${logo ? "carta-title-con-logo " : ""}min-w-0 font-display text-balance text-[var(--carta-green)] [overflow-wrap:anywhere]`}
+          >
+            {organizationName}
+          </h1>
+        </div>
         {branchName || tableLabel ? (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t-[1.5px] border-ink pt-3">
             {branchName ? (

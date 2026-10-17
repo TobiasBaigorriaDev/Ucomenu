@@ -48,6 +48,11 @@
   letter-spacing: -0.015em;
 }
 
+/* Con el logo al lado, el nombre baja un escalón para que entren ambos sin partir palabras. */
+.carta-title-con-logo {
+  font-size: clamp(2.5rem, 0.5rem + 11vw, 5rem);
+}
+
 /* Chips de la barra fija: el foco redondo en los botones redondos (el global es de 2px). */
 .carta-bar a:focus-visible {
   border-radius: 9999px;

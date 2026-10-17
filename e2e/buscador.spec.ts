@@ -38,13 +38,15 @@ test("Staff declara etiquetas; búsqueda combinada y detalle conservan el contex
   if (table.error) throw table.error;
   for (const route of [menu, `/t/${table.data.qr_token}`]) {
     await page.goto(route);
-    // El aviso acompaña a los filtros desde el principio, sin depender de abrir un plato.
+    // El inicio queda limpio: el aviso de alérgenos aparece recién al filtrar por una etiqueta.
     const search = page.getByRole("search", { name: "Buscar y filtrar la carta" });
-    await expect(search).toContainText("no son una certificación");
-    await expect(search.getByRole("link", { name: "Aviso de alérgenos" })).toHaveAttribute("href", "/alergenos");
+    await expect(page.getByTestId("aviso-etiquetas")).toHaveCount(0);
     await page.getByRole("searchbox", { name: "Buscar platos" }).fill("CAFE almendras");
     await page.getByRole("button", { name: "Vegano", exact: true }).click();
+    await expect(page.getByTestId("aviso-etiquetas")).toContainText("no certificadas");
+    await expect(search.getByRole("link", { name: "Aviso de alérgenos" })).toHaveAttribute("href", "/alergenos");
     await page.getByRole("button", { name: "Sin TACC", exact: true }).click();
+    await expect(page.getByTestId("aviso-etiquetas")).toContainText("todas las etiquetas elegidas");
     await expect(page.getByRole("status")).toContainText("1 plato encontrado");
     const trigger = page.getByRole("button", { name: "Ver detalle de Café frío" });
     await trigger.click();

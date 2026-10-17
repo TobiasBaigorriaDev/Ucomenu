@@ -7,6 +7,10 @@
  * Uso (desde la raíz, con el Supabase local encendido):  pnpm db:demo      (o node tools/sembrar-demo.mjs)
  * Es idempotente: vuelve a dejar la demo igual aunque ya estuviera llena. `--quitar` la devuelve al estado del seed.
  *
+ * La demo pasa las dos organizaciones al plan Pro para que `/t/{token}` muestre «Llamar al mozo» y «Pedir la cuenta»
+ * (mesas del seed: `/t/c0ffee01000000000000000000000000` en Café Ejemplo y `/t/fa11a001000000000000000000000000` en
+ * Parrilla Demo); `--quitar` las devuelve a Básico.
+ *
  * IMPORTANTE: las pruebas de RLS y E2E asumen el seed limpio. Antes de correrlas: `pnpm db:reset` (o `pnpm db:demo --quitar`).
  *
  * Las filas nuevas usan ids con sufijo 000000001NNN, y `--quitar` las borra por ese rango. Las fotos son de Unsplash
@@ -297,6 +301,7 @@ async function quitarOrg(def) {
   const logoPaths = (logos ?? []).map((file) => `${def.org}/${file.name}`);
   if (logoPaths.length) await db.storage.from(LOGOS).remove(logoPaths);
   check(await db.from("organizations").update({ logo_path: null }).eq("id", def.org), "quitar el logo");
+  check(await db.from("subscriptions").update({ plan_code: "basic" }).eq("organization_id", def.org), "volver al plan Básico");
 }
 
 async function sembrarOrg(def) {
@@ -328,10 +333,11 @@ async function sembrarOrg(def) {
     check(await db.storage.from(IMAGES).upload(path, bytes.get(plato.foto), { contentType: "image/jpeg", upsert: true }), `subir la foto de ${plato.name ?? plato.id}`);
     check(await db.from("products").update({ image_path: path }).eq("id", plato.id), "guardar la foto");
   }
+  check(await db.from("subscriptions").update({ plan_code: "pro" }).eq("organization_id", def.org), "pasar al plan Pro");
   const logoPath = `${def.org}/${uuidFrom(`logo:${def.org}`)}.png`;
   check(await db.storage.from(LOGOS).upload(logoPath, await logo(def.logo), { contentType: "image/png", upsert: true }), "subir el logo");
   check(await db.from("organizations").update({ logo_path: logoPath }).eq("id", def.org), "guardar el logo");
-  console.log(`${def.slug}: ${categorias.length} categorías nuevas, ${platos.length} platos (${conFoto.length} con foto), ${grupos.length} grupos de opciones, ${agotados.length} agotado, logo.`);
+  console.log(`${def.slug}: ${categorias.length} categorías nuevas, ${platos.length} platos (${conFoto.length} con foto), ${grupos.length} grupos de opciones, ${agotados.length} agotado, logo, plan Pro.`);
 }
 
 const quitar = process.argv.includes("--quitar");

@@ -32,7 +32,7 @@ La carta de cada local lleva su propia identidad (logo y paleta) y convive con e
 ## Capabilities and Constraints
 
 - La carta muestra categorías y platos activos con nombre, descripción, precio base y foto opcional; variantes y adicionales son informativos; el detalle abre en una ficha superpuesta que conserva el contexto.
-- Buscador por nombre y descripción, combinable con filtros dietarios (Sin TACC, Vegano, Vegetariano). Las etiquetas las declara el local y no son una certificación; el aviso de alérgenos debe estar visible junto a los filtros.
+- Buscador por nombre y descripción, combinable con filtros dietarios (Sin TACC, Vegano, Vegetariano). Las etiquetas las declara el local y no son una certificación; el aviso de alérgenos aparece donde importa —al filtrar por una etiqueta— y se repite en el detalle del plato y en el pie; el inicio de la carta no lleva avisos largos (decisión del usuario, 2026-10-17).
 - Un plato agotado en la sucursal se muestra como «Agotado», nunca desaparece.
 - Cada local elige una de cuatro paletas cerradas (Oliva, Azul, Vino, Cacao) con contraste AA verificado y un logo opcional. La carta aplica la paleta con variables CSS dentro de `.carta`; los tokens globales también sirven al panel y no se tocan sin avisar.
 - Una carta puede tener muchas categorías y platos, con y sin foto: ningún componente puede depender de que haya imagen.

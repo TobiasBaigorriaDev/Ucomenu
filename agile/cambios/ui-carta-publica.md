@@ -25,6 +25,8 @@ Contexto durable en [`PRODUCT.md`](../../PRODUCT.md) y en el surface brief con e
 
 **Datos de demo (2026-10-17):** a pedido del usuario, `pnpm db:demo` (`tools/sembrar-demo.mjs`, solo local, idempotente, `--quitar` la deshace) llena `cafe-ejemplo` (7 categorías, 28 platos, 24 con foto, logo) y `parrilla-demo` (7 categorías, 24 platos, 19 con foto, logo) con descripciones, etiquetas, variantes y un plato agotado por local. Fotos de Unsplash descargadas a `.demo-cache/` (ignorada por Git; no se versionan binarios). **No modifica `supabase/seed.sql`**: las pruebas de RLS y E2E siguen asumiendo el seed limpio, así que antes de correrlas hay que volver con `pnpm db:reset` o `pnpm db:demo --quitar`. Cierre de la iteración: correr los E2E sobre el seed limpio.
 
+**Ronda 2 (2026-10-17), feedback del usuario:** (1) el aviso de alérgenos y la leyenda de filtros salen del inicio (el aviso aparece al filtrar por etiqueta); (2) el logo va al lado del nombre del local, en una caja cuadrada con `object-contain`; (3) los botones «Llamar al mozo» y «Pedir la cuenta» se integran al diseño como un dock flotante de dos celdas (icono dibujado, colores de la paleta), con el mismo comportamiento, `data-testid` y ticket de visita. Solo existen en `/t/{token}` y con plan Pro: la demo pasa las dos organizaciones a Pro (`/t/c0ffee01000000000000000000000000` y `/t/fa11a001000000000000000000000000`); `--quitar` las devuelve a Básico. Verificado sobre seed limpio: typecheck, lint, build y 97 E2E de carta, llamado, ticket de visita, identidad y legales.
+
 ## Aceptación
 - [ ] Los cambios pedidos por el usuario están hechos y aprobados por él en el navegador.
 - [ ] Móvil (390 px) y escritorio (1280 px) sin desborde; contraste y foco intactos en las cuatro paletas.

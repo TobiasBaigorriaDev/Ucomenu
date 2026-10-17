@@ -39,3 +39,5 @@ Con `pnpm dev` el detalle no quedaba abierto: StrictMode remontaba el efecto de 
 ## Aviso de alérgenos junto a los filtros (2026-10-17)
 El bloque de búsqueda muestra siempre, antes de filtrar, que las etiquetas las declara el local y no son una certificación, con enlace a `/alergenos`; ya no depende de abrir el detalle. Aserción nueva en `e2e/buscador.spec.ts` (falló antes del cambio). Typecheck, lint, build y `buscador`, `disponibilidad`, `menu`, `legal` y `rendimiento-carta`: **38/38**. Captura a 390 px revisada: sin desborde.
 
+## Ajuste de ubicación del aviso (2026-10-17)
+A pedido del usuario, el aviso largo ya no está al inicio de la carta: aparece junto a los filtros solo cuando hay una etiqueta elegida («no certificadas», confirmar con el personal, enlace a `/alergenos`) y sigue en el detalle del plato y en el pie. Se quitó también la leyenda sobre combinar filtros: queda como una frase corta que solo aparece con dos o más etiquetas. El E2E de `buscador.spec.ts` ahora comprueba que el inicio no lo muestra y que aparece al filtrar.
