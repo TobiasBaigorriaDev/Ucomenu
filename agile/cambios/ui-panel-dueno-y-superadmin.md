@@ -21,3 +21,7 @@ Typecheck, lint, `pnpm test` **453/453** (incluye contraste AA de la paleta de p
 ## Pendiente
 - Rehacer el login y la sala en vivo (tablet o pantalla fija) si se quiere cerrar el lenguaje visual.
 - Probar el panel con un local real que tenga logo claro sobre el riel (el logo va en una caja blanca).
+
+## Revisión y aprobación
+**Codex, ronda 1** (commit `3427f60`, nivel M, a pedido del usuario): **aprobar con cambios**, un hallazgo. Importante, real y reproducido: el nombre del local en la cabecera (`app-shell.tsx`) era un ítem flex sin `min-w-0`; con un nombre de 80 caracteres sin espacios, la página medía 1587 px a 390 px de ancho. Corregido con `min-w-0` y `overflow-wrap: anywhere` en el enlace y su contenedor, con prueba de regresión en `e2e/sucursales.spec.ts` (el test móvil renombra el local a 80 «N»; comprobado que fallaba antes de la corrección con «desborde horizontal a 390 px (lo causa a.font-display…)»). Los tres fixes previos de la revisión del skill los dio por corregidos. Verificado tras la corrección, sobre seed limpio: typecheck, lint y 93 E2E (acceso, mesas, sucursales, superadmin, planes y pagos).
+**Nota de entorno:** `pnpm db:demo --quitar` no devolvió `resto-moroso` a su estado de seed (dos E2E de mora fallaron hasta correr `pnpm db:reset`): antes de E2E usar `pnpm db:reset`.

@@ -289,6 +289,8 @@ test.describe("local sin sucursales y diseño móvil", () => {
     const t = await nuevoLocal("suc-movil");
     const largo = "Sucursal con un nombre larguísimo que ocupa mucho espacio en la pantalla";
     await service().from("branches").insert({ organization_id: t.orgId, slug: "a".repeat(60), name: largo });
+    // El nombre del local (sin espacios, 80 caracteres) va en la cabecera del marco: tampoco debe ensanchar la página.
+    await service().from("organizations").update({ name: "N".repeat(80) }).eq("id", t.orgId);
     await ingresar(page, t.owner, t);
     await sucursal(page, "Centro").locator("summary", { hasText: "Renombrar" }).click();
     await expectNoHorizontalOverflow(page);
