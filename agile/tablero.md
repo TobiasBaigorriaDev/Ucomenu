@@ -34,7 +34,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin, incrementos pendientes: add-ons, desactivar organizaciones y lectura de la auditoría y de los pagos por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
-- [C] SuperAdmin: sumar una cuenta **existente** como Dueño de otra organización: implementado en `feat/dueno-existente` y aprobado por Codex (2 rondas); falta la aprobación humana, integrar y aplicar la migración en staging → agile/cambios/dueno-existente.md
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
@@ -65,6 +64,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 - [S] Restauración ensayada en un proyecto Supabase nuevo; repetición manual con recordatorio mensual configurado (2026-10-17) → [ficha](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17)
 - [S] Wake Lock nativo del panel de sala comprobado con HTTPS en Chrome de Windows (2026-10-17) → [ficha](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17)
+- [C] SuperAdmin suma una cuenta existente como Dueño de otra organización; integrado a `main`, migración aplicada en staging y aprobado por el usuario (2026-10-17) → [ficha](cambios/dueno-existente.md)
 - [C] Desactivar y reactivar sucursales; integrado a `main`, migración confirmada en staging y cierre aprobado por el usuario (2026-10-17) → [ficha](cambios/desactivar-sucursales.md)
 - [M] Rediseño del panel del Dueño y de SuperAdmin con el lenguaje de la carta (riel lateral, celdas, paleta del local y paleta UcoNext); revisado de forma independiente y por Codex; integrado a `main` y subido a `origin` (2026-10-17) → [ficha](cambios/ui-panel-dueno-y-superadmin.md)
 - [M] Rediseño de la carta pública: Bento + Editorial + Cards (Gloock + Schibsted, bento de categorías, bandas pegajosas, cards de plato, dock de llamado); revisado de forma independiente; `PRODUCT.md` y `DESIGN.md` del sistema (2026-10-17) → [ficha](cambios/ui-carta-publica.md)

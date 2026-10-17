@@ -4,19 +4,16 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-`main` está al día en `origin` (desactivar sucursales, revisión cruzada de Codex, ensayos de restauración y Wake Lock) y las migraciones hasta `20261023100000` están aplicadas en staging.
-
-Rama `feat/dueno-existente` (desde `main`, **sin integrar**): SuperAdmin suma una cuenta existente como Dueño de otra organización desde la ficha de la organización («Sumar un Dueño»). Dos pasos: buscar (muestra en qué locales trabaja la cuenta) y confirmar con casilla; la confirmación queda atada al `user_id` mostrado. Función de base `admin_add_owner` (solo `service_role`), auditoría `owner.added`, migración `20261024100000_sumar_dueno_existente.sql`. Detalle, riesgo residual aceptado, evidencia (RLS 644 con acl ajustado, E2E 257 verdes) y las dos rondas de Codex (rechazo con dos hallazgos reales, ya corregidos; luego aprobación) en la [ficha](cambios/dueno-existente.md).
-
-Nivel C: **falta la aprobación humana** de la implementación; el veredicto de Codex no la reemplaza.
+`main` está al día en `origin` y en staging están aplicadas todas las migraciones hasta `20261024100000`. Quedó integrado, con aprobación del usuario y de Codex (2 rondas), «SuperAdmin suma una cuenta existente como Dueño de otra organización»: función `admin_add_owner`, auditoría `owner.added`, sección «Sumar un Dueño» en la ficha de la organización. Detalle, riesgo residual aceptado y evidencia en la [ficha](cambios/dueno-existente.md). Antes: desactivar y reactivar sucursales ([ficha](cambios/desactivar-sucursales.md)).
 
 ## Bloqueos y riesgos
 
-- La migración `20261024100000` existe solo en local. Aplicarla en staging requiere autorización.
-- Flyctl sigue bloqueado por Application Control de Windows: `main` no está desplegado en Fly staging, así que la app de staging no usa aún lo último.
-- El alta de organización sigue exigiendo un Dueño inicial con cuenta nueva; el flujo para un dueño con dos locales está en la ficha.
+- Flyctl sigue bloqueado por Application Control de Windows: `main` no está desplegado en Fly staging, así que la app de staging todavía no usa las dos funciones nuevas aunque su base ya tiene las migraciones.
+- No se probó en un teléfono real. Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015.
+- El alta de organización exige un Dueño inicial con cuenta nueva; para un dueño con dos locales se crea la organización con un email provisorio y se suma la cuenta existente (ver la ficha).
+- `carta.spec.ts` «tope de platos activos» cae a veces bajo carga paralela y pasa solo.
 
 ## Próximo paso
 
-1. Que el usuario apruebe (o corrija) `feat/dueno-existente`; luego integrar a `main`, subir y, con autorización, aplicar la migración en staging.
-2. Siguiente tarea recomendada: [M] login y sala en vivo con el lenguaje del panel.
+1. Destrabar `flyctl` (política de Windows) y desplegar `main` en staging; probar sucursales, desactivar y sumar un Dueño con una sesión SuperAdmin real.
+2. Tarea recomendada: [M] login y sala en vivo con el lenguaje del panel.
