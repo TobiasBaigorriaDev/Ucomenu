@@ -66,8 +66,8 @@ function definicion() {
     slug: SLUG,
     org: ORG,
     branch: BRANCH,
-    categorias: base.categorias.map(({ id: _id, ...cat }) => ({
-      ...cat,
+    categorias: base.categorias.map((cat) => ({
+      name: cat.name,
       platos: cat.platos.map(({ id, ...plato }) => (id ? { ...DEL_SEED[id], ...plato } : plato)),
     })),
   };
