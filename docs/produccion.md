@@ -90,6 +90,19 @@ fly deploy -c fly.staging.toml `
 ```
 Producción es igual con `fly.toml`. Revisar con `fly config validate` y `fly status`. Con una sola máquina, cada despliegue tiene unos segundos de corte: hacerlo fuera del horario de servicio.
 
+**Windows con Smart App Control (`flyctl.exe` bloqueado):** `flyctl.exe` no está firmado y Smart App Control lo bloquea («Una directiva de Control de aplicaciones bloqueó este archivo»). No hace falta apagarlo (es irreversible sin reinstalar Windows): se usa la imagen oficial en Docker, con la sesión guardada en un volumen (nunca en el repositorio). Una sola vez:
+```bash
+docker pull flyio/flyctl:latest
+# Login: el comando espera la aprobación en el navegador. Con la entrada abierta, el código que muestra la página se aplica con
+# `docker exec <contenedor> /flyctl auth login --code <código>` (en Git Bash, con MSYS_NO_PATHCONV=1). Sin --rm, para copiar
+# /.fly (la imagen no define HOME, así que flyctl guarda la configuración en /.fly) a un volumen: ucomenu-fly-config.
+```
+Cada despliegue (desde la raíz del repositorio, con el árbol confirmado; los `<...>` son los mismos valores públicos de arriba):
+```bash
+MSYS_NO_PATHCONV=1 docker run --rm -v ucomenu-fly-config:/.fly -v "$(pwd -W):/work" -w /work flyio/flyctl:latest   deploy -c fly.staging.toml --remote-only --build-arg NEXT_PUBLIC_SUPABASE_URL=<...> --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<...>   --build-arg NEXT_PUBLIC_SITE_URL=<...> --build-arg NEXT_PUBLIC_CONTACT_EMAIL=<...>
+```
+Cualquier otro subcomando (`status`, `releases`, `secrets`) se ejecuta igual cambiando `deploy ...`. Las `NEXT_PUBLIC_*` de staging se pueden reconstruir: la URL sale del `project-ref` de Supabase, la clave pública de `supabase projects api-keys` y el correo de contacto de lo que muestra `/privacidad` desplegado.
+
 ## 4. Programar la purga de `waiter_calls` (aprobación: infraestructura)
 La función existe (`public.purge_waiter_calls`, ADR 0014) pero nada la ejecuta, y la política de privacidad **ya promete 14 días**: no publicar sin esto. En el proyecto remoto, activar `pg_cron` (Database → Extensions) y programar una tarea diaria que repite hasta que devuelve menos que el lote, a las 03:00 de Argentina (06:00 UTC):
 ```sql
