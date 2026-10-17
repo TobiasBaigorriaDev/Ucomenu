@@ -33,3 +33,6 @@ Código y pruebas confirmados en **`6a6a0aa`**, contra `5331d0d`, rama `feat/cor
 - No se repitieron RLS/E2E completos: se verificaron las rutas y contratos afectados. No se invocaron otros agentes; no se requiere revisión independiente por defecto en M.
 
 Reversión: conservar columna y trigger evita perder enlaces aunque se retire la UI administrativa; revertir todo el incremento retiraría también las redirecciones. La recuperación ordinaria es volver al identificador propio anterior desde el mismo formulario. Tamaño autoral mayor a 400 líneas: unidad funcional local; si se abre PR, dividir persistencia/resolución y panel administrativo en una cadena revisable sin recortar pruebas. Sin instalaciones ni operaciones remotas.
+
+## Verificación posterior (Claude Code, 2026-10-17)
+Relectura independiente del diff y repetición sobre `8e50471`, sin cambios de código: `pnpm test` **443/443**; RLS de `branch-slugs`, `acl`, `sucursales` y `tables` **53/53**; build nuevo + `e2e/branch-slugs`, `menu` y `sucursales` **33/33**. El filtro `.or` de `getPublicMenu` solo recibe slugs ya validados por `isValidSlug`. El 308 hacia la dirección vigente responde `Cache-Control: private, no-cache, no-store`: un navegador no lo conserva, así que volver a un identificador anterior no genera bucles en visitantes con redirecciones previas. No se encontraron defectos.
