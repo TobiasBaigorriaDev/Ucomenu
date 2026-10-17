@@ -8,6 +8,8 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 Integrado a `main` y desplegado en staging (`7fb1ca8`, 2026-10-17): el login y los llamados de la sala en vivo usan el lenguaje del panel (celdas, Gloock + Schibsted, paleta de UcoNext en el login). Solo presentación; E2E completo 257 verdes. [Ficha](cambios/ui-login-y-sala.md).
 
+Staging tiene además una carta de demostración (`/m/demo/centro`, 26 platos con fotos) cargada con `tools/sembrar-demo-staging.mjs`; la organización `demo` no tiene cuentas: para editarla hay que sumarse como Dueño desde SuperAdmin. [Ficha](cambios/demo-en-staging.md).
+
 ## Bloqueos y riesgos
 
 - `flyctl.exe` sigue bloqueado por Smart App Control (no está firmado); se despliega con la imagen `flyio/flyctl` en Docker y la sesión en el volumen `ucomenu-fly-config` (procedimiento en `docs/produccion.md`).
