@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-// Las fotos de los platos viven en el bucket público de Supabase Storage: el servidor las pide, las reduce y las sirve en
-// WebP desde el propio dominio (`/_next/image`). Solo se permite ESE host y ESA carpeta; cualquier otra URL es un 400.
+// Fotos y logos viven en buckets públicos de Supabase Storage: el servidor los reduce y sirve desde `/_next/image`.
+// Solo se permiten el host configurado y las carpetas product-images y organization-logos; otras rutas dan 400.
 // Con el Supabase local (127.0.0.1) hay que permitir además la IP local; en la nube (`*.supabase.co`) queda prohibida.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL) : null;
 const supabaseEsLocal = supabaseUrl !== null && ["127.0.0.1", "localhost"].includes(supabaseUrl.hostname);
@@ -28,6 +28,12 @@ const nextConfig: NextConfig = {
             hostname: supabaseUrl.hostname,
             port: supabaseUrl.port,
             pathname: "/storage/v1/object/public/product-images/**",
+          },
+          {
+            protocol: supabaseUrl.protocol === "https:" ? "https" : "http",
+            hostname: supabaseUrl.hostname,
+            port: supabaseUrl.port,
+            pathname: "/storage/v1/object/public/organization-logos/**",
           },
         ]
       : [],

@@ -9,6 +9,7 @@
 - **Tiempo real:** el panel de sala se actualiza por sondeo corto al servidor (ADR 0011); Supabase Realtime queda como evolución posible.
 - **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo. **Implementado** (ADR 0007): email y contraseña, sin registro público, sesión por cookies `httpOnly` con `@supabase/ssr` 0.12.7 y sin cliente de Supabase en el navegador.
 - **Archivos:** Supabase Storage (fotos de platos, logos, modelos 3D).
+  - Identidad del local: `organizations.menu_palette` y `logo_path`; bucket público `organization-logos` con rutas inmutables `{org}/{uuid}.{jpg|png|webp}`. Solo el Dueño con cuenta editable escribe columnas y archivos mediante su sesión y RLS. La carta lee la identidad en vivo junto con la organización, antes de la caché de filas; el optimizador admite ese bucket y `product-images` del host configurado. Configuración en `/panel/{slug}/apariencia`; detalle y evidencia en `agile/cambios/identidad-del-local.md`.
 - **Hosting / despliegue:** un contenedor de Docker en **Fly.io (São Paulo)** (ADR 0015; Vercel Hobby no admite uso comercial) + Supabase Cloud (datos). Desplegar requiere aprobación explícita.
 - **Pruebas (implementado):** unitarias y de RLS con Vitest (RLS contra Supabase local), E2E con Playwright a 390 px contra el build. Comandos en `AGENTS.md`.
 - **Entorno verificado (2026-10-13):** Node 24, pnpm 11, Docker 29, Git, Python 3.12. La CLI de Supabase no estaba instalada; su instalación quedó aprobada por el usuario (ver `agile/herramientas-aprobadas.md`).

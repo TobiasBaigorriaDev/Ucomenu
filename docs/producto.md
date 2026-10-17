@@ -31,6 +31,7 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
   - *Hoy:* la carta pública muestra, bajo cada plato, sus grupos de opciones activos ("Elegí 1", "Opcional · hasta 3") con la diferencia de precio de cada opción ("+ $ 600"); el Dueño y el Staff los gestionan en la pantalla del plato. Es solo informativo: el precio del plato es siempre el base. Una pantalla de detalle propia queda para el ítem del buscador y los filtros.
 - Disponibilidad por sucursal (marcar un plato como agotado sin borrarlo).
 - Identidad visual del local (logo y colores) sobre un diseño gastronómico de alto impacto.
+  - **Implementado en local:** el Dueño elige una paleta de contraste comprobado (Oliva, Azul, Vino o Cacao) y sube o quita el logo desde `/panel/{slug}/apariencia`. Se aplica a la carta de todas las sucursales y a los QR; la configuración predeterminada conserva el diseño actual. Incluida en todos los planes; con la cuenta en solo lectura o suspendida se consulta pero no se edita.
 - Es **solo consulta**: no hay pedidos ni pago online desde el menú.
 
 ### 2. Llamado al camarero en tiempo real — MVP

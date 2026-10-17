@@ -5,6 +5,8 @@ import { CategoryMosaic } from "@/components/menu/category-mosaic";
 import { MenuHeader } from "@/components/menu/menu-header";
 import { MenuSection } from "@/components/menu/menu-section";
 import type { PublicMenu } from "@/lib/public-menu";
+import { logoUrl } from "@/lib/identidad/logos";
+import { paletteStyle } from "@/lib/identidad/palettes";
 
 /**
  * Carta pública de una sucursal. La comparten `/m/{org}/{sucursal}` y `/t/{token}` (esta con la etiqueta de la mesa).
@@ -23,8 +25,8 @@ export function PublicMenuView({
   const { sections } = menu;
 
   return (
-    <div className={callBar ? "carta pb-40" : "carta"}>
-      <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} />
+    <div className={callBar ? "carta pb-40" : "carta"} style={paletteStyle(menu.organization.menu_palette)}>
+      <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} />
       {sections.length > 0 ? (
         <>
           <CategoryMosaic sections={sections} />

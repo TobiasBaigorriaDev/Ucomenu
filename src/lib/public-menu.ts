@@ -6,7 +6,7 @@ import { isValidSlug } from "@/lib/slug";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
 export type PublicMenu = {
-  organization: { id: string; name: string; slug: string };
+  organization: { id: string; name: string; slug: string; menu_palette?: string; logo_path?: string | null };
   branch: { id: string; name: string; slug: string };
   sections: MenuSection[];
 };
@@ -144,7 +144,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .select("id, name, slug, branches!inner(id, name, slug)")
+    .select("id, name, slug, menu_palette, logo_path, branches!inner(id, name, slug)")
     .eq("slug", orgSlug)
     .eq("branches.slug", branchSlug)
     .maybeSingle();
@@ -158,7 +158,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   return {
     kind: "menu",
     menu: {
-      organization: { id: org.id, name: org.name, slug: org.slug },
+      organization: { id: org.id, name: org.name, slug: org.slug, menu_palette: org.menu_palette, logo_path: org.logo_path },
       branch: { id: branch.id, name: branch.name, slug: branch.slug },
       sections: groupMenu(categories, attachOptions(products, optionGroups, options)),
     },

@@ -1,4 +1,5 @@
 import "./carta.css";
+import Image from "next/image";
 
 /** Cuadraditos girados sobre el título (como confeti): quedan fuera de la fila de sucursal y mesa. */
 const CONFETTI = [
@@ -11,12 +12,14 @@ export function MenuHeader({
   organizationName,
   branchName,
   tableLabel,
+  logo,
 }: {
   organizationName: string;
   /** La pantalla de «carta no disponible» no muestra sucursal. */
   branchName?: string;
   /** Solo cuando se entró por el QR de una mesa activa. */
   tableLabel?: string | null;
+  logo?: string | null;
 }) {
   return (
     <header className="relative overflow-hidden">
@@ -24,6 +27,7 @@ export function MenuHeader({
         <span key={position} aria-hidden="true" className={`pointer-events-none absolute rotate-45 ${position}`} />
       ))}
       <div className="relative mx-auto max-w-3xl px-4 pt-16 pb-10 text-center sm:px-6 sm:pt-24 sm:pb-14">
+        {logo ? <Image src={logo} alt={`Logo de ${organizationName}`} width={192} height={112} className="mx-auto mb-6 h-24 w-48 object-contain sm:h-28" /> : null}
         <h1 className="carta-title font-display text-balance text-[var(--carta-green)] [overflow-wrap:anywhere]">
           {organizationName}
         </h1>

@@ -4,19 +4,20 @@ Actualizado: 2026-10-16 · agente saliente: Codex · historial anterior en `agil
 
 ## Punto de retomada
 
-- Rama `fix/paginacion-carta-publica`, creada desde `main` en `27b4fb1`. Implementación en `81be3ac`; el commit que incorpora este handoff corrige su cierre y documenta el diagnóstico de compilación. La rama todavía no está integrada ni subida.
-- Incremento S cerrado: paginación de categorías y platos de la carta pública. Aceptación, decisiones y evidencia están en [su ficha](cambios/paginacion-carta-publica.md). El tablero lo deja **Hecho**; el usuario aclaró que no requiere revisión independiente.
-- **Rigor por consecuencias:** en S alcanza la comprobación afectada y leer el diff. El relevo Codex/Claude no agrega una revisión obligatoria a S; para M se decide según dudas y para C se conserva la revisión independiente y la aprobación humana de lo peligroso. Una tarea por vez.
+- Rama `feat/identidad-local`, desde `8b5b782`; incluye la paginación S ya cerrada. Primera unidad en `db4ab29` (persistencia y permisos); segunda unidad en el commit que incorpora este handoff (interfaz, carta y E2E). Sin integrar ni subir.
+- Identidad implementada: Apariencia del Dueño, logo y paletas cerradas elegidas por el usuario. Aceptación y evidencia en [su ficha](cambios/identidad-del-local.md). Tablero **Para verificar** por la revisión de permisos, no por comprobaciones técnicas pendientes.
+- El ítem M requirió rigor C al agregar políticas de Storage y permisos de columnas. El usuario elige manualmente la sesión revisora; no se invocó otro agente. Para tareas S sigue sin exigirse revisión independiente.
 
 ## Bloqueos y riesgos
 
-- La salida a producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015. Solo el usuario puede crear el proyecto de Supabase de producción, comprar el dominio, elegir el correo de contacto y contratar la revisión legal.
-- Staging: `https://ucomenu-staging.fly.dev`; último despliegue informado desde `main`, con migraciones aplicadas. Falta probar con sesión SuperAdmin, sucursales y variantes. La corrección de esta rama queda local.
+- Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015. Solo el usuario puede crear su proyecto de Supabase, comprar dominio, elegir correo de contacto y contratar revisión legal.
+- Staging: `https://ucomenu-staging.fly.dev`; último despliegue informado desde `main`. La migración de identidad se aplicó solo en local; falta probar con sesión SuperAdmin, sucursales y variantes en staging.
 - Material sensible del ensayo fuera del repo: `C:\Users\tobib\staging.env` y `C:\Users\tobib\respaldos-ucomenu`; limpieza pendiente al terminar el ensayo.
-- No imprimir QR hasta tener dominio. Siguen pendientes teléfono real y decisiones de producto de la ficha de variantes. RLS y E2E comparten base y no deben ejecutarse simultáneamente.
-- Para compilar desde Codex en Windows, ejecutar fuera del sandbox cuando este deniegue la conexión TCP local de los workers; diagnóstico y evidencia en la ficha de paginación. No queda un bloqueo de compilación abierto.
+- No imprimir QR hasta tener dominio. Siguen pendientes teléfono real y decisiones de variantes. RLS y E2E comparten base: no ejecutarlos simultáneamente.
+- Compilar en Windows fuera del sandbox cuando deniegue el TCP local de los workers; diagnóstico en la ficha de paginación. No hay bloqueo de compilación pendiente.
 
 ## Próximo paso
 
-1. Integrar la entrega S local cuando corresponda, sin pedir una revisión adicional. Elegir luego entre los ítems M desbloqueados: buscador y filtros dietarios, disponibilidad por sucursal o identidad del local.
-2. Con el usuario: completar las pruebas de staging con sesión, comprobar la primera purga programada y retomar dominio y producción.
+1. Revisión independiente y solo lectura de `8b5b782..HEAD` contra la ficha de identidad, enfocada en permisos y recuperación. No repetir la revisión de funcionalidades anteriores.
+2. Resolver hallazgos si existen; integrar tras la revisión y aprobación correspondiente. Cualquier aplicación remota requiere autorización del usuario.
+3. Luego elegir buscador/filtros dietarios o disponibilidad por sucursal; con el usuario, retomar pruebas de staging, purga, dominio y producción.
