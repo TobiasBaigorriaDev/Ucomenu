@@ -6,6 +6,8 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 Rama `feat/ui-carta`, desde `main` (subido a `origin/main`). Tarea en curso: [rediseño de la UI de la carta pública](cambios/ui-carta-publica.md), nivel M, iterada en vivo con el usuario. Ya están el contexto de diseño [`PRODUCT.md`](../PRODUCT.md) y el contrato de dirección en `.impeccable/surfaces/src-app-m-org-branch-page-tsx.md`: Bento + Editorial + Card-based, fijada por el usuario, con las cuatro paletas por local sin cambios. Aún no se tocó la UI. `DESIGN.md` no existe a propósito: lo escribe el documentador al cerrar la primera iteración construida.
 
+La demo está llena con `pnpm db:demo` (fotos, 7 categorías por local, logo; ver README). Antes de correr RLS o E2E hay que volver al seed limpio con `pnpm db:reset` o `pnpm db:demo --quitar`.
+
 El servidor de desarrollo corre en `http://localhost:3000/m/cafe-ejemplo/centro` (`pnpm dev`, recarga en caliente); `parrilla-demo/sur` sirve para la paleta Cacao.
 
 ## Bloqueos y riesgos

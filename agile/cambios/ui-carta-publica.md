@@ -23,6 +23,8 @@ Contexto durable en [`PRODUCT.md`](../../PRODUCT.md) y en el surface brief con e
 ## Rondas
 **Ronda 1 (2026-10-17):** tipografía Gloock + Schibsted aplicada a la carta; encabezado editorial alineado a la izquierda, con filete y línea de sucursal y mesa (se quitó el confeti); categorías como bento: la primera celda siempre ancha, cada celda con índice, nombre y cantidad de platos, y foto con scrim o bloque de color de la paleta. Verificado: typecheck, lint y `pnpm test` 444/444. E2E de carta pendientes hasta cerrar la iteración. Falta el feedback del usuario sobre esta ronda.
 
+**Datos de demo (2026-10-17):** a pedido del usuario, `pnpm db:demo` (`tools/sembrar-demo.mjs`, solo local, idempotente, `--quitar` la deshace) llena `cafe-ejemplo` (7 categorías, 28 platos, 24 con foto, logo) y `parrilla-demo` (7 categorías, 24 platos, 19 con foto, logo) con descripciones, etiquetas, variantes y un plato agotado por local. Fotos de Unsplash descargadas a `.demo-cache/` (ignorada por Git; no se versionan binarios). **No modifica `supabase/seed.sql`**: las pruebas de RLS y E2E siguen asumiendo el seed limpio, así que antes de correrlas hay que volver con `pnpm db:reset` o `pnpm db:demo --quitar`. Cierre de la iteración: correr los E2E sobre el seed limpio.
+
 ## Aceptación
 - [ ] Los cambios pedidos por el usuario están hechos y aprobados por él en el navegador.
 - [ ] Móvil (390 px) y escritorio (1280 px) sin desborde; contraste y foco intactos en las cuatro paletas.

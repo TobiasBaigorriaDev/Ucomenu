@@ -20,8 +20,11 @@ pnpm db:start        # Supabase local (primera vez: descarga imágenes de Docker
 pnpm db:reset        # aplica migraciones + datos semilla ficticios
 # Copiá .env.example a .env.local y completá la clave con: pnpm exec supabase status -o env
 pnpm dev             # http://localhost:3000/m/cafe-ejemplo/centro
+pnpm db:demo         # opcional: demo completa (más platos, fotos y logo) en cafe-ejemplo y parrilla-demo
 ```
 Cartas de ejemplo del seed: `/m/cafe-ejemplo/centro`, `/m/parrilla-demo/sur` y `/m/resto-moroso/unica` (cuenta suspendida por mora: muestra «Carta temporalmente no disponible»).
+
+La demo completa (`pnpm db:demo`, solo local; necesita internet la primera vez para bajar las fotos) sirve para ver y diseñar la carta con material real; `pnpm db:demo --quitar` la deshace. **Antes de correr RLS o E2E, volvé al seed limpio** con `pnpm db:reset` (o `pnpm db:demo --quitar`): las pruebas asumen esos datos. La carta pública cachea hasta 60 s, así que un cambio hecho directo en la base tarda ese tiempo en verse.
 
 Pruebas, lint y demás comandos: sección **Comandos del proyecto** de `AGENTS.md`. Las pruebas de RLS necesitan Docker encendido y la base reseteada (`pnpm db:reset`).
 

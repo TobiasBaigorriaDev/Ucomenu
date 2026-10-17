@@ -47,3 +47,6 @@ next-env.d.ts
 # Diagnósticos locales de agentes y referencia visual de terceros (se conservan en disco)
 /output/
 /docs/referencias/HUMM-MENU.png
+
+# Fotos de la demo local (tools/sembrar-demo.mjs): se descargan de Unsplash, no se versionan.
+/.demo-cache/
