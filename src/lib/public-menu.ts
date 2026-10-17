@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { attachOptions, groupMenu, type MenuSection } from "@/lib/menu";
+import { readAllPages } from "@/lib/paginar";
 import { isValidSlug } from "@/lib/slug";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
@@ -55,7 +56,12 @@ type CartaRows = {
   options: { id: string; group_id: string; name: string; price_delta_cents: number; sort_order: number }[];
 };
 
-async function loadRows(orgId: string): Promise<CartaRows> {
+/**
+ * Lee las filas de la organización. Los grupos y las opciones se leen PÁGINA POR PÁGINA (`readAllPages`, orden estable
+ * por id): PostgREST corta cada lectura en `max_rows` (1000) sin avisar y una carta con muchos platos supera ese número
+ * de opciones (200 platos × 6 opciones ya son 1200). Exportada solo para probarla contra la base.
+ */
+export async function loadRows(orgId: string): Promise<CartaRows> {
   const supabase = createPublicClient();
   const [categories, products, optionGroups, options] = await Promise.all([
     supabase.from("categories").select("id, name, sort_order").eq("organization_id", orgId),
@@ -63,18 +69,29 @@ async function loadRows(orgId: string): Promise<CartaRows> {
       .from("products")
       .select("id, category_id, name, description, price_cents, sort_order, image_path")
       .eq("organization_id", orgId),
-    supabase
-      .from("option_groups")
-      .select("id, product_id, name, min_choices, max_choices, sort_order")
-      .eq("organization_id", orgId),
-    supabase.from("options").select("id, group_id, name, price_delta_cents, sort_order").eq("organization_id", orgId),
+    readAllPages((from, to) =>
+      supabase
+        .from("option_groups")
+        .select("id, product_id, name, min_choices, max_choices, sort_order")
+        .eq("organization_id", orgId)
+        .order("id")
+        .range(from, to),
+    ),
+    readAllPages((from, to) =>
+      supabase
+        .from("options")
+        .select("id, group_id, name, price_delta_cents, sort_order")
+        .eq("organization_id", orgId)
+        .order("id")
+        .range(from, to),
+    ),
   ]);
 
   if (categories.error) throw new Error(`No se pudieron leer las categorías: ${categories.error.message}`);
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
   if (optionGroups.error) throw new Error(`No se pudieron leer los grupos de opciones: ${optionGroups.error.message}`);
   if (options.error) throw new Error(`No se pudieron leer las opciones: ${options.error.message}`);
-  return { categories: categories.data, products: products.data, optionGroups: optionGroups.data, options: options.data };
+  return { categories: categories.data, products: products.data, optionGroups: optionGroups.data ?? [], options: options.data ?? [] };
 }
 
 /**

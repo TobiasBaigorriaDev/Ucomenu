@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { readAllPages } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import {
   applyOrder,
@@ -69,19 +70,22 @@ export async function loadProductOptions(db: Db, orgId: string, productId: strin
   if (groups.error) throw new Error(`No se pudieron leer los grupos de opciones: ${groups.error.message}`);
   if (groups.data.length === 0) return [];
 
-  const options = await db
-    .from("options")
-    .select("id, group_id, name, price_delta_cents, sort_order, is_active")
-    .eq("organization_id", orgId)
-    .in(
-      "group_id",
-      groups.data.map((group) => group.id),
-    );
+  // Hasta 20 grupos × 60 opciones = 1200 por plato: más que el corte de PostgREST (1000), así que se lee por páginas.
+  const groupIds = groups.data.map((group) => group.id);
+  const options = await readAllPages((from, to) =>
+    db
+      .from("options")
+      .select("id, group_id, name, price_delta_cents, sort_order, is_active")
+      .eq("organization_id", orgId)
+      .in("group_id", groupIds)
+      .order("id")
+      .range(from, to),
+  );
   if (options.error) throw new Error(`No se pudieron leer las opciones: ${options.error.message}`);
 
   return sortForDisplay(groups.data).map((group) => ({
     ...group,
-    options: sortForDisplay(options.data.filter((option) => option.group_id === group.id)),
+    options: sortForDisplay((options.data ?? []).filter((option) => option.group_id === group.id)),
   }));
 }
 

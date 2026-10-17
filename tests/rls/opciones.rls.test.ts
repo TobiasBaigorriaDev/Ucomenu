@@ -27,6 +27,7 @@ import {
   updateGroup,
   updateOption,
 } from "@/lib/carta/options";
+import { loadRows } from "@/lib/public-menu";
 
 /**
  * Variantes y adicionales contra el Supabase local (ficha variantes-y-adicionales): aislamiento entre organizaciones,
@@ -357,6 +358,91 @@ describe("restricciones de las tablas", () => {
     expect((await service.from("options").insert(opciones)).error).toBeNull(); // 1 + 59 = 60
     const demasiadas = await staff.db.from("options").insert({ organization_id: e.org, group_id: e.group, name: "la 61" });
     expect(demasiadas.error?.code).toBe("54000");
+  });
+});
+
+describe("topes técnicos con altas simultáneas", () => {
+  it("con 59 opciones, cuatro altas a la vez dejan exactamente 60: una se guarda y las otras reciben 54000 (candado de transacción)", async () => {
+    const e = await escenario("tt-opc-carrera-opc");
+    await service.from("options").insert(Array.from({ length: 58 }, (_, i) => ({ organization_id: e.org, group_id: e.group, name: `o${i}` })));
+
+    // Cada alta es una transacción independiente (una petición HTTP propia). Sin el candado, todas cuentan 60 filas y pasan.
+    const resultados = await Promise.all(
+      [owner, staff, owner, staff].map((persona, i) =>
+        persona.db.from("options").insert({ organization_id: e.org, group_id: e.group, name: `carrera${i}` }),
+      ),
+    );
+    const guardadas = resultados.filter((r) => r.error === null).length;
+    expect(guardadas).toBe(1);
+    expect(resultados.filter((r) => r.error?.code === "54000")).toHaveLength(3);
+    expect((await service.from("options").select("id", { count: "exact", head: true }).eq("group_id", e.group)).count).toBe(60);
+  });
+
+  it("con 19 grupos, cuatro altas a la vez dejan exactamente 20 por plato", async () => {
+    const e = await escenario("tt-opc-carrera-grp");
+    await service
+      .from("option_groups")
+      .insert(Array.from({ length: 18 }, (_, i) => ({ organization_id: e.org, product_id: e.product, name: `g${i}`, min_choices: 0, max_choices: 1 })));
+
+    const resultados = await Promise.all(
+      [owner, staff, owner, staff].map((persona, i) =>
+        persona.db
+          .from("option_groups")
+          .insert({ organization_id: e.org, product_id: e.product, name: `carrera${i}`, min_choices: 0, max_choices: 1 }),
+      ),
+    );
+    expect(resultados.filter((r) => r.error === null)).toHaveLength(1);
+    expect(resultados.filter((r) => r.error?.code === "54000")).toHaveLength(3);
+    expect((await service.from("option_groups").select("id", { count: "exact", head: true }).eq("product_id", e.product)).count).toBe(20);
+  });
+});
+
+describe("más de 1000 filas (PostgREST corta cada lectura en max_rows)", () => {
+  it("las opciones de un plato (20 grupos × 60 = 1200) y las de toda la organización se leen completas", async () => {
+    const e = await escenario("tt-opc-paginas");
+    const grupos = await service
+      .from("option_groups")
+      .insert(Array.from({ length: 19 }, (_, i) => ({ organization_id: e.org, product_id: e.product, name: `g${i}`, min_choices: 0, max_choices: 1 })))
+      .select("id");
+    const ids = [e.group, ...(grupos.data ?? []).map((g) => g.id)];
+    expect(ids).toHaveLength(20);
+    for (const id of ids) {
+      const hechas = (await service.from("options").select("id", { count: "exact", head: true }).eq("group_id", id)).count ?? 0;
+      const faltan = Array.from({ length: 60 - hechas }, (_, i) => ({ organization_id: e.org, group_id: id, name: `opcion ${i}`, price_delta_cents: 100 }));
+      const insertadas = await service.from("options").insert(faltan);
+      expect(insertadas.error).toBeNull();
+    }
+    expect((await service.from("options").select("id", { count: "exact", head: true }).eq("organization_id", e.org)).count).toBe(1200);
+
+    // Panel: el módulo devuelve las 1200 (sin paginar eran 1000).
+    const panel = await loadProductOptions(owner.db, e.org, e.product);
+    expect(panel).toHaveLength(20);
+    expect(panel.reduce((total, g) => total + g.options.length, 0)).toBe(1200);
+
+    // Carta pública (lo que se cachea): también las 1200, leídas como anónimo.
+    const filas = await loadRows(e.org);
+    expect(filas.optionGroups).toHaveLength(20);
+    expect(filas.options).toHaveLength(1200);
+  });
+
+  it("los grupos de toda la organización también (51 platos × 20 grupos = 1020)", async () => {
+    const e = await escenario("tt-opc-paginas-grupos");
+    const platos = await service
+      .from("products")
+      .insert(Array.from({ length: 50 }, (_, i) => ({ organization_id: e.org, category_id: e.category, name: `plato ${i}`, price_cents: 1000 })))
+      .select("id");
+    const productos = [e.product, ...(platos.data ?? []).map((p) => p.id)];
+    expect(productos).toHaveLength(51);
+    const hechos = (await service.from("option_groups").select("id", { count: "exact", head: true }).eq("product_id", e.product)).count ?? 0;
+    const filas = productos.flatMap((product, p) =>
+      Array.from({ length: p === 0 ? 20 - hechos : 20 }, (_, i) => ({ organization_id: e.org, product_id: product, name: `g${i}`, min_choices: 0, max_choices: 1 })),
+    );
+    const insertados = await service.from("option_groups").insert(filas);
+    expect(insertados.error).toBeNull();
+    expect((await service.from("option_groups").select("id", { count: "exact", head: true }).eq("organization_id", e.org)).count).toBe(1020);
+
+    const leidas = await loadRows(e.org);
+    expect(leidas.optionGroups).toHaveLength(1020);
   });
 });
 

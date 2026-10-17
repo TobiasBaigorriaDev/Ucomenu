@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
 import type { Database } from "@/lib/supabase/database.types";
 import { sucursalesErrorMessage, sucursalesWriteBlock, type SucursalesError } from "./messages";
-import { readAllPages } from "./paginar";
+import { readAllPages } from "@/lib/paginar";
 import { validateBranchName, validateBranchSlug } from "./rules";
 
 /**
