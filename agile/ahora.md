@@ -17,5 +17,5 @@ Integrado a `main` y desplegado en staging (`7fb1ca8`, 2026-10-17): el login y l
 
 ## Próximo paso
 
-1. Probado por el usuario en staging (2026-10-17): desactivar/reactivar sucursales y «Sumar un Dueño» funcionaron bien. Falta probar el login y la sala rediseñados en el teléfono.
+1. Probado por el usuario en staging (2026-10-17): desactivar/reactivar sucursales y «Sumar un Dueño» funcionaron bien. El login y la sala rediseñados también se probaron en el teléfono y funcionaron bien.
 2. Elegir otra tarea desbloqueada del backlog (ver el tablero).
