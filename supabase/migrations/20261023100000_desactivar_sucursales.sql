@@ -219,7 +219,7 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- Llamados: ninguno nuevo para las mesas de una sucursal inactiva. Idéntica a la de 20261016140000 salvo la lectura de
--- `b.is_active` y su comprobación junto a las demás causas de «no disponible».
+-- `is_active` de la sucursal (bajo el lock de la mesa y con FOR SHARE) y su comprobación junto a las demás causas de «no disponible».
 -- ---------------------------------------------------------------------------
 create or replace function public.create_waiter_call(
   p_token text,
@@ -235,6 +235,7 @@ set search_path = ''
 as $$
 declare
   v_table record;
+  v_branch_active boolean;
   v_client text;
   v_visit timestamptz;
   v_last timestamptz;
@@ -248,7 +249,7 @@ begin
   end if;
 
   select t.id, t.organization_id, t.branch_id, t.is_active, t.muted_until,
-         b.waiter_call_cooldown_seconds as cooldown, b.is_active as branch_active
+         b.waiter_call_cooldown_seconds as cooldown
     into v_table
   from public.tables t
   join public.branches b on b.id = t.branch_id
@@ -263,8 +264,16 @@ begin
   -- Serializa los llamados de una misma mesa: dos toques simultáneos no crean dos pendientes.
   perform pg_advisory_xact_lock(hashtextextended('waiter_call:' || v_table.id::text, 0));
 
+  -- El estado de la sucursal se lee DESPUÉS del lock de la mesa y con FOR SHARE: un llamado que esperaba el lock no usa un
+  -- valor viejo, y una desactivación en curso (que necesita el bloqueo exclusivo de la fila) espera a que este llamado
+  -- termine o ya fue confirmada y se ve acá. Orden de bloqueos fijo (mesa, luego sucursal): no hay interbloqueo.
+  select b.is_active into v_branch_active
+  from public.branches b
+  where b.id = v_table.branch_id
+  for share;
+
   if not v_table.is_active
-     or not v_table.branch_active
+     or not coalesce(v_branch_active, false)
      or (v_table.muted_until is not null and v_table.muted_until > now())
      or not private.has_feature(v_table.organization_id, 'waiter_call') then
     return jsonb_build_object('status', 'unavailable');

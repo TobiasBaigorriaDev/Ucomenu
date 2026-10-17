@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addMembership,
@@ -285,6 +286,25 @@ describe("llamados y mesas", () => {
 
     await setBranchActive(owner.db, local.id, local.branch, true);
     expect((await llamar(local.token, "bill")).data).toEqual({ status: "created" });
+  });
+
+  it("carrera: un llamado que esperaba el lock de la mesa no usa un estado viejo de la sucursal (revisión de Codex, ronda 1)", async () => {
+    const local = await nuevoLocal("tt-des-carrera-llamado");
+    const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+    // Otra transacción retiene el lock de la mesa 2,5 s: el llamado se frena justo antes de mirar el estado de la sucursal.
+    const retenedor = spawn("docker", [
+      "exec", contenedor, "psql", "-U", "postgres", "-c",
+      `begin; select pg_advisory_xact_lock(hashtextextended('waiter_call:${local.table}', 0)); select pg_sleep(2.5); commit;`,
+    ], { stdio: "ignore" });
+    const terminado = new Promise((resolve) => retenedor.on("close", resolve));
+    await new Promise((r) => setTimeout(r, 1200));
+
+    const llamado = llamar(local.token, "waiter").then((r) => r); // el builder es perezoso: .then() lo envía ya; queda esperando el lock
+    await new Promise((r) => setTimeout(r, 400));
+    await service.from("branches").update({ is_active: false }).eq("id", local.branch); // se confirma mientras espera
+    expect((await llamado).data).toEqual({ status: "unavailable" });
+    await terminado;
+    expect((await service.from("waiter_calls").select("id").eq("table_id", local.table)).data).toEqual([]);
   });
 
   it("las mesas se conservan intactas al desactivar y reactivar (token, etiqueta, estado, silencio)", async () => {
