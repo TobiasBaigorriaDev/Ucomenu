@@ -10,7 +10,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope. Reglas decididas en [gestión de sucursales](cambios/gestion-de-sucursales.md); ficha propia con las decisiones aprobadas (2026-10-17) → [ficha](cambios/desactivar-sucursales.md)
+- [M] Rediseño de la interfaz de la carta pública, guiado por el feedback del usuario en vivo (`pnpm dev`); solo presentación: sin cambios de datos, permisos ni reglas → [ficha](cambios/ui-carta-publica.md)
 
 ## Para verificar
 - (vacío)
@@ -24,6 +24,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 0 — Cimientos
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
+- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope. Reglas decididas en [gestión de sucursales](cambios/gestion-de-sucursales.md); decisiones ya aprobadas el 2026-10-17 (solo Dueño, última sucursal desactivable con aviso, mesas intactas, sin reactivar en mora, sin `audit_log`); listo para retomar → agile/cambios/desactivar-sucursales.md
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
