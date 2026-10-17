@@ -6,6 +6,7 @@ import { logoutAction } from "@/lib/auth/actions";
 import type { Role } from "@/lib/entitlements";
 import { paletteStyle, platformStyle } from "@/lib/identidad/palettes";
 import { logoUrl } from "@/lib/identidad/logos";
+import { Mark } from "./mark";
 import { NavLinks, type NavItem } from "./nav-links";
 import "./panel.css";
 
@@ -23,16 +24,6 @@ type Props = {
   fontClass?: string;
   children: ReactNode;
 };
-
-/** Marca de UcoMenu: dos rombos, el vivo sobre el profundo (el mismo gesto que los rombos del pie de la carta). */
-function Mark({ className }: { className?: string }) {
-  return (
-    <svg aria-hidden viewBox="0 0 28 16" className={className}>
-      <path d="M8 0 16 8 8 16 0 8Z" fill="currentColor" />
-      <path d="M20 0 28 8 20 16 12 8Z" fill="var(--vivid, var(--carta-terra))" />
-    </svg>
-  );
-}
 
 const accountLinkClass =
   "inline-flex min-h-11 items-center rounded-full px-3 text-[0.9375rem] font-medium underline underline-offset-4 hover:bg-ink/5 lg:rounded-2xl lg:no-underline lg:hover:bg-white/10";
