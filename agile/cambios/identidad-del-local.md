@@ -45,7 +45,7 @@ Implementación probada: `8b5b782..a781fc8`. Unidades de revisión: `db4ab29` (p
 
 ## Ajustes y límites tras la revisión
 
-- Ajuste S sobre `a781fc8`: `PublicMenu.organization.menu_palette` es `Palette` obligatorio; la lectura de la base valida y normaliza a Oliva. Una nueva regresión comprueba que las nueve variables predeterminadas de `carta.css` coinciden con Oliva; las pruebas existentes ya cubren los textos blancos de las paletas.
+- Ajuste S `9df251d` sobre `a781fc8`: `PublicMenu.organization.menu_palette` es `Palette` obligatorio; la lectura de la base valida y normaliza a Oliva. Una nueva regresión comprueba que las nueve variables predeterminadas de `carta.css` coinciden con Oliva; las pruebas existentes ya cubren los textos blancos de las paletas.
 - Comprobación del ajuste: `pnpm test src/lib/identidad/palettes.test.ts src/lib/public-menu.test.ts src/lib/menu.test.ts` **22/22**; `pnpm typecheck` y `pnpm lint` **OK**. Sin cambios de CSS, esquema ni permisos; no se repiten build/RLS/E2E de la entrega funcional anterior.
 - **Límite aceptado: concurrencia.** Dos subidas que leen el mismo logo anterior pueden dejar una de las versiones nuevas huérfana. No hay reconciliación ni purga automática; requiere limpieza operativa si ocurre.
 - **Límite aceptado: cantidad.** La API limita cada archivo a 2 MB, pero no la cantidad de objetos por organización. Un Dueño con cuenta editable puede subir muchos por API directa, igual que en `product-images`; no se agregan cuotas en este incremento.
