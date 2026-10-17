@@ -3,8 +3,8 @@
 -- Precios en centavos de ARS.
 
 -- Organización 1: carta completa, con filas inactivas para probar que no se publican.
-insert into public.organizations (id, slug, name) values
-  ('10000000-0000-4000-8000-000000000001', 'cafe-ejemplo', 'Café Ejemplo');
+insert into public.organizations (id, slug, name, menu_palette) values
+  ('10000000-0000-4000-8000-000000000001', 'cafe-ejemplo', 'Café Ejemplo', 'oliva');
 
 insert into public.branches (id, organization_id, slug, name) values
   ('11000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'centro', 'Centro');
@@ -49,8 +49,8 @@ insert into public.options (id, organization_id, group_id, name, price_delta_cen
   ('15000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000001', '14000000-0000-4000-8000-000000000004', 'Opción de plato inactivo', 10000, 0, true);
 
 -- Organización 2: existe para probar el aislamiento entre tenants.
-insert into public.organizations (id, slug, name) values
-  ('20000000-0000-4000-8000-000000000001', 'parrilla-demo', 'Parrilla Demo');
+insert into public.organizations (id, slug, name, menu_palette) values
+  ('20000000-0000-4000-8000-000000000001', 'parrilla-demo', 'Parrilla Demo', 'cacao');
 
 insert into public.branches (id, organization_id, slug, name) values
   ('21000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000001', 'sur', 'Sur');

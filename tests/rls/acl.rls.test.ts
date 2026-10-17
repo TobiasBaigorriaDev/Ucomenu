@@ -30,6 +30,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   rotate_table_token: [false, false, false], // trigger de tables: regenera qr_token (ADR 0009)
   limit_table_mute: [false, false, false], // trigger de tables: un silencio dura como máximo 24 horas (configuración del llamado)
   product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
+  organization_logo_org: [false, false, true], // pura; solo las políticas de logos del Dueño
   record_price_change: [true, false, false], // trigger de products: escribe price_history (la API no tiene INSERT)
   price_history_append_only: [false, false, false], // trigger de price_history: rechaza UPDATE, DELETE y TRUNCATE
   audit_log_append_only: [false, false, false], // trigger de audit_log: rechaza UPDATE, DELETE y TRUNCATE (SuperAdmin)

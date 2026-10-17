@@ -165,14 +165,14 @@ isOneToOne: false
                   ]
                 },"organizations": {
                   Row: {
-                    "created_at": string,"id": string,"is_active": boolean,"name": string,"slug": string
+                    "created_at": string,"id": string,"is_active": boolean,"logo_path": string | null,"menu_palette": string,"name": string,"slug": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"slug": string
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_palette"?: string,"name": string,"slug": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"slug"?: string
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_palette"?: string,"name"?: string,"slug"?: string
                   }
                   Relationships: [
                     
