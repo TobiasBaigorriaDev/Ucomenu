@@ -28,3 +28,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0014 | [Purga de `waiter_calls`: retención de 14 días, función de base solo para el servidor y piso de 7 días](0014-purga-de-waiter-calls.md) | aceptada | 2026-10-15 |
 | 0015 | [Estrategia de lanzamiento: Supabase Free con respaldos propios, hosting en un contenedor de Fly.io, staging aparte](0015-estrategia-de-lanzamiento.md) | aceptada | 2026-10-16 |
 | 0016 | [Declaraciones dietarias cerradas y disponibilidad por sucursal en vivo](0016-etiquetas-y-disponibilidad-de-carta.md) | propuesta (implementada localmente) | 2026-10-16 |
+| 0017 | [Conservar identificadores anteriores en la sucursal](0017-historicos-de-slug-por-sucursal.md) | aceptada (decisión técnica) | 2026-10-16 |

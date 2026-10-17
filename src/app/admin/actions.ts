@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
 import { changePlan, registerPayment, setSuspension } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
+import { correctBranchSlug } from "@/lib/admin/branches";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import type { FormState } from "@/lib/form-state";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -69,6 +70,27 @@ async function organizationContext(formData: FormData) {
 }
 
 const NOT_CONFIGURED = "El SuperAdmin no está configurado en este servidor.";
+
+export async function correctBranchSlugAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { newSlug: text(formData, "newSlug") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+  const result = await correctBranchSlug(prepared.ctx, {
+    orgSlug: prepared.slug, branchId: text(formData, "branchId"),
+    expectedSlug: text(formData, "expectedSlug"), newSlug: values.newSlug,
+  });
+  if (!result.ok) return {
+    error: result.error === "uncertain_change"
+      ? "No pudimos confirmar la corrección. Recargá y revisá la dirección actual de la sucursal antes de repetir."
+      : ADMIN_ERROR_MESSAGE[result.error],
+    values,
+  };
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  revalidatePath(`/m/${prepared.slug}/${result.data.previousSlug}`);
+  revalidatePath(`/m/${prepared.slug}/${result.data.slug}`);
+  return { ok: true, message: "Identificador corregido. Las direcciones anteriores siguen funcionando y los QR no cambian." };
+}
 
 export async function changePlanAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const prepared = await organizationContext(formData);

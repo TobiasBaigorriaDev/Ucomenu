@@ -15,6 +15,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   can_attend_calls: [true, false, true], // usada por la política de UPDATE de waiter_calls (panel de sala)
   create_trial_subscription: [true, false, false], // trigger
   enforce_branch_limit: [true, false, false], // trigger
+  keep_branch_slug_history: [false, false, false], // trigger invocador; no amplía permisos de sucursales
   enforce_product_limit: [true, false, false], // trigger
   guard_last_owner: [true, false, false], // trigger de memberships (ADR 0007)
   has_feature: [true, false, false],

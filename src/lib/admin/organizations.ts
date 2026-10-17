@@ -28,6 +28,10 @@ export type AdminError =
   | "invalid_slug"
   | "invalid_branch_name"
   | "invalid_branch_slug"
+  | "branch_not_found"
+  | "branch_slug_taken"
+  | "branch_slug_unchanged"
+  | "branch_changed"
   | "invalid_email"
   | "invalid_plan"
   | "invalid_cycle"
@@ -68,6 +72,10 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   invalid_branch_slug:
     "El identificador de la sucursal solo puede tener minúsculas, números y guiones simples (por ejemplo, principal), hasta 64 caracteres.",
   invalid_email: "Revisá el email del Dueño: no parece válido.",
+  branch_not_found: "No encontramos esa sucursal en la organización.",
+  branch_slug_taken: "Ese identificador ya pertenece a una sucursal o a una dirección anterior de este local.",
+  branch_slug_unchanged: "Ese ya es el identificador de la sucursal: no hay cambios.",
+  branch_changed: "No se cambió el identificador. La sucursal pudo cambiar desde que abriste esta página: recargá y revisá su dirección.",
   invalid_plan: "Elegí un plan válido.",
   invalid_cycle: "Elegí si la facturación es mensual o anual.",
   invalid_period: "«Vigente hasta» tiene que ser una fecha futura, de hasta 2 años.",

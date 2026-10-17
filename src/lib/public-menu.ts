@@ -149,7 +149,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
     .from("organizations")
     .select("id, name, slug, menu_palette, logo_path, branches!inner(id, name, slug)")
     .eq("slug", orgSlug)
-    .eq("branches.slug", branchSlug)
+    .or(`slug.eq.${branchSlug},slug_aliases.cs.{${branchSlug}}`, { referencedTable: "branches" })
     .maybeSingle();
 
   if (orgError) throw new Error(`No se pudo leer la organización: ${orgError.message}`);

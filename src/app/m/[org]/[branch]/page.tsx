@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { MenuUnavailable } from "@/components/menu/menu-unavailable";
 import { PublicMenuView } from "@/components/menu/public-menu-view";
 import { getPublicMenu } from "@/lib/public-menu";
@@ -19,6 +19,7 @@ export default async function PublicMenuPage({ params }: PageProps<"/m/[org]/[br
   const result = await getPublicMenu(org, branch);
   if (!result) notFound();
   if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} />;
+  if (result.menu.branch.slug !== branch) permanentRedirect(`/m/${org}/${result.menu.branch.slug}`);
 
   return <PublicMenuView menu={result.menu} />;
 }

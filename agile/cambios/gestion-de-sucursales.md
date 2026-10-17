@@ -35,7 +35,7 @@ Hasta ahora las sucursales solo existían por script o por el alta del SuperAdmi
 
 ## Decisiones de producto (delegadas por el usuario, 2026-10-16)
 1. **Desactivar una sucursal: fuera de este incremento** (ítem C aparte en el tablero). Regla fijada para cuando se haga: una sucursal inactiva **no cuenta** para el tope (misma regla que platos y mesas, `docs/producto.md`); su carta pública y los QR de sus mesas muestran «no disponible» (no 404, para que un QR impreso no parezca roto); no admite llamados nuevos y sale de la Sala; reactivar respeta el tope. Implica `is_active`, reemplazar `public_menu_status`, `resolve_table_qr`, `create_waiter_call` y `enforce_branch_limit` y el conteo de `org_entitlements`. Mientras tanto, un identificador mal escrito o una sucursal de más se resuelven pidiéndolo a UcoMenu; el formulario lo advierte antes de crear.
-2. **Corrección del identificador:** el Dueño no lo cambia (rompería los links públicos; los QR no dependen de él). Lo corrige UcoMenu por SQL; más adelante, herramienta de SuperAdmin con redirección.
+2. **Corrección del identificador:** el Dueño no lo cambia; los QR no dependen de él. El SuperAdmin ya dispone de la herramienta con conservación de enlaces anteriores: [ficha](correccion-slug-sucursal.md). Las garantías anteriores de esta ficha sobre slug inmutable se refieren a la API del Dueño y Staff.
 3. **Dirección y zona horaria: no se agregan ahora.** Dirección y coordenadas llegan con la Fase 3 (geofencing); la zona horaria, cuando haya un cliente fuera de Argentina (hoy, Buenos Aires fijo).
 
 ## Pendiente para quien integra
@@ -59,7 +59,7 @@ Revisión visual a 390 px con capturas (lista con alta, tope alcanzado con el av
 
 ## (C) Fallos y recuperación
 - Si la migración falla, no queda nada a medias (una sola transacción). Rollback documentado en la migración: quitar la política, revocar el `INSERT` y el `CHECK`; el alta vuelve a ser solo del servidor.
-- Una sucursal creada por error no se puede borrar ni renombrar su identificador desde el panel: queda a cargo de UcoMenu (SQL). Es el costo de no abrir `DELETE`.
+- Una sucursal creada por error no se puede borrar ni renombrar su identificador desde el panel del Dueño: la corrección queda a cargo de UcoMenu, ahora desde SuperAdmin (ficha enlazada arriba). No se abre `DELETE`.
 - Alta repetida (doble clic): la segunda falla por `unique (organization_id, slug)`.
 
 ## (C) Revisión y aprobación

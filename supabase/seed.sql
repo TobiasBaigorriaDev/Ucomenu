@@ -3,6 +3,7 @@
 -- Precios en centavos de ARS.
 
 -- Organización 1: carta completa, con filas inactivas para probar que no se publican.
+-- slug_aliases inicia vacío; los escenarios de corrección generan sus propios históricos.
 insert into public.organizations (id, slug, name, menu_palette) values
   ('10000000-0000-4000-8000-000000000001', 'cafe-ejemplo', 'Café Ejemplo', 'oliva');
 

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
 import { AUDIT_LIMIT } from "@/lib/admin/organizations";
+import { listAdminBranches } from "@/lib/admin/branches";
 import { getOrganizationDetail, PAYMENTS_LIMIT, type PaymentRow } from "@/lib/admin/subscriptions";
 import { isBillingCycle, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
@@ -12,6 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { ChangePlanForm, PaymentForm, SuspensionForm } from "./forms";
+import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
 
@@ -81,6 +83,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
   }
 
   const org = result.data;
+  const branches = await listAdminBranches({ session: await createSessionClient(), admin: createAdminClient(), actorId: user.id }, org.id);
   const now = new Date();
   const suspended = org.suspendedAt !== null;
   const datesState = accountState(org.periodEnd, false, now);
@@ -114,6 +117,25 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           </Row>
           {org.periodEnd ? <Row label={datesState === "active" ? "Vigente hasta" : "Venció el"}>{formatDateWithYear(org.periodEnd)}</Row> : null}
         </ul>
+      </section>
+
+      <section aria-labelledby="seccion-sucursales" className="mt-10">
+        <h2 id="seccion-sucursales" className="font-display text-2xl">Direcciones de las sucursales</h2>
+        <p className="mt-2 max-w-prose leading-relaxed text-muted">
+          Corregí un identificador sin perder los enlaces anteriores: redirigen a la dirección vigente.
+          Los códigos QR de las mesas no cambian. Usá minúsculas, números y guiones simples.
+        </p>
+        {!branches.ok ? <p role="alert" className="mt-3 text-danger">No pudimos cargar las sucursales. Recargá para intentar de nuevo.</p>
+          : branches.data.length === 0 ? <p className="mt-3 text-muted">Todavía no hay sucursales.</p>
+          : <ul className="mt-3 divide-y divide-ink/15">
+            {branches.data.map((branch) => <li key={branch.id} data-testid="admin-sucursal" data-branch={branch.id} className="py-5">
+              <h3 className="font-display text-xl [overflow-wrap:anywhere]">{branch.name}</h3>
+              <Link href={`/m/${org.slug}/${branch.slug}`} className="mt-1 inline-flex min-h-11 items-center text-cobalt underline [overflow-wrap:anywhere]">
+                /m/{org.slug}/{branch.slug}
+              </Link>
+              <BranchSlugForm orgSlug={org.slug} branchId={branch.id} currentSlug={branch.slug} />
+            </li>)}
+          </ul>}
       </section>
 
       <section aria-labelledby="seccion-plan" className="mt-10">
