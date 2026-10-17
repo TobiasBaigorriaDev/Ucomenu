@@ -1,26 +1,34 @@
 ---
 name: ciclo-revision-claude
-description: Usar desde Codex al terminar una implementación para pedir automáticamente revisión independiente de Claude Code con pnpm revision:claude, evaluar hallazgos y verificar correcciones. Solo lectura; no reemplaza aprobación humana de operaciones críticas.
+description: Usar exclusivamente cuando Codex implementa una tarea crítica de nivel C y necesita revisión independiente de Claude Code con pnpm revision:claude. Incluye triage y verificación de correcciones en solo lectura. No activar para tareas S o M ni para documentación sin consecuencias críticas.
 ---
 
 # ciclo-revision-claude
 
 Codex es el único escritor. Claude revisa mediante CLI con Read/Glob/Grep; sin shell, edición, hooks, plugins ni MCP. Solo para sesiones implementadoras de Codex; un revisor no inicia otro ciclo.
 
-1. Terminá la implementación y sus comprobaciones por impacto. Actualizá la ficha si corresponde. Por autorización del usuario, pedí revisión automática al cerrar implementaciones; documentación sola no la necesita, salvo pedido explícito. Si el usuario pide otro alcance o revisión manual, respetalo.
+## Activación: solo tareas críticas
+
+Activar únicamente en **nivel C**, según las consecuencias definidas en `AGENTS.md`: autorización, exposición de información, dinero o eliminación irreversible. Evaluar el alcance real, no el tamaño del diff ni la cantidad de archivos. Si no está clara la clasificación, resolver el riesgo antes de iniciar el ciclo.
+
+En **S y M no usar esta skill**. Un cambio ordinario, reversible o solo de documentación no dispara la revisión de Claude. El procedimiento en ambos sentidos está en [la guía](../../../docs/revision-entre-agentes.md).
+
+## Ciclo
+
+1. Confirmá que el cambio es C. Terminá la implementación y sus comprobaciones por impacto. Dejá la ficha con aceptación, invariantes, fallos, recuperación y evidencia. Pedí revisión automáticamente, sin nueva confirmación. Si el usuario indicó revisión manual u otro revisor, respetalo.
 2. Suspendé las ediciones durante la revisión. Preferí un commit local; para pendientes usá `--uncommitted` (incluye staged y archivos nuevos). Ejecutá:
 
    ```bash
-   pnpm revision:claude --commit HEAD --ficha agile/cambios/<ficha>.md --nivel M
+   pnpm revision:claude --commit HEAD --ficha agile/cambios/<ficha>.md --nivel C
    ```
 
-   Ajustá el nivel S/M/C por consecuencias y omití `--ficha` en S. Alternativas: `--base main`, `--uncommitted`. `--dry-run` muestra el pedido sin llamar a Claude. El comando tarda varios minutos: esperar su finalización sin editar el alcance.
+   Mantené `--nivel C` y la ficha. Alternativas de alcance: `--base main`, `--uncommitted`. `--dry-run` muestra el pedido sin llamar a Claude. El comando tarda varios minutos: esperar su finalización sin editar el alcance.
 3. Leé el informe en `output/revisiones/` y el código: **0** aprobar, **1** aprobar con cambios, **2** rechazar, **3** error sin revisión válida. Si falta Claude o la autenticación, informá el bloqueo; no instales ni cambies credenciales. Nunca interpretes un error como aprobación.
 4. Contrastá cada hallazgo con el código y reproducilo o justificá por qué no aplica. Corregí defectos reales con las pruebas pertinentes; no apliques sugerencias de estilo por ritual.
 5. Tras corregir y verificar, pedí una revisión acotada:
 
    ```bash
-   pnpm revision:claude --commit HEAD --nivel M --ficha agile/cambios/<ficha>.md --verificar --hallazgos output/revisiones/<informe-anterior>.md
+   pnpm revision:claude --commit HEAD --nivel C --ficha agile/cambios/<ficha>.md --verificar --hallazgos output/revisiones/<informe-anterior>.md
    ```
 
    Usá `--uncommitted` si las correcciones siguen sin commit. Máximo tres rondas totales; si no se resuelve, registrá el desacuerdo y consultá al usuario. No delegues implementación ni encadenes revisores.

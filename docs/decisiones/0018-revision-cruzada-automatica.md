@@ -1,6 +1,6 @@
 # 0018 — Revisión cruzada automática entre Codex y Claude
 
-- Estado: aceptada por pedido del usuario.
+- Estado: aceptada; el disparador general de Codex → Claude fue reemplazado por [ADR 0019](0019-revision-claude-solo-criticas.md). La integración técnica en ambos sentidos sigue vigente.
 - Fecha: 2026-10-17.
 
 ## Decisión y motivos

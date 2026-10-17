@@ -2,12 +2,12 @@
 
 Nivel M · 2026-10-17 · solicitado por el usuario.
 
-Motivos duraderos: [ADR 0018](../../docs/decisiones/0018-revision-cruzada-automatica.md).
+Motivos duraderos: [ADR 0018](../../docs/decisiones/0018-revision-cruzada-automatica.md); alcance posterior de la skill: [ADR 0019](../../docs/decisiones/0019-revision-claude-solo-criticas.md). Uso en ambos sentidos: [guía](../../docs/revision-entre-agentes.md).
 
 ## Decisiones y aceptación
 
 - Completar la integración existente Claude → Codex con `pnpm revision:claude`: commit, rama contra base o pendientes (staged, sin stage y nuevos), ficha opcional y nivel S/M/C.
-- Codex pide revisión automáticamente tras implementar y verificar código. Un único escritor; Claude solo lee, no delega ni modifica código, datos, memoria o handoff. Documentación sola no requiere revisión automática.
+- Por ajuste posterior del usuario, `ciclo-revision-claude` pide revisión automáticamente solo tras implementar y verificar tareas críticas C; no se activa en S/M. Un único escritor; Claude solo lee, no delega ni modifica código, datos, memoria o handoff.
 - CLI existente y autenticación local, sin dependencias nuevas ni cambios de credenciales. El coordinador adjunta el diff; Claude dispone solo de Read/Glob/Grep, sin hooks/plugins/MCP ni shell.
 - Informe local ignorado por Git; mismos códigos 0/1/2/3 que `revision:codex`. Fallo del proceso, timeout, JSON de error o falta de veredicto nunca aprueban; no reutilizar salidas anteriores.
 - Verificación de hallazgos con `--verificar --hallazgos`; máximo tres rondas. Permisos del producto y aprobación humana C sin cambios.
@@ -30,6 +30,12 @@ Diff local en `feat/revision-claude`; base actual `d2a5446`. Durante la sesión,
 ## Recuperación
 
 Revertir `tools/revision-claude.mjs`, su prueba, la skill `ciclo-revision-claude`, el comando de package.json y los cambios de reglas/documentación de esta ficha. No hay migraciones ni cambios de producto. Los informes se conservan en output/revisiones.
+
+## Ajuste documental posterior: solo tareas críticas
+
+Diff sobre `1971975`, por pedido del usuario: guía del procedimiento en ambos sentidos; activación de la skill limitada a C en descripción, instrucciones y ejemplos; reglas de entrada y ADR actualizados. Sin cambios de código ni de CLI.
+
+Validación del ajuste: `quick_validate.py .agents/skills/ciclo-revision-claude` OK; `python tools/sincronizar_skills.py --check` OK; 39 enlaces Markdown locales comprobados en diez archivos, sin destinos faltantes; `git diff --check` OK. Índice local de skills regenerado (83 entradas, nueve duplicadas omitidas). Sin suites unitarias, build, RLS, E2E ni otra revisión de Claude: cambio exclusivamente documental y de metodología.
 
 ## Límites
 
