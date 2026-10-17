@@ -4,15 +4,18 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-`main` contiene todo el trabajo local hasta ahora: identidad del local, paginación de la carta, buscador y filtros dietarios con su aviso de alérgenos, disponibilidad por sucursal y corrección de slug por SuperAdmin. `main` está subido a `origin/main` (sin CI ni despliegue automático). Evidencia en las fichas respectivas del tablero; no se copia aquí.
+Rama `feat/ui-carta`, desde `main` (subido a `origin/main`). Tarea en curso: [rediseño de la UI de la carta pública](cambios/ui-carta-publica.md), nivel M, iterada en vivo con el usuario. Ya están el contexto de diseño [`PRODUCT.md`](../PRODUCT.md) y el contrato de dirección en `.impeccable/surfaces/src-app-m-org-branch-page-tsx.md`: Bento + Editorial + Card-based, fijada por el usuario, con las cuatro paletas por local sin cambios. Aún no se tocó la UI. `DESIGN.md` no existe a propósito: lo escribe el documentador al cerrar la primera iteración construida.
 
-## Siguiente tarea (seleccionada)
-
-**[C] Desactivar sucursales**, ficha [desactivar-sucursales](cambios/desactivar-sucursales.md). Las reglas ya están decididas; la ficha trae puntos de partida verificados (qué versión de cada función de base reemplazar, qué lecturas hoy no distinguen sucursales activas) y las **cinco decisiones ya aprobadas por el usuario** (2026-10-17), así que se puede empezar. Crear la rama `feat/desactivar-sucursales` desde `main`. Rigor C: ficha con invariantes, pruebas de RLS y E2E, revisión independiente y aprobación humana.
+El servidor de desarrollo corre en `http://localhost:3000/m/cafe-ejemplo/centro` (`pnpm dev`, recarga en caliente); `parrilla-demo/sur` sirve para la paleta Cacao.
 
 ## Bloqueos y riesgos
 
-- La revisión independiente C de búsqueda y disponibilidad no se hizo en sesión limpia; se integró por decisión del usuario. Opcional: `pnpm revision:codex` sobre `dc4d102..HEAD` cuando vuelva la cuota de Codex.
-- Las migraciones de identidad, carta, disponibilidad y slugs existen solo en local; aplicarlas a staging o producción requiere autorización. La base local se reseteó el 2026-10-17 y el seed funciona de cero (RLS completo en verde).
-- Producción sigue bloqueada por dominio, Supabase de producción, contacto y revisión legal: [ficha](cambios/salida-a-produccion.md), ADR 0015. RLS y E2E comparten base: no ejecutarlos a la vez.
-- Los E2E contra `pnpm dev` usan `e2e/detalle-plato-dev.spec.ts` (variables en el propio archivo); la suite normal corre contra el build.
+- Falta que el usuario apruebe el **par tipográfico nuevo** antes de aplicarlo. Tampoco está activado el modo en vivo de `impeccable` (inyecta un script temporal): requiere su aprobación.
+- Los E2E de carta (`menu`, `buscador`, `disponibilidad`, `identidad`, `rendimiento-carta`) pueden depender de textos o estructura que cambien: ajustarlos por decisión de diseño, no por accidente. Contraste AA de las cuatro paletas: `src/lib/identidad/palettes.test.ts`.
+- Producción sigue bloqueada ([ficha](cambios/salida-a-produccion.md), ADR 0015); migraciones solo en local. «Desactivar sucursales» quedó en el backlog con sus decisiones aprobadas.
+
+## Próximo paso
+
+1. Proponer 2–3 pares tipográficos fuera de la lista de fuentes por defecto del skill, con su motivo; el usuario elige.
+2. Construir la primera ronda: encabezado editorial y bento de categorías; luego cards de plato y listado. Registrar cada ronda en la ficha.
+3. Al cerrar la primera iteración: revisión final del skill, `DESIGN.md` y `.impeccable/design.json`, luego typecheck, lint, build y E2E de carta.

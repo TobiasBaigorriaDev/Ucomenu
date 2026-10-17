@@ -11,11 +11,16 @@ Modificar la UI de la carta pública (`/m/{org}/{sucursal}` y `/t/{token}`) seg�
 - Accesibilidad y móvil primero: 390 px sin desborde, objetivos táctiles de 44 px, contraste AA en las cuatro paletas (`src/lib/identidad/palettes.test.ts`), foco visible, `prefers-reduced-motion`.
 - Si un cambio de diseño necesita tocar los tokens de `globals.css` o las paletas, se avisa antes: afecta al panel y al contraste probado.
 
-## Alcance
-Lo define el usuario ronda a ronda; se registra abajo qué se pidió y qué se decidió.
+## Contexto de diseño y decisiones (2026-10-17)
+Contexto durable en [`PRODUCT.md`](../../PRODUCT.md) y en el surface brief con el contrato de dirección (`.impeccable/surfaces/src-app-m-org-branch-page-tsx.md`); no se repiten aquí. `DESIGN.md` se genera al cerrar la primera iteración construida, no antes.
+- **Alcance:** rediseño profundo; se conservan funciones, contenido y las cuatro paletas por local.
+- **Dirección fijada por el usuario:** Bento + Editorial + Card-based.
+- **Bento:** portada y categorías, platos destacados y todo el listado. **Editorial:** jerarquía de revista y asimetría con quiebres de grilla.
+- **Fotos:** mezcla; las cards funcionan con y sin foto. **Marca:** el local manda, con firma discreta «Hecho con UcoMenu» al pie. **Voz:** voseo cercano.
+- **Tipografía nueva:** se propone en el chat con motivos y la aprueba el usuario antes de aplicarla (pendiente). Paletas sin cambios.
 
 ## Rondas
-(vacío)
+(vacío; se registran aquí las peticiones y decisiones de cada ronda)
 
 ## Aceptación
 - [ ] Los cambios pedidos por el usuario están hechos y aprobados por él en el navegador.
