@@ -1,21 +1,21 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en `agile/historial.md`.
+Actualizado: 2026-10-17 · agente saliente: Codex · historial anterior en `agile/historial.md`.
 
 ## Punto de retomada
 
-Integrado a `main` local (rama `feat/desactivar-sucursales`, aprobado por el usuario el 2026-10-17, ya subido a `origin`): el Dueño desactiva y reactiva sucursales desde `/panel/{slug}/sucursales`. La inactiva no cuenta para el tope del plan, su carta, su alias y los QR de sus mesas dicen «no disponible», no admite llamados nuevos y sale de Mesas, Llamados, Sala y Resumen; reactivar respeta el tope. Migración `20261023100000_desactivar_sucursales.sql`. Implementación, invariantes, evidencia (RLS 628/628, E2E con dos fallos ajenos que pasan al repetir) y las dos rondas de Codex están en la [ficha](cambios/desactivar-sucursales.md).
+Objetivo de esta sesión: habilitar que Codex solicite automáticamente revisiones a Claude al terminar de implementar. El incremento quedó en la rama local `feat/revision-claude`, sobre `d2a5446`; el commit de cierre incluye herramientas, pruebas y documentación. Aceptación, evidencia y límites están en la [ficha](cambios/revision-claude-desde-codex.md); los motivos duraderos están en el [ADR 0018](../docs/decisiones/0018-revision-cruzada-automatica.md). El usuario autorizó el flujo automático y sigue eligiendo quién implementa.
 
-Nivel C: Codex revisó dos rondas (un hallazgo real de carrera en `create_waiter_call`, corregido y con prueba que falla sin la corrección; otro sobre la robustez de esa prueba, también corregido). La aprobación humana de permisos y tope está dada.
+La integración usa la instalación y autenticación existentes de Claude. No necesita instalar dependencias ni cambiar credenciales. La skill específica de Codex está en `.agents/skills/ciclo-revision-claude/SKILL.md`; las cuatro skills Agile compartidas conservan su sincronización habitual. Los informes quedan en `output/revisiones/`, ignorados por Git. La integración anterior de Claude hacia Codex sigue disponible.
 
-La base local quedó en seed limpio. `carta.spec.ts` «tope de platos activos» cae bajo carga paralela y pasa solo (ajeno a este cambio).
+Mientras se trabajaba apareció un commit externo: `d2a5446` actualizó este handoff con el avance de staging. Se conservó íntegramente ese commit y su información operativa; esta sesión no ejecutó operaciones remotas ni de base de datos.
 
 ## Bloqueos y riesgos
 
-- Las migraciones están aplicadas en **staging** (2026-10-17, `supabase db push`: identidad, etiquetas, disponibilidad, slugs y desactivar sucursales; `dry-run` posterior: al día). La app desplegada en Fly de staging **no se actualizó** (falta desplegar `main`). Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015.
-- No se probó en un teléfono real. Login, sala en vivo y `/cuenta` conservan el estilo anterior; la ficha de detalle del plato no se rehízo como bento.
+El estado heredado registra las migraciones aplicadas en staging y el código previo subido a origin. El despliegue de la app en Fly de staging seguía pendiente. Producción continúa bloqueada según la [ficha de salida](cambios/salida-a-produccion.md) y ADR 0015. No se verificó ese entorno durante esta sesión.
+
+Siguen pendientes la comprobación en teléfono real y el posible rediseño de login, sala y cuenta. Los detalles del incremento de sucursales permanecen en su [ficha](cambios/desactivar-sucursales.md).
 
 ## Próximo paso
 
-1. Con autorización: desplegar `main` en staging y probar con sesión SuperAdmin, sucursales y la carta en un teléfono real.
-2. Opcional: rehacer login y sala con el lenguaje del panel; SuperAdmin podría reactivar/desactivar en el futuro (hoy solo el Dueño).
+Continuar con el trabajo que el usuario elija usando la revisión cruzada ya configurada. Publicar la rama o desplegar requiere autorización. Si se retoma staging, revisar primero Git y la ficha de salida para confirmar qué quedó publicado desde la otra sesión.

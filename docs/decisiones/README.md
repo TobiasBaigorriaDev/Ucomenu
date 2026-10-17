@@ -29,3 +29,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0015 | [Estrategia de lanzamiento: Supabase Free con respaldos propios, hosting en un contenedor de Fly.io, staging aparte](0015-estrategia-de-lanzamiento.md) | aceptada | 2026-10-16 |
 | 0016 | [Declaraciones dietarias cerradas y disponibilidad por sucursal en vivo](0016-etiquetas-y-disponibilidad-de-carta.md) | propuesta (implementada localmente) | 2026-10-16 |
 | 0017 | [Conservar identificadores anteriores en la sucursal](0017-historicos-de-slug-por-sucursal.md) | aceptada (decisión técnica) | 2026-10-16 |
+| 0018 | [Revisión cruzada automática entre Codex y Claude](0018-revision-cruzada-automatica.md) | aceptada | 2026-10-17 |
