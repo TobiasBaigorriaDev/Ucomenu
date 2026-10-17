@@ -38,6 +38,9 @@ const SQLSTATE = /^[0-9A-Z]{5}$/;
 const DB_ERRORS: Record<string, AdminError> = {
   not_platform_admin: "forbidden",
   subscription_not_found: "org_not_found",
+  organization_not_found: "org_not_found",
+  account_changed: "account_changed",
+  membership_changed: "account_changed",
   invalid_reason: "invalid_reason",
   invalid_plan: "invalid_plan",
   invalid_cycle: "invalid_cycle",
@@ -58,13 +61,13 @@ const DB_ERRORS: Record<string, AdminError> = {
  * (seguro). Cualquier otro (red cortada, tiempo agotado) deja el resultado INCIERTO: el cambio pudo confirmarse y
  * perderse solo la respuesta; no se asume nada y se pide mirar el estado antes de repetir.
  */
-function dbFailure(error: { code?: string; message?: string }): Result<never> {
+export function dbFailure(error: { code?: string; message?: string }): Result<never> {
   if (typeof error.code !== "string" || !SQLSTATE.test(error.code)) return fail("uncertain_change");
   return fail(DB_ERRORS[error.message ?? ""] ?? "unexpected");
 }
 
 /** Id de la organización por su slug. Solo después de haber probado que quien pide es SuperAdmin. */
-async function findOrgId(ctx: AdminContext, rawSlug: unknown): Promise<Result<string>> {
+export async function findOrgId(ctx: AdminContext, rawSlug: unknown): Promise<Result<string>> {
   const slug = parseSlug(rawSlug);
   if (!slug) return fail("org_not_found");
   const { data, error } = await ctx.admin.from("organizations").select("id").eq("slug", slug).maybeSingle();

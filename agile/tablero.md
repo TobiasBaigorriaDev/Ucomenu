@@ -34,7 +34,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin, incrementos pendientes: add-ons, desactivar organizaciones y lectura de la auditoría y de los pagos por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
-- [C] SuperAdmin: sumar una cuenta **existente** como Dueño de otra organización (hoy el alta exige un email nuevo) — surgido de «SuperAdmin: alta de organizaciones»
+- [C] SuperAdmin: sumar una cuenta **existente** como Dueño de otra organización: implementado en `feat/dueno-existente` y aprobado por Codex (2 rondas); falta la aprobación humana, integrar y aplicar la migración en staging → agile/cambios/dueno-existente.md
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)

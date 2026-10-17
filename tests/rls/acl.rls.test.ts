@@ -44,6 +44,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
+  admin_add_owner: [false, false], // SuperAdmin (ficha dueno-existente): suma una cuenta existente como Dueño; solo service_role
   admin_change_plan: [false, false], // SuperAdmin (ficha superadmin-planes-pagos): solo service_role, desde la acción de servidor
   admin_create_organization: [false, false], // SuperAdmin (ADR 0013): solo service_role, desde la acción de servidor
   admin_register_payment: [false, false], // SuperAdmin: registra un pago y mueve la vigencia; solo service_role
@@ -170,13 +171,14 @@ describe("RLS y permisos de tablas", () => {
     expect(permisos("service_role")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
   });
 
-  it("las acciones de SuperAdmin (alta, plan, suspensión, pago): solo service_role puede ejecutarlas", () => {
+  it("las acciones de SuperAdmin (alta, Dueño existente, plan, suspensión, pago): solo service_role puede ejecutarlas", () => {
     const filas = sql(`
       select p.proname, has_function_privilege('anon', p.oid, 'execute'), has_function_privilege('authenticated', p.oid, 'execute'),
              has_function_privilege('public', p.oid, 'execute'), has_function_privilege('service_role', p.oid, 'execute')
       from pg_proc p join pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'public' and p.proname like 'admin\_%' order by 1`);
     expect(filas).toEqual([
+      ["admin_add_owner", "f", "f", "f", "t"],
       ["admin_change_plan", "f", "f", "f", "t"],
       ["admin_create_organization", "f", "f", "f", "t"],
       ["admin_register_payment", "f", "f", "f", "t"],

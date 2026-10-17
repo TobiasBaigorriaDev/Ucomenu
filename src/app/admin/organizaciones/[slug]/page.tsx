@@ -13,7 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { StatusPill } from "../../status-pill";
-import { ChangePlanForm, PaymentForm, SuspensionForm } from "./forms";
+import { AddOwnerForm, ChangePlanForm, PaymentForm, SuspensionForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
@@ -144,6 +144,17 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
               <BranchSlugForm orgSlug={org.slug} branchId={branch.id} currentSlug={branch.slug} />
             </li>)}
           </ul>}
+      </section>
+
+      <section aria-labelledby="seccion-dueno" className="panel-cell mt-6">
+        <h2 id="seccion-dueno" className="font-display text-2xl">
+          Sumar un Dueño
+        </h2>
+        <p className="mt-2 max-w-prose leading-relaxed text-muted">
+          Para una persona que ya tiene cuenta (por ejemplo, un dueño con otro local). No se crea ni se toca la cuenta: conserva su
+          contraseña y sus otros locales. Si todavía no tiene cuenta, se crea al dar de alta una organización con su email.
+        </p>
+        <AddOwnerForm slug={org.slug} />
       </section>
 
       <section aria-labelledby="seccion-plan" className="panel-cell mt-6">
