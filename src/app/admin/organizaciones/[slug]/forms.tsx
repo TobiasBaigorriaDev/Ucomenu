@@ -263,6 +263,7 @@ export function AddOwnerForm({ slug }: { slug: string }) {
                   Sumar un Dueño le da control total sobre este local. Confirmá solo si es la misma persona: si la cuenta era de Personal
                   de otro local, el Dueño de ese local pudo haber elegido su contraseña.
                 </p>
+                <input type="hidden" name="userId" value={state.values?.userId ?? ""} />
                 <label className="flex min-h-11 items-start gap-3 text-base">
                   <input type="checkbox" name="confirmed" required className="mt-1 size-5 shrink-0" />
                   <span>Confirmo que {state.values?.email} es la persona que va a ser Dueño de esta organización.</span>

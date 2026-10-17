@@ -6,12 +6,14 @@
 --   * p_confirmed = false -> no escribe nada: informa si existe la cuenta y en qué locales ya trabaja (para que el
 --     SuperAdmin confirme que es la misma persona; ver el riesgo residual de la ficha);
 --   * p_confirmed = true  -> suma la membresía 'owner' (o asciende a Personal de esa misma organización) y audita.
+--     La confirmación queda atada a la cuenta que se mostró: p_expected_user es el `user_id` que devolvió el primer paso. Si
+--     el email ahora resuelve a otra cuenta (borrada y recreada entre los dos pasos), no se escribe nada (55000 account_changed).
 -- Devuelve jsonb con `status`: 'no_account' | 'needs_confirmation' | 'already_owner' | 'added' | 'promoted'.
--- Errores: 42501 not_platform_admin · P0002 organization_not_found.
+-- Errores: 42501 not_platform_admin · P0002 organization_not_found · 55000 account_changed / membership_changed.
 --
 -- Rollback (la API de SuperAdmin deja de poder sumar Dueños existentes; las membresías ya creadas se conservan):
---   revoke execute on function public.admin_add_owner(uuid, uuid, text, boolean) from service_role;
---   drop function public.admin_add_owner(uuid, uuid, text, boolean);
+--   revoke execute on function public.admin_add_owner(uuid, uuid, text, boolean, uuid) from service_role;
+--   drop function public.admin_add_owner(uuid, uuid, text, boolean, uuid);
 --   alter table public.audit_log drop constraint audit_log_action_check;
 --   alter table public.audit_log add constraint audit_log_action_check check (action in ('organization.created',
 --     'subscription.plan_changed', 'subscription.suspended', 'subscription.reactivated', 'payment.registered'));
@@ -32,7 +34,8 @@ create function public.admin_add_owner(
   p_actor uuid,
   p_org uuid,
   p_email text,
-  p_confirmed boolean
+  p_confirmed boolean,
+  p_expected_user uuid default null
 )
 returns jsonb
 language plpgsql
@@ -46,6 +49,7 @@ declare
   v_current public.memberships%rowtype;
   v_others jsonb;
   v_was_member boolean;
+  v_rows integer;
 begin
   if p_actor is null or not exists (select 1 from public.platform_admins a where a.user_id = p_actor) then
     raise exception 'not_platform_admin' using errcode = '42501';
@@ -71,7 +75,9 @@ begin
   join public.organizations o on o.id = m.organization_id
   where m.user_id = v_user and m.organization_id <> p_org;
 
-  select * into v_current from public.memberships m where m.user_id = v_user and m.organization_id = p_org;
+  -- FOR UPDATE: si otra transacción está borrando o cambiando esta membresía, se espera a que termine y se lee el estado
+  -- real (sin esto el ascenso podía actualizar 0 filas y aun así auditar «promoted»).
+  select * into v_current from public.memberships m where m.user_id = v_user and m.organization_id = p_org for update;
   v_was_member := found;
   if v_was_member and v_current.role = 'owner' then
     return jsonb_build_object('status', 'already_owner', 'user_id', v_user, 'others', v_others);
@@ -86,8 +92,17 @@ begin
     );
   end if;
 
+  -- La confirmación vale para la cuenta que se mostró, no para lo que hoy resuelva el email.
+  if p_expected_user is null or p_expected_user is distinct from v_user then
+    raise exception 'account_changed' using errcode = '55000';
+  end if;
+
   if v_was_member then
     update public.memberships set role = 'owner' where id = v_current.id;
+    get diagnostics v_rows = row_count;
+    if v_rows <> 1 then
+      raise exception 'membership_changed' using errcode = '55000';
+    end if;
   else
     insert into public.memberships (user_id, organization_id, role) values (v_user, p_org, 'owner');
   end if;
@@ -110,8 +125,8 @@ begin
   return jsonb_build_object('status', case when v_was_member then 'promoted' else 'added' end, 'user_id', v_user, 'others', v_others);
 end;
 $$;
-comment on function public.admin_add_owner(uuid, uuid, text, boolean) is
+comment on function public.admin_add_owner(uuid, uuid, text, boolean, uuid) is
   'SuperAdmin suma una cuenta existente como Dueño de una organización (sin tocar la cuenta de Auth), con auditoría. Sin p_confirmed solo informa. Solo service_role; vuelve a comprobar que p_actor es SuperAdmin.';
 
-revoke all on function public.admin_add_owner(uuid, uuid, text, boolean) from public, anon, authenticated;
-grant execute on function public.admin_add_owner(uuid, uuid, text, boolean) to service_role;
+revoke all on function public.admin_add_owner(uuid, uuid, text, boolean, uuid) from public, anon, authenticated;
+grant execute on function public.admin_add_owner(uuid, uuid, text, boolean, uuid) to service_role;

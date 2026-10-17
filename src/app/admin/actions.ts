@@ -6,6 +6,7 @@ import { changePlan, registerPayment, setSuspension } from "@/lib/admin/subscrip
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
 import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
+import { asUuid } from "@/lib/carta/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import type { FormState } from "@/lib/form-state";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -162,14 +163,14 @@ export async function addExistingOwnerAction(_previous: FormState, formData: For
   const values = { email: text(formData, "email") };
   if (!prepared) return { error: NOT_CONFIGURED, values };
 
-  const result = await addExistingOwner(prepared.ctx, { slug: prepared.slug, email: values.email, confirmed: text(formData, "confirmed") === "on" });
+  const result = await addExistingOwner(prepared.ctx, { slug: prepared.slug, email: values.email, confirmed: text(formData, "confirmed") === "on", expectedUserId: asUuid(formData.get("userId")) });
   if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
 
   if (result.data.status === "needs_confirmation") {
     const here = result.data.currentRole === "staff" ? " Ya es Personal de esta organización: se la asciende a Dueño." : "";
     return {
       message: `Encontramos la cuenta ${values.email}. ${describeAffiliations(result.data.others)}${here}`,
-      values: { ...values, step: "confirm" },
+      values: { ...values, step: "confirm", userId: result.data.userId },
     };
   }
 

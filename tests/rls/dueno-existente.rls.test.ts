@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { addExistingOwner } from "@/lib/admin/owners";
 import type { AdminContext } from "@/lib/admin/organizations";
@@ -104,7 +105,7 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
     const a = await crearLocal();
     const b = await crearLocal();
     for (const user of [a.owner, a.staff, b.owner, comun]) {
-      const r = await addExistingOwner(ctx(user), { slug: b.slug, email: a.owner.email, confirmed: true });
+      const r = await addExistingOwner(ctx(user), { slug: b.slug, email: a.owner.email, confirmed: true, expectedUserId: a.owner.id });
       expect(r, user.email).toEqual({ ok: false, error: "forbidden" });
     }
     expect(rol(b.id, a.owner)).toBeNull();
@@ -125,8 +126,8 @@ describe("buscar y confirmar", () => {
     const b = await crearLocal();
     expect(await addExistingOwner(ctx(admin), { slug: b.slug, email: "no-es-un-email", confirmed: true })).toEqual({ ok: false, error: "invalid_email" });
     expect(await addExistingOwner(ctx(admin), { slug: b.slug, email: undefined, confirmed: true })).toEqual({ ok: false, error: "invalid_email" });
-    expect(await addExistingOwner(ctx(admin), { slug: "no-existe-esa-org", email: b.owner.email, confirmed: true })).toEqual({ ok: false, error: "org_not_found" });
-    expect(await addExistingOwner(ctx(admin), { slug: "MAL SLUG!", email: b.owner.email, confirmed: true })).toEqual({ ok: false, error: "org_not_found" });
+    expect(await addExistingOwner(ctx(admin), { slug: "no-existe-esa-org", email: b.owner.email, confirmed: true, expectedUserId: b.owner.id })).toEqual({ ok: false, error: "org_not_found" });
+    expect(await addExistingOwner(ctx(admin), { slug: "MAL SLUG!", email: b.owner.email, confirmed: true, expectedUserId: b.owner.id })).toEqual({ ok: false, error: "org_not_found" });
   });
 
   it("sin confirmar solo informa dónde trabaja la cuenta y no escribe nada", async () => {
@@ -158,7 +159,7 @@ describe("sumar", () => {
     const antes = cuentaDe(a.owner);
     const cuentasAntes = cuentas();
 
-    const r = await addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true });
+    const r = await addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true, expectedUserId: a.owner.id });
     expect(r.ok && r.data.status).toBe("added");
 
     expect(rol(b.id, a.owner)).toBe("owner");
@@ -179,7 +180,7 @@ describe("sumar", () => {
 
   it("una cuenta de Personal de esa misma organización se asciende a Dueño", async () => {
     const b = await crearLocal();
-    const r = await addExistingOwner(ctx(admin), { slug: b.slug, email: b.staff.email, confirmed: true });
+    const r = await addExistingOwner(ctx(admin), { slug: b.slug, email: b.staff.email, confirmed: true, expectedUserId: b.staff.id });
     expect(r.ok && r.data.status).toBe("promoted");
     expect(rol(b.id, b.staff)).toBe("owner");
     expect(contar("memberships", `organization_id = '${b.id}' and user_id = '${b.staff.id}'`)).toBe(1);
@@ -188,7 +189,7 @@ describe("sumar", () => {
   it("si ya es Dueño no cambia nada y no audita otra vez; repetir es seguro", async () => {
     const a = await crearLocal();
     const b = await crearLocal();
-    expect((await addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true })).ok).toBe(true);
+    expect((await addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true, expectedUserId: a.owner.id })).ok).toBe(true);
     const antes = { membresias: contar("memberships"), auditoria: (await auditoria(b.id)).length };
 
     for (const confirmed of [true, false]) {
@@ -201,7 +202,7 @@ describe("sumar", () => {
     const a = await crearLocal();
     const b = await crearLocal();
     const resultados = await Promise.all(
-      [1, 2, 3, 4].map(() => addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true })),
+      [1, 2, 3, 4].map(() => addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true, expectedUserId: a.owner.id })),
     );
     expect(resultados.filter((r) => r.ok)).toHaveLength(1);
     expect(resultados.filter((r) => !r.ok && r.error === "already_owner")).toHaveLength(3);
@@ -213,7 +214,7 @@ describe("sumar", () => {
     const a = await crearLocal();
     const b = await crearLocal();
     await addMembership(service, a.staff, b.id, "staff");
-    await addExistingOwner(ctx(admin), { slug: b.slug, email: a.staff.email, confirmed: true });
+    await addExistingOwner(ctx(admin), { slug: b.slug, email: a.staff.email, confirmed: true, expectedUserId: a.staff.id });
 
     const filas = await auditoria(b.id);
     expect(filas).toHaveLength(1);
@@ -226,11 +227,79 @@ describe("sumar", () => {
   });
 });
 
+describe("la confirmación vale para la cuenta que se mostró (revisión de Codex, ronda 1)", () => {
+  it("confirmar sin la cuenta esperada, o con otra distinta, no escribe nada", async () => {
+    const a = await crearLocal();
+    const b = await crearLocal();
+    const antes = { membresias: contar("memberships"), auditoria: contar("audit_log") };
+    for (const esperada of [null, "00000000-0000-4000-8000-000000000000", a.staff.id]) {
+      const r = await service.rpc("admin_add_owner", {
+        p_actor: admin.id, p_org: b.id, p_email: a.owner.email, p_confirmed: true, ...(esperada ? { p_expected_user: esperada } : {}),
+      });
+      expect(r.error?.code, String(esperada)).toBe("55000");
+      expect(r.error?.message, String(esperada)).toBe("account_changed");
+    }
+    expect({ membresias: contar("memberships"), auditoria: contar("audit_log") }).toEqual(antes);
+  });
+
+  it("si la cuenta se borra y se recrea con el mismo email entre la búsqueda y la confirmación, no se suma a la nueva", async () => {
+    const a = await crearLocal();
+    const b = await crearLocal();
+    const busqueda = await addExistingOwner(ctx(admin), { slug: b.slug, email: a.staff.email, confirmed: false });
+    expect(busqueda.ok && busqueda.data.status === "needs_confirmation").toBe(true);
+    const mostrada = busqueda.ok && busqueda.data.status === "needs_confirmation" ? busqueda.data.userId : "";
+    expect(mostrada).toBe(a.staff.id);
+
+    // El Dueño de A da de baja a esa cuenta y crea otra con el mismo email (una contraseña que él elige).
+    expect((await service.auth.admin.deleteUser(a.staff.id)).error).toBeNull();
+    const nueva = await service.auth.admin.createUser({ email: a.staff.email, password: "otra-contrasena-larga-9", email_confirm: true });
+    expect(nueva.error).toBeNull();
+    users.push({ id: nueva.data.user!.id, email: a.staff.email, db: service });
+
+    const r = await addExistingOwner(ctx(admin), { slug: b.slug, email: a.staff.email, confirmed: true, expectedUserId: mostrada });
+    expect(r).toEqual({ ok: false, error: "account_changed" });
+    expect(rol(b.id, { id: nueva.data.user!.id } as TestUser)).toBeNull();
+    expect((await auditoria(b.id)).length).toBe(0);
+  });
+
+  it("carrera: si la membresía de Personal se borra mientras se asciende, no queda un «promoted» falso", async () => {
+    const a = await crearLocal();
+    const b = await crearLocal();
+    await addMembership(service, a.staff, b.id, "staff"); // trabaja en A y en B: borrar su membresía de B no borra la cuenta
+    const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+    // Otra transacción borra la membresía de B y la deja sin confirmar hasta que la prueba la libera por stdin.
+    const retenedor = spawn("docker", ["exec", "-i", contenedor, "psql", "-U", "postgres", "-q"], { stdio: ["pipe", "ignore", "ignore"] });
+    const terminado = new Promise((resolve) => retenedor.on("close", resolve));
+    retenedor.stdin.write(`begin; delete from public.memberships where organization_id = '${b.id}' and user_id = '${a.staff.id}';${String.fromCharCode(10)}`);
+    const hasta = async (descripcion: string, consulta: string) => {
+      for (let i = 0; i < 100; i++) {
+        if (sql(consulta)[0]?.[0] === "1") return;
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error(`No se alcanzó: ${descripcion}`);
+    };
+    await hasta("el borrado está pendiente", `select (count(*) > 0)::int from pg_stat_activity where state = 'idle in transaction' and query ilike '%delete from public.memberships%${b.id}%'`);
+
+    const pedido = addExistingOwner(ctx(admin), { slug: b.slug, email: a.staff.email, confirmed: true, expectedUserId: a.staff.id }).then((r) => r);
+    await hasta("el ascenso espera la fila", "select (count(*) > 0)::int from pg_stat_activity where wait_event_type = 'Lock' and query ilike '%admin_add_owner%' and pid <> pg_backend_pid()");
+    retenedor.stdin.end(`commit;${String.fromCharCode(10)}`);
+    const r = await pedido;
+    await terminado;
+
+    // Resultado coherente: lo que se informó es lo que quedó. La membresía ya no existía, así que se suma una nueva de Dueño.
+    expect(r.ok && r.data.status).toBe("added");
+    expect(rol(b.id, a.staff)).toBe("owner");
+    const filas = await auditoria(b.id);
+    expect(filas).toHaveLength(1);
+    expect(filas[0].after).toMatchObject({ promoted: false });
+  });
+});
+
 describe("el aislamiento entre locales sigue valiendo", () => {
   it("al compartir cuenta, el Dueño del otro local ya no puede restablecer su contraseña (guarda shared_account)", async () => {
     const a = await crearLocal();
     const b = await crearLocal();
-    await addExistingOwner(ctx(admin), { slug: b.slug, email: a.staff.email, confirmed: true });
+    await addExistingOwner(ctx(admin), { slug: b.slug, email: a.staff.email, confirmed: true, expectedUserId: a.staff.id });
 
     const membresia = await service.from("memberships").select("id").eq("organization_id", a.id).eq("user_id", a.staff.id).single();
     const r = await resetMemberPassword({ session: a.owner.db, admin: service, actorId: a.owner.id }, a.id, membresia.data!.id, "otra-contrasena-larga-1");
@@ -241,7 +310,7 @@ describe("el aislamiento entre locales sigue valiendo", () => {
   it("sumar a B no le da a nadie acceso a A: el Dueño de B no ve datos de A", async () => {
     const a = await crearLocal();
     const b = await crearLocal();
-    await addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true });
+    await addExistingOwner(ctx(admin), { slug: b.slug, email: a.owner.email, confirmed: true, expectedUserId: a.owner.id });
     expect((await b.owner.db.from("subscriptions").select("id").eq("organization_id", a.id)).data).toEqual([]);
     expect((await b.owner.db.from("memberships").select("user_id").eq("organization_id", a.id)).data).toEqual([]);
   });

@@ -18,11 +18,17 @@ export type Affiliation = { name: string; slug: string; role: "owner" | "staff" 
 
 export type AddOwnerOutcome =
   /** Nada se escribió: la cuenta existe y hay que confirmar. `currentRole` = su rol en ESTA organización, si ya trabaja en ella. */
-  | { status: "needs_confirmation"; currentRole: "staff" | null; others: Affiliation[] }
+  | { status: "needs_confirmation"; userId: string; currentRole: "staff" | null; others: Affiliation[] }
   /** `added` = membresía nueva; `promoted` = era Personal de esta organización y pasó a Dueño. */
   | { status: "added" | "promoted"; others: Affiliation[] };
 
-export type AddOwnerInput = { slug: unknown; email: unknown; confirmed: boolean };
+export type AddOwnerInput = {
+  slug: unknown;
+  email: unknown;
+  confirmed: boolean;
+  /** `userId` que devolvió el primer paso: la confirmación vale solo para esa cuenta (si el email ahora es de otra, no se escribe). */
+  expectedUserId?: string | null;
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -48,6 +54,7 @@ export async function addExistingOwner(ctx: AdminContext, input: AddOwnerInput):
     p_org: org.data,
     p_email: email,
     p_confirmed: input.confirmed === true,
+    ...(input.expectedUserId ? { p_expected_user: input.expectedUserId } : {}),
   });
   if (error) return dbFailure(error);
   if (!isRecord(data)) return fail("unexpected");
@@ -59,7 +66,9 @@ export async function addExistingOwner(ctx: AdminContext, input: AddOwnerInput):
     case "already_owner":
       return fail("already_owner");
     case "needs_confirmation":
-      return ok({ status: "needs_confirmation", currentRole: data.current_role === "staff" ? "staff" : null, others });
+      return typeof data.user_id === "string"
+        ? ok({ status: "needs_confirmation", userId: data.user_id, currentRole: data.current_role === "staff" ? "staff" : null, others })
+        : fail("unexpected");
     case "added":
     case "promoted":
       return ok({ status: data.status, others });

@@ -13,7 +13,7 @@ Un mismo dueño con dos locales: SuperAdmin escribe el email de una cuenta que *
 5. **No se toca la cuenta de Auth** (contraseña, email, confirmación). Sin esquema nuevo salvo la acción de auditoría.
 
 ## Riesgo residual (aceptado, documentado)
-Si la cuenta era **solo Personal** de otro local A, el Dueño de A pudo haber puesto o restablecido su contraseña, y entonces conocería una cuenta que pasa a ser Dueña de B. Mitigaciones: la pantalla lo avisa antes de confirmar; desde que la cuenta tiene dos locales, la guarda `shared_account` impide que el Dueño de A restablezca su contraseña; queda en la auditoría. Si hay duda sobre quién controla la cuenta, la salida correcta es crear una cuenta nueva con otro email.
+Si la cuenta era **solo Personal** de otro local A, el Dueño de A pudo haber puesto o restablecido su contraseña, y entonces conocería una cuenta que pasa a ser Dueño de B. Mitigaciones: la pantalla lo avisa antes de confirmar; desde que la cuenta tiene dos locales, la guarda `shared_account` impide que el Dueño de A restablezca su contraseña; queda en la auditoría. Si hay duda sobre quién controla la cuenta, la salida correcta es crear una cuenta nueva con otro email.
 
 ## Flujo de uso
 El alta de una organización sigue exigiendo un Dueño inicial con **cuenta nueva** (email nuevo y contraseña temporal). Para un dueño con dos locales: crear la organización con un email provisorio, sumar la cuenta existente desde su ficha («Sumar un Dueño») y, si se quiere, que ese Dueño quite la cuenta provisoria desde «Personal» (al no tener otro local, se borra). Hacer que el alta acepte directamente una cuenta existente queda fuera de este incremento.

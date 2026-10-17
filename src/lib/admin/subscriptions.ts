@@ -39,6 +39,8 @@ const DB_ERRORS: Record<string, AdminError> = {
   not_platform_admin: "forbidden",
   subscription_not_found: "org_not_found",
   organization_not_found: "org_not_found",
+  account_changed: "account_changed",
+  membership_changed: "account_changed",
   invalid_reason: "invalid_reason",
   invalid_plan: "invalid_plan",
   invalid_cycle: "invalid_cycle",
