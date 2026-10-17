@@ -1,12 +1,13 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { attachOptions, groupMenu, type MenuSection } from "@/lib/menu";
+import { isPalette, type Palette } from "@/lib/identidad/palettes";
 import { readAllPages } from "@/lib/paginar";
 import { isValidSlug } from "@/lib/slug";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
 export type PublicMenu = {
-  organization: { id: string; name: string; slug: string; menu_palette?: string; logo_path?: string | null };
+  organization: { id: string; name: string; slug: string; menu_palette: Palette; logo_path?: string | null };
   branch: { id: string; name: string; slug: string };
   sections: MenuSection[];
 };
@@ -158,7 +159,11 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   return {
     kind: "menu",
     menu: {
-      organization: { id: org.id, name: org.name, slug: org.slug, menu_palette: org.menu_palette, logo_path: org.logo_path },
+      organization: {
+        id: org.id, name: org.name, slug: org.slug,
+        menu_palette: isPalette(org.menu_palette) ? org.menu_palette : "oliva",
+        logo_path: org.logo_path,
+      },
       branch: { id: branch.id, name: branch.name, slug: branch.slug },
       sections: groupMenu(categories, attachOptions(products, optionGroups, options)),
     },

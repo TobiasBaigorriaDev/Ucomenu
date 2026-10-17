@@ -1,6 +1,6 @@
 # Cambio: Identidad del local en la carta
 
-Estado: **Implementado y comprobado; para revisión independiente de permisos**. Rama `feat/identidad-local`, base `8b5b782`.
+Estado: **Hecho**, con revisión comunicada por el usuario sin observaciones bloqueantes y ajustes menores atendidos. Rama `feat/identidad-local`, base `8b5b782`.
 Nivel: **C por las nuevas políticas de Storage y permisos de columnas**; el alcance de producto del tablero era M.
 
 ## Objetivo y decisiones
@@ -9,7 +9,7 @@ El Dueño configura el logo y la paleta de su organización en Apariencia; se re
 
 - Identidad incluida en todos los planes según producto. Solo Dueño; cuenta editable, igual que el catálogo. Sin cambiar las reglas de negocio existentes.
 - Paletas cerradas con contraste probado, elegidas explícitamente por el usuario: Oliva (actual, predeterminada), Azul, Vino y Cacao.
-- Logo opcional JPEG/PNG/WebP, hasta 2 MB; ruta inmutable propia en bucket público separado `organization-logos`, como los recursos gráficos públicos del catálogo. Reemplazar/quitar limpia el archivo anterior después del guardado; falla cerrada la escritura y se informa cualquier error de limpieza.
+- Logo opcional JPEG/PNG/WebP, hasta 2 MB; ruta inmutable propia en bucket público separado `organization-logos`, como los recursos gráficos públicos del catálogo. Reemplazar/quitar intenta limpiar el archivo anterior después del guardado; falla cerrada la escritura y se registra cualquier error de limpieza.
 - Columnas `organizations.menu_palette` y `logo_path`. Identidad consultada en vivo junto con organización/sucursal; las filas del menú conservan su caché y la suspensión sigue comprobándose en vivo.
 - Panel Operate: configuración con vista previa de los colores; carta conserva tipografía y estructura. El nombre del local permanece visible junto al logo.
 
@@ -31,7 +31,7 @@ El Dueño configura el logo y la paleta de su organización en Apariencia; se re
 
 ## Evidencia y revisión
 
-Diff probado contra `8b5b782`, sin cambios de comportamiento posteriores a estas comprobaciones. Unidades de revisión: `db4ab29` (persistencia y módulo con regresiones de base) y el commit que incorpora esta ficha (interfaz y carta pública con E2E). Revertir ambas retira el flujo; las columnas y archivos pueden conservarse sin pérdida de datos.
+Implementación probada: `8b5b782..a781fc8`. Unidades de revisión: `db4ab29` (persistencia y módulo con regresiones de base) y `a781fc8` (interfaz y carta pública con E2E). Revertir ambas retira el flujo; las columnas y archivos pueden conservarse sin pérdida de datos.
 
 - Docker y Supabase locales: `pnpm db:start`, `pnpm db:reset` y `pnpm db:types` **OK**. Migración `20261020100000` aplicada solo en local; seed de Café en Oliva y Parrilla en Cacao.
 - `pnpm test src/lib/identidad/palettes.test.ts src/lib/public-menu.test.ts src/lib/menu.test.ts`: **21/21**. Contraste AA de las cuatro paletas, filas paginadas y armado de menú.
@@ -41,4 +41,12 @@ Diff probado contra `8b5b782`, sin cambios de comportamiento posteriores a estas
 - Primer E2E: 3/5; dos fallos de preparación corregidos (slug de prueba con `_` y selector ambiguo con el anunciador de rutas de Next). La ejecución final anterior incluye los cinco casos en verde.
 - Inspección visual conjunta a **390 y 1280 px**, panel y carta; logo rectangular transparente, `object-fit: contain` y sin desborde. Capturas en `output/playwright/identidad/` (ignoradas). Se conserva el sistema visual existente; sin cambios de tokens globales.
 - No se ejecutaron suites completas de RLS/E2E: se filtraron por los contratos afectados. Sin cambios en dependencias, staging ni producción; sin prueba en teléfono real.
-- **Pendiente C:** revisión independiente en sesión limpia elegida manualmente por el usuario, antes de integrar. Cualquier aplicación remota requiere autorización separada. No se invocó otro agente.
+- Revisión comunicada por el usuario sobre `a781fc8`: cinco observaciones menores, ninguna bloqueante. No se atribuye a un agente o sesión cuya identidad no fue indicada. No se invocó otro agente.
+
+## Ajustes y límites tras la revisión
+
+- Ajuste S sobre `a781fc8`: `PublicMenu.organization.menu_palette` es `Palette` obligatorio; la lectura de la base valida y normaliza a Oliva. Una nueva regresión comprueba que las nueve variables predeterminadas de `carta.css` coinciden con Oliva; las pruebas existentes ya cubren los textos blancos de las paletas.
+- Comprobación del ajuste: `pnpm test src/lib/identidad/palettes.test.ts src/lib/public-menu.test.ts src/lib/menu.test.ts` **22/22**; `pnpm typecheck` y `pnpm lint` **OK**. Sin cambios de CSS, esquema ni permisos; no se repiten build/RLS/E2E de la entrega funcional anterior.
+- **Límite aceptado: concurrencia.** Dos subidas que leen el mismo logo anterior pueden dejar una de las versiones nuevas huérfana. No hay reconciliación ni purga automática; requiere limpieza operativa si ocurre.
+- **Límite aceptado: cantidad.** La API limita cada archivo a 2 MB, pero no la cantidad de objetos por organización. Un Dueño con cuenta editable puede subir muchos por API directa, igual que en `product-images`; no se agregan cuotas en este incremento.
+- **Límite aceptado: existencia.** La base valida formato y carpeta propia de `logo_path`, pero no comprueba que el archivo exista. Por API directa, el Dueño puede dejar rota la imagen de su propia carta. El flujo de subida del panel guarda la ruta después de subir.

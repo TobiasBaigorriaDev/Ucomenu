@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isOwnLogoPath } from "./logos";
 import { isPalette, PALETTES, paletteStyle } from "./palettes";
@@ -24,6 +25,15 @@ describe("paletas de la carta", () => {
   it("solo admite las paletas conocidas y recupera la predeterminada ante datos desconocidos", () => {
     for (const value of ["__proto__", "toString", "#ffffff", "otra", null]) expect(isPalette(value)).toBe(false);
     expect(paletteStyle("desconocida")).toEqual(paletteStyle("oliva"));
+  });
+  it("los colores predeterminados de .carta coinciden con Oliva", () => {
+    const css = readFileSync(new URL("../../components/menu/carta.css", import.meta.url), "utf8");
+    const block = css.match(/\.carta\s*\{([^}]*)\}/)?.[1];
+    expect(block).toBeDefined();
+    const defaults = Object.fromEntries(
+      [...block!.matchAll(/(--[\w-]+)\s*:\s*(#[\da-f]{6})\s*;/gi)].map(([, name, color]) => [name, color.toLowerCase()]),
+    );
+    expect(defaults).toEqual(paletteStyle("oliva"));
   });
 });
 
