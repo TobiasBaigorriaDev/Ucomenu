@@ -16,5 +16,8 @@ La rama contiene también búsqueda/filtros dietarios y disponibilidad por sucur
 
 ## Próximo paso
 
+Orden sugerido; ninguna dependencia técnica obliga a seguirlo. Antes de integrar, conviene que la revisión C de búsqueda y disponibilidad esté resuelta, porque esta rama la contiene.
+
+
 1. Revisión independiente C de búsqueda/disponibilidad (sesión limpia o `pnpm revision:codex` cuando vuelva la cuota) y `db:reset` local para comprobar el seed.
 2. Con el usuario: probar la corrección de slug desde `/admin` sobre un local de demo; luego integrar la rama y retomar staging.
