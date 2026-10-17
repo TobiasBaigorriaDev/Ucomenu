@@ -66,7 +66,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
-- [M] Rediseño del panel del Dueño y de SuperAdmin con el lenguaje de la carta (riel lateral, celdas, paleta del local y paleta UcoNext); revisado de forma independiente, sin integrar (2026-10-17) → [ficha](cambios/ui-panel-dueno-y-superadmin.md)
+- [M] Rediseño del panel del Dueño y de SuperAdmin con el lenguaje de la carta (riel lateral, celdas, paleta del local y paleta UcoNext); revisado de forma independiente y por Codex; integrado a `main` local, sin subir (2026-10-17) → [ficha](cambios/ui-panel-dueno-y-superadmin.md)
 - [M] Rediseño de la carta pública: Bento + Editorial + Cards (Gloock + Schibsted, bento de categorías, bandas pegajosas, cards de plato, dock de llamado); revisado de forma independiente; `PRODUCT.md` y `DESIGN.md` del sistema (2026-10-17) → [ficha](cambios/ui-carta-publica.md)
 - [M] Corrección del slug de sucursal por SuperAdmin con históricos reservados y redirección a la dirección vigente → [ficha](cambios/correccion-slug-sucursal.md)
 - [M · C técnico] Buscador y filtros dietarios con aviso de alérgenos junto a los filtros; integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/buscador-y-filtros-dietarios.md)
