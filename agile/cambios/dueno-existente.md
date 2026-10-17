@@ -1,6 +1,6 @@
 # Cambio: SuperAdmin suma una cuenta existente como Dueño de otra organización
 
-Estado: **Implementado y aprobado por Codex; pendiente de la aprobación humana** (rama `feat/dueno-existente`, desde `main`). Nivel **C**: toca autorización (da el rol de Dueño) y el aislamiento entre locales. Antecedente: [alta de organizaciones](superadmin-alta-de-organizaciones.md), que rechaza un email que ya tiene cuenta.
+Estado: **Integrado a `main`** (aprobado por Codex y por el usuario el 2026-10-17) (rama `feat/dueno-existente`, desde `main`). Nivel **C**: toca autorización (da el rol de Dueño) y el aislamiento entre locales. Antecedente: [alta de organizaciones](superadmin-alta-de-organizaciones.md), que rechaza un email que ya tiene cuenta.
 
 ## Objetivo
 Un mismo dueño con dos locales: SuperAdmin escribe el email de una cuenta que **ya existe** y la suma como Dueño de una organización, sin crearla ni tocar su contraseña. Cubre también ascender a Dueño a una cuenta que ya es Personal de esa misma organización.
@@ -49,4 +49,4 @@ Mutaciones en la base (una a la vez, restauradas): sin comprobar al actor SuperA
 ## Revisión y aprobación
 - **Ronda 1 (Codex, `8b4caaf`):** RECHAZAR, dos hallazgos, **ambos reales y corregidos** en `56dc48a`. (1) *Bloqueante:* la confirmación no se ataba a la cuenta que se había mostrado, así que, si un Dueño de otro local daba de baja a esa cuenta y creaba otra con el mismo email entre los dos pasos, el rol de Dueño iba a la cuenta nueva. Corregido con `p_expected_user`; prueba de regresión (cuenta reemplazada entre pasos) que falla sin la corrección. (2) *Importante:* un ascenso podía informar `promoted` y auditar sin crear ningún Dueño si la membresía se borraba en paralelo. Corregido con `FOR UPDATE` y comprobación de filas; prueba de carrera sincronizada con `pg_stat_activity` (sin esperas fijas) que falla sin la corrección.
 - **Ronda 2 (verificación, `8b4caaf..50ba72a`):** APROBAR, sin hallazgos; confirmó los dos hallazgos como corregidos y que quitar la comparación de identidad o el `FOR UPDATE` hace fallar sus pruebas. No pudo ver los cambios sin confirmar (restricción de su entorno): el veredicto abarca los commits.
-- **Aprobación humana (autorización y aislamiento entre locales: nivel C): pendiente.** El alcance (cualquier cuenta, con aviso y confirmación) ya estaba aprobado; falta aprobar la implementación terminada antes de integrar a `main` y de aplicar la migración en staging.
+- **Aprobación humana (autorización y aislamiento entre locales: nivel C): dada por el usuario el 2026-10-17** («Apruebo todo»), incluida la integración a `main`, subir a `origin` y aplicar la migración en staging.
