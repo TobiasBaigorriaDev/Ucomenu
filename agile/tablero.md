@@ -25,13 +25,13 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Menú digital (plan Básico)
 - [M] Identidad del local en la carta: logo y colores por organización (requiere columnas en `organizations` y subida de archivo; los tokens de `globals.css` y `.carta` ya son variables CSS) — pendiente de «Diseño gastronómico de la carta pública»
-- [M] Variantes y adicionales: grupos de opciones en el panel y en el detalle del plato
 - [M] Buscador y filtros dietarios en la carta pública
 - [M] Disponibilidad por sucursal: marcar agotado
 - [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope (reglas decididas en la ficha; reemplaza `public_menu_status`, `resolve_table_qr`, `create_waiter_call` y `enforce_branch_limit`) → agile/cambios/gestion-de-sucursales.md
 - [S] Corrección del `slug` de una sucursal por SuperAdmin, con redirección (hoy solo por SQL)
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
+- [S] Paginar las lecturas de `categories` y `products` de la carta pública (PostgREST corta en 1000 filas; hoy sin paginar) — surgido de «Variantes y adicionales»
 - [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
 - [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`): los **textos legales** (`/terminos`, `/privacidad`, `/alergenos`) y el **alta** de una organización desde `/admin`, además de lo del ítem anterior (pendiente de «Salida a producción»)
 - [S] Restaurar un respaldo en un proyecto de Supabase **nuevo** (en staging solo se vació y restauró el mismo): ensayar con `docs/operacion.md` y repetir una vez al mes; requiere crear un proyecto (aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -71,6 +71,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [M] Variantes y adicionales: grupos de opciones por plato (variante 1/1, adicionales 0/N) en el panel y bajo cada plato de la carta pública; lectura anónima solo de lo activo; revisado por Codex en dos rondas (2026-10-17; falta aplicar la migración y confirmar las decisiones de la ficha) → agile/cambios/variantes-y-adicionales.md
 - [C] SuperAdmin: cambiar plan a mano, suspender y reactivar, registro de pagos de solo-agregado y prueba de 14 días como concepto aparte, con auditoría; reglas A1–A8 aprobadas por el usuario y revisado por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/superadmin-planes-pagos.md · ADR 0013
 - [C] Gestión de sucursales en el panel: el Dueño lista, crea y renombra en `/panel/{slug}/sucursales` dentro del tope del plan; política `INSERT` aprobada por el usuario, revisada por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/gestion-de-sucursales.md
 - [M] Rendimiento de la carta pública: fotos reducidas en WebP por `/_next/image` y caché de categorías y platos con invalidación desde el panel; LCP en 4G de 11,3 s a 1,9 s; revisado por Codex, con un límite aceptado (una lectura en vuelo durante una edición puede dejar la carta anterior hasta 60 s) (2026-10-16) → agile/cambios/rendimiento-carta-publica.md

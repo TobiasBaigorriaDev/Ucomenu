@@ -3,7 +3,7 @@
 Actualizado: 2026-10-16 (noche) · agente: Claude Code · historial anterior en `agile/historial.md` (no leer salvo un detalle puntual).
 
 ## Punto de retomada
-- Rama `main`, árbol limpio salvo `.claude/worktrees/` (sin versionar). Integrado en local y **sin subir**: SuperAdmin (plan, suspensión, pagos, prueba), gestión de sucursales, deuda técnica, cierre de sesión por cuenta atendida (10 min de gracia), guía de primeros pasos y rendimiento de la carta. Los dos últimos se hicieron en paralelo con agentes en `git worktree` (ya borrados).
+- Rama `main`, árbol limpio salvo `.claude/worktrees/` (sin versionar). Integrado en local y **sin subir**: variantes y adicionales, SuperAdmin (plan, suspensión, pagos, prueba), gestión de sucursales, deuda técnica, cierre de sesión por cuenta atendida (10 min de gracia), guía de primeros pasos y rendimiento de la carta. Los dos últimos se hicieron en paralelo con agentes en `git worktree` (ya borrados).
 - **Salida a producción** (ficha `agile/cambios/salida-a-produccion.md`, «Bloqueado»; ADR 0015). Staging ensayado el 2026-10-16: `https://ucomenu-staging.fly.dev`, con purga programada, respaldo y restauración probados.
 - **Un proyecto de Supabase por entorno** (staging y producción), no por cliente.
 
@@ -16,6 +16,6 @@ Actualizado: 2026-10-16 (noche) · agente: Claude Code · historial anterior en 
 
 ## Próximo paso
 1. **Al retomar:** ver la primera purga real (`pnpm exec supabase db query --linked` sobre `cron.job_run_details`; esperado `succeeded`).
-2. **Aplicar en staging** (con aprobación) las migraciones `20261016140000_cerrar_sesion_al_atender_la_cuenta.sql`, `20261017100000_superadmin_planes_pagos_suspension.sql` y `20261018100000_gestion_de_sucursales.sql`, y mirar la memoria de Fly (512 MB) con la reducción de fotos.
+2. **Aplicar en staging** (con aprobación) las migraciones `20261016140000_cerrar_sesion_al_atender_la_cuenta.sql`, `20261017100000_superadmin_planes_pagos_suspension.sql`, `20261018100000_gestion_de_sucursales.sql` y `20261019100000_variantes_y_adicionales.sql`, y mirar la memoria de Fly (512 MB) con la reducción de fotos.
 3. **Con el usuario:** teléfono real; dominio, revisión legal y producción; retención de `price_history` (C).
-4. **Sin el usuario:** variantes y adicionales, buscador y filtros, disponibilidad por sucursal, identidad del local (M). Decisiones abiertas de la guía en su ficha.
+4. **Sin el usuario:** buscador y filtros, disponibilidad por sucursal, identidad del local (M). Decisiones abiertas de la guía y de variantes en sus fichas.

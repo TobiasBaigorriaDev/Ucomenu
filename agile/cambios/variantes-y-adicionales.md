@@ -60,3 +60,7 @@ Revisión independiente de Codex en solo lectura (ronda 1, 2026-10-16, sobre `8a
 2. **Candado concurrente sin prueba (sugerencia aceptada).** Las pruebas de tope eran secuenciales y pasaban aunque faltara `pg_advisory_xact_lock`. **Resuelto:** dos pruebas con cuatro altas simultáneas en transacciones independientes (Dueño y Staff) sobre 59 opciones y sobre 19 grupos: exactamente una se guarda y las otras reciben `54000`. **Mutación comprobada:** redefinir ambas funciones *trigger* sin el candado hace fallar las dos pruebas; se restauró con `pnpm db:reset`.
 
 Verificación de la ronda: lint y typecheck OK, `pnpm test` 419/419, `pnpm test:rls` 577/577 (una corrida previa mostró fallos en un archivo que pasó completo al repetir, sin relación con el cambio; el log de `psql` con `ERROR:` es esperado), `pnpm build` OK, E2E `opciones`, `carta`, `menu`, `rendimiento-carta` y `mesas` 74/74.
+
+## Revisión independiente (Codex) e integración
+- Pedida por la lectura anónima de tablas nuevas. Ronda 1: APROBAR CON CAMBIOS (lecturas sin paginar y falta de prueba del candado concurrente; ambas corregidas, detalle arriba). Ronda 2 (verificación, commit `9578f0a`): **APROBAR**, sin hallazgos nuevos. RLS completo repetido por separado tras la ronda: 577/577.
+- Integrado a `main` el 2026-10-17. Las decisiones «a confirmar» siguen abiertas para el usuario. Falta aplicar la migración `20261019100000_variantes_y_adicionales.sql` en staging/producción (con aprobación).
