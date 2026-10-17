@@ -23,7 +23,7 @@ Estado: **Hecho en local**, sin integrar ni desplegar. Nivel **M** por migració
 Slug e históricos se actualizan en una sola escritura/transacción. Error SQL revierte ambos; resultado de red incierto exige recargar antes de repetir. Recuperar un identificador propio previo usa el mismo formulario. Revertir la UI conserva datos, pero retirar soporte de históricos rompería los enlaces anteriores: mantener la migración y la lectura de alias hasta decidir una retirada revisada.
 
 ## Evidencia
-Diff probado de corrección de slug contra `5331d0d`, rama `feat/correccion-slug-sucursal`; el commit que incorpora esta ficha contiene código, pruebas y documentación.
+Código y pruebas confirmados en **`6a6a0aa`**, contra `5331d0d`, rama `feat/correccion-slug-sucursal`. El cierre documental posterior no modifica el código probado.
 - `pnpm test`: **443/443**.
 - `pnpm test:rls tests/rls/branch-slugs.rls.test.ts tests/rls/acl.rls.test.ts tests/rls/sucursales.rls.test.ts tests/rls/tables.rls.test.ts tests/rls/billing.rls.test.ts`: **120/120**. Incluye colisiones e históricos concurrentes, actor falsificado, privilegios sin ampliar, publicación y QR.
 - Build nuevo + `pnpm exec playwright test e2e/branch-slugs.spec.ts e2e/menu.spec.ts e2e/sucursales.spec.ts e2e/superadmin-planes-pagos.spec.ts --workers=2`: **44/44**. Después de precisar el mensaje de resultado incierto: typecheck, lint y build nuevos + `e2e/branch-slugs.spec.ts --workers=2`: **2/2**.
