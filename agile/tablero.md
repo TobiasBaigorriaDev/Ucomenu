@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [S] Categorías y platos de la carta pública paginados; pendiente revisión manual de Claude Code → agile/cambios/paginacion-carta-publica.md
+- (vacío)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -70,6 +70,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [S] Categorías y platos de la carta pública paginados; cerrado sin revisión independiente por su nivel (2026-10-16) → agile/cambios/paginacion-carta-publica.md
 - [M] Variantes y adicionales: grupos de opciones por plato (variante 1/1, adicionales 0/N) en el panel y bajo cada plato de la carta pública; lectura anónima solo de lo activo; revisado por Codex en dos rondas (2026-10-17; falta aplicar la migración y confirmar las decisiones de la ficha) → agile/cambios/variantes-y-adicionales.md
 - [C] SuperAdmin: cambiar plan a mano, suspender y reactivar, registro de pagos de solo-agregado y prueba de 14 días como concepto aparte, con auditoría; reglas A1–A8 aprobadas por el usuario y revisado por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/superadmin-planes-pagos.md · ADR 0013
 - [C] Gestión de sucursales en el panel: el Dueño lista, crea y renombra en `/panel/{slug}/sucursales` dentro del tope del plan; política `INSERT` aprobada por el usuario, revisada por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/gestion-de-sucursales.md
