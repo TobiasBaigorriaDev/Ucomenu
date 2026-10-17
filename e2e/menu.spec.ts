@@ -50,11 +50,11 @@ test.describe("carta pública de Café Ejemplo (390 px)", () => {
     await expect(page.getByRole("heading", { level: 2, name: "Pastelería" })).toBeInViewport();
   });
 
-  test("es accesible por teclado: el primer Tab llega a los enlaces de categorías", async ({ page }) => {
+  test("es accesible por teclado: el primer Tab llega al buscador", async ({ page }) => {
     await page.goto(MENU);
 
     await page.keyboard.press("Tab");
-    const first = page.getByRole("navigation", { name: "Categorías de la carta" }).getByRole("link").first();
+    const first = page.getByRole("searchbox", { name: "Buscar platos" });
     await expect(first).toBeFocused();
   });
 });

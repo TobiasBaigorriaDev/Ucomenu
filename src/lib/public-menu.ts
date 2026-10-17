@@ -44,6 +44,7 @@ type CartaRows = {
     price_cents: number;
     sort_order: number;
     image_path: string | null;
+    dietary_tags: string[];
   }[];
   /** Variantes y adicionales publicados (la base solo entrega lo activo de platos visibles). */
   optionGroups: {
@@ -75,7 +76,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
     readAllPages((from, to) =>
       supabase
         .from("products")
-        .select("id, category_id, name, description, price_cents, sort_order, image_path")
+        .select("id, category_id, name, description, price_cents, sort_order, image_path, dietary_tags")
         .eq("organization_id", orgId)
         .order("id")
         .range(from, to),
@@ -112,7 +113,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
 
 /**
  * Categorías, platos y sus variantes/adicionales publicados de una organización, con caché (la clave lleva la versión de
- * la forma de lo cacheado: al agregar los grupos de opciones pasó a `v2`, para no leer entradas con la forma anterior). Solo se cachea esto, que cambia únicamente cuando el
+ * la forma de lo cacheado: `v3` agrega etiquetas dietarias, para no leer entradas con la forma anterior). Solo se cachea esto, que cambia únicamente cuando el
  * local edita su carta; todo lo que decide si la carta se puede mostrar (que la organización exista y esté activa, que la
  * cuenta no esté suspendida, que la sucursal exista) se consulta SIEMPRE en vivo en `getPublicMenu` antes de llegar acá.
  * Por eso una caché vieja nunca publica la carta de una cuenta suspendida ni de otra organización: la clave lleva el id
@@ -125,7 +126,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
  * guardar los datos anteriores después de la invalidación; dura como máximo lo mismo (`CARTA_CACHE_SECONDS`).
  */
 function readRows(orgId: string): Promise<CartaRows> {
-  return unstable_cache(() => loadRows(orgId), ["carta-publica-v2", orgId], {
+  return unstable_cache(() => loadRows(orgId), ["carta-publica-v3", orgId], {
     tags: [cartaTag(orgId)],
     revalidate: CARTA_CACHE_SECONDS,
   })();

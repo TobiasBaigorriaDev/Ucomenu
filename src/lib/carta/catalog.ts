@@ -6,6 +6,7 @@ import { cartaErrorMessage, writeBlock, type CartaError } from "./messages";
 import { changesFor, moveWithin, nextSortOrder, sortForDisplay, type Direction } from "./ordering";
 import { parsePrice, type PriceProblem } from "./price";
 import { validateDescription, validateName } from "./validation";
+import { parseDietaryTags } from "./dietary";
 
 /**
  * Gestión de la carta (ficha gestion-de-carta). Todo se hace con el cliente de la PERSONA (rol
@@ -56,6 +57,7 @@ export type CartaProduct = {
   sort_order: number;
   is_active: boolean;
   image_path: string | null;
+  dietary_tags: string[];
 };
 
 export type CartaCategory = {
@@ -66,7 +68,7 @@ export type CartaCategory = {
   products: CartaProduct[];
 };
 
-const PRODUCT_COLUMNS = "id, category_id, name, description, price_cents, sort_order, is_active, image_path";
+const PRODUCT_COLUMNS = "id, category_id, name, description, price_cents, sort_order, is_active, image_path, dietary_tags";
 
 /** La carta completa de la organización, incluidos los elementos inactivos, en el orden en que se ve. */
 export async function loadCarta(db: Db, orgId: string): Promise<CartaCategory[]> {
@@ -211,9 +213,10 @@ export type ProductInput = {
   name: string;
   description: string;
   price: string;
+  dietaryTags?: unknown;
 };
 
-type ParsedProduct = { name: string; description: string | null; price_cents: number };
+type ParsedProduct = { name: string; description: string | null; price_cents: number; dietary_tags?: string[] };
 
 function parseProduct(input: ProductInput): Result<ParsedProduct> {
   const name = validateName(input.name);
@@ -222,7 +225,10 @@ function parseProduct(input: ProductInput): Result<ParsedProduct> {
   if (!description.ok) return fail("description_too_long");
   const price = parsePrice(input.price);
   if (!price.ok) return fail(PRICE_ERROR[price.problem]);
-  return ok({ name: name.value, description: description.value, price_cents: price.cents });
+  // Omitido conserva etiquetas en clientes internos antiguos; el formulario siempre envía un arreglo (incluso vacío).
+  const tags = input.dietaryTags === undefined ? undefined : parseDietaryTags(input.dietaryTags);
+  if (tags === null) return fail("dietary_invalid");
+  return ok({ name: name.value, description: description.value, price_cents: price.cents, ...(tags ? { dietary_tags: tags } : {}) });
 }
 
 async function categoryBelongs(db: Db, orgId: string, categoryId: string): Promise<boolean> {

@@ -62,6 +62,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
             description: product.description ?? "",
             price: priceToInput(product.price_cents),
             categoryId: product.category_id,
+            dietaryTags: product.dietary_tags,
           }}
           canWrite={canWrite}
         />

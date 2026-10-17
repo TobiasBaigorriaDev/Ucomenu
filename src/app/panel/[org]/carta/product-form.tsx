@@ -3,6 +3,7 @@
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { inputClass, labelClass } from "@/components/panel/styles";
 import { DESCRIPTION_MAX, NAME_MAX } from "@/lib/carta/validation";
+import { DIETARY_LABEL, DIETARY_TAGS } from "@/lib/carta/dietary";
 import { saveProductAction } from "./actions";
 
 export type ProductFormValues = {
@@ -11,6 +12,7 @@ export type ProductFormValues = {
   /** Texto del campo de precio (`2800,50`). */
   price: string;
   categoryId: string;
+  dietaryTags?: string[];
 };
 
 type Props = {
@@ -111,6 +113,18 @@ export function ProductForm({ orgSlug, productId, categories, initial, canWrite 
                 </label>
               </div>
             )}
+
+            <fieldset aria-describedby="dietary-help">
+              <legend className={labelClass}>Etiquetas dietarias</legend>
+              <p id="dietary-help" className="mt-1 text-sm text-muted">Marcá solo lo que el local puede confirmar, incluyendo la preparación y sus opciones.</p>
+              {DIETARY_TAGS.map((tag) => (
+                <label key={tag} className="flex min-h-11 items-center gap-3">
+                  <input type="checkbox" name="dietary" value={tag} className="size-5 accent-cobalt"
+                    defaultChecked={(v?.dietary ? JSON.parse(v.dietary) as string[] : initial.dietaryTags ?? []).includes(tag)} />
+                  {DIETARY_LABEL[tag]}
+                </label>
+              ))}
+            </fieldset>
 
             <div>
               <SubmitButton pendingLabel="Guardando…">{productId ? "Guardar cambios" : "Crear plato"}</SubmitButton>

@@ -80,10 +80,11 @@ export async function saveProductAction(_previous: FormState, formData: FormData
     description: text(formData, "description"),
     price: text(formData, "price"),
     category: text(formData, "category"),
+    dietary: JSON.stringify(formData.getAll("dietary")),
   };
   const categoryId = asUuid(values.category);
   if (!categoryId) return { error: cartaErrorMessage("category_invalid", null), values };
-  const input = { categoryId, name: values.name, description: values.description, price: values.price };
+  const input = { categoryId, name: values.name, description: values.description, price: values.price, dietaryTags: formData.getAll("dietary") };
 
   const rawId = formData.get("id");
   if (typeof rawId === "string" && rawId !== "") {

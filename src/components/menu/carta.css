@@ -29,6 +29,10 @@
   color: #fff;
 }
 
+.carta-dialog::backdrop {
+  background: rgb(42 38 34 / 55%);
+}
+
 /* Nombre del local: crece con la pantalla sin pasar de 5rem. */
 .carta-title {
   font-size: clamp(2.75rem, 1rem + 9vw, 5rem);

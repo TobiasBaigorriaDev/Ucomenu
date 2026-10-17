@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
 import { LegalLinks } from "@/components/legal/legal-links";
-import { CategoryBar } from "@/components/menu/category-bar";
-import { CategoryMosaic } from "@/components/menu/category-mosaic";
 import { MenuHeader } from "@/components/menu/menu-header";
-import { MenuSection } from "@/components/menu/menu-section";
+import { MenuBrowser } from "@/components/menu/menu-browser";
 import type { PublicMenu } from "@/lib/public-menu";
 import { logoUrl } from "@/lib/identidad/logos";
 import { paletteStyle } from "@/lib/identidad/palettes";
@@ -28,15 +26,7 @@ export function PublicMenuView({
     <div className={callBar ? "carta pb-40" : "carta"} style={paletteStyle(menu.organization.menu_palette)}>
       <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} />
       {sections.length > 0 ? (
-        <>
-          <CategoryMosaic sections={sections} />
-          <CategoryBar sections={sections} />
-          <main className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
-            {sections.map((section) => (
-              <MenuSection key={section.category.id} section={section} />
-            ))}
-          </main>
-        </>
+        <MenuBrowser sections={sections} />
       ) : (
         <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
           <p className="font-display text-2xl">Esta carta todavía no tiene platos.</p>

@@ -14,6 +14,7 @@ export type CartaError =
   | "price_decimals"
   | "price_big"
   | "category_invalid"
+  | "dietary_invalid"
   | "choices_invalid" // mínimo o máximo que no son números enteros
   | "choices_min_over_max" // el mínimo supera al máximo
   | "choices_max_range" // el máximo fuera de 1 a 50
@@ -41,6 +42,7 @@ const STATIC_MESSAGE: Record<Exclude<CartaError, "limit">, string> = {
   price_decimals: PRICE_PROBLEM_MESSAGE.too_many_decimals,
   price_big: PRICE_PROBLEM_MESSAGE.too_big,
   category_invalid: "Elegí una categoría de tu carta.",
+  dietary_invalid: "Elegí solo las etiquetas dietarias de la lista.",
   choices_invalid: "El mínimo y el máximo tienen que ser números enteros.",
   choices_min_over_max: "El mínimo no puede ser mayor que el máximo.",
   choices_max_range: `El máximo tiene que estar entre 1 y ${MAX_CHOICES}.`,
