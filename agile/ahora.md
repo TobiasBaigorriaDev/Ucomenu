@@ -6,7 +6,7 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 `main` está al día en `origin`, y staging tiene aplicadas las migraciones hasta `20261024100000` y la app de `main` (`8e7396a`) desplegada en Fly (2026-10-17; rutas públicas 200, salud OK). Quedó integrado, con aprobación del usuario y de Codex (2 rondas), «SuperAdmin suma una cuenta existente como Dueño de otra organización»: función `admin_add_owner`, auditoría `owner.added`, sección «Sumar un Dueño» en la ficha de la organización. Detalle, riesgo residual aceptado y evidencia en la [ficha](cambios/dueno-existente.md). Antes: desactivar y reactivar sucursales ([ficha](cambios/desactivar-sucursales.md)).
 
-Rama `feat/ui-login-y-sala` (desde `main`, **sin integrar**): el login y los llamados de la sala en vivo usan el lenguaje del panel (celdas, Gloock + Schibsted, paleta de UcoNext en el login). Solo presentación; E2E completo 257 verdes. [Ficha](cambios/ui-login-y-sala.md).
+Integrado a `main` y desplegado en staging (`7fb1ca8`, 2026-10-17): el login y los llamados de la sala en vivo usan el lenguaje del panel (celdas, Gloock + Schibsted, paleta de UcoNext en el login). Solo presentación; E2E completo 257 verdes. [Ficha](cambios/ui-login-y-sala.md).
 
 ## Bloqueos y riesgos
 
@@ -17,5 +17,5 @@ Rama `feat/ui-login-y-sala` (desde `main`, **sin integrar**): el login y los lla
 
 ## Próximo paso
 
-1. Probar en staging, con una sesión SuperAdmin real y en un teléfono, sucursales (desactivar/reactivar) y «Sumar un Dueño».
-2. Si el usuario aprueba `feat/ui-login-y-sala`: integrar, subir y desplegar en staging (por Docker). Después, otra tarea del backlog desbloqueada.
+1. Probado por el usuario en staging (2026-10-17): desactivar/reactivar sucursales y «Sumar un Dueño» funcionaron bien. Falta probar el login y la sala rediseñados en el teléfono.
+2. Elegir otra tarea desbloqueada del backlog (ver el tablero).
