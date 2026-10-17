@@ -6,6 +6,7 @@
  *
  * Uso (desde la raíz, con el Supabase local encendido):  pnpm db:demo      (o node tools/sembrar-demo.mjs)
  * Es idempotente: vuelve a dejar la demo igual aunque ya estuviera llena. `--quitar` la devuelve al estado del seed.
+ * Opciones para ver el peor caso de un local chico: `--sin-fotos` (ningún plato con foto) y `--sin-logo`; se pueden combinar.
  *
  * La demo pasa las dos organizaciones al plan Pro para que `/t/{token}` muestre «Llamar al mozo» y «Pedir la cuenta»
  * (mesas del seed: `/t/c0ffee01000000000000000000000000` en Café Ejemplo y `/t/fa11a001000000000000000000000000` en
@@ -322,7 +323,7 @@ async function sembrarOrg(def) {
   const agotados = platos.filter((plato) => plato.agotado).map((plato) => ({ organization_id: def.org, branch_id: def.branch, product_id: plato.id, is_available: false }));
   if (agotados.length) check(await db.from("product_availability").upsert(agotados, { onConflict: "branch_id,product_id" }), "marcar agotados");
 
-  const conFoto = platos.filter((plato) => plato.foto);
+  const conFoto = sinFotos ? [] : platos.filter((plato) => plato.foto);
   const unicas = [...new Set(conFoto.map((plato) => plato.foto))];
   const bytes = new Map();
   for (let i = 0; i < unicas.length; i += 6) {
@@ -334,13 +335,17 @@ async function sembrarOrg(def) {
     check(await db.from("products").update({ image_path: path }).eq("id", plato.id), "guardar la foto");
   }
   check(await db.from("subscriptions").update({ plan_code: "pro" }).eq("organization_id", def.org), "pasar al plan Pro");
-  const logoPath = `${def.org}/${uuidFrom(`logo:${def.org}`)}.png`;
-  check(await db.storage.from(LOGOS).upload(logoPath, await logo(def.logo), { contentType: "image/png", upsert: true }), "subir el logo");
-  check(await db.from("organizations").update({ logo_path: logoPath }).eq("id", def.org), "guardar el logo");
-  console.log(`${def.slug}: ${categorias.length} categorías nuevas, ${platos.length} platos (${conFoto.length} con foto), ${grupos.length} grupos de opciones, ${agotados.length} agotado, logo, plan Pro.`);
+  if (!sinLogo) {
+    const logoPath = `${def.org}/${uuidFrom(`logo:${def.org}`)}.png`;
+    check(await db.storage.from(LOGOS).upload(logoPath, await logo(def.logo), { contentType: "image/png", upsert: true }), "subir el logo");
+    check(await db.from("organizations").update({ logo_path: logoPath }).eq("id", def.org), "guardar el logo");
+  }
+  console.log(`${def.slug}: ${categorias.length} categorías nuevas, ${platos.length} platos (${conFoto.length} con foto), ${grupos.length} grupos de opciones, ${agotados.length} agotado, ${sinLogo ? "sin logo" : "logo"}, plan Pro.`);
 }
 
 const quitar = process.argv.includes("--quitar");
+const sinFotos = process.argv.includes("--sin-fotos");
+const sinLogo = process.argv.includes("--sin-logo");
 for (const def of ORGS) {
   const found = check(await db.from("organizations").select("id").eq("id", def.org).maybeSingle(), "leer la organización");
   if (!found) throw new Error(`No existe ${def.slug}: corré antes pnpm db:reset (la demo se apoya en el seed).`);
