@@ -10,7 +10,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope. Reglas decididas en [gestión de sucursales](cambios/gestion-de-sucursales.md); ficha propia con las decisiones abiertas → [ficha](cambios/desactivar-sucursales.md)
+- [C] Desactivar sucursales: `is_active`; inactiva no cuenta para el tope, su carta y QR dicen «no disponible», sin llamados nuevos; reactivar respeta el tope. Reglas decididas en [gestión de sucursales](cambios/gestion-de-sucursales.md); ficha propia con las decisiones aprobadas (2026-10-17) → [ficha](cambios/desactivar-sucursales.md)
 
 ## Para verificar
 - (vacío)

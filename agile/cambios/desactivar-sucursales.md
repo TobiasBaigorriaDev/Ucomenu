@@ -1,6 +1,6 @@
 # Cambio: desactivar y reactivar sucursales
 
-Estado: **Seleccionado; sin implementar**. Nivel **C**: toca el tope del plan (dinero), la publicación de cartas y QR (exposición) y funciones públicas de base. Rama sugerida: `feat/desactivar-sucursales`, desde `main`.
+Estado: **Seleccionado; decisiones aprobadas; sin implementar**. Nivel **C**: toca el tope del plan (dinero), la publicación de cartas y QR (exposición) y funciones públicas de base. Rama sugerida: `feat/desactivar-sucursales`, desde `main`.
 
 ## Reglas ya decididas
 Las fija [gestión de sucursales](gestion-de-sucursales.md), «Decisiones pendientes», punto 1: la inactiva no cuenta para el tope; su carta y los QR de sus mesas dicen «no disponible» (no 404); no admite llamados nuevos y sale de la Sala; reactivar respeta el tope. No se repiten aquí.
@@ -10,12 +10,12 @@ Las fija [gestión de sucursales](gestion-de-sucursales.md), «Decisiones pendie
 - **Lecturas de sucursales que hoy no distinguen activas:** `src/lib/public-menu.ts` (filtro con alias), `src/lib/sala/pending.ts`, `src/lib/mesas/tables.ts`, `src/lib/llamados/config.ts`, `src/lib/sucursales/branches.ts`, `src/lib/admin/branches.ts` y el Resumen de `/panel/[org]`.
 - **Interacción con los identificadores históricos:** un alias de una sucursal inactiva debe mostrar «no disponible» igual que su dirección actual; los alias siguen reservados mientras esté inactiva.
 
-## Decisiones abiertas (a confirmar con el usuario antes de implementar)
-1. ¿Quién desactiva y reactiva: solo el Dueño (propuesto) o también el SuperAdmin desde `/admin`?
-2. ¿Se puede desactivar la última sucursal activa? (propuesto: sí, con aviso; la organización queda sin carta pública hasta reactivar).
-3. ¿Las mesas de una sucursal inactiva se conservan intactas, con sus tokens y su estado? (propuesto: sí, sin tocarlas).
-4. ¿Cuenta en solo lectura o suspendida: se puede reactivar? (propuesto: no; sigue la regla de escrituras del catálogo).
-5. ¿Se registra en `audit_log`? Hoy no se audita nada del Dueño; proponer solo si el usuario lo pide.
+## Decisiones (aprobadas por el usuario el 2026-10-17, tal como se propusieron)
+1. Desactivan y reactivan **solo el Dueño**; el SuperAdmin no, por ahora.
+2. Se puede desactivar la **última sucursal activa**, con aviso: la organización queda sin carta pública hasta reactivar.
+3. Las **mesas** de una sucursal inactiva se conservan intactas, con tokens y estado; no se tocan.
+4. Con la cuenta en **solo lectura o suspendida no se puede reactivar**: sigue la regla de escrituras del catálogo.
+5. **Sin `audit_log`**: hoy no se audita nada del Dueño; se agrega solo si el usuario lo pide.
 
 ## Aceptación (borrador)
 - [ ] El Dueño desactiva y reactiva; el tope del plan cuenta solo activas y reactivar sobre el tope se rechaza con mensaje claro.
