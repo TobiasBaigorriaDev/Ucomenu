@@ -18,4 +18,4 @@ La base local quedó en seed limpio. `carta.spec.ts` «tope de platos activos» 
 ## Próximo paso
 
 1. Con autorización: subir `main` a `origin`; aplicar migraciones a staging, desplegar `main` y probar con sesión SuperAdmin, sucursales y la carta en un teléfono real.
-3. Opcional: rehacer login y sala con el lenguaje del panel; SuperAdmin podría reactivar/desactivar en el futuro (hoy solo el Dueño).
+2. Opcional: rehacer login y sala con el lenguaje del panel; SuperAdmin podría reactivar/desactivar en el futuro (hoy solo el Dueño).
