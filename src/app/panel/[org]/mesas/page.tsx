@@ -9,9 +9,9 @@ import { CreateTableForm, RegenerateQrForm, RenameTableForm, TableToggle } from 
 
 export const metadata: Metadata = { title: "Mesas" };
 
-const badgeClass = "inline-flex items-center rounded-sm border border-ink/40 px-2 py-0.5 text-sm text-ink";
+const badgeClass = "inline-flex items-center rounded-full border border-ink/25 bg-sand px-2.5 py-0.5 text-sm text-ink";
 const linkButtonClass =
-  "inline-flex min-h-11 items-center justify-center rounded-md border border-ink/40 px-4 py-2 text-base font-medium text-ink";
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/40 px-4 py-2 text-base font-medium text-ink";
 
 export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesas">) {
   const { org } = await params;
@@ -25,7 +25,7 @@ export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesa
   const limit = ent?.limits.tables_per_branch;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Mesas</h1>
       <p className="mt-2 max-w-prose text-base text-muted">
         Cada mesa tiene su propio QR. Al escanearlo, el comensal ve la carta de la sucursal sabiendo en qué mesa está.
@@ -49,7 +49,7 @@ export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesa
           <section
             key={branch.id}
             aria-labelledby={`suc-${branch.id}`}
-            className="mt-12 border-t-2 border-ink/30 pt-5"
+            className="panel-cell mt-6"
             data-testid="sucursal"
             data-name={branch.name}
           >
@@ -83,7 +83,7 @@ export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesa
             />
 
             {branch.tables.length > 0 ? (
-              <ul className="mt-6 border-t border-ink/15">
+              <ul className="mt-6 panel-list">
                 {branch.tables.map((table) => (
                   <li key={table.id} className="border-b border-ink/15 py-4" data-testid="mesa" data-label={table.label}>
                     <div className="flex items-baseline gap-3 text-lg">

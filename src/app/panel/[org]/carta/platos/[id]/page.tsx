@@ -41,7 +41,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   const notice = writeBlockNotice(ent);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <Link href={`/panel/${org}/carta`} className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2">
         Volver a la carta
       </Link>
@@ -54,7 +54,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       {product.is_active ? null : <p className="mt-2 text-base text-muted">Este plato está inactivo: no se ve en la carta.</p>}
       {notice ? <p className="mt-3 max-w-prose text-base font-medium" data-testid="carta-bloqueada">{notice}</p> : null}
 
-      <section aria-labelledby="datos" className="mt-8">
+      <section aria-labelledby="datos" className="panel-cell mt-8">
         <h2 id="datos" className="font-display text-2xl">
           Datos del plato
         </h2>
@@ -73,7 +73,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         />
       </section>
 
-      <section aria-labelledby="foto" className="mt-12">
+      <section aria-labelledby="foto" className="panel-cell mt-6">
         <h2 id="foto" className="font-display text-2xl">
           Foto
         </h2>

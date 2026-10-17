@@ -13,7 +13,7 @@ export default async function AccountPage() {
 
   return (
     <AppShell area="panel">
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
         <h1 className="font-display text-4xl leading-tight">Mi cuenta</h1>
         <p className="mt-3 text-lg">
           Ingresaste como <span className="font-medium break-all">{user.email}</span>.

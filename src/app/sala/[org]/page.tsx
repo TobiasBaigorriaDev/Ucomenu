@@ -14,7 +14,7 @@ export default async function SalaPage({ params }: PageProps<"/sala/[org]">) {
   const initial = await loadSala(await createSessionClient(), membership.org.id);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Sala en vivo</h1>
       <SalaBoard slug={membership.org.slug} initial={initial} isOwner={membership.role === "owner"} />
     </main>

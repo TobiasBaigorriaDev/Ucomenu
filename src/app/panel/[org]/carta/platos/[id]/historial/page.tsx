@@ -40,7 +40,7 @@ export default async function ProductPriceHistoryPage({
   const base = `/panel/${membership.org.slug}/carta/platos/${productId}/historial`;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <Link
         href={`/panel/${org}/carta/platos/${productId}`}
         className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2"

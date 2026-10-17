@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
+import { toneFor } from "@/components/menu/tones";
 import { loadCarta } from "@/lib/carta/catalog";
 import { imageUrl } from "@/lib/carta/images";
 import { writeBlockNotice } from "@/lib/carta/messages";
@@ -12,9 +13,9 @@ import { ItemControls } from "./item-controls";
 
 export const metadata: Metadata = { title: "Carta" };
 
-const badgeClass = "inline-flex items-center rounded-sm border border-ink/40 px-2 py-0.5 text-sm text-ink";
+const badgeClass = "inline-flex items-center rounded-full border border-ink/25 bg-sand px-2.5 py-0.5 text-sm text-ink";
 const linkButtonClass =
-  "inline-flex min-h-11 items-center justify-center rounded-md border border-ink/40 px-4 py-2 text-base font-medium text-ink";
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/40 px-4 py-2 text-base font-medium text-ink";
 
 export default async function CartaPage({ params }: PageProps<"/panel/[org]/carta">) {
   const { org } = await params;
@@ -26,12 +27,13 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
   const canWrite = ent?.canWrite === true;
   const notice = writeBlockNotice(ent);
 
+  const activeBefore = carta.map((_, index) => carta.slice(0, index).filter((category) => category.is_active).length);
   const used = ent?.usage.active_products ?? 0;
   const limit = ent?.limits.active_products;
   const atLimit = typeof limit === "number" && used >= limit;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Carta</h1>
 
       {ent ? (
@@ -59,7 +61,7 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
         </Link>
       </p>
 
-      <section aria-labelledby="nueva-categoria" className="mt-8">
+      <section aria-labelledby="nueva-categoria" className="panel-cell mt-8">
         <h2 id="nueva-categoria" className="font-display text-2xl">
           Nueva categoría
         </h2>
@@ -76,21 +78,26 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
         <section
           key={category.id}
           aria-labelledby={`cat-${category.id}`}
-          className="mt-12 border-t-2 border-ink/30 pt-5"
+          className="panel-cell mt-6"
           data-testid="categoria"
           data-name={category.name}
         >
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          {/* La banda lleva el tono que esa categoría tiene en la carta pública (solo cuentan las activas). */}
+          <div
+            className={`flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-2xl px-4 py-3 ${
+              category.is_active ? toneFor(activeBefore[categoryIndex]) : "bg-sand text-ink ring-1 ring-inset ring-ink/15"
+            }`}
+          >
             <h2 id={`cat-${category.id}`} className="font-display text-3xl leading-tight break-words">
               {category.name}
             </h2>
             {category.is_active ? null : <span className={badgeClass}>Inactiva</span>}
           </div>
           {category.is_active ? null : (
-            <p className="mt-1 max-w-prose text-sm text-muted">No se ve en la carta, ni sus platos, hasta que la actives.</p>
+            <p className="mt-2 max-w-prose text-sm text-muted">No se ve en la carta, ni sus platos, hasta que la actives.</p>
           )}
 
-          <div className="mt-3 flex flex-wrap items-start gap-2">
+          <div className="mt-4 flex flex-wrap items-start gap-2">
             <ItemControls
               orgSlug={membership.org.slug}
               kind="category"
@@ -105,12 +112,12 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
           </div>
 
           {category.products.length > 0 ? (
-            <ul className="mt-5 border-t border-ink/15">
+            <ul className="mt-5 panel-list">
               {category.products.map((product, productIndex) => {
                 const photo = imageUrl(product.image_path);
                 return (
-                  <li key={product.id} className="border-b border-ink/15 py-4" data-testid="plato" data-name={product.name}>
-                    <div className="flex items-start gap-3">
+                  <li key={product.id} className="border-b border-ink/15 py-4 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-center lg:gap-6" data-testid="plato" data-name={product.name}>
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
                       {photo ? (
                         <Image
                           src={photo}
@@ -118,9 +125,15 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
                           width={96}
                           height={96}
                           unoptimized
-                          className="size-16 shrink-0 rounded-md border border-ink/15 object-cover"
+                          className="size-16 shrink-0 rounded-2xl border border-ink/15 object-cover"
                         />
-                      ) : null}
+                      ) : (
+                        <span
+                          aria-hidden
+                          data-initial={product.name.trim().charAt(0).toUpperCase()}
+                          className="font-display flex size-16 shrink-0 items-center justify-center rounded-2xl bg-sand text-3xl text-brand ring-1 ring-inset ring-ink/15 after:content-[attr(data-initial)]"
+                        />
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-baseline gap-3 text-lg">
                           <span className="min-w-0 font-medium break-words">{product.name}</span>
@@ -130,7 +143,7 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
                         {product.is_active ? null : <span className={`${badgeClass} mt-1`}>Inactivo</span>}
                       </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-start gap-2">
+                    <div className="mt-3 flex flex-wrap items-start gap-2 lg:mt-0 lg:justify-end">
                       <ItemControls
                         orgSlug={membership.org.slug}
                         kind="product"

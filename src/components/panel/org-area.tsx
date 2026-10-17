@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getEntitlements, getMemberships, requireMembership, requireUser } from "@/lib/auth/session";
 import { moraNotice } from "@/lib/entitlements";
+import { toneFor } from "@/components/menu/tones";
 import { AppShell, ROLE_LABEL } from "./app-shell";
 import { MoraBanner } from "./mora-banner";
 
@@ -35,10 +36,10 @@ export async function OrgEntry({ area }: { area: "panel" | "sala" }) {
 
   return (
     <AppShell area={area}>
-      <main className="mx-auto max-w-3xl px-4 py-10">
+      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-8 lg:px-10 lg:py-12">
         {memberships.length === 0 ? (
           <>
-            <h1 className="font-display text-4xl leading-tight">Tu cuenta no tiene ningún local</h1>
+            <h1 className="font-display">Tu cuenta no tiene ningún local</h1>
             <p className="mt-4 max-w-prose text-lg leading-relaxed text-muted">
               Ingresaste como {user.email}, pero esta cuenta todavía no está asociada a un local. Pedile al dueño que te dé de
               alta, o contactá a UcoMenu.
@@ -46,14 +47,13 @@ export async function OrgEntry({ area }: { area: "panel" | "sala" }) {
           </>
         ) : (
           <>
-            <h1 className="font-display text-4xl leading-tight">¿A qué local entrás?</h1>
-            <ul className="mt-6 border-t border-ink/15">
-              {memberships.map(({ org, role }) => (
-                <li key={org.id} className="border-b border-ink/15">
-                  <Link href={`/${area}/${org.slug}`} className="flex min-h-14 items-baseline gap-3 py-3 text-lg">
-                    <span className="font-medium break-words">{org.name}</span>
-                    <span aria-hidden className="leader" />
-                    <span className="text-base text-muted">{ROLE_LABEL[role]}</span>
+            <h1 className="font-display">¿A qué local entrás?</h1>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2">
+              {memberships.map(({ org, role }, index) => (
+                <li key={org.id}>
+                  <Link href={`/${area}/${org.slug}`} className={`flex min-h-24 flex-col justify-between gap-6 rounded-3xl p-4 ${toneFor(index)}`}>
+                    <span className="font-display text-2xl leading-tight break-words">{org.name}</span>
+                    <span className="text-base">{ROLE_LABEL[role]}</span>
                   </Link>
                 </li>
               ))}

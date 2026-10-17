@@ -14,9 +14,9 @@ export function MoraBanner({ notice }: { notice: MoraNotice }) {
       aria-label="Estado de la cuenta"
       data-testid="mora-banner"
       data-tone={notice.tone}
-      className={`border-y px-4 py-4 print:hidden ${TONES[notice.tone]}`}
+      className={`border-b py-4 print:hidden ${TONES[notice.tone]}`}
     >
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-5xl px-4 sm:px-8 lg:px-10">
         <p className="font-display text-xl leading-snug">{notice.title}</p>
         <p className="mt-1 max-w-prose text-base leading-relaxed">{notice.body}</p>
       </div>

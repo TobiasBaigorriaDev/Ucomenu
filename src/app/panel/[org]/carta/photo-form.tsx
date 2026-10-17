@@ -110,10 +110,10 @@ export function PhotoForm({ orgSlug, productId, productName, currentUrl, canWrit
           width={640}
           height={480}
           unoptimized
-          className="aspect-[4/3] w-full rounded-md border border-ink/15 object-cover"
+          className="aspect-[4/3] w-full rounded-2xl border border-ink/15 object-cover"
         />
       ) : (
-        <p className="rounded-md border border-dashed border-ink/40 px-4 py-6 text-base text-muted">Este plato todavía no tiene foto.</p>
+        <p className="rounded-2xl border border-dashed border-ink/40 px-4 py-6 text-base text-muted">Este plato todavía no tiene foto.</p>
       )}
 
       <form action={formAction} className="mt-4">
@@ -132,13 +132,13 @@ export function PhotoForm({ orgSlug, productId, productName, currentUrl, canWrit
               accept="image/jpeg,image/png,image/webp"
               required
               onChange={onChange}
-              className="mt-1 block min-h-11 w-full text-base file:mr-3 file:min-h-11 file:rounded-md file:border file:border-ink/40 file:bg-transparent file:px-4 file:text-base"
+              className="mt-1 block min-h-11 w-full text-base file:mr-3 file:min-h-11 file:rounded-full file:border file:border-ink/40 file:bg-transparent file:px-4 file:text-base"
             />
           </div>
           {current?.preview ? (
             // Vista previa local (blob:): no pasa por el optimizador de imágenes.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={current.preview} alt="Vista previa de la foto elegida" className="aspect-[4/3] w-full rounded-md border border-ink/15 object-cover" />
+            <img src={current.preview} alt="Vista previa de la foto elegida" className="aspect-[4/3] w-full rounded-2xl border border-ink/15 object-cover" />
           ) : null}
           {busy ? <p className="text-sm text-muted">Preparando la foto…</p> : null}
           {current ? (

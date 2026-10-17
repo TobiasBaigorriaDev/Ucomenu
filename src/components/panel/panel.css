@@ -1,0 +1,214 @@
+/*
+ * Estilos del panel del Dueño, la sala y SuperAdmin. Es el reverso de la carta pública: mismo papel, misma tipografía
+ * (Gloock + Schibsted Grotesk) y mismos roles de color, puestos al servicio de trabajar. Todo cuelga de `.panel`.
+ *
+ * Los ocho roles son variables CSS que `paletteStyle()` (panel del Dueño, paleta que eligió el local) o `platformStyle()`
+ * (SuperAdmin, colores de UcoNext) escriben en el elemento `.panel`. Acá van los valores de Oliva como respaldo.
+ * Los colores de gravedad de las cuentas (`--grace-*`, `--readonly-*`, `--suspended-*`, `--danger`) NO cambian con la
+ * paleta: significan lo mismo en todos los locales.
+ */
+
+.panel {
+  --porcelain: #f4efe4;
+  --ink: #2a2622;
+  --muted: #655d52;
+  --cobalt: #3d5f48;
+  --carta-green: #3d5f48;
+  --carta-green-deep: #2f4a39;
+  --carta-blush: #f3d2c6;
+  --carta-terra: #a43f22;
+  --carta-sand: #e8dcc2;
+  /* Fondo de las opciones elegidas (`has-checked:bg-tile`): el rosa de la paleta. */
+  --tile: var(--carta-blush);
+  min-height: 100vh;
+  background: var(--porcelain);
+  color: var(--ink);
+  font-family: var(--font-schibsted), system-ui, sans-serif;
+  accent-color: var(--carta-green);
+  caret-color: var(--carta-green);
+}
+
+/* `font-display` del tema es global (Young Serif); en el panel manda Gloock, que solo existe en peso normal. */
+.panel .font-display {
+  font-family: var(--font-gloock), Georgia, serif;
+  font-weight: 400;
+}
+
+.panel ::selection {
+  background: var(--carta-green);
+  color: #fff;
+}
+
+/* Título de página: crece con la pantalla sin pasar de 3,5rem. Parte nombres largos sin romper el diseño. */
+.panel h1 {
+  font-size: clamp(2.25rem, 1.5rem + 3vw, 3.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+
+/* Subtítulos de sección: un escalón sobre `text-2xl` para sostener la jerarquía frente a los campos. */
+.panel h2.font-display {
+  font-size: 1.75rem;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+}
+
+/* Los puntos guía eran de la carta impresa: en el panel solo empujan el valor a la derecha. */
+.panel .leader {
+  border-bottom: 0;
+  transform: none;
+}
+
+/* Celda: superficie clara con filete fino, sin sombra. `panel-list` es la lista de filas dentro de una celda. */
+.panel-cell,
+.panel-list {
+  border-radius: 1.5rem;
+  background: color-mix(in srgb, var(--porcelain) 45%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.panel-cell {
+  padding: 1.25rem;
+}
+
+@media (min-width: 40rem) {
+  .panel-cell {
+    padding: 1.5rem;
+  }
+}
+
+.panel-list {
+  padding-inline: 1.25rem;
+  border-top-width: 0;
+}
+
+.panel-list > li:last-child {
+  border-bottom-width: 0;
+}
+
+/* Foco: el global usa `--cobalt` (el verde del local); solo sobre el riel oscuro (escritorio) pasa a blanco. En celular
+   la cabecera es papel y el aro verde global se ve bien. */
+@media (min-width: 64rem) {
+  .panel-rail :focus-visible {
+    outline-color: #fff;
+    border-radius: 0.75rem;
+  }
+}
+
+.panel-chips a:focus-visible {
+  border-radius: 9999px;
+  outline-offset: 2px;
+}
+
+/* Barras de desplazamiento y selección de archivos con los colores del local. */
+.panel {
+  scrollbar-color: color-mix(in srgb, var(--ink) 35%, transparent) transparent;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel-nav-link,
+  .panel-chips a {
+    transition:
+      background-color 180ms cubic-bezier(0.22, 1, 0.36, 1),
+      color 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@media print {
+  .panel {
+    background: #fff;
+  }
+}
+
+/* Una lista dentro de una celda no es otra celda: queda plana, con filete entre filas. */
+.panel-cell .panel-list {
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  padding-inline: 0;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+/*
+ * SuperAdmin: misma paleta de roles y mismas celdas, pero tipografía de herramienta (Geist, con Geist Mono para datos) en
+ * lugar de la Gloock de la carta. Va después de las reglas de `.panel` para ganarles por orden con igual especificidad.
+ */
+.panel-platform {
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: var(--font-geist), system-ui, sans-serif;
+}
+
+.panel-platform .font-display {
+  font-family: var(--font-geist), system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.panel-platform h1 {
+  font-size: clamp(1.75rem, 1.3rem + 1.8vw, 2.375rem);
+  line-height: 1.1;
+  letter-spacing: -0.025em;
+}
+
+.panel-platform h2.font-display {
+  font-size: 1.25rem;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+/* Fila seleccionable de una lista de SuperAdmin: la fila entera es el enlace y el resalte sigue a mouse y teclado. */
+.panel-pick {
+  position: relative;
+  border-radius: 1rem;
+}
+
+/* Filete entre filas: no es un borde, para que no se curve con el radio de la fila ni se sume al resalte. */
+.panel-pick:not(:first-child)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0.75rem;
+  right: 0.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--ink) 15%, transparent);
+}
+
+.panel-pick:hover::before,
+.panel-pick:has(a:focus-visible)::before,
+.panel-pick:hover + .panel-pick::before,
+.panel-pick:has(a:focus-visible) + .panel-pick::before {
+  border-top-color: transparent;
+}
+
+/* El enlace del nombre se estira sobre toda la fila: tocar cualquier parte la abre. */
+.panel-pick a.panel-pick-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.panel-pick:hover,
+.panel-pick:has(a:focus-visible) {
+  background: color-mix(in srgb, var(--carta-green) 9%, var(--porcelain));
+  box-shadow: inset 0 0 0 2px var(--carta-green);
+}
+
+.panel-pick a:focus-visible {
+  outline: none;
+}
+
+.panel-pick .panel-pick-arrow {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .panel-pick .panel-pick-arrow {
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .panel-pick:hover .panel-pick-arrow,
+  .panel-pick:has(a:focus-visible) .panel-pick-arrow {
+    transform: translateX(4px);
+  }
+}

@@ -8,7 +8,7 @@ import { availabilityAction } from "./availability-actions";
 export function AvailabilityForms({ orgSlug, productId, branches, canWrite }: {
   orgSlug: string; productId: string; branches: BranchAvailability[]; canWrite: boolean;
 }) {
-  return <section aria-labelledby="availability-title" className="mt-12">
+  return <section aria-labelledby="availability-title" className="panel-cell mt-6">
     <h2 id="availability-title" className="font-display text-2xl">Disponibilidad por sucursal</h2>
     <p className="mt-2 text-base text-muted">Agotado sigue visible en la carta con su aviso. El cambio solo afecta a la sucursal elegida.</p>
     {branches.length ? <ul className="mt-4 divide-y divide-ink/15">

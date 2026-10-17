@@ -1,36 +1,317 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-17T12:00:00.000Z",
-  "title": "Design System: UcoMenu, carta pública",
+  "generatedAt": "2026-10-17T18:00:00.000Z",
+  "title": "Design System: UcoMenu, carta pública y panel",
   "extensions": {
     "colorMeta": {
-      "porcelain": { "role": "neutral", "displayName": "Porcelana", "canonical": "#f4efe4", "tonalRamp": ["#494844", "#7a7872", "#aba7a0", "#dcd7cd", "#f5f1e7", "#f8f5ee", "#fbf9f4", "#fdfdfb"] },
-      "ink": { "role": "neutral", "displayName": "Tinta", "canonical": "#2a2622", "tonalRamp": ["#0d0b0a", "#151311", "#1d1b18", "#26221f", "#44403d", "#787573", "#abaaa8", "#dfdede"] },
-      "muted": { "role": "neutral", "displayName": "Gris cálido", "canonical": "#655d52", "tonalRamp": ["#1e1c19", "#332f29", "#474139", "#5b544a", "#787167", "#9d9891", "#c3bfbb", "#e8e7e5"] },
-      "carta-green": { "role": "primary", "displayName": "Verde del local", "canonical": "#3d5f48", "tonalRamp": ["#121d16", "#1f3024", "#2b4332", "#375641", "#55725e", "#84998b", "#b3c0b7", "#e2e7e4"] },
-      "carta-green-deep": { "role": "primary", "displayName": "Verde profundo", "canonical": "#2f4a39", "tonalRamp": ["#0e1611", "#18251d", "#213428", "#2a4333", "#486051", "#7b8c81", "#adb8b1", "#e0e4e1"] },
-      "carta-terra": { "role": "secondary", "displayName": "Terracota", "canonical": "#a43f22", "tonalRamp": ["#31130a", "#522011", "#732c18", "#94391f", "#af563d", "#c58573", "#dbb4a8", "#f1e2de"] },
-      "carta-blush": { "role": "tertiary", "displayName": "Rosa pálido", "canonical": "#f3d2c6", "tonalRamp": ["#493f3b", "#7a6963", "#aa938b", "#dbbdb2", "#f4d7cd", "#f7e2db", "#faede9", "#fdf8f6"] },
-      "carta-sand": { "role": "tertiary", "displayName": "Arena", "canonical": "#e8dcc2", "tonalRamp": ["#46423a", "#746e61", "#a29a88", "#d1c6af", "#ebe0c9", "#f0e9d8", "#f6f1e7", "#fcfaf6"] }
+      "porcelain": {
+        "role": "neutral",
+        "displayName": "Porcelana",
+        "canonical": "#f4efe4",
+        "tonalRamp": [
+          "#494844",
+          "#7a7872",
+          "#aba7a0",
+          "#dcd7cd",
+          "#f5f1e7",
+          "#f8f5ee",
+          "#fbf9f4",
+          "#fdfdfb"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#2a2622",
+        "tonalRamp": [
+          "#0d0b0a",
+          "#151311",
+          "#1d1b18",
+          "#26221f",
+          "#44403d",
+          "#787573",
+          "#abaaa8",
+          "#dfdede"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Gris cálido",
+        "canonical": "#655d52",
+        "tonalRamp": [
+          "#1e1c19",
+          "#332f29",
+          "#474139",
+          "#5b544a",
+          "#787167",
+          "#9d9891",
+          "#c3bfbb",
+          "#e8e7e5"
+        ]
+      },
+      "carta-green": {
+        "role": "primary",
+        "displayName": "Verde del local",
+        "canonical": "#3d5f48",
+        "tonalRamp": [
+          "#121d16",
+          "#1f3024",
+          "#2b4332",
+          "#375641",
+          "#55725e",
+          "#84998b",
+          "#b3c0b7",
+          "#e2e7e4"
+        ]
+      },
+      "carta-green-deep": {
+        "role": "primary",
+        "displayName": "Verde profundo",
+        "canonical": "#2f4a39",
+        "tonalRamp": [
+          "#0e1611",
+          "#18251d",
+          "#213428",
+          "#2a4333",
+          "#486051",
+          "#7b8c81",
+          "#adb8b1",
+          "#e0e4e1"
+        ]
+      },
+      "carta-terra": {
+        "role": "secondary",
+        "displayName": "Terracota",
+        "canonical": "#a43f22",
+        "tonalRamp": [
+          "#31130a",
+          "#522011",
+          "#732c18",
+          "#94391f",
+          "#af563d",
+          "#c58573",
+          "#dbb4a8",
+          "#f1e2de"
+        ]
+      },
+      "carta-blush": {
+        "role": "tertiary",
+        "displayName": "Rosa pálido",
+        "canonical": "#f3d2c6",
+        "tonalRamp": [
+          "#493f3b",
+          "#7a6963",
+          "#aa938b",
+          "#dbbdb2",
+          "#f4d7cd",
+          "#f7e2db",
+          "#faede9",
+          "#fdf8f6"
+        ]
+      },
+      "carta-sand": {
+        "role": "tertiary",
+        "displayName": "Arena",
+        "canonical": "#e8dcc2",
+        "tonalRamp": [
+          "#46423a",
+          "#746e61",
+          "#a29a88",
+          "#d1c6af",
+          "#ebe0c9",
+          "#f0e9d8",
+          "#f6f1e7",
+          "#fcfaf6"
+        ]
+      },
+      "platform-bg": {
+        "role": "neutral",
+        "displayName": "Papel UcoNext",
+        "canonical": "#f6f5f0"
+      },
+      "platform-ink": {
+        "role": "neutral",
+        "displayName": "Tinta UcoNext",
+        "canonical": "#242621"
+      },
+      "platform-muted": {
+        "role": "neutral",
+        "displayName": "Gris UcoNext",
+        "canonical": "#5c5f55"
+      },
+      "platform-green": {
+        "role": "primary",
+        "displayName": "Verde oscuro UcoNext",
+        "canonical": "#155b20"
+      },
+      "platform-green-deep": {
+        "role": "primary",
+        "displayName": "Verde profundo UcoNext",
+        "canonical": "#0f4318"
+      },
+      "platform-terra": {
+        "role": "secondary",
+        "displayName": "Verde de rol terracota UcoNext",
+        "canonical": "#2e7424"
+      },
+      "platform-blush": {
+        "role": "tertiary",
+        "displayName": "Verde pálido UcoNext",
+        "canonical": "#dcebd3"
+      },
+      "platform-sand": {
+        "role": "tertiary",
+        "displayName": "Arena UcoNext",
+        "canonical": "#e8e6dc"
+      },
+      "platform-vivid": {
+        "role": "accent",
+        "displayName": "Verde vivo (solo decorativo, no AA con blanco)",
+        "canonical": "#4a9e38"
+      },
+      "danger": {
+        "role": "functional",
+        "displayName": "Peligro",
+        "canonical": "#9b1c14"
+      },
+      "grace-bg": {
+        "role": "functional",
+        "displayName": "Mora, fondo",
+        "canonical": "#f6ecc4"
+      },
+      "grace-ink": {
+        "role": "functional",
+        "displayName": "Mora, tinta",
+        "canonical": "#4a3a00"
+      },
+      "grace-edge": {
+        "role": "functional",
+        "displayName": "Mora, borde",
+        "canonical": "#b58a00"
+      },
+      "readonly-bg": {
+        "role": "functional",
+        "displayName": "Solo lectura, fondo",
+        "canonical": "#f8dcc3"
+      },
+      "readonly-ink": {
+        "role": "functional",
+        "displayName": "Solo lectura, tinta",
+        "canonical": "#5c2a00"
+      },
+      "readonly-edge": {
+        "role": "functional",
+        "displayName": "Solo lectura, borde",
+        "canonical": "#c2570c"
+      },
+      "suspended-bg": {
+        "role": "functional",
+        "displayName": "Suspensión, fondo",
+        "canonical": "#f3d0cc"
+      },
+      "suspended-ink": {
+        "role": "functional",
+        "displayName": "Suspensión, tinta",
+        "canonical": "#5e120d"
+      },
+      "suspended-edge": {
+        "role": "functional",
+        "displayName": "Suspensión, borde",
+        "canonical": "#b3261e"
+      }
     },
     "typographyMeta": {
-      "display-title": { "displayName": "Título del local", "purpose": "Nombre del local en la cabecera; Gloock 400." },
-      "section": { "displayName": "Sección", "purpose": "Nombre de categoría en la banda pegajosa." },
-      "dish-name": { "displayName": "Nombre de plato", "purpose": "Títulos de cards y ficha." },
-      "body": { "displayName": "Texto", "purpose": "Descripciones y avisos; Schibsted Grotesk." },
-      "price": { "displayName": "Precio", "purpose": "Importes en terracota, tabulares." },
-      "label": { "displayName": "Etiqueta", "purpose": "Chips de la barra de categorías." }
+      "display-title": {
+        "displayName": "Título del local",
+        "purpose": "Nombre del local en la cabecera; Gloock 400."
+      },
+      "section": {
+        "displayName": "Sección",
+        "purpose": "Nombre de categoría en la banda pegajosa."
+      },
+      "dish-name": {
+        "displayName": "Nombre de plato",
+        "purpose": "Títulos de cards y ficha."
+      },
+      "body": {
+        "displayName": "Texto",
+        "purpose": "Descripciones y avisos; Schibsted Grotesk."
+      },
+      "price": {
+        "displayName": "Precio",
+        "purpose": "Importes en terracota, tabulares."
+      },
+      "label": {
+        "displayName": "Etiqueta",
+        "purpose": "Chips de la barra de categorías."
+      },
+      "panel-page-title": {
+        "displayName": "Título de página del panel",
+        "purpose": "h1 del panel; Gloock 400, clamp(2.25rem, 1.5rem + 3vw, 3.5rem)."
+      },
+      "panel-section-title": {
+        "displayName": "Título de sección del panel",
+        "purpose": "h2 en display dentro de celdas; 1.75rem."
+      },
+      "rail-name": {
+        "displayName": "Nombre en el riel",
+        "purpose": "Nombre del local o UcoMenu; 1.625rem, 2rem desde lg."
+      },
+      "nav-link": {
+        "displayName": "Enlace de navegación",
+        "purpose": "Chips, riel y enlaces de cuenta; 0.9375rem 500."
+      },
+      "nav-group": {
+        "displayName": "Rótulo de grupo",
+        "purpose": "Grupo del riel en sentence-case; 0.8125rem 600, solo visual."
+      },
+      "panel-control": {
+        "displayName": "Control",
+        "purpose": "Texto de botones y campos del panel; 1rem 500."
+      }
     },
     "shadows": [
-      { "name": "dock", "value": "0 10px 28px -10px rgb(0 0 0 / 0.4)", "purpose": "Única sombra del sistema: el dock flotante de llamado." },
-      { "name": "hairline", "value": "inset 0 0 0 1px rgb(42 38 34 / 0.15)", "purpose": "Filete de celdas y cards en lugar de sombra." }
+      {
+        "name": "dock",
+        "value": "0 10px 28px -10px rgb(0 0 0 / 0.4)",
+        "purpose": "Única sombra del sistema: el dock flotante de llamado."
+      },
+      {
+        "name": "hairline",
+        "value": "inset 0 0 0 1px rgb(42 38 34 / 0.15)",
+        "purpose": "Filete de celdas y cards en lugar de sombra."
+      },
+      {
+        "name": "cell-hairline",
+        "value": "inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent)",
+        "purpose": "Filete interior de .panel-cell y .panel-list; el panel no tiene sombras."
+      }
     ],
     "motion": [
-      { "name": "ease-carta", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Chips 180 ms, zoom de foto 500 ms; solo con prefers-reduced-motion: no-preference." }
+      {
+        "name": "ease-carta",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Chips 180 ms, zoom de foto 500 ms; solo con prefers-reduced-motion: no-preference."
+      },
+      {
+        "name": "ease-panel-nav",
+        "value": "180ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Fondo y color de chips y enlaces del riel; solo con prefers-reduced-motion: no-preference."
+      }
     ],
     "breakpoints": [
-      { "name": "sm", "value": "640px" },
-      { "name": "md", "value": "768px" }
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg (riel)",
+        "value": "64rem"
+      }
     ]
   },
   "components": [
@@ -89,26 +370,130 @@
       "description": "Dock flotante con dos celdas; única sombra del sistema.",
       "html": "<div class=\"ds-dock\"><button class=\"ds-d1\" type=\"button\">Llamar al mozo</button><button class=\"ds-d2\" type=\"button\">Pedir la cuenta</button></div>",
       "css": ".ds-dock{--ink:#2a2622;--carta-green:#3d5f48;--carta-blush:#f3d2c6;font-family:Schibsted Grotesk,system-ui,sans-serif;display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:420px;padding:8px;border-radius:28px;background:rgb(244 239 228/.95);box-shadow:0 10px 28px -10px rgb(0 0 0/.4),inset 0 0 0 1px rgb(42 38 34/.15)}.ds-d1,.ds-d2{min-height:56px;border:0;border-radius:24px;font:inherit;font-size:16px;font-weight:600}.ds-d1{background:var(--carta-green);color:#fff}.ds-d2{background:var(--carta-blush);color:var(--ink)}.ds-d1:focus-visible,.ds-d2:focus-visible{outline:2px solid var(--carta-green);outline-offset:2px}"
+    },
+    {
+      "name": "Riel del panel",
+      "kind": "nav",
+      "refersTo": "panel-rail",
+      "description": "Riel verde profundo desde lg: nombre en display, insignia de rol, secciones agrupadas y cuenta al pie.",
+      "html": "<aside class=\"ds-rail\"><a class=\"ds-rail-n\" href=\"#\">La Parrilla</a><span class=\"ds-rail-r\">Dueño</span><span class=\"ds-rail-g\">Tu local</span><a class=\"ds-rail-l\" href=\"#\" aria-current=\"page\">Resumen</a><a class=\"ds-rail-l\" href=\"#\">Carta</a><a class=\"ds-rail-l ds-rail-acc\" href=\"#\">Mi cuenta</a></aside>",
+      "css": ".ds-rail{--porcelain:#f4efe4;--ink:#2a2622;--carta-green-deep:#2f4a39;font-family:Schibsted Grotesk,system-ui,sans-serif;display:flex;flex-direction:column;gap:4px;box-sizing:border-box;width:272px;padding:20px;background:var(--carta-green-deep);color:#fff}.ds-rail-n{font-family:Gloock,Georgia,serif;font-weight:400;font-size:32px;line-height:1;color:#fff;text-decoration:none;margin-bottom:8px}.ds-rail-r{align-self:flex-start;padding:2px 10px;border-radius:9999px;background:rgb(255 255 255/.15);font-size:14px;font-weight:500}.ds-rail-g{padding:16px 12px 4px;font-size:13px;font-weight:600;color:rgb(255 255 255/.75)}.ds-rail-l{display:flex;align-items:center;min-height:44px;padding:0 12px;border-radius:16px;color:#fff;font-size:15px;font-weight:500;text-decoration:none}.ds-rail-l:hover{background:rgb(255 255 255/.1)}.ds-rail-l[aria-current=page]{background:var(--porcelain);color:var(--ink)}.ds-rail-acc{margin-top:16px}.ds-rail-l:focus-visible{outline:2px solid #fff;outline-offset:2px}"
+    },
+    {
+      "name": "Chip de navegación",
+      "kind": "chip",
+      "refersTo": "nav-chip",
+      "description": "Chip de sección en celular: rosa en reposo, verde la sección actual.",
+      "html": "<a class=\"ds-nc\" href=\"#\">Carta</a> <a class=\"ds-nc\" href=\"#\" aria-current=\"page\">Resumen</a>",
+      "css": ".ds-nc{--ink:#2a2622;--carta-green:#3d5f48;--carta-blush:#f3d2c6;--carta-sand:#e8dcc2;font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:9999px;background:var(--carta-blush);color:var(--ink);font-size:15px;font-weight:500;white-space:nowrap;text-decoration:none;transition:background-color 180ms cubic-bezier(.22,1,.36,1),color 180ms cubic-bezier(.22,1,.36,1)}.ds-nc:hover{background:var(--carta-sand)}.ds-nc[aria-current=page]{background:var(--carta-green);color:#fff}.ds-nc:focus-visible{outline:2px solid var(--carta-green);outline-offset:2px}"
+    },
+    {
+      "name": "Celda del panel",
+      "kind": "card",
+      "refersTo": "panel-cell",
+      "description": "Superficie de trabajo: 24 px, filete interior, sin sombra; la lista dentro queda plana.",
+      "html": "<section class=\"ds-cell\"><h2 class=\"ds-cell-h\">Sucursales</h2><ul class=\"ds-cell-l\"><li>Centro<span>Activa</span></li><li>Norte<span>Activa</span></li></ul></section>",
+      "css": ".ds-cell{--ink:#2a2622;--porcelain:#f4efe4;font-family:Schibsted Grotesk,system-ui,sans-serif;box-sizing:border-box;width:320px;padding:24px;border-radius:24px;background:color-mix(in srgb,var(--porcelain) 45%,white);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--ink) 15%,transparent);color:var(--ink)}.ds-cell-h{margin:0 0 12px;font-family:Gloock,Georgia,serif;font-weight:400;font-size:28px;line-height:1.05;letter-spacing:-.005em}.ds-cell-l{margin:0;padding:0;list-style:none;border-top:1px solid color-mix(in srgb,var(--ink) 15%,transparent)}.ds-cell-l li{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--ink) 15%,transparent)}.ds-cell-l li:last-child{border-bottom:0}"
+    },
+    {
+      "name": "Insignia de estado",
+      "kind": "chip",
+      "refersTo": "status-pill",
+      "description": "Píldora de estado o rol; el estado va siempre en texto.",
+      "html": "<span class=\"ds-pill\">Dueño</span> <span class=\"ds-pill ds-pill-ok\">Listo</span> <span class=\"ds-pill ds-pill-todo\">Para hacer</span>",
+      "css": ".ds-pill{--ink:#2a2622;--carta-green:#3d5f48;--carta-blush:#f3d2c6;font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-flex;align-items:center;padding:2px 10px;border-radius:9999px;background:var(--carta-blush);color:var(--ink);font-size:14px;font-weight:500}.ds-pill-ok{background:var(--carta-green);color:#fff}.ds-pill-todo{background:rgb(255 255 255/.7)}"
+    },
+    {
+      "name": "Botón primario del panel",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Píldora en el acento del local; una por vista.",
+      "html": "<button class=\"ds-bp\" type=\"button\">Guardar cambios</button>",
+      "css": ".ds-bp{--cobalt:#3d5f48;--carta-green-deep:#2f4a39;font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 20px;border:0;border-radius:9999px;background:var(--cobalt);color:#fff;font-size:16px;font-weight:500}.ds-bp:hover{background:var(--carta-green-deep)}.ds-bp:disabled{opacity:.6}.ds-bp:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}"
+    },
+    {
+      "name": "Botón secundario del panel",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Píldora con borde ink/40 para acciones de apoyo.",
+      "html": "<button class=\"ds-bs\" type=\"button\">Cancelar</button>",
+      "css": ".ds-bs{--ink:#2a2622;--cobalt:#3d5f48;font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 16px;border:1px solid rgb(42 38 34/.4);border-radius:9999px;background:transparent;color:var(--ink);font-size:16px;font-weight:500}.ds-bs:hover{background:rgb(42 38 34/.05)}.ds-bs:disabled{opacity:.6}.ds-bs:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}"
+    },
+    {
+      "name": "Botón de peligro del panel",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Píldora con borde y texto --danger; no cambia con la paleta.",
+      "html": "<button class=\"ds-bd\" type=\"button\">Eliminar</button>",
+      "css": ".ds-bd{--danger:#9b1c14;font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:8px 16px;border:1px solid var(--danger);border-radius:9999px;background:transparent;color:var(--danger);font-size:16px;font-weight:500}.ds-bd:hover{background:rgb(155 28 20/.05)}.ds-bd:disabled{opacity:.6}.ds-bd:focus-visible{outline:2px solid var(--danger);outline-offset:2px}"
+    },
+    {
+      "name": "Campo del panel",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Campo de 44 px, radio 8 px, borde ink/60, fondo blanco.",
+      "html": "<label class=\"ds-fl\" for=\"ds-f\">Nombre del plato</label><input id=\"ds-f\" class=\"ds-fi\" type=\"text\" placeholder=\"Milanesa napolitana\">",
+      "css": ".ds-fl{--ink:#2a2622;font-family:Schibsted Grotesk,system-ui,sans-serif;display:block;color:var(--ink);font-size:14px;font-weight:500}.ds-fi{--ink:#2a2622;--cobalt:#3d5f48;font-family:Schibsted Grotesk,system-ui,sans-serif;display:block;box-sizing:border-box;width:100%;min-height:44px;margin-top:4px;padding:8px 12px;border:1px solid rgb(42 38 34/.6);border-radius:8px;background:#fff;color:var(--ink);font-size:16px}.ds-fi::placeholder{color:rgb(101 93 82/.7)}.ds-fi:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}"
     }
   ],
   "narrative": {
     "northStar": "La revista de bolsillo del local",
-    "overview": "La carta se lee como un número de revista armado en celdas: una cabecera editorial con el nombre del local en display grande, un índice de categorías en bento y, debajo, secciones con banda de color y cards de plato de escala variable. El local es el protagonista; la plataforma firma discretamente al pie. Papel cálido, tinta oscura, un verde profundo como voz principal y terracota solo para precios y detalles.",
+    "overview": "La carta se lee como un número de revista armado en celdas: una cabecera editorial con el nombre del local en display grande, un índice de categorías en bento y, debajo, secciones con banda de color y cards de plato de escala variable. El local es el protagonista; la plataforma firma discretamente al pie. Papel cálido, tinta oscura, un verde profundo como voz principal y terracota solo para precios y detalles. El panel es su reverso: el mismo papel, la misma tipografía y los mismos ocho roles puestos al servicio de trabajar, con un riel verde profundo y celdas de 24 px con filete; el panel del Dueño se tiñe con la paleta del local y SuperAdmin usa la de UcoNext.",
     "keyCharacteristics": [
       "Colores solo desde los ocho roles de la paleta del local",
       "Gloock en un único peso para títulos; Schibsted Grotesk para el resto",
       "Celdas de radio 24 px con filete ink/15 en vez de sombra",
       "Número de índice repetido en la celda del bento y en la banda de su sección",
-      "Funciona con y sin fotos y con y sin logo"
+      "Funciona con y sin fotos y con y sin logo",
+      "Celdas de 24 px con filete ink/15 también en el panel, sin sombras",
+      "Panel con riel verde profundo en escritorio y chips en celular, en una sola nav"
     ],
     "rules": [
-      { "name": "The Roles Only Rule", "body": "Todo color sale de un rol de la paleta del local; un componente nuevo elige un rol, no un hex.", "section": "colors" },
-      { "name": "The Tone Pairing Rule", "body": "Tinta sobre rosa y arena, blanco sobre verde y terracota.", "section": "colors" },
-      { "name": "The Same Tone Rule", "body": "La celda de una categoría y la banda de su sección usan el mismo tono.", "section": "colors" },
-      { "name": "The One Weight Rule", "body": "Gloock solo existe a peso 400: nunca negrita en títulos.", "section": "typography" },
-      { "name": "The Tabular Money Rule", "body": "Precios, índices y cantidades en tabular-nums.", "section": "typography" },
-      { "name": "The No Gap Rule", "body": "Toda grilla completa sus filas; la última celda sobrante se ensancha.", "section": "layout" },
-      { "name": "The Hairline Not Shadow Rule", "body": "Una celda se separa con color o filete ink/15, jamás con sombra; la excepción es el dock.", "section": "elevation" }
+      {
+        "name": "The Roles Only Rule",
+        "body": "Todo color sale de un rol de la paleta del local; un componente nuevo elige un rol, no un hex.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tone Pairing Rule",
+        "body": "Tinta sobre rosa y arena, blanco sobre verde y terracota.",
+        "section": "colors"
+      },
+      {
+        "name": "The Same Tone Rule",
+        "body": "La celda de una categoría y la banda de su sección usan el mismo tono.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Weight Rule",
+        "body": "Gloock solo existe a peso 400: nunca negrita en títulos.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Money Rule",
+        "body": "Precios, índices y cantidades en tabular-nums.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Gap Rule",
+        "body": "Toda grilla completa sus filas; la última celda sobrante se ensancha.",
+        "section": "layout"
+      },
+      {
+        "name": "The Hairline Not Shadow Rule",
+        "body": "Una celda se separa con color o filete ink/15, jamás con sombra; la excepción es el dock.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Functional Colors Rule",
+        "body": "Los colores de gravedad no se tiñen con la paleta del local ni se reutilizan como decoración.",
+        "section": "colors"
+      },
+      {
+        "name": "The One Nav Rule",
+        "body": "Cada área tiene un solo nav; celular y escritorio son la misma lista con otro estilo.",
+        "section": "layout"
+      }
     ],
     "dos": [
       "Do elegir cada color de uno de los ocho roles de la paleta.",
@@ -116,15 +501,19 @@
       "Do separar superficies con color de celda o filete ink/15, radio 24 px.",
       "Do mantener el número de índice igual en la celda y en la banda.",
       "Do mantener 44 px de objetivo táctil mínimo y tabular-nums en importes.",
-      "Do probar con y sin foto, con y sin logo y con nombres largos."
+      "Do probar con y sin foto, con y sin logo y con nombres largos.",
+      "Do teñir el panel del Dueño con paletteStyle() y SuperAdmin con platformStyle(); una pantalla nueva usa .panel-cell y las clases de styles.ts.",
+      "Do dejar planas las listas dentro de una celda y mantener un solo nav por área."
     ],
     "donts": [
       "Don't usar sombras fuera del dock de llamado.",
-      "Don't aplicar negrita a Gloock ni usar las fuentes del panel ni el azul cobalto dentro de la carta.",
-      "Don't escribir un hex suelto en un componente de la carta.",
+      "Don't aplicar negrita a Gloock ni usar las fuentes del login ni el azul cobalto del tema global dentro de la carta o el panel.",
+      "Don't escribir un hex suelto en un componente de la carta o del panel; excepción: colores funcionales de gravedad.",
       "Don't volver a la lista plana, a celdas uniformes ni a un encabezado centrado.",
       "Don't reordenar los platos ni dejar huecos en las grillas.",
-      "Don't extender este sistema al panel, la sala o el login."
+      "Don't usar el verde vivo de la plataforma (#4a9e38) como fondo de texto: no alcanza AA con blanco.",
+      "Don't teñir con la paleta del local los avisos de mora, solo lectura, suspensión ni el botón de peligro.",
+      "Don't extender este sistema al login ni a rutas que no cuelguen de .carta o .panel."
     ]
   }
 }

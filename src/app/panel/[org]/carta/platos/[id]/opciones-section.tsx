@@ -5,7 +5,7 @@ import { ItemControls } from "../../item-controls";
 import { optionRowAction } from "../../opciones-actions";
 import { CreateGroupForm, CreateOptionForm, EditGroupForm, EditOptionForm } from "../../opciones-forms";
 
-const badgeClass = "inline-flex items-center rounded-sm border border-ink/40 px-2 py-0.5 text-sm text-ink";
+const badgeClass = "inline-flex items-center rounded-full border border-ink/25 bg-sand px-2.5 py-0.5 text-sm text-ink";
 
 type Props = {
   orgSlug: string;
@@ -17,7 +17,7 @@ type Props = {
 /** «Variantes y adicionales» en la pantalla del plato: grupos, sus opciones y el alta de un grupo nuevo. */
 export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props) {
   return (
-    <section aria-labelledby="opciones" className="mt-12" data-testid="opciones">
+    <section aria-labelledby="opciones" className="panel-cell mt-6" data-testid="opciones">
       <h2 id="opciones" className="font-display text-2xl">
         Variantes y adicionales
       </h2>
@@ -35,7 +35,7 @@ export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props)
           {groups.map((group, index) => {
             const activeOptions = group.options.filter((option) => option.is_active).length;
             return (
-              <li key={group.id} className="border-t-2 border-ink/30 pt-4" data-testid="grupo" data-name={group.name}>
+              <li key={group.id} className="border-t border-ink/15 pt-5 first:border-t-0 first:pt-0" data-testid="grupo" data-name={group.name}>
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                   <h3 className="min-w-0 font-display text-xl leading-tight [overflow-wrap:anywhere]">{group.name}</h3>
                   <span className={badgeClass}>{isVariant(group.min_choices, group.max_choices) ? "Variante" : "Adicionales"}</span>
@@ -74,7 +74,7 @@ export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props)
                 </div>
 
                 {group.options.length > 0 ? (
-                  <ul className="mt-4 border-t border-ink/15">
+                  <ul className="mt-4 panel-list">
                     {group.options.map((option, optionIndex) => (
                       <li key={option.id} className="border-b border-ink/15 py-3" data-testid="opcion" data-name={option.name}>
                         <div className="flex items-baseline gap-3 text-lg">

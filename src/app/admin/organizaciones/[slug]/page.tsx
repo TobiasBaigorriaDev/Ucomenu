@@ -12,6 +12,7 @@ import { accountState, BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
+import { StatusPill } from "../../status-pill";
 import { ChangePlanForm, PaymentForm, SuspensionForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
@@ -69,7 +70,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
 
   if (!result || !result.ok) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-8">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
         <p>
           <Link href="/admin" className="underline underline-offset-2">
             Volver a las organizaciones
@@ -90,22 +91,29 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
   const cycle = isBillingCycle(org.billingCycle) ? org.billingCycle : "monthly";
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <p>
         <Link href="/admin" className="underline underline-offset-2">
           Volver a las organizaciones
         </Link>
       </p>
       <h1 className="mt-3 font-display text-4xl leading-tight break-words">{org.name}</h1>
-      <p className="mt-1 text-lg break-words text-muted">
-        {org.slug} · Dueño: {org.ownerEmails.length ? org.ownerEmails.join(", ") : "sin Dueño"}
+      <p className="mt-2 flex flex-wrap items-center gap-2" data-testid="estado-organizacion">
+        <StatusPill state={org.state} className="!text-base" />
+        <span className="rounded-full bg-sand px-2.5 py-0.5 text-base text-ink ring-1 ring-inset ring-ink/15">
+          {PLAN_NAME[org.plan] ?? org.plan}, {(CYCLE_LABEL[org.billingCycle] ?? org.billingCycle).toLowerCase()}
+        </span>
+        {org.isActive ? null : <span className="rounded-full bg-suspended-bg px-2.5 py-0.5 text-base text-suspended-ink">inactiva</span>}
+      </p>
+      <p className="mt-2 text-lg break-words text-muted">
+        <span className="font-mono text-base">{org.slug}</span> · Dueño: {org.ownerEmails.length ? org.ownerEmails.join(", ") : "sin Dueño"}
       </p>
 
-      <section aria-labelledby="seccion-suscripcion" className="mt-8">
+      <section aria-labelledby="seccion-suscripcion" className="panel-cell mt-8">
         <h2 id="seccion-suscripcion" className="font-display text-2xl">
           Suscripción
         </h2>
-        <ul className="mt-3 border-t border-ink/15" data-testid="suscripcion">
+        <ul className="mt-3 panel-list" data-testid="suscripcion">
           <Row label="Plan">{PLAN_NAME[org.plan] ?? org.plan}</Row>
           <Row label="Facturación">{CYCLE_LABEL[org.billingCycle] ?? org.billingCycle}</Row>
           <Row label="Estado">{suspended ? "Suspendida a mano" : BILLING_STATE_LABEL[org.state]}</Row>
@@ -119,7 +127,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         </ul>
       </section>
 
-      <section aria-labelledby="seccion-sucursales" className="mt-10">
+      <section aria-labelledby="seccion-sucursales" className="panel-cell mt-6">
         <h2 id="seccion-sucursales" className="font-display text-2xl">Direcciones de las sucursales</h2>
         <p className="mt-2 max-w-prose leading-relaxed text-muted">
           Corregí un identificador sin perder los enlaces anteriores: redirigen a la dirección vigente.
@@ -138,7 +146,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           </ul>}
       </section>
 
-      <section aria-labelledby="seccion-plan" className="mt-10">
+      <section aria-labelledby="seccion-plan" className="panel-cell mt-6">
         <h2 id="seccion-plan" className="font-display text-2xl">
           Cambiar plan
         </h2>
@@ -149,7 +157,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         <ChangePlanForm slug={org.slug} plan={org.plan} billingCycle={org.billingCycle} />
       </section>
 
-      <section aria-labelledby="seccion-suspension" className="mt-10">
+      <section aria-labelledby="seccion-suspension" className="panel-cell mt-6">
         <h2 id="seccion-suspension" className="font-display text-2xl">
           {suspended ? "Reactivar" : "Suspender"}
         </h2>
@@ -163,7 +171,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         <SuspensionForm slug={org.slug} suspended={suspended} />
       </section>
 
-      <section aria-labelledby="seccion-pago" className="mt-10">
+      <section aria-labelledby="seccion-pago" className="panel-cell mt-6">
         <h2 id="seccion-pago" className="font-display text-2xl">
           Registrar un pago
         </h2>
@@ -178,7 +186,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         />
       </section>
 
-      <section aria-labelledby="seccion-pagos" className="mt-10">
+      <section aria-labelledby="seccion-pagos" className="panel-cell mt-6">
         <h2 id="seccion-pagos" className="font-display text-2xl">
           Pagos registrados
         </h2>
@@ -186,7 +194,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           <p className="mt-3 text-muted">Todavía no hay pagos registrados.</p>
         ) : (
           <>
-            <ul className="mt-3 border-t border-ink/15">
+            <ul className="mt-3 panel-list">
               {org.payments.map((payment) => (
                 <PaymentItem key={payment.id} payment={payment} />
               ))}
@@ -198,7 +206,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         )}
       </section>
 
-      <section aria-labelledby="seccion-movimientos" className="mt-10">
+      <section aria-labelledby="seccion-movimientos" className="panel-cell mt-6">
         <h2 id="seccion-movimientos" className="font-display text-2xl">
           Movimientos de esta organización
         </h2>
@@ -206,7 +214,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           <p className="mt-3 text-muted">Todavía no hay movimientos registrados.</p>
         ) : (
           <>
-            <ul className="mt-3 border-t border-ink/15">
+            <ul className="mt-3 panel-list">
               {org.audit.map((entry) => (
                 <AuditItem key={entry.id} entry={entry} />
               ))}

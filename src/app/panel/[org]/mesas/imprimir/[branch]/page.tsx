@@ -36,7 +36,7 @@ export default async function PrintTablesPage({ params }: PageProps<"/panel/[org
   const tables = branch.tables.filter((table) => table.is_active);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8 print:max-w-none print:p-0">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12 print:max-w-none print:p-0">
       <div className="print:hidden">
         <Link href={`/panel/${org}/mesas`} className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2">
           Volver a las mesas

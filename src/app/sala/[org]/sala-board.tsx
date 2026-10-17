@@ -31,9 +31,9 @@ type Connection = "ok" | "offline" | "expired" | "gone";
 type Alerts = "off" | "on" | "blocked";
 
 const buttonClass =
-  "inline-flex min-h-11 items-center justify-center rounded-md border border-ink/50 px-4 py-2 text-base font-medium text-ink disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/50 px-4 py-2 text-base font-medium text-ink disabled:opacity-60";
 const primaryClass =
-  "inline-flex min-h-11 items-center justify-center rounded-md bg-cobalt px-5 py-2 text-base font-medium text-white disabled:opacity-60";
+  "inline-flex min-h-11 items-center justify-center rounded-full bg-cobalt px-5 py-2 text-base font-medium text-white disabled:opacity-60";
 
 function rememberedAlerts(): boolean {
   try {

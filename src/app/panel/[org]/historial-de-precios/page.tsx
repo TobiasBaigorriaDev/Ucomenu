@@ -20,7 +20,7 @@ export default async function PriceHistoryPage({ params, searchParams }: PagePro
   const base = `/panel/${membership.org.slug}/historial-de-precios`;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <Link href={`/panel/${org}/carta`} className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2">
         Volver a la carta
       </Link>

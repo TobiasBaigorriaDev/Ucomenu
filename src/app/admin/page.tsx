@@ -12,7 +12,9 @@ import { requirePlatformAdmin } from "@/lib/auth/session";
 import { BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
+import { primaryButtonClass } from "@/components/panel/styles";
 import { AuditItem } from "./audit";
+import { StatusPill } from "./status-pill";
 
 export const metadata: Metadata = { title: "SuperAdmin" };
 
@@ -29,18 +31,38 @@ function subscriptionLine(org: OrganizationRow): string {
 
 function OrganizationItem({ org }: { org: OrganizationRow }) {
   return (
-    <li className="border-b border-ink/15 py-3" data-testid="organizacion">
-      <p className="text-lg break-words">
-        <Link href={`/admin/organizaciones/${org.slug}`} className="font-medium underline underline-offset-2">
-          {org.name}
-        </Link>{" "}
-        <span className="text-muted">({org.slug})</span>
-        {org.isActive ? null : <span className="text-danger"> – inactiva</span>}
-      </p>
-      <p className="mt-1 text-base break-words text-muted">{subscriptionLine(org)}</p>
-      <p className="mt-1 text-base break-words text-muted">
-        Dueño: {org.ownerEmails.length ? org.ownerEmails.join(", ") : "sin Dueño"}
-      </p>
+    <li className="panel-pick -mx-3 flex items-start justify-between gap-4 px-3 py-4" data-testid="organizacion">
+      <div className="min-w-0 flex-1">
+        <p className="flex flex-wrap items-baseline gap-x-2 gap-y-1 break-words">
+          <Link
+            href={`/admin/organizaciones/${org.slug}`}
+            className="panel-pick-link min-w-0 font-display text-xl leading-tight [overflow-wrap:anywhere]"
+          >
+            {org.name}
+          </Link>
+          <span className="min-w-0 font-mono text-sm text-muted [overflow-wrap:anywhere]">({org.slug})</span>
+          {org.isActive ? null : <span className="rounded-full bg-suspended-bg px-2.5 py-0.5 text-sm text-suspended-ink">inactiva</span>}
+        </p>
+        <p className="mt-1 text-base break-words text-muted">{subscriptionLine(org)}</p>
+        <p className="mt-1 text-base break-words text-muted">
+          Dueño: {org.ownerEmails.length ? org.ownerEmails.join(", ") : "sin Dueño"}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-3 pt-0.5">
+        <StatusPill state={org.state} />
+        <svg
+          aria-hidden
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.75"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="panel-pick-arrow size-5 text-brand"
+        >
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </div>
     </li>
   );
 }
@@ -59,15 +81,15 @@ export default async function AdminPage() {
   const audit = await listAuditLog({ session });
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Organizaciones</h1>
-      <p className="mt-3">
-        <Link href="/admin/nueva" className="text-lg underline underline-offset-2">
+      <p className="mt-4">
+        <Link href="/admin/nueva" className={primaryButtonClass}>
           Nueva organización
         </Link>
       </p>
 
-      <section aria-labelledby="lista" className="mt-8">
+      <section aria-labelledby="lista" className="panel-cell mt-8">
         <h2 id="lista" className="font-display text-2xl">
           Todas
         </h2>
@@ -79,7 +101,7 @@ export default async function AdminPage() {
           <p className="mt-3 text-muted">Todavía no hay organizaciones.</p>
         ) : (
           <>
-            <ul className="mt-3 border-t border-ink/15">
+            <ul className="mt-3 panel-list">
               {organizations.map((org) => (
                 <OrganizationItem key={org.id} org={org} />
               ))}
@@ -91,7 +113,7 @@ export default async function AdminPage() {
         )}
       </section>
 
-      <section aria-labelledby="movimientos" className="mt-10">
+      <section aria-labelledby="movimientos" className="panel-cell mt-6">
         <h2 id="movimientos" className="font-display text-2xl">
           Últimos movimientos
         </h2>
@@ -103,7 +125,7 @@ export default async function AdminPage() {
           <p className="mt-3 text-muted">Todavía no hay movimientos registrados.</p>
         ) : (
           <>
-            <ul className="mt-3 border-t border-ink/15">
+            <ul className="mt-3 panel-list">
               {audit.data.map((entry) => (
                 <AuditItem key={entry.id} entry={entry} />
               ))}

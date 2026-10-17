@@ -9,7 +9,7 @@ import { CreateBranchForm, RenameBranchForm } from "./branch-forms";
 export const metadata: Metadata = { title: "Sucursales" };
 
 const linkButtonClass =
-  "inline-flex min-h-11 items-center justify-center rounded-md border border-ink/40 px-4 py-2 text-base font-medium text-ink";
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/40 px-4 py-2 text-base font-medium text-ink";
 
 /** Solo Dueño (ficha gestion-de-sucursales). La comprobación es del servidor: el Staff que abra esta URL vuelve al inicio sin ver nada. */
 export default async function SucursalesPage({ params }: PageProps<"/panel/[org]/sucursales">) {
@@ -26,7 +26,7 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
   const atLimit = typeof limit === "number" && used >= limit;
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Sucursales</h1>
       <p className="mt-2 max-w-prose text-base text-muted">
         Cada sucursal tiene su dirección de carta, sus mesas y su QR. La carta es la misma para todo el local.
@@ -45,14 +45,14 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
         <span className="font-medium tabular-nums">{typeof limit === "number" ? `${used} de ${limit}` : `${used}, sin tope`}</span>
       </p>
 
-      <section aria-labelledby="lista" className="mt-6">
+      <section aria-labelledby="lista" className="panel-cell mt-6">
         <h2 id="lista" className="font-display text-2xl">
           Tus sucursales
         </h2>
         {branches.length === 0 ? (
           <p className="mt-3 max-w-prose text-base text-muted">Este local todavía no tiene sucursales: sin una, la carta no se puede abrir.</p>
         ) : (
-          <ul className="mt-3 border-t border-ink/15">
+          <ul className="mt-3 panel-list">
             {branches.map((branch) => (
               <li key={branch.id} className="border-b border-ink/15 py-4" data-testid="sucursal" data-name={branch.name}>
                 <p className="text-lg font-medium break-words">{branch.name}</p>
@@ -78,7 +78,7 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
         )}
       </section>
 
-      <section aria-labelledby="alta" className="mt-10">
+      <section aria-labelledby="alta" className="panel-cell mt-6">
         <h2 id="alta" className="font-display text-2xl">
           Agregar una sucursal
         </h2>

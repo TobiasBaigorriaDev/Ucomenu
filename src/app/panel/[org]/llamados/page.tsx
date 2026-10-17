@@ -8,7 +8,7 @@ import { CooldownForm, MuteControls } from "./config-forms";
 
 export const metadata: Metadata = { title: "Configuración del llamado" };
 
-const badgeClass = "inline-flex items-center rounded-sm border border-ink/40 px-2 py-0.5 text-sm text-ink";
+const badgeClass = "inline-flex items-center rounded-full border border-ink/25 bg-sand px-2.5 py-0.5 text-sm text-ink";
 
 export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/llamados">) {
   const { org } = await params;
@@ -24,7 +24,7 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
   const now = new Date();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Configuración del llamado</h1>
       <p className="mt-2 max-w-prose text-base text-muted">
         Ajustá cada cuánto puede avisar una mesa y silenciá las mesas que abusen del llamado al mozo.
@@ -49,7 +49,7 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
         <section
           key={branch.id}
           aria-labelledby={`suc-${branch.id}`}
-          className="mt-12 border-t-2 border-ink/30 pt-5"
+          className="panel-cell mt-6"
           data-testid="sucursal"
           data-name={branch.name}
         >
@@ -75,7 +75,7 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
 
           <h3 className="mt-8 text-xl font-medium">Mesas</h3>
           {branch.tables.length > 0 ? (
-            <ul className="mt-2 border-t border-ink/15">
+            <ul className="mt-2 panel-list">
               {branch.tables.map((table) => {
                 const muted = isMuted(table.muted_until, now);
                 return (

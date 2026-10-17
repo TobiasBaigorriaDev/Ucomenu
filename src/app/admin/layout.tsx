@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { adminFontClass } from "@/components/panel/admin-fonts";
 import { AppShell } from "@/components/panel/app-shell";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 
@@ -13,5 +14,5 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
  */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   await requirePlatformAdmin("/admin");
-  return <AppShell area="admin">{children}</AppShell>;
+  return <AppShell area="admin" fontClass={adminFontClass}>{children}</AppShell>;
 }

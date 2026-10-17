@@ -30,11 +30,11 @@ export default async function SubscriptionPage({ params }: PageProps<"/panel/[or
   const ent = await getEntitlements(membership.org.id);
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Suscripción</h1>
 
       {ent ? (
-        <ul className="mt-6 border-t border-ink/15">
+        <ul className="mt-6 panel-list">
           <Row label="Plan">{ent.plan ? (PLAN_NAME[ent.plan] ?? ent.plan) : "Sin datos"}</Row>
           {ent.billingCycle ? <Row label="Facturación">{CYCLE_LABEL[ent.billingCycle] ?? ent.billingCycle}</Row> : null}
           <Row label="Estado">{ent.suspendedManually ? "Suspendida por UcoMenu" : STATE_LABEL[ent.state]}</Row>

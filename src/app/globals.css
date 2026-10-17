@@ -21,6 +21,12 @@
   --suspended-ink: #5e120d;
   --suspended-edge: #b3261e;
   --danger: #9b1c14;
+  /* Roles de color de la paleta del local (Oliva por defecto). `.carta` y `.panel` los sobrescriben; ver `lib/identidad/palettes.ts`. */
+  --carta-green: #3d5f48;
+  --carta-green-deep: #2f4a39;
+  --carta-terra: #a43f22;
+  --carta-blush: #f3d2c6;
+  --carta-sand: #e8dcc2;
   color-scheme: light;
 }
 
@@ -40,6 +46,11 @@
   --color-suspended-ink: var(--suspended-ink);
   --color-suspended-edge: var(--suspended-edge);
   --color-danger: var(--danger);
+  --color-brand: var(--carta-green);
+  --color-brand-deep: var(--carta-green-deep);
+  --color-terra: var(--carta-terra);
+  --color-blush: var(--carta-blush);
+  --color-sand: var(--carta-sand);
   --font-display: var(--font-young-serif), Georgia, serif;
   --font-sans: var(--font-hanken), system-ui, sans-serif;
 }

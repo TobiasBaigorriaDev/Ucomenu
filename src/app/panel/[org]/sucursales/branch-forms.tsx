@@ -9,7 +9,7 @@ import { createBranchAction, renameBranchAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 const summaryButtonClass =
-  "inline-flex min-h-11 items-center justify-center rounded-md border border-ink/40 bg-transparent px-4 py-2 text-base font-medium text-ink";
+  "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/40 bg-transparent px-4 py-2 text-base font-medium text-ink";
 
 /**
  * Alta de una sucursal. El identificador se propone a partir del nombre mientras la persona no lo toque; una vez

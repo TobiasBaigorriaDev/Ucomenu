@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { isOwnLogoPath } from "./logos";
-import { isPalette, PALETTES, paletteStyle } from "./palettes";
+import { isPalette, PALETTES, PLATFORM_PALETTE, paletteStyle, platformStyle } from "./palettes";
 
 function luminance(hex: string) {
   const channels = hex.replace("#", "").match(/../g)!.map((x) => parseInt(x, 16) / 255);
@@ -11,7 +11,7 @@ function luminance(hex: string) {
 const contrast = (a: string, b: string) => (Math.max(luminance(a), luminance(b)) + 0.05) / (Math.min(luminance(a), luminance(b)) + 0.05);
 
 describe("paletas de la carta", () => {
-  it.each(Object.entries(PALETTES))("%s conserva contraste AA en texto, botones y foco", (_key, p) => {
+  it.each([...Object.entries(PALETTES), ["plataforma (SuperAdmin)", PLATFORM_PALETTE] as const])("%s conserva contraste AA en texto, botones y foco", (_key, p) => {
     for (const background of [p.background, p.blush, p.sand]) {
       expect(contrast(p.ink, background)).toBeGreaterThanOrEqual(4.5);
       expect(contrast(p.muted, background)).toBeGreaterThanOrEqual(4.5);
@@ -37,6 +37,13 @@ describe("paletas de la carta", () => {
     );
     expect(defaults).toEqual(paletteStyle("oliva"));
   });
+});
+
+it("la paleta de la plataforma conserva los verdes de UcoNext y no es elegible por un local", () => {
+  expect(PLATFORM_PALETTE.accent).toBe("#155b20");
+  expect(PLATFORM_PALETTE.vivid).toBe("#4a9e38");
+  expect(isPalette("plataforma")).toBe(false);
+  expect(platformStyle()).toMatchObject({ "--cobalt": "#155b20", "--vivid": "#4a9e38" });
 });
 
 it("un logo solo pertenece a su carpeta exacta", () => {

@@ -24,7 +24,7 @@ export default async function NewProductPage({ params, searchParams }: PageProps
   const initialCategory = categories.find((c) => c.id === requested)?.id ?? categories[0]?.id ?? "";
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <Link href={`/panel/${org}/carta`} className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2">
         Volver a la carta
       </Link>

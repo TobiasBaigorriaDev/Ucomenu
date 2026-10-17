@@ -19,7 +19,7 @@ import { createSessionClient } from "@/lib/supabase/server";
 
 export type OrgMembership = {
   role: Role;
-  org: { id: string; slug: string; name: string };
+  org: { id: string; slug: string; name: string; menu_palette: string; logo_path: string | null };
 };
 
 export const getCurrentUser = cache(async (): Promise<User | null> => {
@@ -37,7 +37,7 @@ export const getMemberships = cache(async (userId: string): Promise<OrgMembershi
 
   const orgs = await supabase
     .from("organizations")
-    .select("id, slug, name")
+    .select("id, slug, name, menu_palette, logo_path")
     .in(
       "id",
       own.data.map((m) => m.organization_id),
