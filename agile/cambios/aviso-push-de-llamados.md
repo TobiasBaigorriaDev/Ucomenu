@@ -59,7 +59,8 @@ Ejecutado el 2026-10-18 sobre la rama `feat/aviso-push-de-llamados` (base local 
   1. *Rotar VAPID dejaba el dispositivo «activado» sin recibir nada* (la pantalla no comparaba la clave de la suscripción). Ahora la compara (`usesKey`) y rehace la suscripción. Regresión: E2E «si se rotaron las claves…» (falla con la comparación anulada). El 403 no se borra a propósito (ver «Fallos»).
   2. *El `tag` pisaba mesas homónimas de sucursales distintas.* `push_targets_for_call` devuelve `table_key` (12 hex de `md5(id)`, opaca) y el `tag` la usa. Regresiones: unitaria del texto y RLS con dos «Mesa 7» en sucursales distintas.
   3. *El tope de 10 dispositivos se podía exceder por concurrencia.* `register_push_subscription` toma `pg_advisory_xact_lock` por persona y local antes de contar. Regresión determinista (otra sesión sostiene el bloqueo y el registro espera; sin la línea, falla 2/2); la prueba por carrera pura solo detectaba la mutación 1 de 3 veces y se dejó como comprobación extra.
-- Ronda de verificación: pendiente.
+- **Ronda 2 (verificación, Codex sobre `8a16fff`): APROBAR CON CAMBIOS, 1 hallazgo real nuevo, corregido:** la recuperación por rotación VAPID quedaba bloqueada con el cupo de 10 dispositivos lleno (la fila vieja seguía contando y la nueva recibía «límite»). Ahora la pantalla suelta la fila vieja del servidor antes de desuscribir y rehacer (`unregisterPushAction`). Regresión: E2E con 9 dispositivos más registrados por la puerta real (falla sin la línea). Los otros tres hallazgos: rotación parcial → resuelta con esto; etiqueta y tope concurrente, corregidos.
+- Ronda 3 (verificación): pendiente.
 - Aprobación humana (despliegue a staging con las claves VAPID de staging y prueba en dispositivos reales): pendiente.
 
 ## Aprendizajes

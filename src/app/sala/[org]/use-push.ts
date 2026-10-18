@@ -108,6 +108,8 @@ export function usePush(slug: string, publicKey: string | null) {
 
       let subscription = await registration.pushManager.getSubscription();
       if (subscription && !usesKey(subscription, publicKey)) {
+        // Se suelta primero la fila vieja del servidor: si no, con el cupo lleno (10 dispositivos) la nueva recibiría «límite».
+        await unregisterPushAction(slug, subscription.endpoint);
         await subscription.unsubscribe();
         subscription = null;
       }
@@ -118,6 +120,7 @@ export function usePush(slug: string, publicKey: string | null) {
       let result = await registerPushAction(slug, subscription.toJSON());
       if (result.status === "invalid") {
         // Una suscripción hecha con otra clave del servidor (se cambiaron las claves) no sirve: se rehace una vez.
+        await unregisterPushAction(slug, subscription.endpoint);
         await subscription.unsubscribe();
         subscription = await withTimeout(registration.pushManager.subscribe(options), SUBSCRIBE_TIMEOUT_MS);
         result = await registerPushAction(slug, subscription.toJSON());

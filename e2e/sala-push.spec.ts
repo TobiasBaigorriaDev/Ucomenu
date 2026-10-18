@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Tenant } from "./support";
 
@@ -145,6 +146,37 @@ test.describe("aviso con la pestaña cerrada", () => {
     await expect(page.getByTestId("push-activo")).toBeVisible();
     const despues = await page.evaluate(() => sessionStorage.getItem("e2e:push:id"));
     expect(despues).not.toBe(antes); // se volvió a suscribir con la clave actual
+    await context.close();
+  });
+
+  test("rotación de claves con el cupo de 10 dispositivos lleno: reactivar libera el registro viejo y no recibe «límite»", async ({ browser }) => {
+    const t = await nuevoLocal("push-rotacion-cupo");
+    // Nueve dispositivos más de la misma persona, registrados por la puerta real (con su sesión).
+    const otro = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
+    expect((await otro.auth.signInWithPassword({ email: t.staff.email, password: t.staff.password })).error).toBeNull();
+    for (let i = 0; i < 9; i++) {
+      const r = await otro.rpc("register_push_subscription", {
+        p_org: t.orgId,
+        p_endpoint: `https://fcm.googleapis.com/fcm/send/e2e-cupo-${i}-${Date.now()}`,
+        p_p256dh: "B".repeat(87),
+        p_auth: "a".repeat(22),
+      });
+      expect(r.data).toBe("ok");
+    }
+
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await conPushDoble(context);
+    const page = await context.newPage();
+    await abrirSala(page, t);
+    await activar(page).click(); // el décimo
+    await expect(page.getByTestId("push-activo")).toBeVisible();
+
+    await page.evaluate(() => sessionStorage.setItem("e2e:push:id:clave", JSON.stringify(Array.from({ length: 65 }, (_, i) => i))));
+    await page.reload();
+    await expect(activar(page)).toBeVisible();
+    await activar(page).click();
+    await expect(page.getByTestId("push-activo")).toBeVisible();
+    await expect(page.getByTestId("push-error")).toHaveCount(0);
     await context.close();
   });
 
