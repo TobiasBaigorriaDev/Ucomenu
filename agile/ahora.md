@@ -6,7 +6,7 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 [Aviso de llamados también desde el panel](cambios/aviso-push-desde-el-panel.md) (M): **integrado a `main`**, probado y aprobado por el usuario en su Chrome. Incluye el cartel fijo de llamados pendientes en el panel, «Sala en vivo» en modo alerta con contador, el sonido que sigue al salir de la sala (módulo `src/components/panel/sonido-llamados.ts`) y la activación del aviso del sistema desde el Resumen. No cambió esquema ni envío.
 
-**Staging no tiene esto todavía** (`https://ucomenu-staging.fly.dev`): no hay migración nueva, basta redesplegar con la imagen `flyio/flyctl` (ver `docs/produccion.md`) cuando el usuario lo pida. La base local quedó en seed limpio y el servidor local, apagado.
+**Desplegado a staging** (`https://ucomenu-staging.fly.dev`, 2026-10-18, a pedido del usuario; sin migración nueva, con la imagen `flyio/flyctl`; comprobado: `/login` 200 y `/sala-sw.js` con la regla nueva). La base local quedó en seed limpio y el servidor local, apagado.
 
 Base: [aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md), [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md).
 
@@ -20,4 +20,4 @@ Base: [aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md), [ADR 0
 
 ## Próximo paso
 
-Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: lectura de pagos y auditoría por el Dueño (C, dentro de «SuperAdmin, incrementos pendientes»), analítica básica (M), carta en varios idiomas (M), aviso en iPhone por PWA (M) o redesplegar staging. La retención de `price_history` necesita política del usuario.
+Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: lectura de pagos y auditoría por el Dueño (C, dentro de «SuperAdmin, incrementos pendientes»), analítica básica (M), carta en varios idiomas (M), aviso en iPhone por PWA (M). La retención de `price_history` necesita política del usuario.

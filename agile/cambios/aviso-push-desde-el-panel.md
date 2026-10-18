@@ -1,5 +1,5 @@
 # Cambio: Aviso de llamados también desde el panel (`/panel/{slug}`)
-Estado: integrado a `main` — implementado, probado en local y aprobado por el usuario tras probarlo en su Chrome (2026-10-18); sin desplegar a staging
+Estado: integrado a `main` — implementado, probado en local y aprobado por el usuario tras probarlo en su Chrome (2026-10-18); desplegado a staging el mismo día (`/login` 200 y `/sala-sw.js` con la regla nueva; sin migración)
 Nivel: M (reutiliza el registro, el service worker, las funciones de base y los permisos de [aviso-push-de-llamados](aviso-push-de-llamados.md); no cambia autorización, esquema ni envío)
 
 ## Objetivo
