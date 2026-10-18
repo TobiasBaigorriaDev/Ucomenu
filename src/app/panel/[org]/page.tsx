@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PrimerosPasos } from "@/components/panel/primeros-pasos";
+import { AvisoPush } from "@/components/push/aviso-push";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { buildGuide, loadGuideCounts } from "@/lib/guia/primeros-pasos";
+import { vapidPublicKey } from "@/lib/push/config";
 import { createSessionClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Resumen" };
@@ -34,6 +36,13 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
       <h1 className="font-display text-4xl leading-tight">Resumen</h1>
 
       {guide ? <PrimerosPasos guide={guide} /> : null}
+
+      {/* Solo con el plan que incluye el llamado (la función de base rechazaría el alta igual) y con claves VAPID en el servidor. */}
+      {ent?.features.includes("waiter_call") ? (
+        <div className="mt-6">
+          <AvisoPush slug={membership.org.slug} publicKey={vapidPublicKey()} where="panel" />
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[3fr_2fr] lg:items-start">
         <section aria-labelledby="carta-publica" className="rounded-3xl bg-brand p-5 text-white sm:p-6">

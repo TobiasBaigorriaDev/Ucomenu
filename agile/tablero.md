@@ -10,10 +10,10 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): el Dueño y el personal pueden activar las notificaciones sin entrar a `/sala`, y reciben el aviso aunque estén en otra pantalla del panel; evitar el aviso doble si la sala en vivo está abierta y visible — siguiente tarea acordada (2026-10-18); reutiliza `src/lib/push/registration.ts` y `public/sala-sw.js`; la ficha se crea al empezar
+- (vacío)
 
 ## Para verificar
-- (vacío)
+- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): implementado y probado en local en la rama `feat/aviso-push-panel`; falta probarlo en un dispositivo e integrar → [ficha](cambios/aviso-push-desde-el-panel.md)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
