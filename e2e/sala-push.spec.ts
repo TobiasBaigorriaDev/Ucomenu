@@ -180,6 +180,41 @@ test.describe("aviso con la pestaña cerrada", () => {
     await context.close();
   });
 
+  test("si falla soltar el registro viejo tras rotar las claves, no se pierde la recuperación: el reintento lo suelta", async ({ browser }) => {
+    const t = await nuevoLocal("push-rotacion-falla");
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await conPushDoble(context);
+    const page = await context.newPage();
+    await abrirSala(page, t);
+    await activar(page).click();
+    await expect(page.getByTestId("push-activo")).toBeVisible();
+    const viejo = await page.evaluate(() => sessionStorage.getItem("e2e:push:id"));
+
+    await page.evaluate(() => sessionStorage.setItem("e2e:push:id:clave", JSON.stringify(Array.from({ length: 65 }, (_, i) => i))));
+    await page.reload();
+    await expect(activar(page)).toBeVisible();
+
+    // La primera acción de servidor (la baja del registro viejo) falla en la red.
+    let fallar = true;
+    await page.route("**/sala/**", (route) => {
+      if (fallar && route.request().method() === "POST") {
+        fallar = false;
+        return route.abort();
+      }
+      return route.continue();
+    });
+    await activar(page).click();
+    await expect(page.getByTestId("push-error")).toBeVisible();
+    // El navegador sigue con la suscripción vieja: no se dio de baja antes de poder soltar el registro del servidor.
+    expect(await page.evaluate(() => (window as unknown as { __bajas: number }).__bajas)).toBe(0);
+    expect(await page.evaluate(() => sessionStorage.getItem("e2e:push:id"))).toBe(viejo);
+
+    await activar(page).click(); // reintento
+    await expect(page.getByTestId("push-activo")).toBeVisible();
+    expect(await page.evaluate(() => sessionStorage.getItem("e2e:push:id"))).not.toBe(viejo);
+    await context.close();
+  });
+
   test("si el navegador bloquea las notificaciones, lo explica y no registra nada", async ({ browser }) => {
     const t = await nuevoLocal("push-bloqueado");
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });

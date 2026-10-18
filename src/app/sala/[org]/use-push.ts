@@ -105,11 +105,17 @@ export function usePush(slug: string, publicKey: string | null) {
       await navigator.serviceWorker.register(SERVICE_WORKER_URL, { scope: SERVICE_WORKER_SCOPE, updateViaCache: "none" });
       const registration = await withTimeout(navigator.serviceWorker.ready, SUBSCRIBE_TIMEOUT_MS);
       const options = { userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) };
+      // Si no se puede soltar el registro viejo del servidor, no se toca la suscripción del navegador: así el reintento
+      // vuelve a pasar por acá (con la clave actual ya no habría nada que soltar y el cupo lleno rechazaría el alta).
+      const releaseFailed = () => {
+        setState("off");
+        setMessage("No se pudo soltar el registro anterior de este dispositivo. Probá de nuevo en un momento.");
+      };
 
       let subscription = await registration.pushManager.getSubscription();
       if (subscription && !usesKey(subscription, publicKey)) {
         // Se suelta primero la fila vieja del servidor: si no, con el cupo lleno (10 dispositivos) la nueva recibiría «límite».
-        await unregisterPushAction(slug, subscription.endpoint);
+        if (!(await unregisterPushAction(slug, subscription.endpoint))) return releaseFailed();
         await subscription.unsubscribe();
         subscription = null;
       }
@@ -120,7 +126,7 @@ export function usePush(slug: string, publicKey: string | null) {
       let result = await registerPushAction(slug, subscription.toJSON());
       if (result.status === "invalid") {
         // Una suscripción hecha con otra clave del servidor (se cambiaron las claves) no sirve: se rehace una vez.
-        await unregisterPushAction(slug, subscription.endpoint);
+        if (!(await unregisterPushAction(slug, subscription.endpoint))) return releaseFailed();
         await subscription.unsubscribe();
         subscription = await withTimeout(registration.pushManager.subscribe(options), SUBSCRIBE_TIMEOUT_MS);
         result = await registerPushAction(slug, subscription.toJSON());

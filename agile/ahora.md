@@ -4,7 +4,7 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-Rama **`feat/aviso-push-de-llamados`** (sale de `main` en `1645ddd`; `main` no se tocó): [aviso de llamados con la pestaña cerrada por Web Push](cambios/aviso-push-de-llamados.md), Android y Windows (C, [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)). Implementado y probado en local, **sin integrar a `main`, sin desplegar y sin revisión independiente todavía**. La base local quedó con la migración `20261025100000` aplicada.
+Rama **`feat/aviso-push-de-llamados`** (sale de `main` en `1645ddd`; `main` no se tocó): [aviso de llamados con la pestaña cerrada por Web Push](cambios/aviso-push-de-llamados.md), Android y Windows (C, [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)). Implementado y probado en local, revisado por Codex en **tres rondas** (todas «aprobar con cambios»; todos los hallazgos reales corregidos con regresión; la última corrección no tuvo cuarta verificación). **Sin integrar a `main` y sin desplegar.** La base local quedó con la migración `20261025100000` aplicada.
 
 Qué hay: tabla `push_subscriptions` cerrada a la API y cinco funciones, envío desde `after()` en la acción pública del comensal (`src/lib/push/`), `public/sala-sw.js`, bloque «Avisarme aunque cierre la sala» en `/sala/{slug}`, baja al cerrar sesión, `pnpm push:claves` y comprobaciones nuevas en `pnpm prod:check`. Se instaló `web-push` 3.6.7 (aprobado).
 
@@ -18,6 +18,6 @@ Qué hay: tabla `push_subscriptions` cerrada a la API y cinco funciones, envío 
 
 ## Próximo paso
 
-1. Pedir **una ronda de revisión a Codex** (`pnpm revision:codex --commit HEAD --ficha agile/cambios/aviso-push-de-llamados.md --nivel C`, skill `ciclo-revision-codex`) y corregir.
+1. Decidir con el usuario si se pide una cuarta verificación a Codex (la regla manda consultar tras la tercera) o se aprueba con lo hecho.
 2. Con aprobación: generar claves para staging, `fly secrets set`, desplegar (el Dockerfile ahora copia `public/`), activar el aviso en un Android y en la PC y comprobar con la sala cerrada.
 3. Si el usuario aprueba: integrar a `main`, pasar el ítem a «Hecho» y seguir con «Aviso también desde el panel».

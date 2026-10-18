@@ -1,5 +1,5 @@
 # Cambio: Aviso de llamados con la pestaña cerrada (Web Push, Android y Windows)
-Estado: en curso — implementado y probado en local; falta la revisión independiente (Codex), la prueba del usuario en sus dispositivos y la aprobación humana (C)
+Estado: en curso — implementado, probado en local y revisado por Codex en tres rondas (todas «aprobar con cambios», todos los hallazgos corregidos con regresión); falta tu decisión sobre una cuarta verificación, la prueba en dispositivos reales con staging y la aprobación humana (C)
 Nivel: C (envía a servicios externos a partir de datos que registra el cliente —SSRF—, guarda secretos por dispositivo y decide quién se entera de qué local: exposición de información entre organizaciones y autorización)
 
 ## Objetivo
@@ -60,7 +60,8 @@ Ejecutado el 2026-10-18 sobre la rama `feat/aviso-push-de-llamados` (base local 
   2. *El `tag` pisaba mesas homónimas de sucursales distintas.* `push_targets_for_call` devuelve `table_key` (12 hex de `md5(id)`, opaca) y el `tag` la usa. Regresiones: unitaria del texto y RLS con dos «Mesa 7» en sucursales distintas.
   3. *El tope de 10 dispositivos se podía exceder por concurrencia.* `register_push_subscription` toma `pg_advisory_xact_lock` por persona y local antes de contar. Regresión determinista (otra sesión sostiene el bloqueo y el registro espera; sin la línea, falla 2/2); la prueba por carrera pura solo detectaba la mutación 1 de 3 veces y se dejó como comprobación extra.
 - **Ronda 2 (verificación, Codex sobre `8a16fff`): APROBAR CON CAMBIOS, 1 hallazgo real nuevo, corregido:** la recuperación por rotación VAPID quedaba bloqueada con el cupo de 10 dispositivos lleno (la fila vieja seguía contando y la nueva recibía «límite»). Ahora la pantalla suelta la fila vieja del servidor antes de desuscribir y rehacer (`unregisterPushAction`). Regresión: E2E con 9 dispositivos más registrados por la puerta real (falla sin la línea). Los otros tres hallazgos: rotación parcial → resuelta con esto; etiqueta y tope concurrente, corregidos.
-- Ronda 3 (verificación): pendiente.
+- **Ronda 3 (verificación, Codex sobre `f5111c0`): APROBAR CON CAMBIOS, 1 hallazgo real, menor:** si la baja del registro viejo fallaba (red o base), igual se desuscribía el navegador y el reintento ya no volvía a soltar nada (con el cupo lleno seguía el «límite»). Ahora la pantalla comprueba el resultado y no toca la suscripción del navegador si no pudo soltar el registro. Regresión: E2E con la baja abortada (falla con el orden anterior; se rompió la defensa para comprobarlo). **Por la regla de tres rondas no se pidió una cuarta sin consultar:** queda a decisión del usuario si se pide otra verificación o si se aprueba con lo hecho.
+- Aprobación del usuario: pendiente.
 - Aprobación humana (despliegue a staging con las claves VAPID de staging y prueba en dispositivos reales): pendiente.
 
 ## Aprendizajes
