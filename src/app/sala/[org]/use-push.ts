@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { pushStatusAction, registerPushAction, unregisterPushAction } from "@/lib/push/actions";
+import { findOwnRegistration, registerOwn } from "@/lib/push/registration";
 
 /**
  * Aviso con la pestaña cerrada (Web Push) de ESTE dispositivo para ESTE local (ADR 0020). El dispositivo se registra por
@@ -15,10 +16,6 @@ export type PushState =
   | "on" // activado en este dispositivo
   | "denied" // el navegador bloqueó las notificaciones de este sitio
   | "working";
-
-export const SERVICE_WORKER_URL = "/sala-sw.js";
-/** El alcance es la sala; el push llega igual al service worker aunque la pestaña esté cerrada. */
-export const SERVICE_WORKER_SCOPE = "/sala/";
 
 /** El navegador a veces no responde al pedir la suscripción (sin red al servicio de push): se corta y se explica, no se queda en «Un momento…». */
 const SUBSCRIBE_TIMEOUT_MS = 20_000;
@@ -75,7 +72,7 @@ export function usePush(slug: string, publicKey: string | null) {
       if (!supported()) return settle("unsupported");
       if (Notification.permission === "denied") return settle("denied");
       try {
-        const registration = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_SCOPE);
+        const registration = await findOwnRegistration();
         const subscription = await registration?.pushManager.getSubscription();
         // Hecha con otra clave del servidor (se rotaron las claves VAPID): ya no recibe nada; se ofrece activar de nuevo.
         if (!subscription || !usesKey(subscription, publicKey)) return settle("off");
@@ -102,8 +99,8 @@ export function usePush(slug: string, publicKey: string | null) {
         return;
       }
 
-      await navigator.serviceWorker.register(SERVICE_WORKER_URL, { scope: SERVICE_WORKER_SCOPE, updateViaCache: "none" });
-      const registration = await withTimeout(navigator.serviceWorker.ready, SUBSCRIBE_TIMEOUT_MS);
+      // Siempre el registro PROPIO (no `ready`, que devuelve el que controla la página y puede ser de otra app del mismo origen).
+      const registration = await withTimeout(registerOwn(), SUBSCRIBE_TIMEOUT_MS);
       const options = { userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) };
       // Si no se puede soltar el registro viejo del servidor, no se toca la suscripción del navegador: así el reintento
       // vuelve a pasar por acá (con la clave actual ya no habría nada que soltar y el cupo lleno rechazaría el alta).
@@ -154,7 +151,7 @@ export function usePush(slug: string, publicKey: string | null) {
     setState("working");
     setMessage("");
     try {
-      const registration = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_SCOPE);
+      const registration = await findOwnRegistration();
       const subscription = await registration?.pushManager.getSubscription();
       if (subscription) {
         const removed = await unregisterPushAction(slug, subscription.endpoint);

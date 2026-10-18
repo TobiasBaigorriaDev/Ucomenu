@@ -2,6 +2,7 @@
 
 import { logoutAction } from "@/lib/auth/actions";
 import { forgetPushDeviceAction } from "@/lib/push/actions";
+import { findOwnRegistration } from "@/lib/push/registration";
 
 /**
  * «Salir». Antes de cerrar la sesión suelta el aviso con la pestaña cerrada de ESTE dispositivo (ADR 0020): si no, el
@@ -11,7 +12,7 @@ import { forgetPushDeviceAction } from "@/lib/push/actions";
 async function forgetThisDevice(): Promise<void> {
   try {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
-    const registration = await navigator.serviceWorker.getRegistration("/sala/");
+    const registration = await findOwnRegistration();
     const subscription = await registration?.pushManager.getSubscription();
     if (!subscription) return;
     await forgetPushDeviceAction(subscription.endpoint);

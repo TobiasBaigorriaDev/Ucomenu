@@ -37,6 +37,19 @@ async function conPushDoble(context: BrowserContext, permiso: "granted" | "denie
     Object.defineProperty(Notification, "permission", { configurable: true, get: () => actual });
     Notification.requestPermission = async () => (actual = respuesta);
 
+    // Cada PushManager recuerda de qué registro de service worker viene, para comprobar por cuál se suscribe la app.
+    const w2 = window as unknown as { __alcances: string[] };
+    w2.__alcances = [];
+    const original = Object.getOwnPropertyDescriptor(ServiceWorkerRegistration.prototype, "pushManager")!;
+    Object.defineProperty(ServiceWorkerRegistration.prototype, "pushManager", {
+      configurable: true,
+      get() {
+        const manager = original.get!.call(this) as PushManager & { __alcance?: string };
+        manager.__alcance = (this as ServiceWorkerRegistration).scope;
+        return manager;
+      },
+    });
+
     const KEY = "e2e:push:id";
     const w = window as unknown as { __bajas: number };
     w.__bajas = 0;
@@ -57,7 +70,8 @@ async function conPushDoble(context: BrowserContext, permiso: "granted" | "denie
       const id = sessionStorage.getItem(KEY);
       return id ? (make(id, JSON.parse(sessionStorage.getItem(KEY + ":clave") ?? "[]")) as unknown as PushSubscription) : null;
     };
-    PushManager.prototype.subscribe = async (opciones?: PushSubscriptionOptionsInit) => {
+    PushManager.prototype.subscribe = async function (this: PushManager & { __alcance?: string }, opciones?: PushSubscriptionOptionsInit) {
+      w2.__alcances.push(this.__alcance ?? "?");
       const id = crypto.randomUUID();
       const clave = Array.from(new Uint8Array(opciones?.applicationServerKey as ArrayBuffer));
       sessionStorage.setItem(KEY, id);
@@ -212,6 +226,35 @@ test.describe("aviso con la pestaña cerrada", () => {
     await activar(page).click(); // reintento
     await expect(page.getByTestId("push-activo")).toBeVisible();
     expect(await page.evaluate(() => sessionStorage.getItem("e2e:push:id"))).not.toBe(viejo);
+    await context.close();
+  });
+
+  test("con el service worker de OTRA app en el mismo origen (alcance «/»), el aviso se suscribe por el propio (alcance /sala/)", async ({ browser }) => {
+    const t = await nuevoLocal("push-ajeno");
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await conPushDoble(context);
+    // Otra app que corrió antes en el mismo puerto dejó un service worker en «/».
+    await context.route("**/sw-de-otra-app.js", (route) =>
+      route.fulfill({ contentType: "text/javascript", body: "self.addEventListener('install',()=>self.skipWaiting());self.addEventListener('activate',(e)=>e.waitUntil(self.clients.claim()));" }),
+    );
+    const page = await context.newPage();
+    await abrirSala(page, t);
+    await page.evaluate(async () => {
+      await navigator.serviceWorker.register("/sw-de-otra-app.js", { scope: "/" });
+      await navigator.serviceWorker.ready;
+    });
+    await page.reload();
+    await expect(activar(page)).toBeVisible();
+
+    await activar(page).click();
+    await expect(page.getByTestId("push-activo")).toBeVisible();
+    const alcances = await page.evaluate(() => (window as unknown as { __alcances: string[] }).__alcances);
+    expect(alcances.length).toBeGreaterThan(0);
+    for (const alcance of alcances) expect(alcance).toMatch(/\/sala\/$/); // nunca por el registro ajeno
+
+    // Recargar: el estado también sale del registro propio.
+    await page.reload();
+    await expect(page.getByTestId("push-activo")).toBeVisible();
     await context.close();
   });
 
