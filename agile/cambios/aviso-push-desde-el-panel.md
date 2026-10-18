@@ -1,5 +1,5 @@
 # Cambio: Aviso de llamados también desde el panel (`/panel/{slug}`)
-Estado: implementado y probado en local (segunda versión, con cartel dentro del panel); falta que el usuario lo pruebe y la integración a `main`
+Estado: integrado a `main` — implementado, probado en local y aprobado por el usuario tras probarlo en su Chrome (2026-10-18); sin desplegar a staging
 Nivel: M (reutiliza el registro, el service worker, las funciones de base y los permisos de [aviso-push-de-llamados](aviso-push-de-llamados.md); no cambia autorización, esquema ni envío)
 
 ## Objetivo
@@ -27,9 +27,10 @@ Que el Dueño y el personal puedan activar el aviso de llamados **desde el panel
 - [x] Aviso del sistema: con el panel o la sala de ese local a la vista y con foco no se duplica; con el panel oculto o sin foco, sí.
 - [x] 390 px sin desborde en el Resumen; el botón es de 44 px.
 - [x] La sala sigue igual (pruebas existentes del aviso, sin cambios).
+- [x] El sonido de los llamados sigue al pasar de la sala al panel sin recargar y se rearma con el primer toque tras recargar.
 
 ## Fuera de alcance
-- Sonido dentro del panel; iPhone/PWA (ítem propio); activar desde otras pantallas del panel (basta con el Resumen).
+- Pantalla encendida (Wake Lock) en el panel; iPhone/PWA (ítem propio); activar desde otras pantallas del panel (basta con el Resumen).
 
 ## Evidencia
 Ejecutado el 2026-10-18 sobre la rama `feat/aviso-push-panel` (base local en seed):

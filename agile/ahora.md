@@ -4,18 +4,20 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-[Aviso de llamados también desde el panel](cambios/aviso-push-desde-el-panel.md) (M): **implementado y confirmado en la rama `feat/aviso-push-panel`**, sin integrar a `main`. Lo pedido era poder navegar el panel y ver arriba un aviso si una mesa llama: un **cartel fijo dentro del panel** (`llamados-banner.tsx`, sondea `/sala/{slug}/estado`) lo hace; además el Resumen ofrece activar el aviso del sistema (plan con llamado y claves VAPID). El bloque y el hook `usePush` ahora viven en `src/components/push/` y los comparten la sala y el panel. No cambia el esquema ni el envío; el registro sigue siendo por local y dispositivo. Pruebas en la ficha; el ítem está en «Para verificar».
+[Aviso de llamados también desde el panel](cambios/aviso-push-desde-el-panel.md) (M): **integrado a `main`**, probado y aprobado por el usuario en su Chrome. Incluye el cartel fijo de llamados pendientes en el panel, «Sala en vivo» en modo alerta con contador, el sonido que sigue al salir de la sala (módulo `src/components/panel/sonido-llamados.ts`) y la activación del aviso del sistema desde el Resumen. No cambió esquema ni envío.
 
-Base ([aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md), [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)): en `main` y en staging (`https://ucomenu-staging.fly.dev`), que **todavía no tiene** esto.
+**Staging no tiene esto todavía** (`https://ucomenu-staging.fly.dev`): no hay migración nueva, basta redesplegar con la imagen `flyio/flyctl` (ver `docs/produccion.md`) cuando el usuario lo pida. La base local quedó en seed limpio y el servidor local, apagado.
+
+Base: [aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md), [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md).
 
 ## Bloqueos y riesgos
 
-- **Producción:** sigue bloqueada (dominio, proyecto de Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`); `pnpm prod:check` lo verifica.
+- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`); `pnpm prod:check` lo verifica.
 - En Windows el aviso del sistema solo llega con Chrome o Edge en ejecución; iPhone queda en el tablero (PWA).
-- Regla vigente del service worker: no muestra el aviso del sistema si la sala o el panel de ese local están a la vista **y con foco** (ya se ven); con la sala visible en otro monitor, avisa (preferible repetido a perdido). Puede relajarse a «solo a la vista».
-- La base local quedó con `cafe-ejemplo` en plan Pro para la prueba manual: `pnpm db:reset` antes de las pruebas E2E.
-- `.env.local` conserva claves VAPID de prueba (no versionado). Fly se despliega con la imagen `flyio/flyctl` (ver `docs/produccion.md`).
+- Regla del *service worker*: no muestra el aviso del sistema si la sala o el panel de ese local están a la vista **y con foco**; con la sala visible en otro monitor, avisa (preferible repetido a perdido).
+- El E2E con 2 o más *workers* tumba el servidor de pruebas de esta máquina (Windows): usar `--workers=1` y repetir de a uno lo que falle.
+- `.env.local` conserva claves VAPID de prueba (no versionado).
 
 ## Próximo paso
 
-El usuario prueba el aviso desde el Resumen en su dispositivo (local o staging). Si lo aprueba: integrar la rama a `main`, pasar el ítem a «Hecho» y, si quiere, desplegar a staging. Después, elegir otra tarea desbloqueada del [tablero](tablero.md) (por ejemplo lectura de pagos y auditoría por el Dueño, nivel C).
+Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: lectura de pagos y auditoría por el Dueño (C, dentro de «SuperAdmin, incrementos pendientes»), analítica básica (M), carta en varios idiomas (M), aviso en iPhone por PWA (M) o redesplegar staging. La retención de `price_history` necesita política del usuario.

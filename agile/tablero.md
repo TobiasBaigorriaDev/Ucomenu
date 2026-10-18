@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): implementado y probado en local en la rama `feat/aviso-push-panel` (cartel dentro del panel + activación del aviso del sistema); falta que el usuario lo pruebe e integrar → [ficha](cambios/aviso-push-desde-el-panel.md)
+- (vacío)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -63,6 +63,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [M] Aviso de llamados también desde el panel: cartel fijo con los llamados pendientes, «Sala en vivo» en modo alerta con contador, sonido que sigue al salir de la sala y activación del aviso del sistema desde el Resumen; probado y aprobado por el usuario en su Chrome (2026-10-18; sin desplegar a staging) → [ficha](cambios/aviso-push-desde-el-panel.md)
 - [C] Aviso de llamados con la pestaña cerrada por Web Push (Android y Windows): tabla de suscripciones cerrada a la API, envío desde el servidor, service worker de la sala; revisado por Codex en tres rondas, probado por el usuario en Windows y Android contra staging y aprobado (2026-10-18) → [ficha](cambios/aviso-push-de-llamados.md) · ADR 0020
 - [S] Restauración ensayada en un proyecto Supabase nuevo; repetición manual con recordatorio mensual configurado (2026-10-17) → [ficha](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17)
 - [S] Wake Lock nativo del panel de sala comprobado con HTTPS en Chrome de Windows (2026-10-17) → [ficha](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17)
