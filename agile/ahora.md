@@ -4,20 +4,18 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-[Aviso de llamados también desde el panel](cambios/aviso-push-desde-el-panel.md) (M): **integrado a `main`**, probado y aprobado por el usuario en su Chrome. Incluye el cartel fijo de llamados pendientes en el panel, «Sala en vivo» en modo alerta con contador, el sonido que sigue al salir de la sala (módulo `src/components/panel/sonido-llamados.ts`) y la activación del aviso del sistema desde el Resumen. No cambió esquema ni envío.
+[Aviso de llamados en iPhone y iPad](cambios/aviso-push-iphone.md) (M): **implementado y confirmado en la rama `feat/aviso-iphone`**, sin integrar a `main` ni desplegado. La sala y el panel se pueden instalar como app (`public/sala.webmanifest`, íconos en `public/icons/` generados con `tools/generar-iconos.mjs`, metadatos solo en `/sala` y `/panel`); en Safari de iPhone el bloque del aviso explica cómo instalar; y el *service worker* **siempre muestra** el aviso si la suscripción es de Apple, que revoca las que no terminan en una notificación visible. Pruebas locales verdes (ficha). El ítem está en «Para verificar».
 
-**Desplegado a staging** (`https://ucomenu-staging.fly.dev`, 2026-10-18, a pedido del usuario; sin migración nueva, con la imagen `flyio/flyctl`; comprobado: `/login` 200 y `/sala-sw.js` con la regla nueva). La base local quedó en seed limpio y el servidor local, apagado.
+**Falta lo que no se puede probar acá:** un iPhone real (iOS 16.4+). Pasos: desplegar la rama a staging (imagen `flyio/flyctl`, ver `docs/produccion.md`), abrir `https://ucomenu-staging.fly.dev/sala` en Safari, instalar con Compartir → «Agregar a pantalla de inicio», abrir desde el ícono, activar los avisos y llamar desde una mesa con la app cerrada. Si Apple rechaza el envío, mirar primero el `VAPID_SUBJECT` de staging (hoy `https://ucomenu-staging.fly.dev`).
 
-Base: [aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md), [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md).
+La base local está en seed y el servidor local, apagado. Staging tiene `main` (incluye el cartel del panel).
 
 ## Bloqueos y riesgos
 
-- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`); `pnpm prod:check` lo verifica.
-- En Windows el aviso del sistema solo llega con Chrome o Edge en ejecución; iPhone queda en el tablero (PWA).
-- Regla del *service worker*: no muestra el aviso del sistema si la sala o el panel de ese local están a la vista **y con foco**; con la sala visible en otro monitor, avisa (preferible repetido a perdido).
-- El E2E con 2 o más *workers* tumba el servidor de pruebas de esta máquina (Windows): usar `--workers=1` y repetir de a uno lo que falle.
+- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`) y un `VAPID_SUBJECT` real.
+- E2E: usar `--workers=1` (con más, el servidor de pruebas de esta máquina cae); repetir de a uno lo que falle.
 - `.env.local` conserva claves VAPID de prueba (no versionado).
 
 ## Próximo paso
 
-Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: lectura de pagos y auditoría por el Dueño (C, dentro de «SuperAdmin, incrementos pendientes»), analítica básica (M), carta en varios idiomas (M), aviso en iPhone por PWA (M). La retención de `price_history` necesita política del usuario.
+El usuario prueba en un iPhone (con staging desplegado). Si funciona: integrar a `main`, pasar el ítem a «Hecho» y subir. Si no, ajustar según lo que falle. Después elegir otra tarea del [tablero](tablero.md).

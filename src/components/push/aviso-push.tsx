@@ -32,6 +32,31 @@ export function AvisoPush({ slug, publicKey, where }: { slug: string; publicKey:
   const copy = COPY[where];
   if (!publicKey || push.state === "checking") return null;
 
+  // iPhone y iPad: Apple solo entrega avisos a la app instalada en la pantalla de inicio. Sin botón: en la pestaña no serviría.
+  if (push.state === "install" || push.state === "ios-old") {
+    return (
+      <div className="panel-cell mb-4 !py-4" data-testid="aviso-push">
+        <p className="text-base font-medium">Avisos en iPhone y iPad</p>
+        {push.state === "install" ? (
+          <>
+            <p className="mt-1 max-w-prose text-sm text-muted" data-testid="push-ayuda">
+              Apple solo muestra avisos con la app cerrada si instalás UcoMenu en la pantalla de inicio. Hace falta iOS 16.4 o superior.
+            </p>
+            <ol className="mt-2 max-w-prose list-decimal space-y-1 pl-5 text-base" data-testid="push-instalar">
+              <li>En Safari, tocá el botón <strong>Compartir</strong> (el cuadrado con la flecha hacia arriba).</li>
+              <li>Elegí <strong>Agregar a pantalla de inicio</strong> y confirmá.</li>
+              <li>Abrí <strong>UcoMenu</strong> desde el ícono nuevo, entrá a {where === "sala" ? "la sala" : "el panel"} y activá los avisos ahí.</li>
+            </ol>
+          </>
+        ) : (
+          <p className="mt-1 max-w-prose text-sm text-muted" data-testid="push-ayuda">
+            Este iPhone o iPad no puede mostrar avisos con la app cerrada. Hace falta iOS o iPadOS 16.4 o superior: actualizá el sistema e intentá de nuevo.
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="panel-cell mb-4 flex flex-wrap items-center gap-3 !py-4" data-testid="aviso-push">
       {push.state === "on" ? (

@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [M] Aviso de llamados en iPhone y iPad: la sala y el panel se instalan como app (manifiesto, íconos, instrucciones en pantalla) y el aviso siempre se muestra en Apple; probado en local, **falta probarlo en un iPhone real** (iOS 16.4+) → [ficha](cambios/aviso-push-iphone.md)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -31,7 +31,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
-- [M] Aviso de llamados en iPhone: requiere instalar la sala como PWA (iOS 16.4 o superior), manifiesto e instrucciones de instalación — a futuro (desbloqueado: depende del aviso con la pestaña cerrada, ya hecho)
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin, incrementos pendientes: add-ons, desactivar organizaciones y lectura de la auditoría y de los pagos por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
