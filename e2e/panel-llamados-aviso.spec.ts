@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
+import { conDobles, pitidos } from "./audio-doble";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Tenant } from "./support";
 
 /**
@@ -115,6 +116,83 @@ test.describe("cartel de llamados en el panel", () => {
     await page.waitForTimeout(4_000);
     await expect(page.getByTestId("llamados-aviso")).toHaveCount(0);
     expect(consultas).toEqual([]);
+    await context.close();
+  });
+});
+
+test.describe("sonido de los llamados fuera de la sala", () => {
+  test("lo activado en la sala sigue sonando al pasar a otra pantalla del panel; los pendientes que ya había no suenan", async ({ browser }) => {
+    const { t, mesas } = await nuevoLocal("panel-sonido-sala");
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await conDobles(context);
+    const page = await context.newPage();
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/sala/${t.slug}`);
+    await page.getByRole("button", { name: "Activar alertas" }).click();
+    await expect(page.getByTestId("alertas-activas")).toBeVisible();
+    expect(await pitidos(page)).toBe(1); // el de confirmación
+
+    // A otra pantalla del panel SIN recargar (el módulo del sonido sigue vivo).
+    await llamar(mesas[0].qr_token); // ya pendiente cuando llega el cartel: no debe sonar
+    await page.getByRole("link", { name: "Panel", exact: true }).click();
+    await page.getByRole("link", { name: "Carta" }).first().click();
+    await expect(page).toHaveURL(new RegExp(`/panel/${t.slug}/carta`));
+    await expect(page.getByTestId("llamados-aviso-titulo")).toBeVisible({ timeout: 12_000 });
+    await page.waitForTimeout(4_000);
+    expect(await pitidos(page)).toBeLessThanOrEqual(2); // a lo sumo el de la sala si alcanzó a verlo; nunca uno por cada sondeo
+
+    const antes = await pitidos(page);
+    await llamar(mesas[1].qr_token, "bill");
+    await expect.poll(() => pitidos(page), { timeout: 12_000 }).toBe(antes + 1);
+    await context.close();
+  });
+
+  test("el sonido se activa desde el Resumen y suena con un llamado nuevo mientras se navega; silenciarlo lo calla", async ({ browser }) => {
+    const { t, mesas } = await nuevoLocal("panel-sonido-resumen");
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await conDobles(context);
+    const page = await context.newPage();
+    await login(page, t.staff.email, t.staff.password);
+    await page.goto(`/panel/${t.slug}`);
+    await page.getByRole("button", { name: "Activar sonido de llamados" }).click();
+    await expect(page.getByTestId("sonido-activo")).toBeVisible();
+    expect(await pitidos(page)).toBe(1);
+
+    await page.getByRole("link", { name: "Mesas" }).first().click();
+    await expect(page).toHaveURL(new RegExp(`/panel/${t.slug}/mesas`));
+    await llamar(mesas[0].qr_token);
+    await expect.poll(() => pitidos(page), { timeout: 12_000 }).toBe(2);
+
+    await page.getByRole("link", { name: "Resumen" }).first().click();
+    await page.getByRole("button", { name: "Silenciar sonido" }).click();
+    await llamar(mesas[1].qr_token, "bill");
+    await expect(page.getByTestId("llamados-aviso-lista")).toContainText("Mesa 2", { timeout: 12_000 });
+    expect(await pitidos(page)).toBe(2); // el cartel avisa, pero ya no suena
+    await context.close();
+  });
+
+  test("tras recargar, el sonido que estaba activado vuelve con el primer toque en la pantalla", async ({ browser }) => {
+    const { t, mesas } = await nuevoLocal("panel-sonido-recarga");
+    const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+    await conDobles(context);
+    const page = await context.newPage();
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/panel/${t.slug}`);
+    await page.getByRole("button", { name: "Activar sonido de llamados" }).click();
+    await expect(page.getByTestId("sonido-activo")).toBeVisible();
+
+    // Se espera al primer sondeo de la página recargada: un llamado hecho antes de él cuenta como «ya había» y no suena.
+    await page.reload();
+    await expect
+      .poll(() => page.evaluate(() => performance.getEntriesByType("resource").some((e) => e.name.includes("/estado"))), { timeout: 12_000 })
+      .toBe(true);
+    await expect(page.getByRole("button", { name: "Activar sonido de llamados" })).toBeVisible(); // el navegador exige un gesto: todavía no suena
+    await page.getByRole("heading", { name: "Resumen" }).click(); // el primer toque lo vuelve a armar, sin pitido de confirmación
+    await expect(page.getByTestId("sonido-activo")).toBeVisible();
+    expect(await pitidos(page)).toBe(0); // la página recargada empieza de cero: el armado no hace ruido
+
+    await llamar(mesas[0].qr_token);
+    await expect.poll(() => pitidos(page), { timeout: 12_000 }).toBe(1);
     await context.close();
   });
 });

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PrimerosPasos } from "@/components/panel/primeros-pasos";
+import { SonidoControl } from "@/components/panel/sonido-control";
 import { AvisoPush } from "@/components/push/aviso-push";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { buildGuide, loadGuideCounts } from "@/lib/guia/primeros-pasos";
@@ -40,6 +41,7 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
       {/* Solo con el plan que incluye el llamado (la función de base rechazaría el alta igual) y con claves VAPID en el servidor. */}
       {ent?.features.includes("waiter_call") ? (
         <div className="mt-6">
+          <SonidoControl />
           <AvisoPush slug={membership.org.slug} publicKey={vapidPublicKey()} where="panel" />
         </div>
       ) : null}

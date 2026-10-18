@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { setPendingCalls } from "./llamados-pendientes";
-import { KIND_LABEL, nextPollDelay, parseSalaState, sortOldestFirst, type SalaCall } from "@/lib/sala/types";
+import { armSoundOnFirstGesture, beepIfOn } from "./sonido-llamados";
+import { KIND_LABEL, newCalls, nextPollDelay, parseSalaState, sortOldestFirst, type SalaCall } from "@/lib/sala/types";
 
 /**
  * Aviso de llamados DENTRO del panel (ficha aviso-push-desde-el-panel): quien edita la carta u otra pantalla del panel ve
@@ -17,9 +18,12 @@ export function LlamadosBanner({ slug }: { slug: string }) {
   const [multiBranch, setMultiBranch] = useState(false);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
   const stopped = useRef(false);
+  // Los que ya había al cargar no suenan (como en la sala): solo los llamados que aparecen después.
+  const seen = useRef<Set<string> | null>(null);
 
   useEffect(() => {
     stopped.current = false;
+    seen.current = null;
     let disposed = false;
     let inFlight = false;
     let failures = 0;
@@ -61,6 +65,9 @@ export function LlamadosBanner({ slug }: { slug: string }) {
         }
         failures = 0;
         if (!disposed) {
+          const known = seen.current;
+          seen.current = new Set(next.calls.map((call) => call.id).concat(known ? [...known] : []));
+          if (known && newCalls(known, next.calls).length > 0) beepIfOn();
           setCalls(next.calls);
           setPendingCalls(next.calls.length); // la navegación marca «Sala en vivo» mientras haya pendientes, estén o no ocultos en el cartel
           setMultiBranch(next.multiBranch);
@@ -78,6 +85,7 @@ export function LlamadosBanner({ slug }: { slug: string }) {
       if (document.visibilityState === "visible" && !inFlight && !stopped.current) void poll();
     };
     document.addEventListener("visibilitychange", onVisible);
+    armSoundOnFirstGesture(); // tras recargar, el sonido activado antes vuelve con el primer toque
     void poll();
     return () => {
       disposed = true;
