@@ -45,6 +45,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
       if (role === "owner") {
         items.push({ href: `/panel/${org.slug}/apariencia`, label: "Apariencia", icon: "apariencia", group: "Gestión" });
         items.push({ href: `/panel/${org.slug}/sucursales`, label: "Sucursales", icon: "sucursales", group: "Gestión" });
+        items.push({ href: `/panel/${org.slug}/analitica`, label: "Analítica", icon: "analitica", group: "Gestión" });
         items.push({ href: `/panel/${org.slug}/suscripcion`, label: "Suscripción", icon: "suscripcion", group: "Gestión" });
         items.push({ href: `/panel/${org.slug}/personal`, label: "Personal", icon: "personal", group: "Gestión" });
       }

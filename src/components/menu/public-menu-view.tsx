@@ -27,7 +27,7 @@ export function PublicMenuView({
     <div className={`${cartaFontClass} ${callBar ? "carta pb-40" : "carta"}`} style={paletteStyle(menu.organization.menu_palette)}>
       <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} />
       {sections.length > 0 ? (
-        <MenuBrowser sections={sections} />
+        <MenuBrowser sections={sections} branchId={menu.branch.id} />
       ) : (
         <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
           <p className="font-display text-2xl">Esta carta todavía no tiene platos.</p>

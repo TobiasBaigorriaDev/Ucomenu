@@ -21,6 +21,10 @@ export default function PrivacyPage() {
           La carta no usa cookies ni guarda información en tu dispositivo.
         </p>
         <p>
+          Para que el local sepa qué platos interesan más, contamos cuántas veces se abre el detalle de cada plato. Es solo un
+          número por plato y por día: no registramos quién lo abrió ni tu dirección IP, y no guardamos nada en tu dispositivo.
+        </p>
+        <p>
           Como en cualquier sitio web, el servidor que te entrega la página y su proveedor de alojamiento pueden registrar datos
           técnicos de la conexión (por ejemplo, tu dirección IP y el navegador) en sus registros de funcionamiento y seguridad.
           UcoMenu no usa esos registros para identificarte ni para publicidad.

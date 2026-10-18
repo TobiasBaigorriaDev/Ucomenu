@@ -1,18 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { DIETARY_LABEL, DIETARY_TAGS, filterMenu, type DietaryTag } from "@/lib/carta/dietary";
+import { recordDishViewAction } from "@/lib/analitica/actions";
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
 import { CategoryBar } from "./category-bar";
 import { CategoryMosaic } from "./category-mosaic";
 import { DishDetail } from "./dish-detail";
 import { MenuSection } from "./menu-section";
 
-export function MenuBrowser({ sections }: { sections: Section[] }) {
+export function MenuBrowser({ sections, branchId }: { sections: Section[]; branchId: string }) {
   const [query, setQuery] = useState("");
   const [tags, setTags] = useState<DietaryTag[]>([]);
   const [selected, setSelected] = useState<MenuProduct | null>(null);
+  // Analítica básica (ficha analitica-basica): se cuenta UNA vista por plato y por visita. La memoria es solo de esta página
+  // (se pierde al recargar): la carta promete no guardar nada en el dispositivo, así que no se usa ningún almacenamiento.
+  const viewed = useRef<Set<string>>(new Set());
+  const counting = useRef(true);
+  function select(product: MenuProduct) {
+    setSelected(product);
+    if (!counting.current || viewed.current.has(product.id)) return;
+    viewed.current.add(product.id);
+    // Sin esperar y sin mostrar nada: si el local no tiene analítica o falla, se deja de intentar en esta visita.
+    void recordDishViewAction(branchId, product.id).then(
+      (counted) => {
+        if (!counted) counting.current = false;
+      },
+      () => {
+        counting.current = false;
+      },
+    );
+  }
   const visible = useMemo(() => filterMenu(sections, query, tags), [sections, query, tags]);
   const count = visible.reduce((total, section) => total + section.products.length, 0);
   const filtering = Boolean(query.trim()) || tags.length > 0;
@@ -52,7 +71,7 @@ export function MenuBrowser({ sections }: { sections: Section[] }) {
         <CategoryMosaic sections={visible} />
         <CategoryBar sections={visible} />
         <main className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
-          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={setSelected} />)}
+          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={select} />)}
         </main>
       </> : <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
         <h2 className="font-display text-2xl">No encontramos platos con esa búsqueda.</h2>

@@ -8,6 +8,7 @@ export type NavIcon =
   | "apariencia"
   | "sucursales"
   | "suscripcion"
+  | "analitica"
   | "personal"
   | "sala"
   | "panel"
@@ -40,6 +41,12 @@ const PATHS: Record<NavIcon, ReactNode> = {
     <>
       <path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15l1.5-2Z" />
       <path d="M10 20.5a2.2 2.2 0 0 0 4 0" />
+    </>
+  ),
+  analitica: (
+    <>
+      <path d="M4 20.5h16" />
+      <path d="M6.5 20.5v-6M12 20.5V8.5M17.5 20.5v-9.5" />
     </>
   ),
   apariencia: (

@@ -53,12 +53,15 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   drop_push_subscriptions: [false, false], // aviso de llamados (ADR 0020): limpia suscripciones muertas; solo service_role
   create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],
+  owner_calls_by_hour: [false, true], // analítica básica (ADR 0022): llamados por hora para el Dueño con el plan; vuelve a comprobar todo; solo lectura
+  owner_top_dishes: [false, true], // analítica básica (ADR 0022): platos más vistos para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   owner_account_history: [false, true], // el Dueño lee el historial de cambios de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   owner_payments: [false, true], // el Dueño lee los pagos de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   public_menu_status: [true, true],
   push_subscription_registered: [false, true], // aviso de llamados (ADR 0020): ¿está registrado este dispositivo? Solo lo propio
   push_targets_for_call: [false, false], // aviso de llamados (ADR 0020): a quién avisar de un llamado nuevo; solo service_role
 
+  record_dish_view: [true, true], // analítica básica (ADR 0022): la carta pública suma una vista; solo contadores y valida adentro
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
   register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
