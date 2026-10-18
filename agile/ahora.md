@@ -4,20 +4,21 @@ Actualizado: 2026-10-17 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-`main` está al día en `origin`, y staging tiene aplicadas las migraciones hasta `20261024100000` y la app de `main` (`8e7396a`) desplegada en Fly (2026-10-17; rutas públicas 200, salud OK). Quedó integrado, con aprobación del usuario y de Codex (2 rondas), «SuperAdmin suma una cuenta existente como Dueño de otra organización»: función `admin_add_owner`, auditoría `owner.added`, sección «Sumar un Dueño» en la ficha de la organización. Detalle, riesgo residual aceptado y evidencia en la [ficha](cambios/dueno-existente.md). Antes: desactivar y reactivar sucursales ([ficha](cambios/desactivar-sucursales.md)).
+`main` está en `origin` (`428d05b`) y no hay ramas de trabajo abiertas ni cambios sin confirmar. Staging está al día: migraciones hasta `20261024100000` aplicadas y la app de `main` desplegada en Fly (`7fb1ca8`; lo posterior es solo documentación y herramientas). La base local quedó en seed limpio.
 
-Integrado a `main` y desplegado en staging (`7fb1ca8`, 2026-10-17): el login y los llamados de la sala en vivo usan el lenguaje del panel (celdas, Gloock + Schibsted, paleta de UcoNext en el login). Solo presentación; E2E completo 257 verdes. [Ficha](cambios/ui-login-y-sala.md).
-
-Staging tiene además una carta de demostración (`/m/demo/centro`, 26 platos con fotos) cargada con `tools/sembrar-demo-staging.mjs`; la organización `demo` no tiene cuentas: para editarla hay que sumarse como Dueño desde SuperAdmin. [Ficha](cambios/demo-en-staging.md).
+Hecho hoy, todo integrado y probado por el usuario en staging (con teléfono):
+- [Desactivar y reactivar sucursales](cambios/desactivar-sucursales.md) (C, Codex 2 rondas).
+- [Sumar una cuenta existente como Dueño](cambios/dueno-existente.md) (C, Codex 2 rondas; riesgo residual aceptado y documentado).
+- [Login y sala en vivo con el lenguaje del panel](cambios/ui-login-y-sala.md) (M).
+- [Carta de demostración en staging](cambios/demo-en-staging.md): `/m/demo/centro`, 26 platos con 24 fotos. La organización `demo` no tiene cuentas: para editarla hay que sumarla a un Dueño desde SuperAdmin («Sumar un Dueño»).
 
 ## Bloqueos y riesgos
 
-- `flyctl.exe` sigue bloqueado por Smart App Control (no está firmado); se despliega con la imagen `flyio/flyctl` en Docker y la sesión en el volumen `ucomenu-fly-config` (procedimiento en `docs/produccion.md`).
-- No se probó en un teléfono real. Producción sigue bloqueada: [ficha](cambios/salida-a-produccion.md), ADR 0015.
-- El alta de organización exige un Dueño inicial con cuenta nueva; para un dueño con dos locales se crea la organización con un email provisorio y se suma la cuenta existente (ver la ficha).
-- `carta.spec.ts` «tope de platos activos» cae a veces bajo carga paralela y pasa solo.
+- `flyctl.exe` lo bloquea Smart App Control (no está firmado): se despliega con la imagen `flyio/flyctl` en Docker y la sesión en el volumen `ucomenu-fly-config` (procedimiento en `docs/produccion.md`; no pide login de nuevo).
+- Producción sigue bloqueada: dominio, proyecto de Supabase de producción, revisión legal y aprobación del usuario ([ficha](cambios/salida-a-produccion.md), ADR 0015). La demo en producción sería una decisión aparte.
+- El alta de organización exige un Dueño inicial con cuenta nueva; para un dueño con dos locales se crea con un email provisorio y se suma la cuenta existente.
+- `carta.spec.ts` «tope de platos activos» cae a veces bajo carga paralela y pasa solo. Si `pnpm build` da EPERM sobre `.next`, borrar `.next`.
 
 ## Próximo paso
 
-1. Probado por el usuario en staging (2026-10-17): desactivar/reactivar sucursales y «Sumar un Dueño» funcionaron bien. El login y la sala rediseñados también se probaron en el teléfono y funcionaron bien.
-2. Elegir otra tarea desbloqueada del backlog (ver el tablero).
+Elegir una tarea desbloqueada del [tablero](tablero.md). Recomendada: **[C] lectura de pagos y de la auditoría por el Dueño** (útil antes de salir a producción; es exposición de datos, así que pasa por Codex y aprobación humana). Alternativas: retención y purga de `price_history` (prerrequisito de borrar organizaciones; necesita una política de retención del usuario) o pulir la ficha de detalle del plato como bento. Si otro agente trabaja en el mismo repositorio, usar un worktree propio.
