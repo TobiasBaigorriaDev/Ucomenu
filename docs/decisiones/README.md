@@ -31,3 +31,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0017 | [Conservar identificadores anteriores en la sucursal](0017-historicos-de-slug-por-sucursal.md) | aceptada (decisión técnica) | 2026-10-16 |
 | 0018 | [Revisión cruzada automática entre Codex y Claude](0018-revision-cruzada-automatica.md) | aceptada; disparador reemplazado por 0019 | 2026-10-17 |
 | 0019 | [Reservar la skill de revisión de Claude a tareas críticas](0019-revision-claude-solo-criticas.md) | aceptada | 2026-10-17 |
+| 0020 | [Aviso de llamados con la pestaña cerrada: Web Push desde el servidor](0020-aviso-de-llamados-por-web-push.md) | aceptada | 2026-10-18 |

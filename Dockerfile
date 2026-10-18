@@ -39,6 +39,8 @@ WORKDIR /app
 # Salida mínima de Next (servidor y solo las dependencias que usa) + archivos estáticos con hash.
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
+# Archivos públicos (el service worker del aviso de llamados, public/sala-sw.js): el modo standalone no los copia solo.
+COPY --from=build --chown=node:node /app/public ./public
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]

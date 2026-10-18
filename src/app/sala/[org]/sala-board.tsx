@@ -20,6 +20,7 @@ import {
 } from "@/lib/sala/types";
 import { attendCallAction } from "./actions";
 import { createBeeper, type Beeper } from "./beep";
+import { usePush } from "./use-push";
 
 const PREFERENCE_KEY = "ucomenu:sala:alertas";
 /** Cuánto dura el resaltado de un llamado nuevo. */
@@ -53,7 +54,18 @@ function remember(on: boolean) {
   }
 }
 
-export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: SalaState; isOwner: boolean }) {
+export function SalaBoard({
+  slug,
+  initial,
+  isOwner,
+  pushPublicKey,
+}: {
+  slug: string;
+  initial: SalaState;
+  isOwner: boolean;
+  /** Clave pública VAPID; `null` si el aviso con la pestaña cerrada no está configurado en este entorno (no se muestra el bloque). */
+  pushPublicKey: string | null;
+}) {
   const [state, setState] = useState<SalaState>(initial);
   const [now, setNow] = useState(() => Date.parse(initial.serverNow));
   const [lastOk, setLastOk] = useState(() => Date.parse(initial.serverNow));
@@ -65,6 +77,7 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [globalNote, setGlobalNote] = useState("");
+  const push = usePush(slug, pushPublicKey);
 
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
   const offset = useRef(0);
@@ -358,6 +371,44 @@ export function SalaBoard({ slug, initial, isOwner }: { slug: string; initial: S
           </>
         )}
       </div>
+
+      {pushPublicKey && push.state !== "checking" ? (
+        <div className="panel-cell mb-4 flex flex-wrap items-center gap-3 !py-4" data-testid="aviso-push">
+          {push.state === "on" ? (
+            <>
+              <p className="text-base font-medium" data-testid="push-activo">
+                Avisos activados en este dispositivo, aunque cierres la sala
+              </p>
+              <button type="button" onClick={push.disable} className={buttonClass}>
+                Desactivar avisos
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={push.enable}
+                disabled={push.state === "working" || push.state === "unsupported" || push.state === "denied"}
+                className={primaryClass}
+              >
+                {push.state === "working" ? "Un momento…" : "Avisarme aunque cierre la sala"}
+              </button>
+              <p className="max-w-prose text-sm text-muted" data-testid="push-ayuda">
+                {push.state === "unsupported"
+                  ? "Este navegador no puede mostrar avisos con la sala cerrada. Probá con Chrome o Edge."
+                  : push.state === "denied"
+                    ? "Bloqueaste las notificaciones de este sitio. Habilitalas desde el candado de la barra de direcciones y volvé a intentar."
+                    : "Recibí una notificación del sistema cuando alguien llame, aunque cierres la pestaña. En la computadora, Chrome o Edge tienen que seguir abiertos en segundo plano."}
+              </p>
+            </>
+          )}
+          {push.message ? (
+            <p role="alert" className="w-full text-base font-medium text-danger" data-testid="push-error">
+              {push.message}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {state.calls.length === 0 ? (
         <p className="panel-cell font-display text-3xl leading-tight text-muted" data-testid="sala-vacia">

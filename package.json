@@ -20,6 +20,7 @@
     "revision:claude": "node tools/revision-claude.mjs",
     "prod:check": "node tools/verificar-produccion.mjs",
     "respaldo": "node tools/respaldar.mjs",
+    "push:claves": "node tools/generar-claves-vapid.mjs",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "test:e2e:full": "next build && playwright test"
   },
@@ -29,7 +30,8 @@
     "next": "16.4.0",
     "qrcode-generator": "2.0.4",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "web-push": "3.6.7"
   },
   "devDependencies": {
     "@playwright/test": "1.64.0",
@@ -37,6 +39,7 @@
     "@types/node": "^24.19.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "supabase": "2.120.0",

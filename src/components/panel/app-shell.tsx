@@ -2,10 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CSSProperties, ReactNode } from "react";
 import { cartaFontClass } from "@/components/menu/carta-fonts";
-import { logoutAction } from "@/lib/auth/actions";
 import type { Role } from "@/lib/entitlements";
 import { paletteStyle, platformStyle } from "@/lib/identidad/palettes";
 import { logoUrl } from "@/lib/identidad/logos";
+import { LogoutForm } from "./logout-form";
 import { Mark } from "./mark";
 import { NavLinks, type NavItem } from "./nav-links";
 import "./panel.css";
@@ -118,11 +118,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
           <Link href="/cuenta" className={accountLinkClass}>
             Mi cuenta
           </Link>
-          <form action={logoutAction} className="lg:contents">
-            <button type="submit" className={`${accountLinkClass} lg:w-full`}>
-              Salir
-            </button>
-          </form>
+          <LogoutForm buttonClassName={`${accountLinkClass} lg:w-full`} />
         </div>
         {items.length > 0 ? (
           <div className="mt-3 w-full lg:order-2 lg:mt-6 lg:w-auto">

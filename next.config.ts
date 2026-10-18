@@ -46,6 +46,19 @@ const nextConfig: NextConfig = {
     // Las rutas de las fotos llevan un UUID nuevo en cada subida: nunca cambian, así que se pueden guardar mucho tiempo.
     minimumCacheTTL: 60 * 60 * 24 * 30,
   },
+  async headers() {
+    // El service worker del aviso de llamados (ADR 0020) se revalida siempre: una versión nueva tiene que llegar a los
+    // dispositivos sin esperar a una caché. Solo puede controlar la sala (alcance /sala/).
+    return [
+      {
+        source: "/sala-sw.js",
+        headers: [
+          { key: "Cache-Control", value: "no-cache, max-age=0, must-revalidate" },
+          { key: "Service-Worker-Allowed", value: "/sala/" },
+        ],
+      },
+    ];
+  },
   turbopack: {
     rules: {
       "*.css": {

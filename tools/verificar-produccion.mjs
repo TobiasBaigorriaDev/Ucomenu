@@ -97,6 +97,36 @@ export function evaluarEntorno(env) {
     bien("WAITER_CALL_CLIENT_SECRET: presente y largo.");
   }
 
+  // Aviso de llamados con la pestaña cerrada (Web Push, ADR 0020). Opcional: sin las tres variables queda apagado.
+  const vapid = ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"];
+  const hayVapid = vapid.some((nombre) => !vacio(env[nombre]));
+  if (!hayVapid) {
+    aviso("VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY: no están; el aviso con la pestaña cerrada queda apagado (la sala sigue por sondeo). Se generan con `pnpm push:claves`.");
+  } else {
+    let vapidBien = true;
+    if (vacio(env.VAPID_PUBLIC_KEY) || !/^[A-Za-z0-9_-]{87}$/.test(env.VAPID_PUBLIC_KEY.trim())) {
+      error("VAPID_PUBLIC_KEY: falta o no tiene el formato de `pnpm push:claves` (87 caracteres base64url); la pantalla ofrecería un aviso que no funciona.");
+      vapidBien = false;
+    }
+    if (vacio(env.VAPID_PRIVATE_KEY) || !/^[A-Za-z0-9_-]{43}$/.test(env.VAPID_PRIVATE_KEY.trim())) {
+      error("VAPID_PRIVATE_KEY: falta o no tiene el formato de `pnpm push:claves` (43 caracteres base64url); sin ella no se envía ningún aviso.");
+      vapidBien = false;
+    } else {
+      // La clave privada de push es un secreto de servidor: jamás en una variable que llega al navegador.
+      const filtradas = Object.entries(env).filter(([nombre, valor]) => nombre.startsWith("NEXT_PUBLIC_") && valor === env.VAPID_PRIVATE_KEY);
+      for (const [nombre] of filtradas) {
+        error(`${nombre}: contiene la clave privada de push y llegaría al navegador.`);
+        vapidBien = false;
+      }
+    }
+    const contactoPush = env.VAPID_SUBJECT;
+    if (!vacio(contactoPush) && !/^(mailto:[^\s@]+@[^\s@]+|https:\/\/[^\s]+)$/.test(contactoPush.trim())) {
+      error("VAPID_SUBJECT: tiene que ser un `mailto:` o una dirección `https:` (o quedar vacía para usar el correo de contacto).");
+      vapidBien = false;
+    }
+    if (vapidBien) bien("VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY: presentes y con formato correcto (aviso con la pestaña cerrada activo).");
+  }
+
   // Dirección pública (base de los QR impresos).
   const sitio = env.NEXT_PUBLIC_SITE_URL;
   if (vacio(sitio)) {

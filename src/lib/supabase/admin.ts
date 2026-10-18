@@ -10,6 +10,9 @@ import type { Database } from "./database.types";
  *  - Solo lo usa `src/lib/personnel.ts`, que antes comprueba con el cliente de la persona (RLS)
  *    que quien pide es `owner` de la organización. Nunca se usa para leer datos "en nombre" de nadie
  *    sin esa comprobación.
+ *  - Excepción acotada (ADR 0020): `src/lib/push/notify-call.ts` lo usa, sin sesión de nadie, solo para llamar a
+ *    `push_targets_for_call` y `drop_push_subscriptions` tras crearse un llamado. Esas funciones validan adentro
+ *    (token de mesa, pendiente reciente) y son las únicas con acceso a las suscripciones.
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

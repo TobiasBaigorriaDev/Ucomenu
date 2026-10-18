@@ -309,6 +309,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth_secret": string,"created_at": string,"endpoint": string,"id": string,"organization_id": string,"p256dh": string,"registered_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth_secret": string,"created_at"?: string,"endpoint": string,"id"?: string,"organization_id": string,"p256dh": string,"registered_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "auth_secret"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"organization_id"?: string,"p256dh"?: string,"registered_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "push_subscriptions_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "push_subscriptions_user_id_organization_id_fkey"
+      columns: ["user_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "memberships"
+      referencedColumns: ["user_id","organization_id"]
+    }
+                  ]
                 },"subscription_addons": {
                   Row: {
                     "addon_code": string,"created_at": string,"ends_at": string | null,"extra_packs": number,"id": string,"organization_id": string
@@ -437,6 +463,9 @@ isOneToOne: false
 "create_waiter_call":
 { Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json
                            },
+"drop_push_subscriptions":
+{ Args: { "p_ids": (string)[] }; Returns: number
+                           },
 "org_entitlements":
 { Args: { "p_org": string }; Returns: Json
                            },
@@ -446,8 +475,20 @@ isOneToOne: false
 "purge_waiter_calls":
 { Args: { "p_batch"?: number,"p_retention"?: string }; Returns: number
                            },
+"push_subscription_registered":
+{ Args: { "p_endpoint": string,"p_org": string }; Returns: boolean
+                           },
+"push_targets_for_call":
+{ Args: { "p_kind": string,"p_token": string }; Returns: Json
+                           },
+"register_push_subscription":
+{ Args: { "p_auth": string,"p_endpoint": string,"p_org": string,"p_p256dh": string }; Returns: string
+                           },
 "resolve_table_qr":
 { Args: { "p_token": string }; Returns: Json
+                           },
+"unregister_push_subscription":
+{ Args: { "p_endpoint": string,"p_org"?: string }; Returns: undefined
                            }
           }
           Enums: {

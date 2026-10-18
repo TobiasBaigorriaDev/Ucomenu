@@ -58,10 +58,12 @@ Las públicas (`NEXT_PUBLIC_*`) van como argumentos de construcción de la image
 | `WAITER_CALL_CLIENT_SECRET` | 32 bytes aleatorios en hexadecimal: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 | `NEXT_PUBLIC_SITE_URL` | el dominio definitivo con https, sin ruta |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | el correo real de contacto de la política de privacidad |
+| `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | *(opcional, ADR 0020)* par de claves del aviso de llamados con la pestaña cerrada: `pnpm push:claves` (un par distinto por entorno). La privada es un **secreto de servidor** (`fly secrets set`); la pública también va como secreto/variable de servidor (la pantalla la lee en tiempo de ejecución). Sin ellas el aviso queda apagado |
+| `VAPID_SUBJECT` | *(opcional)* `mailto:` o `https:` de contacto del aviso; si falta se usa `NEXT_PUBLIC_CONTACT_EMAIL` |
 
 Las `NEXT_PUBLIC_*` se incrustan **al construir**: cambiarlas exige un nuevo despliegue. `WAITER_CALL_CLIENT_SECRET` también firma el ticket de visita; si se rota, los tickets abiertos dejan de valer (los comensales vuelven a escanear el QR) y cambian los identificadores de cliente.
 
-Antes de desplegar, con las seis variables en un archivo **temporal fuera del repositorio**:
+Antes de desplegar, con las variables (las seis obligatorias y, si se activa el aviso con la pestaña cerrada, las `VAPID_*`) en un archivo **temporal fuera del repositorio**:
 ```powershell
 pnpm prod:check --env C:\ruta\temporal\produccion.env
 ```
