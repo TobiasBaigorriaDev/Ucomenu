@@ -4,17 +4,17 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-[Aviso de llamados también desde el panel](cambios/aviso-push-desde-el-panel.md) (M): **implementado y confirmado en la rama `feat/aviso-push-panel`**, sin integrar a `main`. El Resumen del panel (`/panel/{slug}`) ofrece activar el aviso con el plan que incluye el llamado y claves VAPID; el bloque y el hook `usePush` ahora viven en `src/components/push/` y los comparten la sala y el panel. No cambia el esquema ni el envío; el registro sigue siendo por local y dispositivo. Pruebas en local verdes (ver la ficha). El item está en «Para verificar» del tablero.
+[Aviso de llamados también desde el panel](cambios/aviso-push-desde-el-panel.md) (M): **implementado y confirmado en la rama `feat/aviso-push-panel`**, sin integrar a `main`. Lo pedido era poder navegar el panel y ver arriba un aviso si una mesa llama: un **cartel fijo dentro del panel** (`llamados-banner.tsx`, sondea `/sala/{slug}/estado`) lo hace; además el Resumen ofrece activar el aviso del sistema (plan con llamado y claves VAPID). El bloque y el hook `usePush` ahora viven en `src/components/push/` y los comparten la sala y el panel. No cambia el esquema ni el envío; el registro sigue siendo por local y dispositivo. Pruebas en la ficha; el ítem está en «Para verificar».
 
-Base de [aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md) (C, [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)): en `main` y en staging (`https://ucomenu-staging.fly.dev`, migraciones hasta `20261025100000`). Staging **todavía no tiene** el aviso desde el panel.
+Base ([aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md), [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)): en `main` y en staging (`https://ucomenu-staging.fly.dev`), que **todavía no tiene** esto.
 
 ## Bloqueos y riesgos
 
 - **Producción:** sigue bloqueada (dominio, proyecto de Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`); `pnpm prod:check` lo verifica.
-- En Windows el aviso solo llega si Chrome o Edge siguen en ejecución; iPhone queda en el tablero (PWA).
-- Regla vigente del service worker: no avisa solo si esa sala está a la vista **y con foco**; con la sala visible en otro monitor y el panel con foco, avisa (preferible repetido a perdido). El usuario puede pedir relajarla a «solo a la vista».
-- `.env.local` conserva claves VAPID de prueba (no versionado). `flyctl.exe` lo bloquea Smart App Control: se despliega con la imagen `flyio/flyctl` (ver `docs/produccion.md`).
-- Si el editor guarda una copia vieja de un archivo de `agile/`, lo pisa (pasó con `tablero.md`): recargar o revertir, nunca sobrescribir.
+- En Windows el aviso del sistema solo llega con Chrome o Edge en ejecución; iPhone queda en el tablero (PWA).
+- Regla vigente del service worker: no muestra el aviso del sistema si la sala o el panel de ese local están a la vista **y con foco** (ya se ven); con la sala visible en otro monitor, avisa (preferible repetido a perdido). Puede relajarse a «solo a la vista».
+- La base local quedó con `cafe-ejemplo` en plan Pro para la prueba manual: `pnpm db:reset` antes de las pruebas E2E.
+- `.env.local` conserva claves VAPID de prueba (no versionado). Fly se despliega con la imagen `flyio/flyctl` (ver `docs/produccion.md`).
 
 ## Próximo paso
 

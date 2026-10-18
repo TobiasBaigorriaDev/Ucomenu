@@ -10,6 +10,17 @@
 var SALA_PATH = /^\/sala(\/[a-z0-9-]+)?$/;
 var FALLBACK = { title: "Llamado en la sala", body: "Abrí la sala para ver quién necesita atención.", url: "/sala", tag: "llamado" };
 
+/**
+ * ¿Esta ventana ya le muestra el llamado a la persona? La sala del local sí (lista y sonido) y las pantallas del panel de
+ * ese mismo local también (cartel de llamados pendientes arriba). Otra sala, otro local o cualquier otra página, no.
+ */
+function isWatching(pathname, salaPath) {
+  if (pathname === salaPath) return true;
+  var slug = salaPath.slice("/sala/".length);
+  if (slug === "" || salaPath.indexOf("/sala/") !== 0) return false;
+  return pathname === "/panel/" + slug || pathname.indexOf("/panel/" + slug + "/") === 0;
+}
+
 function text(value, fallback, max) {
   return typeof value === "string" && value.trim() !== "" ? value.trim().slice(0, max) : fallback;
 }
@@ -42,10 +53,10 @@ self.addEventListener("push", function (event) {
   var data = readPayload(event);
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (windows) {
-      // Si esa sala está a la vista y con foco, ya suena y se ve sola (sondeo): no se duplica el aviso. Con la pestaña
+      // Si esa sala (o el panel del mismo local) está a la vista y con foco, ya se ve sola (sondeo): no se duplica el aviso. Con la pestaña
       // oculta, en segundo plano o sin foco, SIEMPRE se muestra: es mejor un aviso repetido que uno perdido.
       var watching = windows.some(function (client) {
-        return client.visibilityState === "visible" && client.focused === true && new URL(client.url).pathname === data.url;
+        return client.visibilityState === "visible" && client.focused === true && isWatching(new URL(client.url).pathname, data.url);
       });
       if (watching) return undefined;
       return self.registration.showNotification(data.title, {

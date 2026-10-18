@@ -81,10 +81,12 @@ describe("service worker del aviso de llamados", () => {
     expect(showNotification).toHaveBeenCalledTimes(1);
   });
 
-  it("sí avisa si la ventana a la vista es la sala de OTRO local o cualquier otra pantalla", async () => {
+  it("sí avisa si la ventana a la vista es la sala o el panel de OTRO local, o cualquier otra pantalla", async () => {
     const abiertas = [
       client("https://app.test/sala/otro-local", { visibilityState: "visible", focused: true }),
-      client("https://app.test/panel/cafe", { visibilityState: "visible", focused: true }),
+      client("https://app.test/panel/otro-local/carta", { visibilityState: "visible", focused: true }),
+      client("https://app.test/panel/cafeteria", { visibilityState: "visible", focused: true }), // mismo prefijo, otro local
+      client("https://app.test/login", { visibilityState: "visible", focused: true }),
     ];
     const { listeners, showNotification } = loadWorker(abiertas);
     const { event, done } = pushEvent(PAYLOAD);
@@ -93,25 +95,26 @@ describe("service worker del aviso de llamados", () => {
     expect(showNotification).toHaveBeenCalledTimes(1);
   });
 
-  it("con el panel a la vista y con foco AVISA, y con la sala a la vista y con foco aunque haya un panel abierto NO duplica", async () => {
-    // Quien está en el panel no tiene sonido ni sondeo de la sala: el aviso del sistema es el único que se entera.
-    const soloPanel = loadWorker([
-      client("https://app.test/panel/cafe", { visibilityState: "visible", focused: true }),
-      client("https://app.test/sala/cafe", { visibilityState: "visible", focused: false }),
-    ]);
-    const primero = pushEvent(PAYLOAD);
-    soloPanel.listeners.get("push")!(primero.event);
-    await primero.done();
-    expect(soloPanel.showNotification).toHaveBeenCalledTimes(1);
+  it.each(["https://app.test/panel/cafe", "https://app.test/panel/cafe/carta"])(
+    "con el panel de ese local a la vista y con foco (%s) NO duplica: el cartel del panel ya avisa",
+    async (url) => {
+      const { listeners, showNotification } = loadWorker([client(url, { visibilityState: "visible", focused: true })]);
+      const { event, done } = pushEvent(PAYLOAD);
+      listeners.get("push")!(event);
+      await done();
+      expect(showNotification).not.toHaveBeenCalled();
+    },
+  );
 
-    const salaConFoco = loadWorker([
+  it("con el panel oculto o sin foco SÍ avisa", async () => {
+    const { listeners, showNotification } = loadWorker([
       client("https://app.test/panel/cafe", { visibilityState: "visible", focused: false }),
-      client("https://app.test/sala/cafe", { visibilityState: "visible", focused: true }),
+      client("https://app.test/panel/cafe/carta", { visibilityState: "hidden", focused: false }),
     ]);
-    const segundo = pushEvent(PAYLOAD);
-    salaConFoco.listeners.get("push")!(segundo.event);
-    await segundo.done();
-    expect(salaConFoco.showNotification).not.toHaveBeenCalled();
+    const { event, done } = pushEvent(PAYLOAD);
+    listeners.get("push")!(event);
+    await done();
+    expect(showNotification).toHaveBeenCalledTimes(1);
   });
 
   it("un push ilegible o sin datos muestra un aviso genérico (Chrome exige mostrar algo)", async () => {

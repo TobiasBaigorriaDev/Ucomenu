@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): implementado y probado en local en la rama `feat/aviso-push-panel`; falta probarlo en un dispositivo e integrar → [ficha](cambios/aviso-push-desde-el-panel.md)
+- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): implementado y probado en local en la rama `feat/aviso-push-panel` (cartel dentro del panel + activación del aviso del sistema); falta que el usuario lo pruebe e integrar → [ficha](cambios/aviso-push-desde-el-panel.md)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
