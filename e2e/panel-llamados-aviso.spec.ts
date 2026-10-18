@@ -57,6 +57,12 @@ test.describe("cartel de llamados en el panel", () => {
     await expect(lista(page)).toContainText("llama al mozo");
     await expectNoHorizontalOverflow(page);
 
+    // La navegación marca «Sala en vivo» en modo alerta, con el contador.
+    const alerta = page.locator('a[data-alerta="true"]');
+    await expect(alerta).toHaveCount(1);
+    await expect(alerta).toContainText("Sala en vivo");
+    await expect(alerta).toContainText("1 llamado pendiente");
+
     // Se navega a otra pantalla del panel sin recargar: el cartel sigue.
     await page.getByRole("link", { name: "Mesas" }).first().click();
     await expect(page).toHaveURL(new RegExp(`/panel/${t.slug}/mesas`));
@@ -64,16 +70,20 @@ test.describe("cartel de llamados en el panel", () => {
 
     await page.getByRole("button", { name: "Ocultar" }).click();
     await expect(page.getByTestId("llamados-aviso-titulo")).toHaveCount(0);
+    await expect(page.locator('a[data-alerta="true"]')).toHaveCount(1); // ocultar el cartel no apaga la alerta: sigue pendiente
 
     await llamar(mesas[1].qr_token, "bill");
     await expect(page.getByTestId("llamados-aviso-titulo")).toHaveText("Una mesa necesita atención", { timeout: 12_000 });
     await expect(lista(page)).toContainText("Mesa 2");
     await expect(lista(page)).not.toContainText("Mesa 1"); // la oculta sigue oculta
     await expect(lista(page)).toContainText("pide la cuenta");
+    await expect(page.locator('a[data-alerta="true"]')).toContainText("2 llamados pendientes");
+    await expectNoHorizontalOverflow(page);
 
     // Atendido en la sala: el cartel se va solo.
     await service().from("waiter_calls").update({ status: "attended" }).eq("organization_id", t.orgId);
     await expect(page.getByTestId("llamados-aviso-titulo")).toHaveCount(0, { timeout: 12_000 });
+    await expect(page.locator('a[data-alerta="true"]')).toHaveCount(0);
     await context.close();
   });
 

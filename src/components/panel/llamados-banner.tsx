@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { setPendingCalls } from "./llamados-pendientes";
 import { KIND_LABEL, nextPollDelay, parseSalaState, sortOldestFirst, type SalaCall } from "@/lib/sala/types";
 
 /**
@@ -54,12 +55,14 @@ export function LlamadosBanner({ slug }: { slug: string }) {
         if (!next.enabled) {
           // El plan o la cuenta no permiten el llamado: no hay nada que mostrar ni que consultar.
           setCalls([]);
+          setPendingCalls(0);
           stopped.current = true;
           return;
         }
         failures = 0;
         if (!disposed) {
           setCalls(next.calls);
+          setPendingCalls(next.calls.length); // la navegación marca «Sala en vivo» mientras haya pendientes, estén o no ocultos en el cartel
           setMultiBranch(next.multiBranch);
         }
       } catch {
@@ -78,6 +81,7 @@ export function LlamadosBanner({ slug }: { slug: string }) {
     void poll();
     return () => {
       disposed = true;
+      setPendingCalls(0);
       clearTimeout(timer);
       controller?.abort();
       document.removeEventListener("visibilitychange", onVisible);
@@ -91,10 +95,10 @@ export function LlamadosBanner({ slug }: { slug: string }) {
       {shown.length > 0 ? (
         <section className="border-b border-blush bg-blush text-ink shadow-sm" aria-label="Llamados pendientes">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-8 lg:px-10">
-            <p className="font-display text-xl leading-snug" data-testid="llamados-aviso-titulo">
+            <p className="basis-full font-display text-xl leading-snug sm:basis-auto" data-testid="llamados-aviso-titulo">
               {shown.length === 1 ? "Una mesa necesita atención" : `${shown.length} mesas necesitan atención`}
             </p>
-            <ul className="flex min-w-0 flex-1 flex-wrap gap-x-4 gap-y-1 text-base" data-testid="llamados-aviso-lista">
+            <ul className="flex min-w-0 basis-full flex-wrap gap-x-4 gap-y-1 text-base sm:flex-1 sm:basis-0" data-testid="llamados-aviso-lista">
               {shown.slice(0, 4).map((call) => (
                 <li key={call.id} className="break-words">
                   <span className="font-medium">{call.tableLabel}</span>
