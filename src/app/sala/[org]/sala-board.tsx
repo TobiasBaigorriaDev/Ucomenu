@@ -18,18 +18,16 @@ import {
   type SalaCall,
   type SalaState,
 } from "@/lib/sala/types";
+import { AvisoPush } from "@/components/push/aviso-push";
+import { activateSound, beepIfOn, rememberedAlerts, silenceSound, useSoundState } from "@/components/panel/sonido-llamados";
 import { attendCallAction } from "./actions";
-import { createBeeper, type Beeper } from "./beep";
-import { usePush } from "./use-push";
 
-const PREFERENCE_KEY = "ucomenu:sala:alertas";
 /** Cuánto dura el resaltado de un llamado nuevo. */
 const FRESH_MS = 8_000;
 /** Una consulta que no responde en este tiempo se corta: cuenta como falla y no frena el sondeo. */
 const REQUEST_TIMEOUT_MS = 10_000;
 
 type Connection = "ok" | "offline" | "expired" | "gone";
-type Alerts = "off" | "on" | "blocked";
 
 const buttonClass =
   "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/50 px-4 py-2 text-base font-medium text-ink hover:bg-ink/5 disabled:opacity-60";
@@ -37,22 +35,6 @@ const primaryClass =
   "inline-flex min-h-11 items-center justify-center rounded-full bg-cobalt px-5 py-2 text-base font-medium text-white hover:bg-brand-deep disabled:opacity-60";
 /** Cada tipo de aviso lleva su propio tono en la banda de la tarjeta (el mismo vocabulario de la carta: verde y rosa). */
 const BAND_CLASS = { waiter: "bg-brand text-white", bill: "bg-blush text-ink" } as const;
-
-function rememberedAlerts(): boolean {
-  try {
-    return window.localStorage.getItem(PREFERENCE_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function remember(on: boolean) {
-  try {
-    window.localStorage.setItem(PREFERENCE_KEY, on ? "1" : "0");
-  } catch {
-    // Sin almacenamiento (ventana privada, bloqueado): la preferencia simplemente no se recuerda.
-  }
-}
 
 export function SalaBoard({
   slug,
@@ -70,20 +52,19 @@ export function SalaBoard({
   const [now, setNow] = useState(() => Date.parse(initial.serverNow));
   const [lastOk, setLastOk] = useState(() => Date.parse(initial.serverNow));
   const [connection, setConnection] = useState<Connection>("ok");
-  const [alerts, setAlerts] = useState<Alerts>("off");
+  // El sonido vive fuera de la pantalla (módulo compartido con el panel): salir de la sala no lo apaga.
+  const alerts = useSoundState();
   const [hadAlerts, setHadAlerts] = useState(false);
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [globalNote, setGlobalNote] = useState("");
-  const push = usePush(slug, pushPublicKey);
 
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
   const offset = useRef(0);
   const seen = useRef<Set<string>>(new Set(initial.calls.map((call) => call.id)));
-  const alertsRef = useRef<Alerts>("off");
-  const beeper = useRef<Beeper | null>(null);
+  const alertsRef = useRef(alerts);
   const wakeLock = useRef<WakeLockSentinel | null>(null);
   // Sube cada vez que termina una atención: invalida las consultas que ya estaban en vuelo.
   const attendEpoch = useRef(0);
@@ -144,7 +125,7 @@ export function SalaBoard({
         ? `Nuevo llamado: ${incoming[0].tableLabel}, ${KIND_LABEL[incoming[0].kind].toLowerCase()}.`
         : `${incoming.length} llamados nuevos.`,
     );
-    if (alertsRef.current === "on") beeper.current?.beep();
+    beepIfOn();
   }, []);
 
   // --- Sondeo: la tabla es la fuente de verdad; cada respuesta reemplaza la lista entera.
@@ -244,29 +225,20 @@ export function SalaBoard({
       if (alertsRef.current === "on" && document.visibilityState === "visible") void requestWakeLock();
     };
     document.addEventListener("visibilitychange", again);
+    again(); // si el sonido ya estaba activado al entrar (venía de otra pantalla del panel), también se mantiene la pantalla encendida
     return () => {
       document.removeEventListener("visibilitychange", again);
       void releaseWakeLock();
-      beeper.current?.close();
     };
   }, [requestWakeLock, releaseWakeLock]);
 
   async function activateAlerts() {
-    beeper.current ??= createBeeper();
-    const unlocked = await beeper.current.unlock();
-    if (!unlocked) {
-      setAlerts("blocked");
-      return;
-    }
-    setAlerts("on");
-    remember(true);
-    beeper.current.beep(); // confirma que suena
+    if (!(await activateSound())) return;
     await requestWakeLock();
   }
 
   async function silenceAlerts() {
-    setAlerts("off");
-    remember(false);
+    silenceSound();
     await releaseWakeLock();
   }
 
@@ -372,43 +344,7 @@ export function SalaBoard({
         )}
       </div>
 
-      {pushPublicKey && push.state !== "checking" ? (
-        <div className="panel-cell mb-4 flex flex-wrap items-center gap-3 !py-4" data-testid="aviso-push">
-          {push.state === "on" ? (
-            <>
-              <p className="text-base font-medium" data-testid="push-activo">
-                Avisos activados en este dispositivo, aunque cierres la sala
-              </p>
-              <button type="button" onClick={push.disable} className={buttonClass}>
-                Desactivar avisos
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={push.enable}
-                disabled={push.state === "working" || push.state === "unsupported" || push.state === "denied"}
-                className={primaryClass}
-              >
-                {push.state === "working" ? "Un momento…" : "Avisarme aunque cierre la sala"}
-              </button>
-              <p className="max-w-prose text-sm text-muted" data-testid="push-ayuda">
-                {push.state === "unsupported"
-                  ? "Este navegador no puede mostrar avisos con la sala cerrada. Probá con Chrome o Edge."
-                  : push.state === "denied"
-                    ? "Bloqueaste las notificaciones de este sitio. Habilitalas desde el candado de la barra de direcciones y volvé a intentar."
-                    : "Recibí una notificación del sistema cuando alguien llame, aunque cierres la pestaña. En la computadora, Chrome o Edge tienen que seguir abiertos en segundo plano."}
-              </p>
-            </>
-          )}
-          {push.message ? (
-            <p role="alert" className="w-full text-base font-medium text-danger" data-testid="push-error">
-              {push.message}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+      <AvisoPush slug={slug} publicKey={pushPublicKey} where="sala" />
 
       {state.calls.length === 0 ? (
         <p className="panel-cell font-display text-3xl leading-tight text-muted" data-testid="sala-vacia">

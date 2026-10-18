@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { conDobles, pitidos, wakeLocks } from "./audio-doble";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Estado, type Person, type Tenant } from "./support";
 
 /**
@@ -44,54 +45,6 @@ async function llamar(token: string, kind: "waiter" | "bill" = "waiter") {
 }
 
 const filasDe = async (orgId: string) => (await service().from("waiter_calls").select("*").eq("organization_id", orgId).order("created_at")).data ?? [];
-
-/** Sustituye Web Audio y Wake Lock por dobles que cuentan: el sonido real no se puede oír en una prueba. */
-async function conDobles(context: BrowserContext) {
-  await context.addInitScript(() => {
-    const w = window as unknown as Record<string, unknown>;
-    w.__osciladores = 0;
-    w.__wake = 0;
-    class FakeContext {
-      state = "running";
-      currentTime = 0;
-      destination = {};
-      resume() {
-        return Promise.resolve();
-      }
-      close() {
-        return Promise.resolve();
-      }
-      createGain() {
-        return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect: (n: unknown) => n };
-      }
-      createOscillator() {
-        return {
-          frequency: { value: 0 },
-          type: "",
-          connect: (n: unknown) => n,
-          start() {
-            (window as unknown as { __osciladores: number }).__osciladores += 1;
-          },
-          stop() {},
-        };
-      }
-    }
-    w.AudioContext = FakeContext;
-    Object.defineProperty(navigator, "wakeLock", {
-      configurable: true,
-      value: {
-        request: async () => {
-          (window as unknown as { __wake: number }).__wake += 1;
-          return { release: async () => {} };
-        },
-      },
-    });
-  });
-}
-
-/** Cada pitido son dos osciladores. */
-const pitidos = async (page: Page) => (await page.evaluate(() => (window as unknown as { __osciladores: number }).__osciladores)) / 2;
-const wakeLocks = (page: Page) => page.evaluate(() => (window as unknown as { __wake: number }).__wake);
 
 async function abrirSala(context: BrowserContext, persona: Person, t: Tenant) {
   const page = await context.newPage();

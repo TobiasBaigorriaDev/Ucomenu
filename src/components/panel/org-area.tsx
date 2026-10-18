@@ -5,6 +5,7 @@ import { getEntitlements, getMemberships, requireMembership, requireUser } from 
 import { moraNotice } from "@/lib/entitlements";
 import { toneFor } from "@/components/menu/tones";
 import { AppShell, ROLE_LABEL } from "./app-shell";
+import { LlamadosBanner } from "./llamados-banner";
 import { MoraBanner } from "./mora-banner";
 
 /**
@@ -14,10 +15,14 @@ import { MoraBanner } from "./mora-banner";
  */
 export async function OrgArea({ area, slug, children }: { area: "panel" | "sala"; slug: string; children: ReactNode }) {
   const { membership, memberships } = await requireMembership(slug, `/${area}/${slug}`);
-  const notice = moraNotice(await getEntitlements(membership.org.id), membership.role);
+  const ent = await getEntitlements(membership.org.id);
+  const notice = moraNotice(ent, membership.role);
+  // En el panel, quien edita la carta se entera arriba de que una mesa llamó (la sala en vivo tiene su propia lista).
+  const showCalls = area === "panel" && ent?.features.includes("waiter_call") === true;
 
   return (
     <AppShell area={area} org={membership.org} role={membership.role} hasSeveralOrgs={memberships.length > 1}>
+      {showCalls ? <LlamadosBanner slug={membership.org.slug} /> : null}
       {notice ? <MoraBanner notice={notice} /> : null}
       {children}
     </AppShell>

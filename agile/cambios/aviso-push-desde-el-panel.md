@@ -1,0 +1,43 @@
+# Cambio: Aviso de llamados también desde el panel (`/panel/{slug}`)
+Estado: integrado a `main` — implementado, probado en local y aprobado por el usuario tras probarlo en su Chrome (2026-10-18); sin desplegar a staging
+Nivel: M (reutiliza el registro, el service worker, las funciones de base y los permisos de [aviso-push-de-llamados](aviso-push-de-llamados.md); no cambia autorización, esquema ni envío)
+
+## Objetivo
+*(Corrección del usuario, 2026-10-18, tras probar la primera versión: la idea era poder navegar el panel —por ejemplo, editando la carta— y que si una mesa llama aparezca un aviso arriba, dentro de la pantalla. El aviso del sistema solo no alcanzaba.)*
+
+Que el Dueño y el personal puedan activar el aviso de llamados **desde el panel**, sin entrar a `/sala`, y lo reciban aunque estén en cualquier pantalla del panel (o con el navegador en segundo plano). Que no haya aviso doble si la sala en vivo está abierta y a la vista.
+
+## Decisiones
+- **No cambia el envío ni la base:** el push llega al service worker del dispositivo (alcance `/sala/`, archivo `sala-sw.js`) sin importar desde qué página se activó. Registrar el service worker desde `/panel/...` es válido: el alcance es `/sala/` y el encabezado `Service-Worker-Allowed: /sala/` ya lo permite. El registro en el servidor sigue siendo **por local y dispositivo**, así que un dispositivo activado en la sala figura «activado» en el panel y al revés.
+- **Una sola implementación:** el bloque de pantalla y el hook `usePush` pasan a `src/components/push/` y los usan la sala y el Resumen del panel. Mismos `data-testid` (`aviso-push`, `push-activo`, `push-ayuda`, `push-error`).
+- **Dónde:** en el Resumen (`/panel/{slug}`), arriba de la carta pública. Solo si el servidor tiene `VAPID_PUBLIC_KEY` **y** el plan incluye el llamado (`waiter_call`): con el plan Básico no se ofrece (la función de base lo rechazaría igual).
+- **Textos:** en el panel el aviso habla de «llamados» y no de «cerrar la sala» («Avisarme cuando llamen a una mesa» / «Avisos de llamados activados en este dispositivo»).
+- **Cartel dentro del panel** (`src/components/panel/llamados-banner.tsx`, montado en `OrgArea` solo para `area="panel"` y con el plan que incluye el llamado): consulta el mismo estado que la sala (`/sala/{slug}/estado`, sesión + RLS, cada ~3 s con la pestaña a la vista, más espaciado oculta o con errores) y muestra arriba, fijo, «Una mesa necesita atención» con las mesas y el tipo, un enlace «Ir a la sala en vivo» y «Ocultar» (oculta las actuales; uno nuevo vuelve a aparecer). Se va solo cuando se atiende en la sala. Sin sonido (para eso está la sala). Deja de consultar si responde 401/404 o `enabled: false`.
+- **«Sala en vivo» en modo alerta** *(pedido del usuario)*: mientras haya llamados pendientes, ese ítem de la navegación del panel pasa a rojo (`bg-danger`, con borde blanco, pulso solo si el sistema no pide reducir movimiento) y lleva un contador («2»; texto oculto «2 llamados pendientes» para lectores de pantalla). Lo marca el mismo cartel que consulta (`llamados-pendientes.ts`, un contador compartido en el navegador); ocultar el cartel NO apaga la alerta. En celular el chip puede quedar fuera de la vista (la navegación se desplaza de costado): ahí lo que se ve es el cartel.
+- **El sonido sigue al salir de la sala** *(pedido del usuario)*: el sonido de los llamados deja de vivir dentro de la pantalla de la sala y pasa a un módulo del navegador (`src/components/panel/sonido-llamados.ts`; el pitido, `src/lib/sala/beep.ts`). Salir de la sala hacia el panel sin recargar lo conserva, y el cartel del panel suena con cada llamado **nuevo** (los pendientes al cargar no suenan, como en la sala). Tras **recargar** el navegador vuelve a exigir un gesto: si estaba activado, se rearma con el primer toque o tecla en el panel (sin pitido). El panel tiene su propio control en el Resumen («Activar sonido de llamados» / «Silenciar sonido»), que es el mismo interruptor que «Activar alertas» de la sala. La pantalla encendida (Wake Lock) sigue siendo solo de la sala, y se pide también si se entra con el sonido ya activado.
+- **Aviso doble:** el service worker no muestra el aviso del sistema si una ventana de **esa** sala **o de un panel de ese mismo local** está a la vista **y con foco** (ya se ve: lista o cartel). Con el panel oculto o sin foco, o con otra sala/otro local, se muestra: es preferible un aviso repetido a uno perdido. Con la sala visible pero sin foco (otro monitor), también se muestra.
+- **Al tocar el aviso** abre o enfoca la sala (`/sala/{slug}`), también desde el panel.
+
+## Aceptación
+- [x] En `/panel/{slug}` con plan Pro y claves VAPID, el Dueño y el Staff ven «Avisarme cuando llamen a una mesa», lo activan (permiso + registro en el servidor), sobrevive a recargar y se puede desactivar.
+- [x] El dispositivo activado en la sala figura activado en el panel (mismo local) y no en otro local.
+- [x] Con el plan Básico o sin claves VAPID, el Resumen no muestra el bloque.
+- [x] El service worker sigue siendo el de alcance `/sala/` (también si se activa desde el panel) y no se usa el de otra app.
+- [x] Panel a la vista: aparece el cartel arriba con la mesa y el tipo, sigue al navegar entre pantallas, se puede ocultar y se va al atenderse; otro local, plan Básico y la sala no lo muestran (ni consultan).
+- [x] Aviso del sistema: con el panel o la sala de ese local a la vista y con foco no se duplica; con el panel oculto o sin foco, sí.
+- [x] 390 px sin desborde en el Resumen; el botón es de 44 px.
+- [x] La sala sigue igual (pruebas existentes del aviso, sin cambios).
+- [x] El sonido de los llamados sigue al pasar de la sala al panel sin recargar y se rearma con el primer toque tras recargar.
+
+## Fuera de alcance
+- Pantalla encendida (Wake Lock) en el panel; iPhone/PWA (ítem propio); activar desde otras pantallas del panel (basta con el Resumen).
+
+## Evidencia
+Ejecutado el 2026-10-18 sobre la rama `feat/aviso-push-panel` (base local en seed):
+- `pnpm typecheck` OK · `pnpm lint` OK · `pnpm build` OK · `pnpm test` **541/541** (nueva: `sala-sw.test.ts`, panel con foco avisa y sala con foco no duplica aunque haya un panel abierto).
+- `playwright test e2e/panel-push.spec.ts e2e/sala-push.spec.ts --workers=2`: **15/15** (5 nuevas del panel: Dueño y Staff activan/recargan/desactivan y se suscriben por el service worker de alcance `/sala/`; el dispositivo activado en el panel figura activo en la sala del mismo local y no en otro; permiso bloqueado; plan Básico sin el bloque; 390 px sin desborde). Las 10 de la sala siguen pasando tras mover el bloque y el hook a `src/components/push/`.
+- Specs vecinas del panel (`acceso`, `alta-guiada`, `llamado-config`, `sucursales`, `desactivar-sucursales`): **80/80**.
+- **Segunda versión (cartel), mismo día:** `pnpm typecheck` y `pnpm lint` OK; `pnpm test` (sala-sw 13/13 con las reglas nuevas del panel); `playwright test e2e/panel-llamados-aviso.spec.ts e2e/panel-push.spec.ts e2e/sala-push.spec.ts --workers=2`: **18/18** (3 nuevas del cartel: aparece arriba al llamar, sigue al navegar, se oculta y reaparece con uno nuevo, desaparece al atenderse, no muestra el de otro local, enlace a la sala sin cartel allí; plan Básico sin cartel ni consultas). Además `acceso`, `llamado-config`, `sala` y `mesas`: 86/86 con un solo fallo de `acceso:82`, que espera el plan Básico y se rompió porque dejé `cafe-ejemplo` en Pro en la base local para la prueba manual (no es una regresión; se corrige con `pnpm db:reset`).
+- **Modo alerta de «Sala en vivo»:** `panel-llamados-aviso.spec.ts` extendida (contador 1 → 2, sigue con el cartel oculto, se apaga al atender); capturas a 390 y 1280 px con dos llamados: el ítem rojo con «2» en el riel de escritorio y el cartel apilado sin desborde en celular.
+- **Sonido fuera de la sala:** 3 pruebas nuevas en `panel-llamados-aviso.spec.ts` (activado en la sala, sigue sonando en el panel tras navegar sin recargar y los pendientes al cargar no suenan; activar desde el Resumen, sonar y callar al silenciar; rearmar tras recargar con el primer toque). `sala.spec.ts` (sonido, Wake Lock, atender…) sin cambios y verde: con 1 *worker*, **22/22** (sala + cartel); con 2, 13 fallos de carga del servidor de pruebas que pasan de a uno (inestabilidad ya registrada). Con 1 *worker*: `panel-llamados-aviso`, `panel-push` y `sala-push` **21/21**; unitarias 543/543. La primera versión de la prueba de recarga tenía una carrera propia (llamaba antes del primer sondeo de la página recargada, que lo cuenta como «ya había»): ahora espera ese sondeo.
+- **No ejecutado:** E2E completo, RLS (no cambia el esquema) y prueba con dispositivo real (el envío no cambia: es el de la sala).
