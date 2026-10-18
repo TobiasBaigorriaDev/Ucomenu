@@ -6,7 +6,7 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 [Aviso de llamados en iPhone y iPad](cambios/aviso-push-iphone.md) (M): **integrado a `main`**, desplegado a staging y aprobado por el usuario tras probarlo en un iPhone real (instaló la app desde Safari y recibió los avisos con la app cerrada). Con esto el aviso con la app cerrada funciona en Android, Windows e iPhone/iPad ([ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)); el aviso desde el panel ya estaba hecho.
 
-Staging (`https://ucomenu-staging.fly.dev`) está al día con `main`. La base local está en seed y el servidor local, apagado.
+Staging (`https://ucomenu-staging.fly.dev`) está al día con `main`: no hay migraciones pendientes ni secretos nuevos por cargar, así que un redespliegue solo hace falta cuando cambie el código. La base local está en seed y el servidor local, apagado.
 
 ## Bloqueos y riesgos
 
