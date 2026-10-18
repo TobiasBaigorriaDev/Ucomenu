@@ -10,7 +10,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Seleccionado
-- (vacío)
+- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): el Dueño y el personal pueden activar las notificaciones sin entrar a `/sala`, y reciben el aviso aunque estén en otra pantalla del panel; evitar el aviso doble si la sala en vivo está abierta y visible — siguiente tarea acordada (2026-10-18); reutiliza `src/lib/push/registration.ts` y `public/sala-sw.js`; la ficha se crea al empezar
 
 ## Para verificar
 - (vacío)
@@ -31,7 +31,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
-- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): el Dueño y el personal pueden activar las notificaciones sin entrar a `/sala`, y reciben el aviso aunque estén en otra pantalla del panel; evitar el aviso doble si la sala en vivo está abierta y visible (desbloqueado: depende del aviso con la pestaña cerrada, ya hecho)
 - [M] Aviso de llamados en iPhone: requiere instalar la sala como PWA (iOS 16.4 o superior), manifiesto e instrucciones de instalación — a futuro (desbloqueado: depende del aviso con la pestaña cerrada, ya hecho)
 
 ### Fase 1 — MVP · Plataforma SaaS
