@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { pushStatusAction, registerPushAction, unregisterPushAction } from "@/lib/push/actions";
+import { isAppleMobile, isInstalledApp } from "@/lib/push/platform";
 import { findOwnRegistration, registerOwn } from "@/lib/push/registration";
 
 /**
@@ -12,6 +13,8 @@ import { findOwnRegistration, registerOwn } from "@/lib/push/registration";
 export type PushState =
   | "checking" // todavía no se sabe
   | "unsupported" // el navegador no tiene Service Worker, Push o Notification
+  | "install" // iPhone o iPad en una pestaña de Safari: Apple solo entrega avisos a la app instalada en la pantalla de inicio
+  | "ios-old" // la app instalada en un iPhone o iPad sin Web Push (anterior a iOS/iPadOS 16.4)
   | "off" // se puede activar
   | "on" // activado en este dispositivo
   | "denied" // el navegador bloqueó las notificaciones de este sitio
@@ -38,6 +41,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 
 const supported = () =>
   typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+
+/** Por qué no se puede activar aquí. Apple tiene su propio camino: instalar la app y, en las versiones viejas, no hay Push. */
+function unsupportedReason(): PushState {
+  if (!isAppleMobile(navigator.userAgent, navigator.maxTouchPoints ?? 0)) return "unsupported";
+  const installed = isInstalledApp((navigator as Navigator & { standalone?: boolean }).standalone, window.matchMedia?.("(display-mode: standalone)").matches === true);
+  return installed ? "ios-old" : "install";
+}
 
 /** La clave pública VAPID viaja en base64url; el navegador la pide como bytes. */
 function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
@@ -69,7 +79,7 @@ export function usePush(slug: string, publicKey: string | null) {
       if (!cancelled) setState(next);
     };
     void (async () => {
-      if (!supported()) return settle("unsupported");
+      if (!supported()) return settle(unsupportedReason());
       if (Notification.permission === "denied") return settle("denied");
       try {
         const registration = await findOwnRegistration();

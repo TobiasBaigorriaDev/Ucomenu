@@ -4,20 +4,17 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-[Aviso de llamados también desde el panel](cambios/aviso-push-desde-el-panel.md) (M): **integrado a `main`**, probado y aprobado por el usuario en su Chrome. Incluye el cartel fijo de llamados pendientes en el panel, «Sala en vivo» en modo alerta con contador, el sonido que sigue al salir de la sala (módulo `src/components/panel/sonido-llamados.ts`) y la activación del aviso del sistema desde el Resumen. No cambió esquema ni envío.
+[Aviso de llamados en iPhone y iPad](cambios/aviso-push-iphone.md) (M): **integrado a `main`**, desplegado a staging y aprobado por el usuario tras probarlo en un iPhone real (instaló la app desde Safari y recibió los avisos con la app cerrada). Con esto el aviso con la app cerrada funciona en Android, Windows e iPhone/iPad ([ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)); el aviso desde el panel ya estaba hecho.
 
-**Desplegado a staging** (`https://ucomenu-staging.fly.dev`, 2026-10-18, a pedido del usuario; sin migración nueva, con la imagen `flyio/flyctl`; comprobado: `/login` 200 y `/sala-sw.js` con la regla nueva). La base local quedó en seed limpio y el servidor local, apagado.
-
-Base: [aviso con la pestaña cerrada](cambios/aviso-push-de-llamados.md), [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md).
+Staging (`https://ucomenu-staging.fly.dev`) está al día con `main`. La base local está en seed y el servidor local, apagado.
 
 ## Bloqueos y riesgos
 
-- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`); `pnpm prod:check` lo verifica.
-- En Windows el aviso del sistema solo llega con Chrome o Edge en ejecución; iPhone queda en el tablero (PWA).
-- Regla del *service worker*: no muestra el aviso del sistema si la sala o el panel de ese local están a la vista **y con foco**; con la sala visible en otro monitor, avisa (preferible repetido a perdido).
-- El E2E con 2 o más *workers* tumba el servidor de pruebas de esta máquina (Windows): usar `--workers=1` y repetir de a uno lo que falle.
+- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`) y un `VAPID_SUBJECT` real (Apple lo valida); `pnpm prod:check` lo verifica.
+- iPhone: solo con la sala instalada en la pantalla de inicio (iOS 16.4+); desde Chrome o Edge del iPhone no se probó. Apple siempre muestra el aviso aunque la sala esté a la vista (si no, revoca la suscripción).
+- E2E: usar `--workers=1` (con más, el servidor de pruebas de esta máquina cae); repetir de a uno lo que falle.
 - `.env.local` conserva claves VAPID de prueba (no versionado).
 
 ## Próximo paso
 
-Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: lectura de pagos y auditoría por el Dueño (C, dentro de «SuperAdmin, incrementos pendientes»), analítica básica (M), carta en varios idiomas (M), aviso en iPhone por PWA (M). La retención de `price_history` necesita política del usuario.
+Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: lectura de pagos y auditoría por el Dueño (C, dentro de «SuperAdmin, incrementos pendientes»), analítica básica (M) o carta en varios idiomas (M). La retención de `price_history` necesita política del usuario.

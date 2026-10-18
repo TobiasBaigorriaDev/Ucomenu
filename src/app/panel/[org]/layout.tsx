@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
+import { appInstalable } from "@/components/panel/app-instalable";
 import { OrgArea } from "@/components/panel/org-area";
 
-export const metadata: Metadata = { robots: { index: false, follow: false } };
+export const metadata: Metadata = { robots: { index: false, follow: false }, ...appInstalable };
 
 export default async function PanelOrgLayout({ children, params }: LayoutProps<"/panel/[org]">) {
   const { org } = await params;

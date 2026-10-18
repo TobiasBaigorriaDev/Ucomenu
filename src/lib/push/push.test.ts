@@ -5,6 +5,7 @@ import { vapidConfig, vapidPublicKey } from "./config";
 import { dispatchCallPush, parseTargets, PUSH_TTL_SECONDS, type PushSend } from "./dispatch";
 import { isAllowedPushEndpoint } from "./endpoint";
 import { buildCallPayload } from "./payload";
+import { isAppleMobile, isInstalledApp } from "./platform";
 import { parseSubscription } from "./subscription";
 
 const P256DH = "B".repeat(87);
@@ -12,6 +13,29 @@ const AUTH = "a".repeat(22);
 const FCM = "https://fcm.googleapis.com/fcm/send/abc:APA91bE-token_1";
 const TOKEN = "c0ffee01000000000000000000000000";
 const KEY = "0123456789ab";
+
+const IPHONE = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1";
+const IPAD_COMO_MAC = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
+const ANDROID = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Mobile Safari/537.36";
+
+describe("iPhone y iPad (la sala instalada como app)", () => {
+  it.each([
+    ["iPhone", IPHONE, 5, true],
+    ["iPad con el UA de escritorio (iPadOS reciente)", IPAD_COMO_MAC, 5, true],
+    ["una Mac de verdad (sin pantalla táctil)", IPAD_COMO_MAC, 0, false],
+    ["Android", ANDROID, 5, false],
+    ["Windows", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/126.0 Safari/537.36", 0, false],
+  ])("%s", (_nombre, ua, toques, esperado) => {
+    expect(isAppleMobile(ua, toques)).toBe(esperado);
+  });
+
+  it("la app está instalada con `navigator.standalone` (Safari) o con display-mode (estándar)", () => {
+    expect(isInstalledApp(true, false)).toBe(true);
+    expect(isInstalledApp(undefined, true)).toBe(true);
+    expect(isInstalledApp(false, false)).toBe(false);
+    expect(isInstalledApp(undefined, false)).toBe(false);
+  });
+});
 
 describe("destinos de push permitidos (anti-SSRF)", () => {
   it.each([

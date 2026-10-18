@@ -11,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 type Listener = (event: Record<string, unknown>) => void;
 type FakeClient = { url: string; visibilityState: string; focused: boolean; focus: ReturnType<typeof vi.fn> };
 
-function loadWorker(clients: FakeClient[]) {
+function loadWorker(clients: FakeClient[], endpoint?: string) {
   const listeners = new Map<string, Listener>();
   const showNotification = vi.fn(async () => undefined);
   const openWindow = vi.fn(async (...args: [url: string]) => void args);
@@ -19,7 +19,10 @@ function loadWorker(clients: FakeClient[]) {
     addEventListener: (type: string, listener: Listener) => listeners.set(type, listener),
     skipWaiting: vi.fn(),
     clients: { claim: vi.fn(), matchAll: vi.fn(async () => clients), openWindow },
-    registration: { showNotification },
+    registration: {
+      showNotification,
+      pushManager: { getSubscription: vi.fn(async () => (endpoint ? { endpoint } : null)) },
+    },
   };
   const source = readFileSync(path.resolve(import.meta.dirname, "../../public/sala-sw.js"), "utf8");
   vm.runInNewContext(source, { self, URL, JSON });
@@ -117,13 +120,51 @@ describe("service worker del aviso de llamados", () => {
     expect(showNotification).toHaveBeenCalledTimes(1);
   });
 
+  describe("suscripción de Apple (iPhone, iPad, Safari): cada push debe terminar en una notificación visible o Apple revoca la suscripción", () => {
+    const aLaVista = [client("https://app.test/sala/cafe", { visibilityState: "visible", focused: true })];
+
+    it.each(["https://web.push.apple.com/QAbc123", "https://push.apple.com/3/device/abc"])(
+      "con la sala a la vista y con foco AVISA igual (%s)",
+      async (endpoint) => {
+        const { listeners, showNotification } = loadWorker(aLaVista, endpoint);
+        const { event, done } = pushEvent(PAYLOAD);
+        listeners.get("push")!(event);
+        await done();
+        expect(showNotification).toHaveBeenCalledTimes(1);
+      },
+    );
+
+    it.each([
+      ["Chrome", "https://fcm.googleapis.com/fcm/send/abc"],
+      ["un host que solo se parece al de Apple", "https://evilpush.apple.com.example.test/x"],
+      ["sin suscripción", undefined],
+    ])("con %s la sala a la vista y con foco sigue sin duplicar", async (_nombre, endpoint) => {
+      const { listeners, showNotification } = loadWorker(aLaVista, endpoint);
+      const { event, done } = pushEvent(PAYLOAD);
+      listeners.get("push")!(event);
+      await done();
+      expect(showNotification).not.toHaveBeenCalled();
+    });
+
+    it("si no se puede leer la suscripción, se comporta como un navegador común (no rompe el aviso)", async () => {
+      const { listeners, showNotification, self } = loadWorker([], "https://web.push.apple.com/x");
+      self.registration.pushManager.getSubscription.mockRejectedValue(new Error("falla"));
+      const { event, done } = pushEvent(PAYLOAD);
+      listeners.get("push")!(event);
+      await done();
+      expect(showNotification).toHaveBeenCalledTimes(1); // sin ventanas a la vista: avisa
+    });
+  });
+
   it("un push ilegible o sin datos muestra un aviso genérico (Chrome exige mostrar algo)", async () => {
     const { listeners, showNotification } = loadWorker([]);
     const roto = pushEvent("esto no es json", true);
     listeners.get("push")!(roto.event);
     await roto.done();
-    const vacio = { waitUntil: (promise: Promise<unknown>) => promise, data: null };
-    await listeners.get("push")!(vacio);
+    const pendientes: Promise<unknown>[] = [];
+    const vacio = { waitUntil: (promise: Promise<unknown>) => pendientes.push(promise), data: null };
+    listeners.get("push")!(vacio);
+    await Promise.all(pendientes);
     expect(showNotification).toHaveBeenCalledTimes(2);
     expect(showNotification.mock.calls[0]).toEqual(["Llamado en la sala", expect.objectContaining({ data: { url: "/sala" } })]);
   });

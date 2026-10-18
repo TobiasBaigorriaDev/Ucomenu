@@ -49,15 +49,39 @@ self.addEventListener("activate", function (event) {
   event.waitUntil(self.clients.claim());
 });
 
+/**
+ * ¿La suscripción es de Apple (iPhone, iPad, Safari)? Apple exige que CADA push termine en una notificación visible: si no,
+ * revoca la suscripción. Un error al preguntarlo cuenta como «no».
+ */
+function isAppleSubscription() {
+  try {
+    return self.registration.pushManager.getSubscription().then(
+      function (subscription) {
+        return !!subscription && /^https:\/\/([a-z0-9-]+\.)*push\.apple\.com\//.test(subscription.endpoint);
+      },
+      function () {
+        return false;
+      },
+    );
+  } catch {
+    return Promise.resolve(false);
+  }
+}
+
 self.addEventListener("push", function (event) {
   var data = readPayload(event);
   event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (windows) {
+    Promise.all([self.clients.matchAll({ type: "window", includeUncontrolled: true }), isAppleSubscription()]).then(function (results) {
+      var windows = results[0];
+      var apple = results[1];
       // Si esa sala (o el panel del mismo local) está a la vista y con foco, ya se ve sola (sondeo): no se duplica el aviso. Con la pestaña
-      // oculta, en segundo plano o sin foco, SIEMPRE se muestra: es mejor un aviso repetido que uno perdido.
-      var watching = windows.some(function (client) {
-        return client.visibilityState === "visible" && client.focused === true && isWatching(new URL(client.url).pathname, data.url);
-      });
+      // oculta, en segundo plano o sin foco, SIEMPRE se muestra: es mejor un aviso repetido que uno perdido. En Apple se muestra
+      // siempre: sin una notificación por cada push, Apple revoca la suscripción.
+      var watching =
+        !apple &&
+        windows.some(function (client) {
+          return client.visibilityState === "visible" && client.focused === true && isWatching(new URL(client.url).pathname, data.url);
+        });
       if (watching) return undefined;
       return self.registration.showNotification(data.title, {
         body: data.body,
