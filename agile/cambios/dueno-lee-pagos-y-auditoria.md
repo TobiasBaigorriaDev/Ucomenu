@@ -1,5 +1,5 @@
 # Cambio: El Dueño lee los pagos y el historial de cambios de su cuenta
-Estado: revisado por Codex (2 rondas, aprobado); falta que el usuario lo pruebe y apruebe antes de integrarlo y de aplicar la migración a staging
+Estado: integrado a `main` — revisado por Codex (2 rondas, aprobado) y aprobado por el usuario tras verlo en su Chrome local (2026-10-18); la migración todavía NO está aplicada en staging
 Nivel: C (exposición de información —datos de dinero y de operaciones del equipo de UcoMenu hacia el cliente— y autorización: quién lee qué de la facturación)
 
 ## Objetivo
@@ -56,4 +56,4 @@ Ejecutado el 2026-10-18 sobre la rama `feat/dueno-lee-pagos-auditoria` (base loc
   1. *La paginación omitía filas con la misma fecha* (ordenaba por fecha e id pero el cursor llevaba solo la fecha). Ahora el cursor es (fecha, id) en las dos funciones (`p_before_id`), la dirección y la pantalla. Regresión: prueba RLS con fechas idénticas (falla sin el desempate: 2 mutaciones lo detectan).
   2. *La pantalla no mostraba cuándo se registró el pago ni el vencimiento anterior* (la ficha lo prometía). Ahora: «Cubre hasta el X (antes vencía el Y)» y «Registrado el …»; se evitó «desde» porque un pago de una cuenta vencida no cubre el hueco.
 - **Ronda 2 (verificación, Codex sobre `4ed2f28`): APROBAR.** Los dos hallazgos, corregidos (revisó la regresión de fechas empatadas y la lectura de los datos nuevos). Una sugerencia no bloqueante, aplicada: el comando de rollback de esta ficha tenía las firmas de tres argumentos y ahora son cuatro.
-- Aprobación del usuario antes de aplicar la migración a staging: pendiente.
+- **Aprobación del usuario (2026-10-18):** vio la pantalla en local con `dueno@cafe-ejemplo.test` («me parece bien»); se mantiene mostrar la referencia del pago. Integrado a `main`. **Aplicar la migración `20261026100000` a staging sigue pendiente de su aprobación explícita.**
