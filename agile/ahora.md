@@ -4,18 +4,18 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-Rama **`feat/aviso-push-llamados`** (sale de `main` en `1645ddd`; `main` no se tocó): [aviso de llamados con la pestaña cerrada por Web Push](cambios/aviso-push-de-llamados.md), Android y Windows (C, [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)). Implementado, revisado por Codex en tres rondas (todos los hallazgos reales corregidos con regresión; la última corrección sin cuarta verificación) y **probado por el usuario en su Chrome de Windows con la sala cerrada (2026-10-18)**.
+[Aviso de llamados con la pestaña cerrada por Web Push](cambios/aviso-push-de-llamados.md) (C, [ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)): **integrado a `main` y subido a `origin`**, aprobado por el usuario tras probarlo en Windows y en Android contra staging (2026-10-18). Revisado por Codex en tres rondas.
 
-**Desplegado a staging** (2026-10-18): migración `20261025100000` aplicada, claves VAPID propias en los secretos de Fly, app en `https://ucomenu-staging.fly.dev`. Producción no tocada; sin integrar a `main`. La base local tiene la misma migración.
+Staging está al día: migraciones hasta `20261025100000` aplicadas, app desplegada en `https://ucomenu-staging.fly.dev` y claves VAPID propias en los secretos de Fly. Producción no existe todavía. La base local quedó en seed limpio.
 
 ## Bloqueos y riesgos
 
-- Falta probarlo en un **Android** contra staging: hace falta una cuenta en una organización con plan Pro y una mesa (la organización `demo` de staging no tiene cuentas; se suma una desde SuperAdmin).
-- En Windows el aviso solo llega si Chrome/Edge siguen en ejecución; iPhone es otro ítem.
-- `.env.local` tiene claves VAPID de prueba (no versionado) y `cafe-ejemplo` quedó en plan Pro en la base local (`pnpm db:reset` lo revierte).
-- `flyctl.exe` lo bloquea Smart App Control: se despliega con la imagen `flyio/flyctl` (ver `docs/produccion.md`). Producción sigue bloqueada (ficha `salida-a-produccion`).
+- **Producción:** sigue bloqueada (dominio, proyecto de Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hay que generar **otro par VAPID** (`pnpm push:claves`) y cargarlo como secreto; `pnpm prod:check` lo verifica.
+- En Windows el aviso solo llega si Chrome/Edge siguen en ejecución; iPhone queda en el tablero (PWA).
+- `.env.local` conserva claves VAPID de prueba (no versionado).
+- `flyctl.exe` lo bloquea Smart App Control: se despliega con la imagen `flyio/flyctl` (ver `docs/produccion.md`).
+- `revision-codex.test.ts › --uncommitted` falla solo con cambios sin confirmar en `.env.example`.
 
 ## Próximo paso
 
-1. Probar en Android contra staging; si va bien y el usuario aprueba, integrar a `main`, pasar el ítem a «Hecho» y seguir con «Aviso también desde el panel».
-2. Decidir si se pide una cuarta verificación a Codex (la regla manda consultar tras la tercera).
+Elegir una tarea desbloqueada del [tablero](tablero.md). Recomendada: **[M] aviso de llamados también desde el panel** (`/panel/{slug}`), que ahora está desbloqueada; reutiliza `src/lib/push/registration.ts` y el service worker. Alternativas: lectura de pagos y auditoría por el Dueño (C) o la retención de `price_history` (necesita política del usuario).
