@@ -24,7 +24,7 @@ Las que dependen del producto y no estaban definidas se tomaron por la opción *
 - **A5. Prueba vencida = misma degradación de mora, contada desde su fin** (ya era el supuesto de `producto.md`); su estado `expired` es información aparte. No hay «extender la prueba» ni «terminar la prueba» a mano (fuera de alcance).
 - **A6. Corrección de un pago mal cargado: no hay pantalla.** Los pagos son inmutables; si se carga uno equivocado (p. ej. una fecha de más), lo corrige el operador por SQL con acceso a la base (apagando el trigger de `payments` y ajustando `subscriptions.current_period_end`), dejando constancia. Es el principal riesgo residual de dinero; se acepta para no abrir una vía de escritura más. Si se prefiere, el siguiente incremento sería «anular pago» como asiento nuevo.
 - **A7. Monedas y medios**: lista cerrada (ARS/USD; transferencia, link de pago, efectivo, otro). El pago es de hasta 365 días atrás y no puede ser del futuro.
-- **A8. El Dueño no ve sus pagos ni la auditoría todavía** (fuera de alcance); `docs/arquitectura.md` lo preveía.
+- **A8. El Dueño no ve sus pagos ni la auditoría todavía** (fuera de alcance; resuelto después en la ficha `dueno-lee-pagos-y-auditoria`, ADR 0021); `docs/arquitectura.md` lo preveía.
 
 ## Aceptación
 - [x] Dado un SuperAdmin, cuando cambia plan y ciclo con motivo, entonces cambian `plan_code`/`billing_cycle`, las fechas no se tocan, y hay **una** fila de auditoría (`subscription.plan_changed`) con actor, antes, después y motivo; los límites y features nuevos rigen en el acto y bajar de plan no borra nada.
