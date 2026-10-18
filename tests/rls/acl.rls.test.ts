@@ -35,6 +35,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   record_price_change: [true, false, false], // trigger de products: escribe price_history (la API no tiene INSERT)
   price_history_append_only: [false, false, false], // trigger de price_history: rechaza UPDATE, DELETE y TRUNCATE
   audit_log_append_only: [false, false, false], // trigger de audit_log: rechaza UPDATE, DELETE y TRUNCATE (SuperAdmin)
+  is_push_endpoint: [false, false, false], // pura; la usa la restricción CHECK de push_subscriptions (aviso de llamados, ADR 0020)
   is_platform_admin: [true, false, true], // usada por la política de lectura de audit_log y de payments (SuperAdmin)
   payments_append_only: [false, false, false], // trigger de payments: rechaza UPDATE, DELETE y TRUNCATE (SuperAdmin)
   trial_status: [false, false, false], // pura; la usa org_entitlements (estado de la prueba gratuita)
@@ -49,11 +50,17 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_create_organization: [false, false], // SuperAdmin (ADR 0013): solo service_role, desde la acción de servidor
   admin_register_payment: [false, false], // SuperAdmin: registra un pago y mueve la vigencia; solo service_role
   admin_set_suspension: [false, false], // SuperAdmin: suspende o reactiva a mano; solo service_role
+  drop_push_subscriptions: [false, false], // aviso de llamados (ADR 0020): limpia suscripciones muertas; solo service_role
   create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],
   public_menu_status: [true, true],
+  push_subscription_registered: [false, true], // aviso de llamados (ADR 0020): ¿está registrado este dispositivo? Solo lo propio
+  push_targets_for_call: [false, false], // aviso de llamados (ADR 0020): a quién avisar de un llamado nuevo; solo service_role
+
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
+  register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
+  unregister_push_subscription: [false, true], // aviso de llamados (ADR 0020): borra solo las suscripciones propias
 };
 
 describe("funciones de autorización y entitlements", () => {
@@ -199,6 +206,34 @@ describe("RLS y permisos de tablas", () => {
       expect(permisos("authenticated", tabla), `${tabla}: authenticated`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
       expect(permisos("service_role", tabla), `${tabla}: service_role`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
     }
+  });
+
+  it("push_subscriptions: nadie la toca directamente (ni anon, ni authenticated, ni service_role); solo funciones", () => {
+    const permisos = (rol: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'public.push_subscriptions', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    for (const rol of ["anon", "authenticated", "service_role"]) {
+      expect(permisos(rol), `push_subscriptions: ${rol}`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    }
+  });
+
+  it("las funciones del aviso de llamados: quién ejecuta cada una (service_role las tiene todas por defecto, pero sin sesión no es nadie: auth.uid() es nulo)", () => {
+    const filas = sql(`
+      select p.proname, has_function_privilege('anon', p.oid, 'execute'), has_function_privilege('authenticated', p.oid, 'execute'),
+             has_function_privilege('public', p.oid, 'execute'), has_function_privilege('service_role', p.oid, 'execute')
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname like '%push%' order by 1`);
+    expect(filas).toEqual([
+      ["drop_push_subscriptions", "f", "f", "f", "t"],
+      ["push_subscription_registered", "f", "t", "f", "t"],
+      ["push_targets_for_call", "f", "f", "f", "t"],
+      ["register_push_subscription", "f", "t", "f", "t"],
+      ["unregister_push_subscription", "f", "t", "f", "t"],
+    ]);
   });
 
   it("organization_id, id, slug y is_active no son actualizables por la API", () => {

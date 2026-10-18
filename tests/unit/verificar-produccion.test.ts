@@ -18,6 +18,8 @@ const BUENO: Record<string, string> = {
   WAITER_CALL_CLIENT_SECRET: "c".repeat(64),
   NEXT_PUBLIC_SITE_URL: "https://ucomenu.com",
   NEXT_PUBLIC_CONTACT_EMAIL: "hola@ucomenu.com",
+  VAPID_PUBLIC_KEY: "B".repeat(87),
+  VAPID_PRIVATE_KEY: "p".repeat(43),
 };
 
 const con = (cambios: Record<string, string | undefined>) => {
@@ -31,7 +33,25 @@ describe("evaluarEntorno", () => {
     const r = evaluarEntorno(BUENO);
     expect(r.errores).toEqual([]);
     expect(r.avisos).toEqual([]);
-    expect(r.correctos.length).toBe(6);
+    expect(r.correctos.length).toBe(7);
+  });
+
+  it("sin claves de push no es un error: avisa que el aviso con la pestaña cerrada queda apagado", () => {
+    const r = evaluarEntorno(con({ VAPID_PUBLIC_KEY: undefined, VAPID_PRIVATE_KEY: undefined }));
+    expect(r.errores).toEqual([]);
+    expect(r.avisos.join(" ")).toContain("queda apagado");
+  });
+
+  it.each([
+    ["falta la privada", { VAPID_PRIVATE_KEY: undefined }, "VAPID_PRIVATE_KEY"],
+    ["falta la pública", { VAPID_PUBLIC_KEY: undefined }, "VAPID_PUBLIC_KEY"],
+    ["pública con mal formato", { VAPID_PUBLIC_KEY: "corta" }, "VAPID_PUBLIC_KEY"],
+    ["privada con mal formato", { VAPID_PRIVATE_KEY: "corta" }, "VAPID_PRIVATE_KEY"],
+    ["contacto inválido", { VAPID_SUBJECT: "ftp://x" }, "VAPID_SUBJECT"],
+    ["la privada en una variable pública", { NEXT_PUBLIC_CONTACT_EMAIL: "p".repeat(43) }, "llegaría al navegador"],
+  ])("claves de push a medias o mal puestas: %s", (_nombre, cambios, texto) => {
+    const r = evaluarEntorno(con(cambios));
+    expect(r.errores.join(" ")).toContain(texto);
   });
 
   it.each([

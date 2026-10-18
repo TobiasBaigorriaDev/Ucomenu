@@ -30,7 +30,9 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`): los **textos legales** (`/terminos`, `/privacidad`, `/alergenos`) y el **alta** de una organización desde `/admin`, además de lo del ítem anterior (pendiente de «Salida a producción»)
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
-- (fase completa: llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»)
+- (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
+- [M] Aviso de llamados también desde el panel (`/panel/{slug}`): el Dueño y el personal pueden activar las notificaciones sin entrar a `/sala`, y reciben el aviso aunque estén en otra pantalla del panel; evitar el aviso doble si la sala en vivo está abierta y visible (desbloqueado: depende del aviso con la pestaña cerrada, ya hecho)
+- [M] Aviso de llamados en iPhone: requiere instalar la sala como PWA (iOS 16.4 o superior), manifiesto e instrucciones de instalación — a futuro (desbloqueado: depende del aviso con la pestaña cerrada, ya hecho)
 
 ### Fase 1 — MVP · Plataforma SaaS
 - [C] SuperAdmin, incrementos pendientes: add-ons, desactivar organizaciones y lectura de la auditoría y de los pagos por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
@@ -62,6 +64,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] Aviso de llamados con la pestaña cerrada por Web Push (Android y Windows): tabla de suscripciones cerrada a la API, envío desde el servidor, service worker de la sala; revisado por Codex en tres rondas, probado por el usuario en Windows y Android contra staging y aprobado (2026-10-18) → [ficha](cambios/aviso-push-de-llamados.md) · ADR 0020
 - [S] Restauración ensayada en un proyecto Supabase nuevo; repetición manual con recordatorio mensual configurado (2026-10-17) → [ficha](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17)
 - [S] Wake Lock nativo del panel de sala comprobado con HTTPS en Chrome de Windows (2026-10-17) → [ficha](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17)
 - [S] Carta de demostración en staging: organización `demo` con 26 platos y 24 fotos; herramienta `tools/sembrar-demo-staging.mjs` (2026-10-17) → [ficha](cambios/demo-en-staging.md)

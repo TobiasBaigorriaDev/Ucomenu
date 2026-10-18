@@ -21,7 +21,7 @@ El panel de sala tiene que mostrar los llamados al personal «en vivo». `arquit
 ## Consecuencias
 - **Latencia de hasta ~3 s** (hasta ~15 s con la pestaña oculta, que los navegadores ralentizan igual) y una consulta liviana por dispositivo cada 3 s: despreciable a escala MVP (uno o dos dispositivos por local), con un índice parcial por organización para los pendientes.
 - El modelo no cambia si se suma Realtime después: la tabla sigue siendo la fuente de verdad y la pantalla ya recarga todo en cada ciclo; bastaría un canal que dispare el mismo ciclo antes. Hacerlo exigiría una enmienda al ADR 0007 sobre el token.
-- Los celulares con la pantalla apagada o la pestaña en segundo plano pueden no sonar: se recomienda un dispositivo dedicado (*Wake Lock* ayuda con la pantalla encendida).
+- Los celulares con la pantalla apagada o la pestaña en segundo plano pueden no sonar: se recomienda un dispositivo dedicado (*Wake Lock* ayuda con la pantalla encendida). **Enmienda ([ADR 0020](0020-aviso-de-llamados-por-web-push.md)):** con la pestaña cerrada o fuera del navegador, el aviso llega por Web Push desde el servidor (Android y escritorio); el sondeo sigue siendo la fuente de verdad.
 - El sonido requiere un gesto del usuario en cada carga; sin él la alerta es visual y del título.
 - Atender depende del plan y de la mora: un pendiente al pasar a solo lectura ya no se puede atender (vence solo a los 30 minutos). Tampoco se puede atender uno de 30 minutos o más aunque siga `pending`: la política lo exige (mismo borde que la lista).
 - El cliente hace una sola consulta a la vez y descarta las respuestas anteriores a una atención; con `enabled:false` deja de consultar.

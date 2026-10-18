@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { requireMembership } from "@/lib/auth/session";
+import { vapidPublicKey } from "@/lib/push/config";
 import { loadSala } from "@/lib/sala/pending";
 import { createSessionClient } from "@/lib/supabase/server";
 import { SalaBoard } from "./sala-board";
@@ -16,7 +17,12 @@ export default async function SalaPage({ params }: PageProps<"/sala/[org]">) {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Sala en vivo</h1>
-      <SalaBoard slug={membership.org.slug} initial={initial} isOwner={membership.role === "owner"} />
+      <SalaBoard
+        slug={membership.org.slug}
+        initial={initial}
+        isOwner={membership.role === "owner"}
+        pushPublicKey={vapidPublicKey()}
+      />
     </main>
   );
 }
