@@ -29,14 +29,16 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 export function parseTargets(raw: unknown): {
   slug: string;
   tableLabel: string;
+  tableKey: string;
   branchName: string;
   multiBranch: boolean;
   subscriptions: PushTarget[];
 } | null {
   if (!isRecord(raw)) return null;
-  const { slug, table_label: tableLabel, branch_name: branchName, multi_branch: multiBranch, subscriptions } = raw;
+  const { slug, table_label: tableLabel, table_key: tableKey, branch_name: branchName, multi_branch: multiBranch, subscriptions } = raw;
   if (typeof slug !== "string" || !/^[a-z0-9-]+$/.test(slug)) return null;
   if (typeof tableLabel !== "string" || typeof branchName !== "string" || typeof multiBranch !== "boolean") return null;
+  if (typeof tableKey !== "string" || !/^[0-9a-f]{12}$/.test(tableKey)) return null;
   if (!Array.isArray(subscriptions)) return null;
   const targets: PushTarget[] = [];
   for (const item of subscriptions) {
@@ -47,7 +49,7 @@ export function parseTargets(raw: unknown): {
     if (!isAllowedPushEndpoint(endpoint)) continue;
     targets.push({ id, endpoint, p256dh, auth });
   }
-  return { slug, tableLabel, branchName, multiBranch, subscriptions: targets };
+  return { slug, tableLabel, tableKey, branchName, multiBranch, subscriptions: targets };
 }
 
 const statusOf = (error: unknown): number | null => (isRecord(error) && typeof error.statusCode === "number" ? error.statusCode : null);
@@ -74,6 +76,7 @@ export async function dispatchCallPush(db: Db, send: PushSend, token: string, ki
         slug: targets.slug,
         kind,
         tableLabel: targets.tableLabel,
+        tableKey: targets.tableKey,
         branchName: targets.branchName,
         multiBranch: targets.multiBranch,
       }),

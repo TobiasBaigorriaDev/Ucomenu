@@ -14,6 +14,8 @@ export function buildCallPayload(input: {
   slug: string;
   kind: CallKind;
   tableLabel: string;
+  /** Clave opaca de la mesa (no es su id): distingue «Mesa 1» de dos sucursales para que sus avisos no se reemplacen. */
+  tableKey: string;
   branchName: string;
   multiBranch: boolean;
 }): CallPushPayload {
@@ -23,7 +25,7 @@ export function buildCallPayload(input: {
     title: KIND_LABEL[input.kind],
     body: `${table}${branch}`,
     url: `/sala/${input.slug}`,
-    // Un segundo aviso de la misma mesa y tipo reemplaza al anterior en vez de apilarse.
-    tag: `llamado:${input.slug}:${input.kind}:${table}`,
+    // Un segundo aviso de la MISMA mesa y tipo reemplaza al anterior en vez de apilarse (mesas distintas no se pisan).
+    tag: `llamado:${input.slug}:${input.kind}:${input.tableKey}`,
   };
 }

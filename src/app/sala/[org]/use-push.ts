@@ -51,6 +51,15 @@ function keyBytes(base64url: string): Uint8Array<ArrayBuffer> {
   return bytes;
 }
 
+/** ¿La suscripción del navegador se hizo con la clave VAPID actual? Si se rotó el par, la anterior ya no sirve. Sin dato, se asume que sí. */
+function usesKey(subscription: PushSubscription, publicKey: string): boolean {
+  const stored = subscription.options?.applicationServerKey;
+  if (!stored) return true;
+  const a = new Uint8Array(stored);
+  const b = keyBytes(publicKey);
+  return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
 export function usePush(slug: string, publicKey: string | null) {
   const [state, setState] = useState<PushState>("checking");
   const [message, setMessage] = useState("");
@@ -68,7 +77,8 @@ export function usePush(slug: string, publicKey: string | null) {
       try {
         const registration = await navigator.serviceWorker.getRegistration(SERVICE_WORKER_SCOPE);
         const subscription = await registration?.pushManager.getSubscription();
-        if (!subscription) return settle("off");
+        // Hecha con otra clave del servidor (se rotaron las claves VAPID): ya no recibe nada; se ofrece activar de nuevo.
+        if (!subscription || !usesKey(subscription, publicKey)) return settle("off");
         const registered = await pushStatusAction(slug, subscription.endpoint);
         settle(registered ? "on" : "off");
       } catch {
@@ -97,6 +107,10 @@ export function usePush(slug: string, publicKey: string | null) {
       const options = { userVisibleOnly: true, applicationServerKey: keyBytes(publicKey) };
 
       let subscription = await registration.pushManager.getSubscription();
+      if (subscription && !usesKey(subscription, publicKey)) {
+        await subscription.unsubscribe();
+        subscription = null;
+      }
       if (!subscription) {
         subscription = await withTimeout(registration.pushManager.subscribe(options), SUBSCRIBE_TIMEOUT_MS);
       }

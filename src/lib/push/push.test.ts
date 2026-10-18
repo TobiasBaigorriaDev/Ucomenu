@@ -11,6 +11,7 @@ const P256DH = "B".repeat(87);
 const AUTH = "a".repeat(22);
 const FCM = "https://fcm.googleapis.com/fcm/send/abc:APA91bE-token_1";
 const TOKEN = "c0ffee01000000000000000000000000";
+const KEY = "0123456789ab";
 
 describe("destinos de push permitidos (anti-SSRF)", () => {
   it.each([
@@ -68,22 +69,31 @@ describe("suscripción que manda el navegador", () => {
 
 describe("texto del aviso", () => {
   it("lleva tipo, mesa y la ruta de la sala; nunca ids", () => {
-    const payload = buildCallPayload({ slug: "cafe", kind: "waiter", tableLabel: "Mesa 4", branchName: "Centro", multiBranch: false });
-    expect(payload).toEqual({ title: "Llama al mozo", body: "Mesa 4", url: "/sala/cafe", tag: "llamado:cafe:waiter:Mesa 4" });
+    const payload = buildCallPayload({ slug: "cafe", kind: "waiter", tableLabel: "Mesa 4", tableKey: KEY, branchName: "Centro", multiBranch: false });
+    expect(payload).toEqual({ title: "Llama al mozo", body: "Mesa 4", url: "/sala/cafe", tag: `llamado:cafe:waiter:${KEY}` });
+  });
+
+  it("mesas homónimas de sucursales distintas no comparten etiqueta (no se pisan los avisos); la misma mesa sí", () => {
+    const base = { slug: "cafe", kind: "waiter", tableLabel: "Mesa 1", branchName: "Centro", multiBranch: true } as const;
+    const centro = buildCallPayload({ ...base, tableKey: "aaaaaaaaaaaa" });
+    const norte = buildCallPayload({ ...base, branchName: "Norte", tableKey: "bbbbbbbbbbbb" });
+    expect(centro.tag).not.toBe(norte.tag);
+    expect(buildCallPayload({ ...base, tableKey: "aaaaaaaaaaaa" }).tag).toBe(centro.tag);
+    expect(buildCallPayload({ ...base, kind: "bill", tableKey: "aaaaaaaaaaaa" }).tag).not.toBe(centro.tag);
   });
 
   it("pide la cuenta con otro título y suma la sucursal solo si hay más de una", () => {
-    const una = buildCallPayload({ slug: "cafe", kind: "bill", tableLabel: "Mesa 4", branchName: "Centro", multiBranch: false });
-    const varias = buildCallPayload({ slug: "cafe", kind: "bill", tableLabel: "Mesa 4", branchName: "Centro", multiBranch: true });
+    const una = buildCallPayload({ slug: "cafe", kind: "bill", tableLabel: "Mesa 4", tableKey: KEY, branchName: "Centro", multiBranch: false });
+    const varias = buildCallPayload({ slug: "cafe", kind: "bill", tableLabel: "Mesa 4", tableKey: KEY, branchName: "Centro", multiBranch: true });
     expect(una.title).toBe("Pide la cuenta");
     expect(una.body).toBe("Mesa 4");
     expect(varias.body).toBe("Mesa 4 · Centro");
   });
 
   it("recorta textos largos y no deja una mesa vacía", () => {
-    const largo = buildCallPayload({ slug: "cafe", kind: "waiter", tableLabel: "x".repeat(300), branchName: "", multiBranch: true });
+    const largo = buildCallPayload({ slug: "cafe", kind: "waiter", tableLabel: "x".repeat(300), tableKey: KEY, branchName: "", multiBranch: true });
     expect(largo.body.length).toBeLessThanOrEqual(80);
-    expect(buildCallPayload({ slug: "cafe", kind: "waiter", tableLabel: "  ", branchName: "", multiBranch: false }).body).toBe("Mesa");
+    expect(buildCallPayload({ slug: "cafe", kind: "waiter", tableLabel: "  ", tableKey: KEY, branchName: "", multiBranch: false }).body).toBe("Mesa");
   });
 });
 
@@ -117,6 +127,7 @@ describe("lectura de los destinos", () => {
   const valido = {
     slug: "cafe",
     table_label: "Mesa 4",
+    table_key: KEY,
     branch_name: "Centro",
     multi_branch: false,
     subscriptions: [{ id: "s1", endpoint: FCM, p256dh: P256DH, auth: AUTH }],
@@ -131,7 +142,7 @@ describe("lectura de los destinos", () => {
     expect(parseTargets(sucia)?.subscriptions.map((s) => s.id)).toEqual(["s1"]);
   });
 
-  it.each([null, "x", { ...valido, slug: "../etc" }, { ...valido, multi_branch: "no" }, { ...valido, subscriptions: "x" }])(
+  it.each([null, "x", { ...valido, slug: "../etc" }, { ...valido, multi_branch: "no" }, { ...valido, table_key: "no-es-hex" }, { ...valido, table_key: undefined }, { ...valido, subscriptions: "x" }])(
     "una forma inesperada es «no avisar»",
     (raw) => {
       expect(parseTargets(raw)).toBeNull();
@@ -148,6 +159,7 @@ describe("envío del aviso", () => {
   const destinos = (subscriptions: unknown[]) => ({
     slug: "cafe",
     table_label: "Mesa 4",
+    table_key: KEY,
     branch_name: "Centro",
     multi_branch: false,
     subscriptions,
@@ -164,7 +176,7 @@ describe("envío del aviso", () => {
     expect(send).toHaveBeenCalledTimes(2);
     const [subscription, payload, options] = send.mock.calls[0];
     expect(subscription).toEqual({ endpoint: "https://fcm.googleapis.com/fcm/send/a", keys: { p256dh: P256DH, auth: AUTH } });
-    expect(JSON.parse(payload)).toEqual({ title: "Pide la cuenta", body: "Mesa 4", url: "/sala/cafe", tag: "llamado:cafe:bill:Mesa 4" });
+    expect(JSON.parse(payload)).toEqual({ title: "Pide la cuenta", body: "Mesa 4", url: "/sala/cafe", tag: `llamado:cafe:bill:${KEY}` });
     expect(options).toMatchObject({ TTL: PUSH_TTL_SECONDS, urgency: "high" });
     expect(db.rpc).toHaveBeenCalledWith("push_targets_for_call", { p_token: TOKEN, p_kind: "bill" });
   });

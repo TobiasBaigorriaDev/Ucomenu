@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -203,6 +204,38 @@ describe("registrar el dispositivo", () => {
     expect(filas(local.id)).toHaveLength(11);
   });
 
+  it("el tope aguanta registros simultáneos: con nueve, dieciséis pedidos a la vez dejan exactamente diez", async () => {
+    const local = await nuevoLocal("tt-push-tope-carrera");
+    for (let i = 0; i < 9; i++) expect((await registrar(staff.db, local.id)).data).toBe("ok");
+    const resultados = await Promise.all(Array.from({ length: 16 }, () => registrar(staff.db, local.id)));
+    expect(resultados.filter((r) => r.data === "ok")).toHaveLength(1);
+    expect(resultados.filter((r) => r.data === "limit")).toHaveLength(15);
+    expect(filas(local.id)).toHaveLength(10);
+  });
+
+  it("el registro espera el bloqueo de la persona y el local (determinista: sin él, el tope se podría exceder por carrera)", async () => {
+    const local = await nuevoLocal("tt-push-bloqueo");
+    // Otra sesión toma el mismo bloqueo asesor y lo sostiene unos segundos.
+    const SOSTENER_MS = 3000;
+    const sostener = spawn("docker", [
+      "exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c",
+      `begin; select pg_advisory_xact_lock(hashtextextended('push_subscription:${staff.id}:${local.id}', 0)); select pg_sleep(${SOSTENER_MS / 1000}); commit;`,
+    ]);
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1200)); // deja que la otra sesión lo tome
+      // Otra persona del mismo local no espera: el bloqueo es por persona y local.
+      const libre = Date.now();
+      expect((await registrar(owner.db, local.id)).data).toBe("ok");
+      expect(Date.now() - libre).toBeLessThan(SOSTENER_MS - 1000);
+      // La persona bloqueada espera a que la otra sesión lo suelte.
+      const inicio = Date.now();
+      expect((await registrar(staff.db, local.id)).data).toBe("ok");
+      expect(Date.now() - inicio + (inicio - libre)).toBeGreaterThan(SOSTENER_MS - 1500);
+    } finally {
+      await new Promise((resolve) => (sostener.exitCode !== null ? resolve(null) : sostener.once("exit", resolve)));
+    }
+  });
+
   it("el mismo dispositivo en otra cuenta pasa a quien lo usa ahora; la anterior deja de tenerlo", async () => {
     const local = await nuevoLocal("tt-push-cambio-cuenta");
     const { endpoint } = await registrar(staff.db, local.id);
@@ -292,12 +325,31 @@ describe("a quién avisa el servidor", () => {
     const { data, error } = await destinos(local.token);
     expect(error).toBeNull();
     const respuesta = data as { slug: string; table_label: string; branch_name: string; multi_branch: boolean; subscriptions: { endpoint: string; p256dh: string; auth: string }[] };
-    expect(Object.keys(respuesta).sort()).toEqual(["branch_name", "multi_branch", "slug", "subscriptions", "table_label"]);
+    expect(Object.keys(respuesta).sort()).toEqual(["branch_name", "multi_branch", "slug", "subscriptions", "table_key", "table_label"]);
+    expect((respuesta as unknown as { table_key: string }).table_key).toMatch(/^[0-9a-f]{12}$/);
     expect(respuesta).toMatchObject({ slug: "tt-push-destinos", table_label: "Mesa 7", branch_name: "Uno", multi_branch: false });
     expect(respuesta.subscriptions.map((s) => s.endpoint).sort()).toEqual([mia.endpoint, delDueno.endpoint].sort());
     expect(respuesta.subscriptions[0]).toMatchObject({ p256dh: P256DH, auth: AUTH });
     expect(JSON.stringify(respuesta)).not.toContain(local.id);
     expect(JSON.stringify(respuesta)).not.toContain(local.table);
+  });
+
+  it("dos mesas con la misma etiqueta en sucursales distintas devuelven claves distintas (sus avisos no se reemplazan)", async () => {
+    const local = await nuevoLocal("tt-push-homonimas");
+    await registrar(staff.db, local.id);
+    const otra = await service.from("branches").insert({ organization_id: local.id, slug: "dos", name: "Dos" }).select("id").single();
+    const mesa = await service
+      .from("tables")
+      .insert({ organization_id: local.id, branch_id: otra.data!.id, label: "Mesa 7" })
+      .select("id, qr_token")
+      .single();
+    await llamar(local);
+    const segundo = { ...local, token: mesa.data!.qr_token, table: mesa.data!.id };
+    await llamar(segundo);
+    const a = ((await destinos(local.token)).data as { table_key: string }).table_key;
+    const b = ((await destinos(segundo.token)).data as { table_key: string }).table_key;
+    expect(a).not.toBe(b);
+    expect(a).toBe(((await destinos(local.token)).data as { table_key: string }).table_key); // estable
   });
 
   it("marca si el local tiene más de una sucursal activa", async () => {

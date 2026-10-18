@@ -39,11 +39,12 @@ async function conPushDoble(context: BrowserContext, permiso: "granted" | "denie
     const KEY = "e2e:push:id";
     const w = window as unknown as { __bajas: number };
     w.__bajas = 0;
-    const make = (id: string) => {
+    const make = (id: string, key: number[]) => {
       const endpoint = `https://fcm.googleapis.com/fcm/send/e2e-${id}`;
       return {
         endpoint,
         expirationTime: null,
+        options: { applicationServerKey: new Uint8Array(key).buffer },
         toJSON: () => ({ endpoint, expirationTime: null, keys: { p256dh: "B".repeat(87), auth: "a".repeat(22) } }),
         unsubscribe: async () => {
           w.__bajas += 1;
@@ -53,12 +54,14 @@ async function conPushDoble(context: BrowserContext, permiso: "granted" | "denie
     };
     PushManager.prototype.getSubscription = async () => {
       const id = sessionStorage.getItem(KEY);
-      return id ? (make(id) as unknown as PushSubscription) : null;
+      return id ? (make(id, JSON.parse(sessionStorage.getItem(KEY + ":clave") ?? "[]")) as unknown as PushSubscription) : null;
     };
-    PushManager.prototype.subscribe = async () => {
+    PushManager.prototype.subscribe = async (opciones?: PushSubscriptionOptionsInit) => {
       const id = crypto.randomUUID();
+      const clave = Array.from(new Uint8Array(opciones?.applicationServerKey as ArrayBuffer));
       sessionStorage.setItem(KEY, id);
-      return make(id) as unknown as PushSubscription;
+      sessionStorage.setItem(KEY + ":clave", JSON.stringify(clave));
+      return make(id, clave) as unknown as PushSubscription;
     };
   }, permiso);
 }
@@ -119,6 +122,29 @@ test.describe("aviso con la pestaña cerrada", () => {
     await page.goto(`/sala/${b.slug}`);
     await expect(page.getByRole("heading", { name: "Sala en vivo" })).toBeVisible();
     await expect(activar(page)).toBeVisible(); // mismo dispositivo y suscripción, pero este local no lo tiene registrado
+    await context.close();
+  });
+
+  test("si se rotaron las claves del servidor, el dispositivo suscrito con la anterior no figura «activado» y se rehace al activar", async ({ browser }) => {
+    const t = await nuevoLocal("push-rotacion");
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await conPushDoble(context);
+    const page = await context.newPage();
+    await abrirSala(page, t);
+    await activar(page).click();
+    await expect(page.getByTestId("push-activo")).toBeVisible();
+    const antes = await page.evaluate(() => sessionStorage.getItem("e2e:push:id"));
+
+    // Se rotó el par VAPID: la suscripción guardada en el navegador quedó hecha con otra clave.
+    await page.evaluate(() => sessionStorage.setItem("e2e:push:id:clave", JSON.stringify(Array.from({ length: 65 }, (_, i) => i))));
+    await page.reload();
+    await expect(activar(page)).toBeVisible();
+    await expect(page.getByTestId("push-activo")).toHaveCount(0);
+
+    await activar(page).click();
+    await expect(page.getByTestId("push-activo")).toBeVisible();
+    const despues = await page.evaluate(() => sessionStorage.getItem("e2e:push:id"));
+    expect(despues).not.toBe(antes); // se volvió a suscribir con la clave actual
     await context.close();
   });
 

@@ -90,7 +90,9 @@ begin
     return 'invalid';
   end if;
 
-  -- Tope por persona y local (un teléfono y una PC son dos; diez cubre de sobra y frena el abuso).
+  -- Tope por persona y local (un teléfono y una PC son dos; diez cubre de sobra y frena el abuso). El lock serializa los
+  -- registros de la misma persona y local: sin él, dos pedidos simultáneos contarían los mismos nueve y terminarían en once.
+  perform pg_advisory_xact_lock(hashtextextended('push_subscription:' || v_user::text || ':' || p_org::text, 0));
   if (
     select count(*) from public.push_subscriptions s
     where s.user_id = v_user and s.organization_id = p_org and s.endpoint <> p_endpoint
@@ -148,7 +150,8 @@ comment on function public.push_subscription_registered(uuid, text) is
   'Si el dispositivo (endpoint) de quien llama está registrado para p_org. Solo ve lo propio.';
 
 -- A quién avisar por un llamado recién creado. Solo service_role (el servidor, después de create_waiter_call = created).
--- Devuelve null si no corresponde avisar. Nunca devuelve ids de mesa ni de organización: solo lo que arma el aviso.
+-- Devuelve null si no corresponde avisar. Nunca devuelve ids de mesa ni de organización: solo lo que arma el aviso
+-- (incluida una clave opaca de la mesa, que distingue mesas homónimas de sucursales distintas en la etiqueta del aviso).
 create function public.push_targets_for_call(p_token text, p_kind text)
 returns jsonb
 language plpgsql
@@ -166,7 +169,8 @@ begin
     return null;
   end if;
 
-  select t.id, t.organization_id, t.label, b.name as branch_name, o.slug
+  select t.id, t.organization_id, t.label, b.name as branch_name, o.slug,
+         substr(md5(t.id::text), 1, 12) as table_key
     into v_table
   from public.tables t
   join public.branches b on b.id = t.branch_id and b.is_active
@@ -207,6 +211,7 @@ begin
   return jsonb_build_object(
     'slug', v_table.slug,
     'table_label', v_table.label,
+    'table_key', v_table.table_key,
     'branch_name', v_table.branch_name,
     'multi_branch', v_multi,
     'subscriptions', v_subscriptions

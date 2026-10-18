@@ -9,7 +9,7 @@ Que el personal reciba una notificación del sistema cuando alguien llama al moz
 - *(usuario, 2026-10-17)* Primero Android y Windows. El aviso desde el panel y iPhone son ítems aparte del tablero. *(usuario, 2026-10-18)* Instalar `web-push`.
 - **Registro por local y dispositivo** (no «por sucursal»: la sala y la membresía son por organización).
 - **Sin tabla legible:** `push_subscriptions` no da ningún permiso (ni a `service_role`); todo por funciones `SECURITY DEFINER`. Detalle en el ADR.
-- **El texto del aviso:** título = tipo («Llama al mozo» / «Pide la cuenta»), cuerpo = mesa (+ sucursal si hay varias), toca → `/sala/{slug}`. Una notificación por mesa y tipo (`tag`), que no se cierra sola (`requireInteraction`).
+- **El texto del aviso:** título = tipo («Llama al mozo» / «Pide la cuenta»), cuerpo = mesa (+ sucursal si hay varias), toca → `/sala/{slug}`. Una notificación por mesa y tipo (`tag` con una clave opaca de la mesa, no la etiqueta: «Mesa 1» de dos sucursales no se pisan), que no se cierra sola (`requireInteraction`).
 - **Pantalla:** un bloque debajo de «Activar alertas» en `/sala/{slug}`: «Avisarme aunque cierre la sala» → «Avisos activados en este dispositivo» + «Desactivar avisos». Solo se muestra si el servidor tiene `VAPID_PUBLIC_KEY`. El estado se pregunta al servidor (no solo al navegador).
 - **Service worker** `public/sala-sw.js` con alcance `/sala/`, sin caché ni `fetch`. Trata el contenido como no confiable (solo rutas `/sala/...`, textos acotados).
 
@@ -50,12 +50,16 @@ Ejecutado el 2026-10-18 sobre la rama `feat/aviso-push-de-llamados` (base local 
 ## (C) Fallos y recuperación
 - **Servicio de push caído o lento:** cada envío tiene 8 s de tope y TTL de 2 minutos; los fallos se cuentan en el log (códigos, sin direcciones). El comensal no espera (`after()`).
 - **404/410:** `drop_push_subscriptions` borra esas filas; el dispositivo ve «activar» en su próxima visita (el estado sale del servidor).
-- **Claves VAPID rotadas o faltantes:** sin las tres variables no se envía y la pantalla no ofrece el aviso; cambiar el par invalida las suscripciones (envían 403/410 y se limpian) y cada dispositivo vuelve a activar. `pnpm prod:check` marca las claves a medias.
+- **Claves VAPID rotadas o faltantes:** sin las tres variables no se envía y la pantalla no ofrece el aviso. Al cambiar el par, las suscripciones viejas dejan de servir (FCM responde 403): la pantalla compara la clave con la que se suscribió el navegador y, si no coincide, **no figura «activado»** y al activar se desuscribe y se suscribe de nuevo con la clave actual; la fila vieja se borra sola cuando el servicio de push responde 404/410 por la suscripción dada de baja (un 403 no borra: podría ser una mala configuración y no queremos vaciar todas las suscripciones por eso). `pnpm prod:check` marca las claves a medias.
 - **Rollback:** `git revert` de la rama y, en una base con datos, los `drop` del comentario inicial de la migración (solo se pierden suscripciones). La pantalla vuelve a ser la de antes.
 - **Suscripciones huérfanas** (dispositivo que desaparece): quedan hasta el próximo 404/410; sin purga programada (anotado en el ADR).
 
 ## (C) Revisión y aprobación
-- Revisión independiente (Codex, una ronda, solo lectura): pendiente.
+- **Ronda 1 (Codex, `--base main` sobre `9c81c63`, solo lectura): APROBAR CON CAMBIOS, 3 hallazgos «importantes», los tres reales y corregidos:**
+  1. *Rotar VAPID dejaba el dispositivo «activado» sin recibir nada* (la pantalla no comparaba la clave de la suscripción). Ahora la compara (`usesKey`) y rehace la suscripción. Regresión: E2E «si se rotaron las claves…» (falla con la comparación anulada). El 403 no se borra a propósito (ver «Fallos»).
+  2. *El `tag` pisaba mesas homónimas de sucursales distintas.* `push_targets_for_call` devuelve `table_key` (12 hex de `md5(id)`, opaca) y el `tag` la usa. Regresiones: unitaria del texto y RLS con dos «Mesa 7» en sucursales distintas.
+  3. *El tope de 10 dispositivos se podía exceder por concurrencia.* `register_push_subscription` toma `pg_advisory_xact_lock` por persona y local antes de contar. Regresión determinista (otra sesión sostiene el bloqueo y el registro espera; sin la línea, falla 2/2); la prueba por carrera pura solo detectaba la mutación 1 de 3 veces y se dejó como comprobación extra.
+- Ronda de verificación: pendiente.
 - Aprobación humana (despliegue a staging con las claves VAPID de staging y prueba en dispositivos reales): pendiente.
 
 ## Aprendizajes
