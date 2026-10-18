@@ -1,5 +1,5 @@
 # Cambio: Aviso de llamados en iPhone y iPad (la sala como app instalada)
-Estado: implementado y probado en local; falta probarlo en un iPhone real (instalar la app desde staging) y la integración a `main`
+Estado: integrado a `main` — implementado, probado en local, desplegado a staging y aprobado por el usuario tras probarlo en su iPhone (2026-10-18)
 Nivel: M (no cambia autorización, esquema, permisos ni el envío por la API; suma un manifiesto, íconos, instrucciones en pantalla y una regla del *service worker* para Apple. La lista de destinos ya incluye `*.push.apple.com`)
 
 ## Objetivo
@@ -23,7 +23,7 @@ Que el personal con iPhone o iPad (iOS/iPadOS 16.4 o superior) reciba el aviso d
 - [x] En iOS/iPadOS sin soporte (anterior a 16.4) el mensaje lo dice.
 - [x] Con suscripción de `push.apple.com` el *service worker* muestra siempre el aviso; con la de Chrome sigue sin duplicar.
 - [x] Sin regresiones en la sala y el panel (pruebas del aviso, del cartel y del sonido).
-- [ ] Probado en un iPhone real con la app instalada desde staging (**requiere al usuario**).
+- [x] Probado en un iPhone real con la app instalada desde staging (el usuario, 2026-10-18: «anda todo excelente»).
 
 ## Fuera de alcance
 - App nativa, *badge* en el ícono y avisos de otros eventos; pantalla propia de «cómo instalar» fuera del bloque; sonido propio.
@@ -35,4 +35,5 @@ Ejecutado el 2026-10-18 sobre la rama `feat/aviso-iphone` (base local en seed):
 - Regresión con `--workers=1`: `sala`, `sala-push`, `panel-push` y `panel-llamados-aviso` **38/38**.
 - Íconos: `tools/generar-iconos.mjs` (Playwright, sin dependencias nuevas) → `public/icons/` (192, 512, 512 *maskable*, 180 de Apple); revisada la imagen de 512.
 - Fuentes de las reglas de Apple: webkit.org «Web Push for Web Apps on iOS and iPadOS» y «Meet Web Push».
-- **No ejecutado / no verificable acá:** un iPhone real: instalar la app, el permiso, la suscripción a `push.apple.com`, el aviso con la app cerrada, que `clients.openWindow` abra la app al tocar el aviso y que Apple acepte el contacto VAPID del entorno. Tampoco se comprobó que Apple no exija más (p. ej. que el `VAPID_SUBJECT` de staging sea aceptado): **lo prueba el usuario con un iPhone contra staging.**
+- **Prueba del usuario en un iPhone real contra staging (HTTPS, 2026-10-18):** instaló la app desde Safari, activó los avisos y los recibió con la app cerrada: «anda todo excelente». Quedó desplegada la versión con el primer paso de las instrucciones que pide abrir la página en Safari.
+- **Antes de esa prueba, no verificable desde acá:** un iPhone real: instalar la app, el permiso, la suscripción a `push.apple.com`, el aviso con la app cerrada, que `clients.openWindow` abra la app al tocar el aviso y que Apple acepte el contacto VAPID del entorno. Tampoco se comprobó que Apple no exija más (p. ej. que el `VAPID_SUBJECT` de staging sea aceptado): **lo prueba el usuario con un iPhone contra staging.**

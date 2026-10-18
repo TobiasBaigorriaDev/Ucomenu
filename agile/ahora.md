@@ -4,18 +4,17 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-[Aviso de llamados en iPhone y iPad](cambios/aviso-push-iphone.md) (M): **implementado y confirmado en la rama `feat/aviso-iphone`**, sin integrar a `main` ni desplegado. La sala y el panel se pueden instalar como app (`public/sala.webmanifest`, íconos en `public/icons/` generados con `tools/generar-iconos.mjs`, metadatos solo en `/sala` y `/panel`); en Safari de iPhone el bloque del aviso explica cómo instalar; y el *service worker* **siempre muestra** el aviso si la suscripción es de Apple, que revoca las que no terminan en una notificación visible. Pruebas locales verdes (ficha). El ítem está en «Para verificar».
+[Aviso de llamados en iPhone y iPad](cambios/aviso-push-iphone.md) (M): **integrado a `main`**, desplegado a staging y aprobado por el usuario tras probarlo en un iPhone real (instaló la app desde Safari y recibió los avisos con la app cerrada). Con esto el aviso con la app cerrada funciona en Android, Windows e iPhone/iPad ([ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)); el aviso desde el panel ya estaba hecho.
 
-**Falta lo que no se puede probar acá:** un iPhone real (iOS 16.4+). Pasos: desplegar la rama a staging (imagen `flyio/flyctl`, ver `docs/produccion.md`), abrir `https://ucomenu-staging.fly.dev/sala` en Safari, instalar con Compartir → «Agregar a pantalla de inicio», abrir desde el ícono, activar los avisos y llamar desde una mesa con la app cerrada. Si Apple rechaza el envío, mirar primero el `VAPID_SUBJECT` de staging (hoy `https://ucomenu-staging.fly.dev`).
-
-La base local está en seed y el servidor local, apagado. Staging tiene `main` (incluye el cartel del panel).
+Staging (`https://ucomenu-staging.fly.dev`) está al día con `main`. La base local está en seed y el servidor local, apagado.
 
 ## Bloqueos y riesgos
 
-- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`) y un `VAPID_SUBJECT` real.
+- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Al salir hace falta **otro par VAPID** (`pnpm push:claves`) y un `VAPID_SUBJECT` real (Apple lo valida); `pnpm prod:check` lo verifica.
+- iPhone: solo con la sala instalada en la pantalla de inicio (iOS 16.4+); desde Chrome o Edge del iPhone no se probó. Apple siempre muestra el aviso aunque la sala esté a la vista (si no, revoca la suscripción).
 - E2E: usar `--workers=1` (con más, el servidor de pruebas de esta máquina cae); repetir de a uno lo que falle.
 - `.env.local` conserva claves VAPID de prueba (no versionado).
 
 ## Próximo paso
 
-El usuario prueba en un iPhone (con staging desplegado). Si funciona: integrar a `main`, pasar el ítem a «Hecho» y subir. Si no, ajustar según lo que falle. Después elegir otra tarea del [tablero](tablero.md).
+Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: lectura de pagos y auditoría por el Dueño (C, dentro de «SuperAdmin, incrementos pendientes»), analítica básica (M) o carta en varios idiomas (M). La retención de `price_history` necesita política del usuario.
