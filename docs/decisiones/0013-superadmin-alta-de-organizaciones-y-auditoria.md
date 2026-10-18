@@ -26,7 +26,7 @@ Hasta hoy las organizaciones y sus primeros Dueños se crean por script local (`
 - Primer SuperAdmin de un entorno real: `insert into public.platform_admins (user_id) select id from auth.users where email = '<email>'`, a mano y con aprobación (toca producción cuando exista). En local lo carga el seed (`admin@ucomenu.test`).
 - Una organización con auditoría **sí se podrá borrar** el día que exista ese borrado (sin clave foránea); su retención se define aparte. El borrado sigue bloqueado por `price_history` (ADR 0012).
 - Cada acción nueva de SuperAdmin (cambiar/suspender plan, pagos, add-ons) sigue el mismo patrón: función de base acotada, solo `service_role`, vuelve a comprobar al actor, escribe `audit_log` en la misma transacción; se agrega su valor al `check` de `action`.
-- Lectura de la auditoría por el Dueño de la organización (prevista en `arquitectura.md`): pendiente, cuando haya movimientos que mostrarle.
+- Lectura de la auditoría por el Dueño de la organización (prevista en `arquitectura.md`): **hecha** por funciones con proyección segura, sin abrir la tabla (ADR 0021).
 - El Dueño inicial es una cuenta nueva con contraseña temporal sin cambio forzado (deuda ya conocida). Sumar una cuenta existente como Dueño de otra organización queda para otro incremento.
 
 ## Ampliación (2026-10-17): plan, suspensión y pagos a mano

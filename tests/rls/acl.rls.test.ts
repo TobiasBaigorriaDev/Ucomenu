@@ -53,6 +53,8 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   drop_push_subscriptions: [false, false], // aviso de llamados (ADR 0020): limpia suscripciones muertas; solo service_role
   create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],
+  owner_account_history: [false, true], // el Dueño lee el historial de cambios de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
+  owner_payments: [false, true], // el Dueño lee los pagos de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   public_menu_status: [true, true],
   push_subscription_registered: [false, true], // aviso de llamados (ADR 0020): ¿está registrado este dispositivo? Solo lo propio
   push_targets_for_call: [false, false], // aviso de llamados (ADR 0020): a quién avisar de un llamado nuevo; solo service_role

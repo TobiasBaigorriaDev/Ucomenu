@@ -33,7 +33,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] SuperAdmin, incrementos pendientes: add-ons, desactivar organizaciones y lectura de la auditoría y de los pagos por el Dueño. **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
+- [C] SuperAdmin, incrementos pendientes: add-ons y desactivar organizaciones (la lectura de la auditoría y de los pagos por el Dueño está en «Hecho»). **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
@@ -62,6 +62,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] El Dueño lee los pagos y el historial de cambios de su cuenta en Suscripción: dos funciones de base solo de lectura con proyección segura (lista blanca, sin actor, motivo ni ids de terceros); revisado por Codex en dos rondas y aprobado por el usuario (2026-10-18); **migración aún no aplicada en staging** → [ficha](cambios/dueno-lee-pagos-y-auditoria.md) · ADR 0021
 - [M] Aviso de llamados en iPhone y iPad: la sala y el panel se instalan como app (manifiesto, íconos, instrucciones en pantalla) y el aviso siempre se muestra en Apple; probado y aprobado por el usuario en un iPhone real contra staging (2026-10-18; desplegado a staging) → [ficha](cambios/aviso-push-iphone.md)
 - [M] Aviso de llamados también desde el panel: cartel fijo con los llamados pendientes, «Sala en vivo» en modo alerta con contador, sonido que sigue al salir de la sala y activación del aviso del sistema desde el Resumen; probado y aprobado por el usuario en su Chrome (2026-10-18; desplegado a staging) → [ficha](cambios/aviso-push-desde-el-panel.md)
 - [C] Aviso de llamados con la pestaña cerrada por Web Push (Android y Windows): tabla de suscripciones cerrada a la API, envío desde el servidor, service worker de la sala; revisado por Codex en tres rondas, probado por el usuario en Windows y Android contra staging y aprobado (2026-10-18) → [ficha](cambios/aviso-push-de-llamados.md) · ADR 0020
