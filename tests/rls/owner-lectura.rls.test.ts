@@ -71,9 +71,9 @@ const pago = (local: Local, dias: number, cambios: Record<string, string> = {}) 
   ...cambios,
 });
 
-const pagos = (db: Db, org: string, extra: { p_limit?: number; p_before?: string } = {}) =>
+const pagos = (db: Db, org: string, extra: { p_limit?: number; p_before?: string; p_before_id?: string } = {}) =>
   db.rpc("owner_payments", { p_org: org, ...extra });
-const historial = (db: Db, org: string, extra: { p_limit?: number; p_before?: string } = {}) =>
+const historial = (db: Db, org: string, extra: { p_limit?: number; p_before?: string; p_before_id?: string } = {}) =>
   db.rpc("owner_account_history", { p_org: org, ...extra });
 
 /** Un local con un movimiento de cada tipo, hechos como los hace el servidor (por las funciones de SuperAdmin). */
@@ -268,7 +268,7 @@ describe("paginación", () => {
 
     const primera = (await pagos(local.owner.db, local.id, { p_limit: 2 })).data!;
     expect(primera.map((p) => p.amount_cents)).toEqual([9_000, 6_000]);
-    const resto = (await pagos(local.owner.db, local.id, { p_limit: 2, p_before: primera[1].created_at })).data!;
+    const resto = (await pagos(local.owner.db, local.id, { p_limit: 2, p_before: primera[1].created_at, p_before_id: primera[1].id })).data!;
     expect(resto.map((p) => p.amount_cents)).toEqual([3_000]);
 
     expect((await pagos(local.owner.db, local.id, { p_limit: 0 })).data).toHaveLength(1); // mínimo 1
@@ -277,6 +277,46 @@ describe("paginación", () => {
     expect((await historial(local.owner.db, local.id, { p_limit: 1 })).data).toHaveLength(1);
     const antiguo = (await pagos(local.owner.db, local.id, { p_before: "2000-01-01T00:00:00Z" })).data;
     expect(antiguo).toEqual([]);
+  });
+
+  it("con la misma fecha en varias filas el cursor (fecha, id) no salta ni repite ninguna", async () => {
+    const local = await crearLocal();
+    const instante = "2026-03-05 12:00:00.123456+00";
+    // 26 movimientos y 5 pagos con EXACTAMENTE la misma fecha: la fecha sola no alcanza para paginar.
+    sql(
+      `insert into public.audit_log (actor_id, actor_email, action, organization_id, created_at, before, after) ` +
+        `select '${admin.id}', '${admin.email}', 'subscription.suspended', '${local.id}', '${instante}', null, '{"slug":"${local.slug}"}'::jsonb from generate_series(1, 26)`,
+    );
+    const sub = (await service.from("subscriptions").select("id").eq("organization_id", local.id).single()).data!.id;
+    for (let i = 1; i <= 5; i += 1) {
+      sql(
+        `insert into public.payments (organization_id, subscription_id, plan_code, billing_cycle, amount_cents, currency, method, paid_on, previous_period_end, covers_until, registered_by, created_at) ` +
+          `values ('${local.id}', '${sub}', 'pro', 'monthly', ${1000 + i}, 'ARS', 'cash', '2026-03-05', '2026-03-01', '2026-04-0${i}', '${admin.id}', '${instante}')`,
+      );
+    }
+
+    const recorrer = async (leer: (extra: { p_limit: number; p_before?: string; p_before_id?: string }) => Promise<{ data: { id: string; created_at: string }[] | null }>, tope: number) => {
+      const vistos: string[] = [];
+      let cursor: { p_before: string; p_before_id: string } | undefined;
+      for (let vuelta = 0; vuelta < 20; vuelta += 1) {
+        const pagina = (await leer({ p_limit: tope, ...cursor })).data!;
+        if (pagina.length === 0) break;
+        vistos.push(...pagina.map((fila) => fila.id));
+        const ultima = pagina[pagina.length - 1];
+        cursor = { p_before: ultima.created_at, p_before_id: ultima.id };
+      }
+      return vistos;
+    };
+
+    const movimientos = await recorrer((extra) => historial(local.owner.db, local.id, extra) as never, 10);
+    expect(movimientos).toHaveLength(26);
+    expect(new Set(movimientos).size).toBe(26);
+    const cobros = await recorrer((extra) => pagos(local.owner.db, local.id, extra) as never, 2);
+    expect(cobros).toHaveLength(5);
+    expect(new Set(cobros).size).toBe(5);
+
+    // Sin id (un cursor viejo, solo con fecha) sigue siendo «estrictamente anterior»: nunca devuelve las empatadas.
+    expect((await historial(local.owner.db, local.id, { p_before: "2026-03-05T12:00:00.123456+00:00" })).data).toEqual([]);
   });
 
   it("el tope por pedido es 100", async () => {

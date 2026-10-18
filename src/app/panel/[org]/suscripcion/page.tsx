@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { loadOwnerAccount, type Page } from "@/lib/cuenta/cargar";
-import { describeHistory, describePayment, formatDateTime, formatDay, parseBefore, type HistoryRow, type PaymentRow } from "@/lib/cuenta/lectura";
+import { describeHistory, describePayment, formatDateTime, formatDay, parseCursor, type HistoryRow, type PaymentRow } from "@/lib/cuenta/lectura";
 import { formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL, type BillingState } from "@/lib/entitlements";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -32,7 +32,7 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
   const { org } = await params;
   const { membership } = await requireOwner(org, `/panel/${org}/suscripcion`);
   const query = await searchParams;
-  const before = { payments: parseBefore(query.pagos_antes), history: parseBefore(query.cambios_antes) };
+  const before = { payments: parseCursor(query.pagos_antes), history: parseCursor(query.cambios_antes) };
   const [ent, account] = await Promise.all([
     getEntitlements(membership.org.id),
     // La base vuelve a comprobar que sea Dueño y entrega solo lo que puede ver (ADR 0021).
@@ -42,7 +42,9 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
   // «Ver más» de una lista conserva dónde está la otra.
   const moreHref = (list: "pagos" | "cambios", next: string) => {
     const params = new URLSearchParams();
-    const other = list === "pagos" ? before.history : before.payments;
+    // El cursor de la otra lista se conserva tal cual (fecha_id).
+    const keep = (cursor: typeof before.payments) => (cursor ? `${cursor.before}_${cursor.beforeId}` : null);
+    const other = list === "pagos" ? keep(before.history) : keep(before.payments);
     if (list === "pagos") {
       params.set("pagos_antes", next);
       if (other) params.set("cambios_antes", other);

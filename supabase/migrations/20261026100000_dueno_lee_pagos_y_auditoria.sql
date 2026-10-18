@@ -1,8 +1,8 @@
 -- El Dueño lee los pagos y el historial de cambios de SU cuenta (nivel C; ficha dueno-lee-pagos-y-auditoria, ADR 0021).
 --
 -- Rollback (local): git revert + `pnpm db:reset`. En una base con datos (no hay datos propios que perder):
---   drop function public.owner_payments(uuid, integer, timestamptz);
---   drop function public.owner_account_history(uuid, integer, timestamptz);
+--   drop function public.owner_payments(uuid, integer, timestamptz, uuid);
+--   drop function public.owner_account_history(uuid, integer, timestamptz, uuid);
 --
 -- Decisiones:
 --  * `payments` y `audit_log` NO reciben política de lectura para el Dueño: siguen siendo de SuperAdmin. Contienen datos que
@@ -11,7 +11,8 @@
 --  * Solo un Dueño ACTUAL de la organización recibe filas; cualquier otra identidad (Staff, Dueño de otro local, sin rol,
 --    anon, SuperAdmin sin membresía) recibe cero filas, igual que con un local inexistente.
 --  * Lista blanca de acciones: una acción nueva de `audit_log` queda oculta hasta que se sume a propósito a esta función.
---  * Solo leen. Paginación por fecha con tope de 100 filas por pedido.
+--  * Solo leen. Paginación con cursor (fecha, id) —el id desempata filas con la misma fecha, para no saltar ninguna— y tope
+--    de 100 filas por pedido.
 
 -- ---------------------------------------------------------------------------
 -- Pagos de la organización
@@ -20,7 +21,8 @@
 create function public.owner_payments(
   p_org uuid,
   p_limit integer default 24,
-  p_before timestamptz default null
+  p_before timestamptz default null,
+  p_before_id uuid default null
 )
 returns table (
   id uuid,
@@ -50,12 +52,16 @@ begin
          p.previous_period_end, p.covers_until
   from public.payments p
   where p.organization_id = p_org
-    and (p_before is null or p.created_at < p_before)
+    and (
+      p_before is null
+      or p.created_at < p_before
+      or (p_before_id is not null and p.created_at = p_before and p.id < p_before_id)
+    )
   order by p.created_at desc, p.id desc
   limit least(greatest(coalesce(p_limit, 24), 1), 100);
 end;
 $$;
-comment on function public.owner_payments(uuid, integer, timestamptz) is
+comment on function public.owner_payments(uuid, integer, timestamptz, uuid) is
   'Pagos de la organización para su Dueño actual (cero filas para cualquier otra identidad). Sin registered_by. Solo lee.';
 
 -- ---------------------------------------------------------------------------
@@ -66,7 +72,8 @@ comment on function public.owner_payments(uuid, integer, timestamptz) is
 create function public.owner_account_history(
   p_org uuid,
   p_limit integer default 25,
-  p_before timestamptz default null
+  p_before timestamptz default null,
+  p_before_id uuid default null
 )
 returns table (
   id uuid,
@@ -124,12 +131,16 @@ begin
       'payment.registered',
       'owner.added'
     )
-    and (p_before is null or a.created_at < p_before)
+    and (
+      p_before is null
+      or a.created_at < p_before
+      or (p_before_id is not null and a.created_at = p_before and a.id < p_before_id)
+    )
   order by a.created_at desc, a.id desc
   limit least(greatest(coalesce(p_limit, 25), 1), 100);
 end;
 $$;
-comment on function public.owner_account_history(uuid, integer, timestamptz) is
+comment on function public.owner_account_history(uuid, integer, timestamptz, uuid) is
   'Historial de cambios de la cuenta para su Dueño actual (cero filas para cualquier otra identidad). Lista blanca de acciones y de claves; sin actor, motivo ni ids de terceros. Solo lee.';
 
 -- ---------------------------------------------------------------------------
@@ -137,7 +148,7 @@ comment on function public.owner_account_history(uuid, integer, timestamptz) is
 -- ---------------------------------------------------------------------------
 -- PUBLIC recibe EXECUTE por defecto: se parte de cero. Solo una sesión de persona (la función vuelve a comprobar que sea
 -- Dueño de la organización); anon y service_role no las necesitan.
-revoke all on function public.owner_payments(uuid, integer, timestamptz) from public, anon, authenticated, service_role;
-revoke all on function public.owner_account_history(uuid, integer, timestamptz) from public, anon, authenticated, service_role;
-grant execute on function public.owner_payments(uuid, integer, timestamptz) to authenticated;
-grant execute on function public.owner_account_history(uuid, integer, timestamptz) to authenticated;
+revoke all on function public.owner_payments(uuid, integer, timestamptz, uuid) from public, anon, authenticated, service_role;
+revoke all on function public.owner_account_history(uuid, integer, timestamptz, uuid) from public, anon, authenticated, service_role;
+grant execute on function public.owner_payments(uuid, integer, timestamptz, uuid) to authenticated;
+grant execute on function public.owner_account_history(uuid, integer, timestamptz, uuid) to authenticated;

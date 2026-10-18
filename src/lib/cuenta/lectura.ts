@@ -88,11 +88,23 @@ export function parseHistory(raw: unknown): HistoryRow[] | null {
   return rows;
 }
 
-/** El cursor de «Ver más» viene de la dirección: solo se acepta una fecha con hora y zona (la que devolvió la base). */
-export function parseBefore(value: unknown): string | undefined {
-  if (typeof value !== "string" || value.length > 40) return undefined;
-  return /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.test(value) && !Number.isNaN(Date.parse(value)) ? value : undefined;
+/**
+ * Cursor de «Ver más»: la fecha de la última fila mostrada y su id (separados por «_»). La fecha sola no alcanza: varias
+ * filas pueden compartirla y las que quedaron fuera de la página se saltarían. Viene de la dirección, así que solo se
+ * acepta la forma exacta que devuelve la base (fecha con hora y zona + uuid).
+ */
+export type Cursor = { before: string; beforeId: string };
+
+const CURSOR = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2}))_([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/;
+
+export function parseCursor(value: unknown): Cursor | undefined {
+  if (typeof value !== "string" || value.length > 80) return undefined;
+  const match = CURSOR.exec(value);
+  if (!match || Number.isNaN(Date.parse(match[1]))) return undefined;
+  return { before: match[1], beforeId: match[2] };
 }
+
+export const formatCursor = (row: { createdAt: string; id: string }): string => `${row.createdAt}_${row.id}`;
 
 /** «18 de octubre de 2026» a partir de AAAA-MM-DD, sin que la zona horaria lo corra un día. */
 export function formatDay(day: string): string {
@@ -165,7 +177,8 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
 export function describePayment(row: PaymentRow): { amount: string; lines: string[] } {
   const lines = [
     `${METHOD_LABEL[row.method] ?? row.method} · Plan ${planLabel(row.plan, row.billingCycle)}`,
-    `Cubre hasta el ${formatDateWithYear(row.coversUntil)}`,
+    `Cubre hasta el ${formatDateWithYear(row.coversUntil)} (antes vencía el ${formatDateWithYear(row.previousPeriodEnd)})`,
+    `Registrado el ${formatDateTime(row.createdAt)}`,
   ];
   if (row.reference) lines.push(`Referencia: ${row.reference}`);
   return { amount: formatMoney(row.amountCents, row.currency), lines };

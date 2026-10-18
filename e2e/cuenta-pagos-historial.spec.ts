@@ -71,6 +71,8 @@ test.describe("Suscripción: pagos y historial", () => {
     await expect(pagos.first()).toContainText("Transferencia");
     await expect(pagos.first()).toContainText(`Referencia: ${REFERENCIA}`);
     await expect(pagos.first()).toContainText("Recibido el");
+    await expect(pagos.first()).toContainText("(antes vencía el"); // el vencimiento anterior, para conciliar
+    await expect(pagos.first()).toContainText("Registrado el");
 
     const cambios = page.getByTestId("cambio");
     await expect(cambios).toHaveCount(4);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeHistory, describePayment, formatDay, parseBefore, parseHistory, parsePayments, type HistoryRow } from "./lectura";
+import { describeHistory, describePayment, formatCursor, formatDay, parseCursor, parseHistory, parsePayments, type HistoryRow } from "./lectura";
 
 const PAGO = {
   id: "0b6f3d8c-0000-4000-8000-000000000001",
@@ -38,7 +38,12 @@ describe("lectura de pagos", () => {
   it("el texto de un pago: importe con moneda, medio, plan, período y referencia", () => {
     const { amount, lines } = describePayment(parsePayments([PAGO])![0]);
     expect(amount.replace(/\s/g, " ")).toBe("$ 20.000 ARS"); // Intl usa un espacio fino
-    expect(lines).toEqual(["Transferencia · Plan Pro, mensual", "Cubre hasta el 20 de noviembre de 2026", "Referencia: op-123"]);
+    expect(lines).toEqual([
+      "Transferencia · Plan Pro, mensual",
+      "Cubre hasta el 20 de noviembre de 2026 (antes vencía el 19 de octubre de 2026)",
+      "Registrado el 18/10/2026, 12:47",
+      "Referencia: op-123",
+    ]);
   });
 });
 
@@ -48,11 +53,25 @@ describe("fechas", () => {
     expect(formatDay("2026-01-01")).toBe("1 de enero de 2026");
   });
 
-  it("el cursor de «Ver más» solo acepta una fecha con hora y zona", () => {
-    expect(parseBefore("2026-10-18T15:47:25.123456+00:00")).toBe("2026-10-18T15:47:25.123456+00:00");
-    expect(parseBefore("2026-10-18T15:47:25Z")).toBe("2026-10-18T15:47:25Z");
-    for (const malo of ["", "ayer", "2026-10-18", "2026-10-18T15:47:25", "2026-13-45T99:99:99Z", "1; drop table payments", undefined, 5, ["2026-10-18T15:47:25Z"], "2026-10-18T15:47:25Z".repeat(4)]) {
-      expect(parseBefore(malo as string)).toBeUndefined();
+  it("el cursor de «Ver más» lleva la fecha y el id de la última fila, y solo acepta esa forma exacta", () => {
+    const id = "0b6f3d8c-0000-4000-8000-000000000001";
+    expect(parseCursor(`2026-10-18T15:47:25.123456+00:00_${id}`)).toEqual({ before: "2026-10-18T15:47:25.123456+00:00", beforeId: id });
+    expect(parseCursor(`2026-10-18T15:47:25Z_${id}`)).toEqual({ before: "2026-10-18T15:47:25Z", beforeId: id });
+    expect(formatCursor({ createdAt: "2026-10-18T15:47:25+00:00", id })).toBe(`2026-10-18T15:47:25+00:00_${id}`);
+    for (const malo of [
+      "",
+      "ayer",
+      "2026-10-18T15:47:25Z", // sin id: un cursor de la versión anterior no sirve
+      `2026-10-18_${id}`,
+      `2026-13-45T99:99:99Z_${id}`,
+      "2026-10-18T15:47:25Z_no-es-un-uuid",
+      `2026-10-18T15:47:25Z_${id}; drop table payments`,
+      undefined,
+      5,
+      [`2026-10-18T15:47:25Z_${id}`],
+      `2026-10-18T15:47:25Z_${id}`.repeat(3),
+    ]) {
+      expect(parseCursor(malo as string)).toBeUndefined();
     }
   });
 });

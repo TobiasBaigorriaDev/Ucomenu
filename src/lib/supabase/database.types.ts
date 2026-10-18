@@ -470,12 +470,12 @@ isOneToOne: false
 { Args: { "p_org": string }; Returns: Json
                            },
 "owner_account_history":
-{ Args: { "p_before"?: string,"p_limit"?: number,"p_org": string }; Returns: {
+{ Args: { "p_before"?: string,"p_before_id"?: string,"p_limit"?: number,"p_org": string }; Returns: {
               "action": string,"created_at": string,"detail": Json,"id": string
             }[]
                            },
 "owner_payments":
-{ Args: { "p_before"?: string,"p_limit"?: number,"p_org": string }; Returns: {
+{ Args: { "p_before"?: string,"p_before_id"?: string,"p_limit"?: number,"p_org": string }; Returns: {
               "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string
             }[]
                            },
