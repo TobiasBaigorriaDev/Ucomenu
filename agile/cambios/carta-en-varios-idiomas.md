@@ -1,5 +1,5 @@
 # Cambio: Carta en varios idiomas
-Estado: integrado a `main` (aprobado por el usuario el 2026-10-18; migración aplicada en staging; falta desplegar la app)
+Estado: integrado a `main` (aprobado por el usuario el 2026-10-18; migración aplicada y app desplegada en staging)
 Nivel: M (esquema nuevo, pero sin tocar autorización, dinero ni borrados; ver «Nivel»)
 
 ## Objetivo
@@ -46,4 +46,4 @@ Ejecutada el 2026-10-18 sobre `pnpm db:reset` (migración `20261028100000_carta_
 
 ## Integración
 - Aprobada por el usuario tras probarla en local (2026-10-18) e integrada a `main` con `Merge feat/carta-multiidioma`. Sin revisión independiente, por su nivel.
-- Migración `20261028100000` **aplicada en staging** (2026-10-18): `supabase db push --dry-run` listó solo esa y `db push` la aplicó; `migration list` la muestra en local y remoto. (Un primer intento fue bloqueado por el control de permisos; salió al repetirlo con la orden explícita del usuario.) Es aditiva y el código anterior la ignora. El despliegue de la app a staging no se hizo.
+- Migración `20261028100000` **aplicada en staging** (2026-10-18): `supabase db push --dry-run` listó solo esa y `db push` la aplicó; `migration list` la muestra en local y remoto. (Un primer intento fue bloqueado por el control de permisos; salió al repetirlo con la orden explícita del usuario.) Es aditiva y el código anterior la ignora. App desplegada a staging el mismo día (`fly deploy -c fly.staging.toml` con la imagen oficial en Docker): rutas públicas 200 y la pantalla nueva del panel exige sesión. Sin traducciones en `demo`, la carta de staging se ve en español.

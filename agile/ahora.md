@@ -6,9 +6,7 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 [Carta en varios idiomas](cambios/carta-en-varios-idiomas.md) (M, [ADR 0023](../docs/decisiones/0023-carta-en-varios-idiomas.md)): aprobada por el usuario e **integrada a `main`** (sin servicios externos de traducción; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`).
 
-Staging (`https://ucomenu-staging.fly.dev`): la migración `20261028100000` **ya está aplicada** (2026-10-18, `supabase db push` tras `--dry-run` que listó solo esa). Es aditiva: la app que hoy corre en staging la ignora.
-
-Falta **desplegar la app** a staging (Fly, `docs/produccion.md` paso 3b) para ver la carta en varios idiomas allá. Ya no hay nada que lo bloquee; no se pidió ni se hizo.
+Staging (`https://ucomenu-staging.fly.dev`): migración `20261028100000` aplicada y **app desplegada** (2026-10-18, imagen de `main` con `fly deploy` por Docker; `/`, `/login`, `/m/demo/centro` responden 200 y `/panel/demo/carta/traducciones` redirige al login). La organización `demo` no tiene traducciones cargadas: para ver el selector hay que escribir alguna en el panel de su Dueño.
 
 Antes (ya en staging): pagos y auditoría del Dueño, analítica básica, aviso de llamados por Web Push.
 
