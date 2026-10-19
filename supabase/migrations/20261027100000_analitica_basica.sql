@@ -106,7 +106,8 @@ returns table (
   product_id uuid,
   name text,
   views bigint,
-  total_views bigint
+  total_views bigint,
+  is_active boolean
 )
 language plpgsql
 stable
@@ -134,16 +135,17 @@ begin
     group by d.product_id
   ),
   total as (select coalesce(sum(per_dish.v), 0)::bigint as t from per_dish)
-  select p.id, p.name, per_dish.v, total.t
+  -- Se listan también los platos desactivados (con su estado): así el total siempre coincide con lo que se muestra.
+  select p.id, p.name, per_dish.v, total.t, p.is_active
   from per_dish
-  join public.products p on p.id = per_dish.pid and p.organization_id = p_org and p.is_active
+  join public.products p on p.id = per_dish.pid and p.organization_id = p_org
   cross join total
   order by per_dish.v desc, p.name, p.id
   limit least(greatest(coalesce(p_limit, 10), 1), 50);
 end;
 $$;
 comment on function public.owner_top_dishes(uuid, integer, uuid, integer) is
-  'Platos más vistos de los últimos días (1 a 90) para el Dueño actual con analítica, con el total de vistas del período. Cero filas para cualquier otra identidad. Solo lee.';
+  'Platos más vistos de los últimos días (1 a 90) para el Dueño actual con analítica, con el total de vistas del período y si el plato sigue activo. Cero filas para cualquier otra identidad. Solo lee.';
 
 -- ---------------------------------------------------------------------------
 -- Llamados por hora del día (Dueño con analítica)

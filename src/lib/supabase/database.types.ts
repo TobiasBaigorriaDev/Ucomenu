@@ -518,7 +518,7 @@ isOneToOne: false
                            },
 "owner_top_dishes":
 { Args: { "p_branch"?: string,"p_days"?: number,"p_limit"?: number,"p_org": string }; Returns: {
-              "name": string,"product_id": string,"total_views": number,"views": number
+              "is_active": boolean,"name": string,"product_id": string,"total_views": number,"views": number
             }[]
                            },
 "public_menu_status":

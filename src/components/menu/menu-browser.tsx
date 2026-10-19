@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { DIETARY_LABEL, DIETARY_TAGS, filterMenu, type DietaryTag } from "@/lib/carta/dietary";
-import { recordDishViewAction } from "@/lib/analitica/actions";
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
 import { CategoryBar } from "./category-bar";
 import { CategoryMosaic } from "./category-mosaic";
@@ -22,15 +21,23 @@ export function MenuBrowser({ sections, branchId }: { sections: Section[]; branc
     setSelected(product);
     if (!counting.current || viewed.current.has(product.id)) return;
     viewed.current.add(product.id);
-    // Sin esperar y sin mostrar nada: si el local no tiene analítica o falla, se deja de intentar en esta visita.
-    void recordDishViewAction(branchId, product.id).then(
-      (counted) => {
-        if (!counted) counting.current = false;
-      },
-      () => {
+    // Un `fetch` a una ruta, NO una acción del servidor: las acciones de la página van de a una y un conteo lento demoraría
+    // «Llamar al mozo». Sin esperar y sin mostrar nada; si el local no tiene analítica o falla, se deja de intentar en esta visita.
+    void fetch("/api/vista-plato", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ branch: branchId, product: product.id }),
+      keepalive: true,
+      credentials: "omit",
+      cache: "no-store",
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: unknown) => {
+        if (!data || (data as { counted?: unknown }).counted !== true) counting.current = false;
+      })
+      .catch(() => {
         counting.current = false;
-      },
-    );
+      });
   }
   const visible = useMemo(() => filterMenu(sections, query, tags), [sections, query, tags]);
   const count = visible.reduce((total, section) => total + section.products.length, 0);

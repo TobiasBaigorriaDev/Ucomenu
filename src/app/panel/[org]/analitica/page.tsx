@@ -128,7 +128,10 @@ function TopDishesSection({ dishes, total, failed }: { dishes: DishViews[] | nul
               <li key={dish.id} className="border-b border-ink/15 py-3" data-testid="plato-fila" data-nombre={dish.name}>
                 <div className="flex items-baseline gap-3">
                   <span className="w-6 shrink-0 text-right text-base text-muted tabular-nums">{index + 1}</span>
-                  <span className="min-w-0 flex-1 text-lg break-words">{dish.name}</span>
+                  <span className="min-w-0 flex-1 text-lg break-words">
+                    {dish.name}
+                    {dish.active ? null : <span className="ml-2 text-sm text-muted">(desactivado)</span>}
+                  </span>
                   <span className="shrink-0 text-lg font-medium tabular-nums">{dish.views}</span>
                 </div>
                 <div aria-hidden className="mt-2 ml-9 h-2 rounded-full bg-ink/10">

@@ -1,16 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { barPercent, callsOf, hourRange, parseCallsByHour, parseTopDishes, peakHours, plural, totalCalls } from "./lectura";
 
-const FILA = { product_id: "0b6f3d8c-0000-4000-8000-000000000001", name: "Milanesa", views: 8, total_views: 12 };
+const FILA = { product_id: "0b6f3d8c-0000-4000-8000-000000000001", name: "Milanesa", views: 8, total_views: 12, is_active: true };
 
 describe("platos más vistos", () => {
   it("lee las filas y toma el total del período", () => {
-    const r = parseTopDishes([FILA, { ...FILA, product_id: "otro", name: "Flan", views: 4 }])!;
+    const r = parseTopDishes([FILA, { ...FILA, product_id: "otro", name: "Flan", views: 4, is_active: false }])!;
     expect(r.dishes).toEqual([
-      { id: FILA.product_id, name: "Milanesa", views: 8 },
-      { id: "otro", name: "Flan", views: 4 },
+      { id: FILA.product_id, name: "Milanesa", views: 8, active: true },
+      { id: "otro", name: "Flan", views: 4, active: false },
     ]);
     expect(r.total).toBe(12);
+  });
+
+  it("un plato sin la marca de activo se toma como activo (no se oculta nada por un dato ausente)", () => {
+    expect(parseTopDishes([{ ...FILA, is_active: undefined }])!.dishes[0].active).toBe(true);
   });
 
   it("sin filas es una lista vacía con total 0 (no un error)", () => {

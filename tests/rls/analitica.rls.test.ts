@@ -241,12 +241,21 @@ describe("platos más vistos (solo el Dueño con el plan)", () => {
     expect((await top(local.owner.db, local.id, { p_days: -3 })).data!.map((f) => f.name)).toEqual(["Milanesa"]);
   });
 
-  it("un plato desactivado no se lista, pero sus vistas siguen en el total del período", async () => {
+  it("un plato desactivado se lista marcado como tal y sus vistas siguen en el total del período", async () => {
     const local = await conVistas();
     sql(`update public.products set is_active = false where id = '${plato(local, "Ensalada")}'`);
     const r = (await top(local.owner.db, local.id)).data!;
-    expect(r.map((f) => f.name)).toEqual(["Milanesa"]);
-    expect(Number(r[0].total_views)).toBe(12);
+    expect(r.map((f) => [f.name, f.is_active])).toEqual([["Milanesa", true], ["Ensalada", false]]);
+    expect(r.every((f) => Number(f.total_views) === 12)).toBe(true);
+  });
+
+  it("si TODOS los platos vistos se desactivaron, el total no se pierde (sigue habiendo filas con el total)", async () => {
+    const local = await crearLocal();
+    sembrar(local, plato(local, "Flan"), local.branch, hoyAr(), 7);
+    sql(`update public.products set is_active = false where id = '${plato(local, "Flan")}'`);
+    const r = (await top(local.owner.db, local.id)).data!;
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ name: "Flan", views: 7, total_views: 7, is_active: false });
   });
 
   it("nadie más recibe nada: Staff, Dueño de otro local, sin rol, anon, plan Básico y cuenta suspendida; en «solo lectura» sí", async () => {
@@ -292,7 +301,7 @@ describe("platos más vistos (solo el Dueño con el plan)", () => {
     const local = await conVistas();
     const antes = vistas();
     const r = (await top(local.owner.db, local.id)).data!;
-    expect(Object.keys(r[0]).sort()).toEqual(["name", "product_id", "total_views", "views"]);
+    expect(Object.keys(r[0]).sort()).toEqual(["is_active", "name", "product_id", "total_views", "views"]);
     expect(vistas()).toBe(antes);
   });
 });

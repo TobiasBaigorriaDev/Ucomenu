@@ -49,11 +49,11 @@ test.afterAll(async () => {
 const vistas = (orgId: string) => Number(sql(`select coalesce(sum(views), 0) from public.dish_view_counts where organization_id = '${orgId}'`)[0][0]);
 const filas = (orgId: string) => Number(sql(`select count(*) from public.dish_view_counts where organization_id = '${orgId}'`)[0][0]);
 
-/** Cuenta los pedidos de acciones del servidor (el conteo de vistas) que hace la página. */
-function contarAcciones(page: Page) {
+/** Cuenta los pedidos de conteo de vistas que hace la página. */
+function contarPedidos(page: Page) {
   const pedidos: string[] = [];
   page.on("request", (request) => {
-    if (request.method() === "POST" && request.headers()["next-action"]) pedidos.push(request.url());
+    if (request.method() === "POST" && new URL(request.url()).pathname === "/api/vista-plato") pedidos.push(request.url());
   });
   return pedidos;
 }
@@ -66,7 +66,65 @@ const abrirYCerrar = async (page: Page, plato: string) => {
   await expect(dialogo).toBeHidden();
 };
 
+test.describe("la ruta que cuenta las vistas", () => {
+  test("solo acepta un POST chico con dos ids válidos, no devuelve cookies y no cuenta lo que no cuadra", async ({ request }) => {
+    const l = await nuevoLocal("ana-ruta");
+    const url = "/api/vista-plato";
+    const valido = { branch: l.branch, product: l.platos.Milanesa };
+
+    const ok = await request.post(url, { data: valido });
+    expect(ok.status()).toBe(200);
+    expect(await ok.json()).toEqual({ counted: true });
+    expect(ok.headers()["set-cookie"]).toBeUndefined();
+    expect(ok.headers()["cache-control"]).toContain("no-store");
+    expect(vistas(l.t.orgId)).toBe(1);
+
+    // Lo que no cuadra no cuenta ni rompe: ids que no son uuid, JSON roto, vacío, demasiado grande, método equivocado.
+    const sinContar = await request.post(url, { data: { branch: "no-es-uuid", product: "tampoco" } });
+    expect([sinContar.status(), await sinContar.json()]).toEqual([200, { counted: false }]);
+    expect((await request.post(url, { data: Buffer.from("{roto"), headers: { "content-type": "application/json" } })).status()).toBe(400);
+    expect((await request.post(url, { data: Buffer.from(""), headers: { "content-type": "application/json" } })).status()).toBe(400);
+    expect((await request.post(url, { data: { branch: l.branch, product: l.platos.Milanesa, relleno: "x".repeat(2000) } })).status()).toBe(413);
+    expect((await request.get(url)).status()).toBe(405);
+    // Un plato de otra organización o inexistente no cuenta.
+    const otro = await nuevoLocal("ana-ruta-otro");
+    expect(await (await request.post(url, { data: { branch: l.branch, product: otro.platos.Milanesa } })).json()).toEqual({ counted: false });
+    expect(await (await request.post(url, { data: { branch: l.branch, product: "00000000-0000-4000-8000-0000000000aa" } })).json()).toEqual({ counted: false });
+    expect(vistas(l.t.orgId)).toBe(1);
+    expect(vistas(otro.t.orgId)).toBe(0);
+  });
+});
+
 test.describe("la carta pública cuenta las vistas", () => {
+  test("un conteo lento no demora «Llamar al mozo» (no comparten la cola de acciones del servidor)", async ({ browser }) => {
+    const l = await nuevoLocal("ana-no-bloquea");
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    // El conteo queda retenido hasta que la prueba lo suelte.
+    let soltar!: () => void;
+    const puerta = new Promise<void>((resolve) => (soltar = resolve));
+    // Se retiene el pedido de conteo SEA CUAL SEA el mecanismo (una ruta o una acción del servidor): se lo reconoce por el id del plato.
+    await page.route("**/*", async (route) => {
+      const pedido = route.request();
+      const esConteo = pedido.method() === "POST" && (pedido.postData() ?? "").includes(l.platos.Milanesa);
+      if (esConteo) await puerta;
+      await route.continue();
+    });
+    await page.goto(`/t/${l.mesas[0].token}`);
+    await expect(page.getByTestId("barra-llamado")).toBeVisible();
+
+    await abrirYCerrar(page, "Milanesa"); // dispara el conteo, que queda esperando
+    await page.getByTestId("barra-llamado").getByRole("button", { name: "Llamar al mozo" }).click();
+    await expect(page.getByTestId("mensaje-llamado")).toBeVisible({ timeout: 8_000 }); // el llamado se confirmó con el conteo todavía retenido
+    const llamados = await service().from("waiter_calls").select("id").eq("organization_id", l.t.orgId);
+    expect(llamados.data).toHaveLength(1);
+    expect(vistas(l.t.orgId)).toBe(0); // y la vista todavía no llegó
+
+    soltar();
+    await expect.poll(() => vistas(l.t.orgId)).toBe(1);
+    await context.close();
+  });
+
   test("una vista por plato y por visita; recargar es otra visita; no se guarda nada en el dispositivo", async ({ browser }) => {
     const l = await nuevoLocal("ana-carta");
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -98,7 +156,7 @@ test.describe("la carta pública cuenta las vistas", () => {
     const l = await nuevoLocal("ana-basico", "basic");
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
-    const acciones = contarAcciones(page);
+    const acciones = contarPedidos(page);
     await page.goto(`/m/${l.t.slug}/centro`);
 
     await abrirYCerrar(page, "Milanesa");

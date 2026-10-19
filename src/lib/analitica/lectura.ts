@@ -8,7 +8,7 @@
 export const ANALYTICS_DAYS = 14;
 export const TOP_DISHES = 10;
 
-export type DishViews = { id: string; name: string; views: number };
+export type DishViews = { id: string; name: string; views: number; /** `false`: el plato se desactivó después (sus vistas siguen contando). */ active: boolean };
 export type TopDishes = { dishes: DishViews[]; total: number };
 
 export type HourCalls = { hour: number; waiter: number; bill: number };
@@ -24,7 +24,7 @@ export function parseTopDishes(raw: unknown): TopDishes | null {
   for (const item of raw) {
     if (!isRecord(item) || typeof item.product_id !== "string" || typeof item.name !== "string") return null;
     if (!isCount(item.views) || !isCount(item.total_views)) return null;
-    dishes.push({ id: item.product_id, name: item.name, views: item.views });
+    dishes.push({ id: item.product_id, name: item.name, views: item.views, active: item.is_active !== false });
     total = item.total_views; // el mismo en todas las filas
   }
   return { dishes, total };
