@@ -58,11 +58,11 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [C] Cobro automático de la suscripción (Mercado Pago Suscripciones) con activación y suspensión por webhook
 - [M] Subdominio o dominio propio por organización
 - [M] Carta en varios idiomas
-- [M] Analítica básica: platos más vistos y llamados por franja horaria — incluida desde el plan Pro
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
-- [C] El Dueño lee los pagos y el historial de cambios de su cuenta en Suscripción: dos funciones de base solo de lectura con proyección segura (lista blanca, sin actor, motivo ni ids de terceros); revisado por Codex en dos rondas y aprobado por el usuario (2026-10-18); **migración aún no aplicada en staging** → [ficha](cambios/dueno-lee-pagos-y-auditoria.md) · ADR 0021
+- [C] Analítica básica para el Dueño con plan Pro: platos más vistos (contadores anónimos por día, sin guardar nada del comensal) y llamados por hora de los últimos 14 días, con detalle al pasar el cursor o tocar; revisado por Codex en tres rondas y aprobado por el usuario (2026-10-19) → [ficha](cambios/analitica-basica.md) · ADR 0022
+- [C] El Dueño lee los pagos y el historial de cambios de su cuenta en Suscripción: dos funciones de base solo de lectura con proyección segura (lista blanca, sin actor, motivo ni ids de terceros); revisado por Codex en dos rondas y aprobado por el usuario (2026-10-18); → [ficha](cambios/dueno-lee-pagos-y-auditoria.md) · ADR 0021
 - [M] Aviso de llamados en iPhone y iPad: la sala y el panel se instalan como app (manifiesto, íconos, instrucciones en pantalla) y el aviso siempre se muestra en Apple; probado y aprobado por el usuario en un iPhone real contra staging (2026-10-18; desplegado a staging) → [ficha](cambios/aviso-push-iphone.md)
 - [M] Aviso de llamados también desde el panel: cartel fijo con los llamados pendientes, «Sala en vivo» en modo alerta con contador, sonido que sigue al salir de la sala y activación del aviso del sistema desde el Resumen; probado y aprobado por el usuario en su Chrome (2026-10-18; desplegado a staging) → [ficha](cambios/aviso-push-desde-el-panel.md)
 - [C] Aviso de llamados con la pestaña cerrada por Web Push (Android y Windows): tabla de suscripciones cerrada a la API, envío desde el servidor, service worker de la sala; revisado por Codex en tres rondas, probado por el usuario en Windows y Android contra staging y aprobado (2026-10-18) → [ficha](cambios/aviso-push-de-llamados.md) · ADR 0020

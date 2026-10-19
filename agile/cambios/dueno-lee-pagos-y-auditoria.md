@@ -1,5 +1,5 @@
 # Cambio: El Dueño lee los pagos y el historial de cambios de su cuenta
-Estado: integrado a `main` — revisado por Codex (2 rondas, aprobado) y aprobado por el usuario tras verlo en su Chrome local (2026-10-18); la migración todavía NO está aplicada en staging
+Estado: integrado a `main` — revisado por Codex (2 rondas, aprobado) y aprobado por el usuario tras verlo en su Chrome local (2026-10-18); la migración se aplicó a staging junto con la de analítica (2026-10-19, aprobado por el usuario)
 Nivel: C (exposición de información —datos de dinero y de operaciones del equipo de UcoMenu hacia el cliente— y autorización: quién lee qué de la facturación)
 
 ## Objetivo

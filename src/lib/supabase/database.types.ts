@@ -91,6 +91,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"dish_view_counts": {
+                  Row: {
+                    "branch_id": string,"day": string,"organization_id": string,"product_id": string,"views": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"day": string,"organization_id": string,"product_id": string,"views": number
+                  }
+                  Update: {
+                    "branch_id"?: string,"day"?: string,"organization_id"?: string,"product_id"?: string,"views"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "dish_view_counts_branch_id_fkey"
+      columns: ["branch_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "dish_view_counts_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "dish_view_counts_product_id_fkey"
+      columns: ["product_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"memberships": {
                   Row: {
                     "created_at": string,"id": string,"organization_id": string,"role": string,"user_id": string
@@ -474,9 +506,19 @@ isOneToOne: false
               "action": string,"created_at": string,"detail": Json,"id": string
             }[]
                            },
+"owner_calls_by_hour":
+{ Args: { "p_branch"?: string,"p_org": string }; Returns: {
+              "bill": number,"hour_of_day": number,"waiter": number
+            }[]
+                           },
 "owner_payments":
 { Args: { "p_before"?: string,"p_before_id"?: string,"p_limit"?: number,"p_org": string }; Returns: {
               "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string
+            }[]
+                           },
+"owner_top_dishes":
+{ Args: { "p_branch"?: string,"p_days"?: number,"p_limit"?: number,"p_org": string }; Returns: {
+              "is_active": boolean,"name": string,"product_id": string,"total_views": number,"views": number
             }[]
                            },
 "public_menu_status":
@@ -490,6 +532,9 @@ isOneToOne: false
                            },
 "push_targets_for_call":
 { Args: { "p_kind": string,"p_token": string }; Returns: Json
+                           },
+"record_dish_view":
+{ Args: { "p_branch": string,"p_product": string }; Returns: boolean
                            },
 "register_push_subscription":
 { Args: { "p_auth": string,"p_endpoint": string,"p_org": string,"p_p256dh": string }; Returns: string

@@ -81,7 +81,7 @@ Tres niveles más WebAR como add-on, con **cobro manual** en el MVP: el SuperAdm
 - **Límites:** son techos para *crear* y para *activar* (no se puede superar el tope). Los platos se cuentan solo si están activos (`is_active`): con el tope alcanzado se bloquea tanto crear un plato activo como pasar uno inactivo a activo; pasar un plato de activo a inactivo siempre se permite, para que el local pueda acomodarse a su cupo. Misma regla para sucursales y mesas. *(Confirmado 2026-10-14.)*
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.
 - En el MVP se venden **Básico y Pro**. Premium y el add-on WebAR se habilitan cuando se entreguen las fases 3 y 2.
-- **Analítica básica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). Se construye después del MVP (Fase 4).
+- **Analítica básica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). **Implementada** (ficha `analitica-basica`, ADR 0022): `/panel/{slug}/analitica`, solo Dueño, con los platos más vistos (aperturas del detalle, contadores por día) y los llamados por hora de los últimos 14 días.
 
 ### Mora y suspensión (degradación progresiva)
 Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Supuesto (nuevo)*):
