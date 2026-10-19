@@ -1,4 +1,5 @@
-import { choiceRule } from "@/lib/carta/options-rules";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuOptionGroup } from "@/lib/menu";
 import { formatArs } from "@/lib/money";
 
@@ -26,7 +27,8 @@ export function limitOptionGroups(groups: MenuOptionGroup[], maxRows?: number): 
  * plato sigue siendo el base y cada opción muestra su diferencia («+ $ 600»; sin diferencia, nada). Los grupos no usan
  * títulos (`h2` = categorías, `h3` = platos); cada uno es una lista con nombre y regla de elección.
  */
-export function DishOptions({ productId, groups, maxRows }: { productId: string; groups: MenuOptionGroup[]; maxRows?: number }) {
+export function DishOptions({ productId, groups, maxRows, lang }: { productId: string; groups: MenuOptionGroup[]; maxRows?: number; lang: Lang }) {
+  const t = TEXTOS[lang].options;
   const { shown, hidden } = limitOptionGroups(groups, maxRows);
   return (
     <div className="mt-3 space-y-3" data-testid="opciones-plato">
@@ -36,7 +38,7 @@ export function DishOptions({ productId, groups, maxRows }: { productId: string;
           <div key={group.id} data-testid="grupo-opciones" className="max-w-[46ch] border-l border-ink/20 pl-3">
             <p id={titleId} className="flex flex-wrap items-baseline gap-x-2 text-sm">
               <span className="font-semibold tracking-wide text-[var(--carta-green)] [overflow-wrap:anywhere]">{group.name}</span>
-              <span className="text-muted">{choiceRule(group.min_choices, group.max_choices)}</span>
+              <span className="text-muted">{t.rule(group.min_choices, group.max_choices)}</span>
             </p>
             <ul aria-labelledby={titleId} className="mt-1">
               {group.options.map((option) => (
@@ -53,7 +55,7 @@ export function DishOptions({ productId, groups, maxRows }: { productId: string;
           </div>
         );
       })}
-      {hidden > 0 ? <p className="text-sm text-muted">{hidden === 1 ? "1 opción más en el detalle" : `${hidden} opciones más en el detalle`}</p> : null}
+      {hidden > 0 ? <p className="text-sm text-muted">{t.more(hidden)}</p> : null}
     </div>
   );
 }

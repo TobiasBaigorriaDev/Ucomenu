@@ -73,14 +73,14 @@ isOneToOne: false
                   ]
                 },"categories": {
                   Row: {
-                    "created_at": string,"id": string,"is_active": boolean,"name": string,"organization_id": string,"sort_order": number
+                    "created_at": string,"id": string,"is_active": boolean,"name": string,"organization_id": string,"sort_order": number,"translations": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"sort_order"?: number
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"sort_order"?: number
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Relationships: [
                     {
@@ -145,14 +145,14 @@ isOneToOne: false
                   ]
                 },"option_groups": {
                   Row: {
-                    "created_at": string,"id": string,"is_active": boolean,"max_choices": number,"min_choices": number,"name": string,"organization_id": string,"product_id": string,"sort_order": number
+                    "created_at": string,"id": string,"is_active": boolean,"max_choices": number,"min_choices": number,"name": string,"organization_id": string,"product_id": string,"sort_order": number,"translations": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"max_choices"?: number,"min_choices"?: number,"name": string,"organization_id": string,"product_id": string,"sort_order"?: number
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"max_choices"?: number,"min_choices"?: number,"name": string,"organization_id": string,"product_id": string,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"max_choices"?: number,"min_choices"?: number,"name"?: string,"organization_id"?: string,"product_id"?: string,"sort_order"?: number
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"max_choices"?: number,"min_choices"?: number,"name"?: string,"organization_id"?: string,"product_id"?: string,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Relationships: [
                     {
@@ -171,14 +171,14 @@ isOneToOne: false
                   ]
                 },"options": {
                   Row: {
-                    "created_at": string,"group_id": string,"id": string,"is_active": boolean,"name": string,"organization_id": string,"price_delta_cents": number,"sort_order": number
+                    "created_at": string,"group_id": string,"id": string,"is_active": boolean,"name": string,"organization_id": string,"price_delta_cents": number,"sort_order": number,"translations": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"group_id": string,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"price_delta_cents"?: number,"sort_order"?: number
+                    "created_at"?: string,"group_id": string,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"price_delta_cents"?: number,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Update: {
-                    "created_at"?: string,"group_id"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"price_delta_cents"?: number,"sort_order"?: number
+                    "created_at"?: string,"group_id"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"price_delta_cents"?: number,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Relationships: [
                     {
@@ -317,14 +317,14 @@ isOneToOne: false
                   ]
                 },"products": {
                   Row: {
-                    "category_id": string,"created_at": string,"currency": string,"description": string | null,"dietary_tags": (string)[],"id": string,"image_path": string | null,"is_active": boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order": number
+                    "category_id": string,"created_at": string,"currency": string,"description": string | null,"dietary_tags": (string)[],"id": string,"image_path": string | null,"is_active": boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order": number,"translations": NonNullable<Json>
                   }
                   ComputedFields: never
                   Insert: {
-                    "category_id": string,"created_at"?: string,"currency"?: string,"description"?: string | null,"dietary_tags"?: (string)[],"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order"?: number
+                    "category_id": string,"created_at"?: string,"currency"?: string,"description"?: string | null,"dietary_tags"?: (string)[],"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"name": string,"organization_id": string,"price_cents": number,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Update: {
-                    "category_id"?: string,"created_at"?: string,"currency"?: string,"description"?: string | null,"dietary_tags"?: (string)[],"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"price_cents"?: number,"sort_order"?: number
+                    "category_id"?: string,"created_at"?: string,"currency"?: string,"description"?: string | null,"dietary_tags"?: (string)[],"id"?: string,"image_path"?: string | null,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"price_cents"?: number,"sort_order"?: number,"translations"?: NonNullable<Json>
                   }
                   Relationships: [
                     {

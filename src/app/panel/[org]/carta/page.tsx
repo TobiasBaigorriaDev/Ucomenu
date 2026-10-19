@@ -55,9 +55,12 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
         </p>
       ) : null}
 
-      <p className="mt-3">
+      <p className="mt-3 flex flex-wrap gap-2">
         <Link href={`/panel/${membership.org.slug}/historial-de-precios`} className={linkButtonClass} data-testid="ver-historial-precios">
           Historial de precios
+        </Link>
+        <Link href={`/panel/${membership.org.slug}/carta/traducciones`} className={linkButtonClass} data-testid="ver-traducciones">
+          Traducciones
         </Link>
       </p>
 

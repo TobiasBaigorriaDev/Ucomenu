@@ -1,3 +1,5 @@
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
 import { categoryAnchor } from "./anchors";
 import { DishCard, type CardSpan } from "./dish-card";
@@ -18,7 +20,7 @@ export function cardSpans(products: Pick<MenuProduct, "image_path">[]): CardSpan
   });
 }
 
-export function MenuSection({ section, index, onSelect }: { section: Section; index: number; onSelect?: (product: MenuProduct) => void }) {
+export function MenuSection({ section, index, onSelect, lang }: { section: Section; index: number; onSelect?: (product: MenuProduct) => void; lang: Lang }) {
   const { category, products } = section;
   const headingId = `${categoryAnchor(category.id)}-title`;
   const spans = cardSpans(products);
@@ -36,12 +38,12 @@ export function MenuSection({ section, index, onSelect }: { section: Section; in
           <h2 id={headingId} className="min-w-0 font-display text-[2rem] leading-none [overflow-wrap:anywhere] sm:text-5xl">
             {category.name}
           </h2>
-          <p className="ml-auto shrink-0 text-sm font-medium">{products.length === 1 ? "1 plato" : `${products.length} platos`}</p>
+          <p className="ml-auto shrink-0 text-sm font-medium">{TEXTOS[lang].count.dishes(products.length)}</p>
         </div>
       </div>
       <ul className="mt-2 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         {products.map((product, i) => (
-          <DishCard key={product.id} product={product} span={spans[i]} onSelect={onSelect} />
+          <DishCard key={product.id} product={product} span={spans[i]} onSelect={onSelect} lang={lang} />
         ))}
       </ul>
     </section>

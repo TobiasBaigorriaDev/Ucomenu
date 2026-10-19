@@ -1,7 +1,11 @@
+import type { Translations } from "@/lib/idiomas/traducciones";
+
 export type MenuCategory = {
   id: string;
   name: string;
   sort_order: number;
+  /** Traducciones del nombre (carta en varios idiomas); la vista las resuelve con `localizeSections`. */
+  translations?: Translations;
 };
 
 export type MenuOption = {
@@ -10,6 +14,7 @@ export type MenuOption = {
   /** Diferencia sobre el precio base, en centavos (0 = sin diferencia). Solo informativa. */
   price_delta_cents: number;
   sort_order: number;
+  translations?: Translations;
 };
 
 export type MenuOptionGroup = {
@@ -18,6 +23,7 @@ export type MenuOptionGroup = {
   min_choices: number;
   max_choices: number;
   sort_order: number;
+  translations?: Translations;
   options: MenuOption[];
 };
 
@@ -36,6 +42,7 @@ export type MenuProduct = {
   is_available?: boolean;
   /** Variantes y adicionales activos del plato (con al menos una opción activa), en orden. */
   option_groups?: MenuOptionGroup[];
+  translations?: Translations;
 };
 
 export type MenuSection = {

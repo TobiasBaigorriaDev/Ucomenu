@@ -1,3 +1,6 @@
+import { BASE_LANG, type Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
+
 /** Resultado de `create_waiter_call` y los mensajes que ve el comensal. Puro: se prueba en `llamados.test.ts`. */
 
 export type CallKind = "waiter" | "bill";
@@ -41,29 +44,28 @@ export function parseCallResult(raw: unknown): CallResult {
 export type CallTone = "ok" | "info" | "error";
 
 /** El ticket de visita venció, no es válido o la mesa ya cerró la cuenta (fichas ticket-de-visita y cerrar-sesion-al-atender-la-cuenta): mismo texto. */
-export const SESSION_EXPIRED_MESSAGE = "Esta sesión venció. Escaneá de nuevo el QR de tu mesa para avisar al personal.";
+export const SESSION_EXPIRED_MESSAGE = TEXTOS[BASE_LANG].call.expired;
 
-export const UNAVAILABLE_MESSAGE = "Por ahora no se puede avisar desde acá. Levantá la mano o buscá al personal.";
+export const UNAVAILABLE_MESSAGE = TEXTOS[BASE_LANG].call.unavailable;
 
-const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
-
-/** Qué se le dice al comensal por cada resultado. El tono decide el rol accesible del mensaje. */
-export function callMessage(kind: CallKind, result: CallResult): { tone: CallTone; text: string } {
-  const bill = kind === "bill";
+/**
+ * Qué se le dice al comensal por cada resultado, en el idioma de su carta (los textos viven en `idiomas/textos.ts`). El tono
+ * decide el rol accesible del mensaje.
+ */
+export function callMessage(kind: CallKind, result: CallResult, lang: Lang = BASE_LANG): { tone: CallTone; text: string } {
+  const t = TEXTOS[lang].call;
   switch (result.status) {
     case "created":
-      return { tone: "ok", text: bill ? "Pedimos tu cuenta. En un momento te la acercan." : "Avisamos al personal. En un momento te atienden." };
+      return { tone: "ok", text: t.created[kind] };
     case "already_pending":
-      return { tone: "info", text: bill ? "Ya pedimos tu cuenta. Enseguida te la acercan." : "Ya avisamos al personal. Enseguida te atienden." };
+      return { tone: "info", text: t.already[kind] };
     case "cooldown":
-      return { tone: "info", text: `Ya avisaste hace un momento. Podés volver a avisar en ${plural(result.retryAfterSeconds, "segundo", "segundos")}.` };
-    case "rate_limited": {
-      const minutes = Math.max(1, Math.ceil(result.retryAfterSeconds / 60));
-      return { tone: "error", text: `Se hicieron demasiados avisos desde tu conexión. Probá de nuevo en ${plural(minutes, "minuto", "minutos")}.` };
-    }
+      return { tone: "info", text: t.cooldown(result.retryAfterSeconds) };
+    case "rate_limited":
+      return { tone: "error", text: t.rateLimited(Math.max(1, Math.ceil(result.retryAfterSeconds / 60))) };
     case "session_closed":
-      return { tone: "error", text: SESSION_EXPIRED_MESSAGE };
+      return { tone: "error", text: t.expired };
     default:
-      return { tone: "error", text: UNAVAILABLE_MESSAGE };
+      return { tone: "error", text: t.unavailable };
   }
 }

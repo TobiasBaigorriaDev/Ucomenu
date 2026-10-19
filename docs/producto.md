@@ -33,6 +33,7 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 - Disponibilidad por sucursal (marcar un plato como agotado sin borrarlo).
   - Dueño y Staff la gestionan en la pantalla del plato. Agotado permanece visible con su aviso; el resto de las sucursales conserva su estado y no cambia la activación del plato. Aceptación y evidencia en [la ficha](../agile/cambios/disponibilidad-por-sucursal.md).
 - Identidad visual del local (logo y colores) sobre un diseño gastronómico de alto impacto.
+  - **Idiomas:** la carta pública se ofrece en español, inglés y portugués ([ADR 0023](decisiones/0023-carta-en-varios-idiomas.md)). El Dueño y el Staff escriben las traducciones de categorías, platos, variantes y opciones en `/panel/{slug}/carta/traducciones`; lo que falta se ve en español. El selector aparece en la carta al cargar el primer texto en un idioma, y el comensal entra en el idioma de su navegador si el local lo ofrece. Los textos legales siguen en español. No hay traducción automática.
   - **Presentación:** la carta pública se rediseñó como Bento + Editorial + Cards (índice de categorías en bento, banda de sección pegajosa con el color de su celda, platos como cards con o sin foto, dock de llamado en la carta de mesa). Contexto en [`PRODUCT.md`](../PRODUCT.md) y sistema de diseño en [`DESIGN.md`](../DESIGN.md).
   - **Implementado en local:** el Dueño elige una paleta de contraste comprobado (Oliva, Azul, Vino o Cacao) y sube o quita el logo desde `/panel/{slug}/apariencia`. Se aplica a la carta de todas las sucursales y a los QR; la configuración predeterminada conserva el diseño actual. Incluida en todos los planes; con la cuenta en solo lectura o suspendida se consulta pero no se edita.
 - Es **solo consulta**: no hay pedidos ni pago online desde el menú.
@@ -106,7 +107,7 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 
 ## MVP
 - **Incluye:** menú digital completo (módulo 1), llamado al mozo con panel de sala (módulo 2), panel (módulo 5), SuperAdmin con gestión manual de planes, límites y mora (módulo 6), multi-sucursal, planes Básico y Pro con *feature flags*, prueba gratuita de 14 días.
-- **No incluye (fuera de alcance):** WebAR (fase 2), fidelización y Wallet (fase 3), cobro automático de la suscripción, pedidos y pago desde la mesa, reservas, delivery, integración con sistemas de punto de venta, app nativa, carta en varios idiomas.
+- **No incluye (fuera de alcance):** WebAR (fase 2), fidelización y Wallet (fase 3), cobro automático de la suscripción, pedidos y pago desde la mesa, reservas, delivery, integración con sistemas de punto de venta, app nativa, traducción automática de la carta (la carta en varios idiomas existe, pero las traducciones las escribe el local).
 
 ## Reglas de negocio clave
 ### Organización, sucursales y permisos

@@ -1,20 +1,26 @@
 import Link from "next/link";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 
 export const LEGAL_PAGES = [
-  { href: "/terminos", label: "Términos de uso" },
-  { href: "/privacidad", label: "Privacidad" },
-  { href: "/alergenos", label: "Aviso de alérgenos" },
+  { href: "/terminos", key: "terms" },
+  { href: "/privacidad", key: "privacy" },
+  { href: "/alergenos", key: "allergens" },
 ] as const;
 
-/** Enlaces a los tres textos legales. Se usa en el pie de la portada, del login, de la carta y de los propios textos. */
-export function LegalLinks({ className = "" }: { className?: string }) {
+/**
+ * Enlaces a los tres textos legales. Se usa en el pie de la portada, del login, de la carta y de los propios textos. Los
+ * rótulos siguen el idioma de la carta; los textos a los que llevan están solo en español (piden revisión legal).
+ */
+export function LegalLinks({ className = "", lang = "es" }: { className?: string; lang?: Lang }) {
+  const legal = TEXTOS[lang].legal;
   return (
-    <nav aria-label="Información legal" className={className}>
+    <nav aria-label={legal.nav} className={className}>
       <ul className="flex flex-wrap gap-x-5 text-sm">
         {LEGAL_PAGES.map((page) => (
           <li key={page.href}>
             <Link href={page.href} className="inline-flex min-h-11 items-center underline underline-offset-2">
-              {page.label}
+              {legal[page.key]}
             </Link>
           </li>
         ))}

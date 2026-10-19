@@ -4,6 +4,7 @@
  *
  * Una VARIANTE es un grupo con mínimo 1 y máximo 1 (p. ej. el tamaño); los ADICIONALES, mínimo 0 y máximo N.
  */
+import { TEXTOS } from "@/lib/idiomas/textos";
 import { parsePrice, type PriceProblem } from "./price";
 
 /** Topes técnicos (no de plan). Los repite la base (`enforce_option_group_cap` / `enforce_option_cap`, error 54000). */
@@ -54,9 +55,7 @@ export function deltaToInput(cents: number): string {
 
 /** «Elegí 1», «Opcional · hasta 3»… Lo que el comensal y el local leen para entender la regla del grupo. */
 export function choiceRule(min: number, max: number): string {
-  if (min === 0) return max === 1 ? "Opcional · hasta 1" : `Opcional · hasta ${max}`;
-  if (min === max) return `Elegí ${min}`;
-  return `Elegí de ${min} a ${max}`;
+  return TEXTOS.es.options.rule(min, max);
 }
 
 /** Variante = elegir exactamente una; el panel lo muestra con esa palabra. */
