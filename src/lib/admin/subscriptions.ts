@@ -245,6 +245,9 @@ export type OrganizationDetail = {
 
 export const PAYMENTS_LIMIT = 50;
 
+const PAYMENT_COLUMNS =
+  "id, created_at, paid_on, amount_cents, currency, method, reference, plan_code, billing_cycle, previous_period_end, covers_until";
+
 /**
  * Ficha de una organización para el SuperAdmin: suscripción, pagos y movimientos. La suscripción se lee con la clave de
  * servicio (la política la deja solo al Dueño); los pagos y la auditoría, con la sesión de la persona, donde la RLS deja
@@ -272,9 +275,7 @@ export async function getOrganizationDetail(
     ctx.admin.from("memberships").select("user_id").eq("organization_id", org.data.id).eq("role", "owner"),
     ctx.session
       .from("payments")
-      .select(
-        "id, created_at, paid_on, amount_cents, currency, method, reference, plan_code, billing_cycle, previous_period_end, covers_until",
-      )
+      .select(PAYMENT_COLUMNS)
       .eq("organization_id", org.data.id)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
@@ -283,14 +284,31 @@ export async function getOrganizationDetail(
   ]);
   if (sub.error || !sub.data || owners.error || payments.error || !audit.ok) return fail("unexpected");
 
+  // El pago que define la vigencia actual es el que se puede anular: tiene que estar en la lista aunque los últimos
+  // PAYMENTS_LIMIT (vigentes y anulados) lo hayan dejado afuera (p. ej. tras muchas correcciones).
+  const rows = [...payments.data];
+  const currentEnd = sub.data.current_period_end;
+  if (currentEnd && !rows.some((p) => new Date(p.covers_until).getTime() === new Date(currentEnd).getTime())) {
+    const same = await ctx.session
+      .from("payments")
+      .select(PAYMENT_COLUMNS)
+      .eq("organization_id", org.data.id)
+      .eq("covers_until", currentEnd)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(20);
+    if (same.error) return fail("unexpected");
+    rows.push(...same.data.filter((p) => !rows.some((r) => r.id === p.id)));
+  }
+
   // Anulaciones de los pagos que se muestran (RLS: solo SuperAdmin).
-  const voids = payments.data.length
+  const voids = rows.length
     ? await ctx.session
         .from("payment_voids")
         .select("payment_id, created_at, reason")
         .in(
           "payment_id",
-          payments.data.map((p) => p.id),
+          rows.map((p) => p.id),
         )
     : { data: [], error: null };
   if (voids.error) return fail("unexpected");
@@ -317,7 +335,7 @@ export async function getOrganizationDetail(
     suspendedAt: sub.data.suspended_at,
     state: accountState(periodEnd, sub.data.suspended_at !== null, now),
     trial: trialStatus(sub.data.trial_ends_at, sub.data.current_period_end, now),
-    payments: payments.data.map((p) => ({
+    payments: rows.map((p) => ({
       id: p.id,
       createdAt: p.created_at,
       paidOn: p.paid_on,

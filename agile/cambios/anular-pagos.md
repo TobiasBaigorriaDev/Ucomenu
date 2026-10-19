@@ -72,4 +72,10 @@ Base local (`pnpm db:reset` con todas las migraciones y el seed), sobre el commi
 - **No probado / límites:** atomicidad por inyección de fallos (cada rechazo prueba que no deja filas; la función es una sola transacción); lector de pantalla y teléfono real (solo 390 px emulado); contra staging o producción (nada: la migración no se aplicó fuera de local); el formulario no comprueba en el servidor la casilla de confirmación (es una guarda de la pantalla; la autoridad es la base).
 
 ## Revisión y aprobación (C)
-(pendiente)
+- **Ronda 1 (Codex, commit `48dc4f6`, informe en `output/revisiones/`):** APROBAR CON CAMBIOS, tres hallazgos Importantes, los tres reales y reproducidos:
+  1. *El pago que define la vigencia podía quedar fuera de la lista* (solo se leen los últimos 50, vigentes y anulados): tras muchas correcciones no habría botón para anularlo. **Corregido:** `getOrganizationDetail` agrega a la lista el pago vigente cuya cobertura es el `current_period_end` si no está entre los 50; prueba de regresión (51 correcciones sobre un primer pago) que **falla sin la corrección** (comprobado desactivándola). El aviso «se muestran los 50 más recientes» pasa a `>=`.
+  2. *Rollback documentado inválido* (restaurar el `unique` falla si ya hay un pago corregido con la misma cobertura). **Corregido** en la cabecera de la migración: va en una transacción y ese paso se omite si falla con `23505`.
+  3. *Prueba de TRUNCATE enmascarada* (truncar ambas tablas dejaba que el trigger de `payment_voids` tapara la ausencia del de `payments`). **Corregido:** cada consulta exige el mensaje de `payments` con su operación; **falla sin `payments_no_truncate`** (comprobado quitándolo).
+- Tras las correcciones: `pnpm test` 654/654, RLS de los cuatro archivos afectados 89/89, `pnpm build` OK, E2E de las dos specs afectadas 18/18 (una corrida previa falló en «reactivar una cuenta con las fechas vencidas», ajena al cambio —suspensión, sin pagos—, y pasó sola y en la repetición de las dos specs).
+- **Ronda 2 (verificación):** pendiente.
+- **Aprobación humana:** pendiente. La migración no se aplicó fuera de la base local; aplicarla en staging necesita su aprobación.

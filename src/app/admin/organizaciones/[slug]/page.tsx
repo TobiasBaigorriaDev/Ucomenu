@@ -236,7 +236,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
                 />
               ))}
             </ul>
-            {org.payments.length === PAYMENTS_LIMIT ? (
+            {org.payments.length >= PAYMENTS_LIMIT ? (
               <p className="mt-3 text-sm text-muted">Se muestran los {PAYMENTS_LIMIT} más recientes.</p>
             ) : null}
           </>

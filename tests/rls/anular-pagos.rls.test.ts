@@ -475,6 +475,28 @@ describe("lo que ve cada quien", () => {
   });
 });
 
+describe("la lista de pagos de la ficha", () => {
+  it("el pago que define la vigencia aparece y se puede anular aunque más de 50 pagos recientes (anulados) lo dejen afuera", async () => {
+    const local = await crearLocal(10 * DIA_MS);
+    const primero = await cargar(local, { coversUntil: enDias(20) });
+    // 51 correcciones: se carga un pago y se anula en seguida; todos más nuevos que el primero.
+    for (let i = 0; i < 51; i++) {
+      const id = await cargar(local, { coversUntil: enDias(30) });
+      expect((await anular(local, id, `corrección ${i}`)).ok).toBe(true);
+    }
+    expect(fin((await suscripcion(local.id)).current_period_end)).toBe(finDelDia(enDias(20))); // el primero vuelve a definir la vigencia
+
+    const r = await getOrganizationDetail(ctx(admin), local.slug);
+    if (!r.ok) throw new Error("no se pudo leer la ficha");
+    const detalle = r.data;
+    const delPrimero = detalle.payments.find((p) => p.id === primero);
+    expect(delPrimero, "el pago que define la vigencia tiene que estar en la lista").toBeDefined();
+    expect(isVoidable(delPrimero!, detalle.currentPeriodEnd)).toBe(true);
+    expect(detalle.payments.filter((p) => isVoidable(p, detalle.currentPeriodEnd))).toHaveLength(1);
+    expect((await anular(local, primero)).ok).toBe(true);
+  }, 120_000);
+});
+
 describe("una organización con anulaciones tampoco se borra en cascada por accidente", () => {
   it("RESTRICT desde payment_voids", async () => {
     const local = await crearLocal();

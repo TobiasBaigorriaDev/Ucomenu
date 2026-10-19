@@ -248,12 +248,15 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
     const ins = await service.from("audit_log").insert({ actor_id: admin.id, actor_email: "x", action: "payment.registered" });
     expect(ins.error?.code).toBe("42501");
 
-    for (const consulta of [
-      `update public.payments set amount_cents = 1 where id = '${id}'`,
-      `delete from public.payments where id = '${id}'`,
-      `truncate public.payments, public.payment_voids`, // sola, la frena la clave foránea de payment_voids antes que el trigger
-    ]) {
-      expect(() => sql(consulta), consulta).toThrow(/solo de agregado|payments es de solo agregado/);
+    // Cada consulta tiene que ser rechazada por el trigger de `payments` (el mensaje nombra la tabla y la operación): con
+    // `payment_voids` en la lista de TRUNCATE, el trigger de esa otra tabla no puede tapar la ausencia del de `payments`.
+    for (const [consulta, operacion] of [
+      [`update public.payments set amount_cents = 1 where id = '${id}'`, "UPDATE"],
+      [`delete from public.payments where id = '${id}'`, "DELETE"],
+      // Sola, la frena la clave foránea de payment_voids antes que el trigger; `payments` va primero para que dispare primero.
+      [`truncate public.payments, public.payment_voids`, "TRUNCATE"],
+    ] as const) {
+      expect(() => sql(consulta), consulta).toThrow(new RegExp(`payments es de solo agregado \\(${operacion} rechazado\\)`));
     }
     expect(contar("payments", `id = '${id}' and amount_cents = 2000000`)).toBe(1);
   });

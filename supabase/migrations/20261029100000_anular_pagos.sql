@@ -11,13 +11,16 @@
 --
 -- Rollback (local): git revert + `pnpm db:reset`. En una base con datos (se pierden las anulaciones: la vigencia NO se
 -- restaura sola a la de después del pago, hay que reponerla a mano; la auditoría queda y, mientras existan filas
--- 'payment.voided', no se puede volver a poner el `check` viejo):
+-- 'payment.voided', no se puede volver a poner el `check` viejo). Todo en UNA transacción (begin … commit):
 --   drop function public.admin_void_payment(uuid, uuid, uuid, text);
 --   drop table public.payment_voids;
 --   drop function private.payment_voids_append_only();
---   alter table public.payments add constraint payments_subscription_id_covers_until_key unique (subscription_id, covers_until);
 --   y volver a crear `owner_payments` y `owner_account_history` con las definiciones de
 --   20261026100000_dueno_lee_pagos_y_auditoria.sql.
+-- El `unique (subscription_id, covers_until)` de `payments` solo se puede volver a poner si NO hay dos pagos de una
+-- suscripción con la misma cobertura (pasa justo después de corregir un pago: anulado + el correcto):
+--   alter table public.payments add constraint payments_subscription_id_covers_until_key unique (subscription_id, covers_until);
+-- Si falla con 23505, omitirlo: la regla «extiende» de `admin_register_payment` más el lock ya impiden el duplicado.
 --
 -- Reglas de fondo:
 --  * Solo se anula el pago que DEFINE la vigencia actual (`current_period_end = covers_until`): para corregir uno anterior
