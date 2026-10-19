@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AdminContext } from "./organizations";
-import { changePlan, registerPayment, setSuspension } from "./subscriptions";
+import { changePlan, isVoidable, registerPayment, setSuspension, voidPayment } from "./subscriptions";
 import { accountState, parseEntitlements, trialStatus, moraNotice } from "@/lib/entitlements";
 import { formatMoney } from "./format";
 import {
@@ -281,5 +281,60 @@ describe("errores de las funciones de base", () => {
     expect(await registerPayment(ctx, { ...pagoValido, amount: "0" })).toEqual({ ok: false, error: "invalid_amount" });
     expect(await registerPayment(ctx, { ...pagoValido, coversUntil: "2020-01-01" })).toEqual({ ok: false, error: "invalid_covers_until" });
     expect(llamadas).toEqual([]);
+  });
+});
+
+describe("anular un pago (ficha anular-pagos)", () => {
+  const PAGO_ID = "0b6f3d8c-0000-4000-8000-000000000001";
+  const anulacion = { slug: "local-1", paymentId: PAGO_ID, reason: "Se cargó mal" };
+
+  it("la base contesta con un identificador: la anulación quedó hecha", async () => {
+    const { ctx, llamadas } = fakeContext({ data: "anulacion-1" });
+    expect(await voidPayment(ctx, anulacion)).toEqual({ ok: true, data: { voidId: "anulacion-1" } });
+    expect(llamadas).toEqual(["admin_void_payment"]);
+  });
+
+  it("cada error estable de la base se traduce a su error de la aplicación", async () => {
+    const casos: Array<[RpcError, string]> = [
+      [{ code: "42501", message: "not_platform_admin" }, "forbidden"],
+      [{ code: "22023", message: "invalid_reason" }, "invalid_reason"],
+      [{ code: "P0002", message: "subscription_not_found" }, "org_not_found"],
+      [{ code: "P0002", message: "payment_not_found" }, "payment_not_found"],
+      [{ code: "55000", message: "payment_already_voided" }, "payment_already_voided"],
+      [{ code: "55000", message: "payment_not_latest" }, "payment_not_latest"],
+      [{ code: "55000", message: "payment_history_inconsistent" }, "payment_history_inconsistent"],
+    ];
+    for (const [error, esperado] of casos) {
+      const { ctx } = fakeContext({ error });
+      expect(await voidPayment(ctx, anulacion), esperado).toEqual({ ok: false, error: esperado });
+    }
+  });
+
+  it("sin SQLSTATE, o sin identificador en la respuesta, el resultado es INCIERTO: no se asume éxito ni fallo", async () => {
+    for (const error of [{ code: "", message: "TypeError: fetch failed" }, { message: "timeout" }, { code: "PGRST000", message: "x" }]) {
+      const { ctx } = fakeContext({ error });
+      expect(await voidPayment(ctx, anulacion)).toEqual({ ok: false, error: "uncertain_change" });
+    }
+    const { ctx } = fakeContext({ data: null });
+    expect(await voidPayment(ctx, anulacion)).toEqual({ ok: false, error: "uncertain_change" });
+  });
+
+  it("lo inválido se rechaza antes de llamar a la base", async () => {
+    const { ctx, llamadas } = fakeContext({ data: "anulacion-1" });
+    expect(await voidPayment(ctx, { ...anulacion, reason: "  " })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await voidPayment(ctx, { ...anulacion, reason: "x".repeat(201) })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await voidPayment(ctx, { ...anulacion, paymentId: "no-es-un-uuid" })).toEqual({ ok: false, error: "payment_not_found" });
+    expect(await voidPayment(ctx, { ...anulacion, paymentId: undefined })).toEqual({ ok: false, error: "payment_not_found" });
+    expect(await voidPayment(ctx, { ...anulacion, slug: "No Es Un Slug!" })).toEqual({ ok: false, error: "org_not_found" });
+    expect(llamadas).toEqual([]);
+  });
+
+  it("solo se ofrece anular el pago que define el vencimiento actual y que no está anulado", () => {
+    const pago = { coversUntil: "2026-11-20T15:00:00+00:00", voided: null };
+    expect(isVoidable(pago, "2026-11-20T15:00:00+00:00")).toBe(true);
+    expect(isVoidable(pago, "2026-11-20T12:00:00-03:00")).toBe(true); // el mismo instante en otra zona
+    expect(isVoidable(pago, "2026-12-20T15:00:00+00:00")).toBe(false); // hay un pago más nuevo
+    expect(isVoidable(pago, null)).toBe(false); // sin período propio
+    expect(isVoidable({ ...pago, voided: { at: "2026-10-19T10:00:00+00:00", reason: "x" } }, "2026-11-20T15:00:00+00:00")).toBe(false);
   });
 });

@@ -47,6 +47,51 @@ describe("lectura de pagos", () => {
   });
 });
 
+describe("pagos anulados (ficha anular-pagos)", () => {
+  const ANULADO = { ...PAGO, voided_at: "2026-10-19T14:30:00+00:00" };
+
+  it("un pago vigente no trae fecha de anulación; uno anulado, sí", () => {
+    expect(parsePayments([PAGO])![0].voidedAt).toBeNull();
+    expect(parsePayments([{ ...PAGO, voided_at: null }])![0].voidedAt).toBeNull();
+    expect(parsePayments([ANULADO])![0].voidedAt).toBe("2026-10-19T14:30:00+00:00");
+  });
+
+  it("una fecha de anulación rota es un error de lectura, no un pago vigente", () => {
+    expect(parsePayments([{ ...PAGO, voided_at: "ayer" }])).toBeNull();
+    expect(parsePayments([{ ...PAGO, voided_at: 5 }])).toBeNull();
+  });
+
+  it("el texto de un pago anulado lo dice primero y no muestra motivo ni autor", () => {
+    const { voided, lines } = describePayment(parsePayments([ANULADO])![0]);
+    expect(voided).toBe(true);
+    expect(lines[0]).toBe("Anulado el 19/10/2026, 11:30: este pago ya no cuenta para tu vencimiento");
+    expect(describePayment(parsePayments([PAGO])![0]).voided).toBe(false);
+  });
+
+  it("el movimiento «Pago anulado» muestra importe, medio y a qué fecha vuelve el vencimiento, y nada más", () => {
+    const { title, lines } = describeHistory(
+      fila("payment.voided", {
+        amount_cents: 2_000_000,
+        currency: "ARS",
+        method: "transfer",
+        plan: "pro",
+        period_end: "2026-11-01T03:00:00+00:00",
+        reason: "nota interna",
+        actor_email: "equipo@ucomenu.test",
+      }),
+    );
+    expect(title).toBe("Pago anulado");
+    expect(lines[0].replace(/\s/g, " ")).toBe("$ 20.000 ARS");
+    expect(lines.slice(1)).toEqual(["Transferencia", "Tu vencimiento vuelve al 1 de noviembre de 2026"]);
+    expect(JSON.stringify({ title, lines })).not.toMatch(/nota interna|equipo@/);
+  });
+
+  it("la acción «payment.voided» es una de las que esta pantalla conoce", () => {
+    const filas = parseHistory([{ id: "1", created_at: "2026-10-19T10:00:00+00:00", action: "payment.voided", detail: {} }])!;
+    expect(filas.map((f) => f.action)).toEqual(["payment.voided"]);
+  });
+});
+
 describe("fechas", () => {
   it("el día del pago no se corre por la zona horaria", () => {
     expect(formatDay("2026-10-18")).toBe("18 de octubre de 2026");

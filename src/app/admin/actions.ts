@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
-import { changePlan, registerPayment, setSuspension } from "@/lib/admin/subscriptions";
+import { changePlan, registerPayment, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
 import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
@@ -144,6 +144,19 @@ export async function registerPaymentAction(_previous: FormState, formData: Form
   revalidatePath("/admin");
   revalidatePath(prepared.page);
   return { ok: true, message: "Listo: el pago quedó registrado y la vigencia se actualizó." };
+}
+
+export async function voidPaymentAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await voidPayment(prepared.ctx, { slug: prepared.slug, paymentId: text(formData, "paymentId"), reason: values.reason });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  return { ok: true, message: "Listo: el pago quedó anulado y el vencimiento volvió al de antes. Si había que cargarlo bien, registrá el pago correcto." };
 }
 
 // ---------------------------------------------------------------------------

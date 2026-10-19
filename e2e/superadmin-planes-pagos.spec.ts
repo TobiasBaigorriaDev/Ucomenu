@@ -264,6 +264,130 @@ test.describe("registrar un pago", () => {
   });
 });
 
+/** Carga un pago por la función de base (la pantalla de carga ya se prueba arriba) y devuelve su id. */
+async function cargarPago(orgId: string, diasHastaCubre: number, extra: { reference?: string } = {}) {
+  const r = await service().rpc("admin_register_payment", {
+    p_actor: ADMIN_ID,
+    p_org: orgId,
+    p_amount_cents: 2_000_000,
+    p_currency: "ARS",
+    p_method: "transfer",
+    p_reference: extra.reference ?? "",
+    p_paid_on: new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()),
+    p_covers_until: new Date(Date.now() + diasHastaCubre * DIA_MS).toISOString(),
+  });
+  expect(r.error).toBeNull();
+  return r.data as string;
+}
+
+test.describe("anular un pago (ficha anular-pagos)", () => {
+  test("avisa qué pasa con el vencimiento, pide motivo, deja el pago marcado, el Dueño lo ve sin el motivo y se puede cargar el correcto", async ({ page, browser }) => {
+    const t = await createTenant("adm-anula", "grace");
+    try {
+      await cargarPago(t.orgId, 30);
+      await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(t.slug));
+      await expect(page.getByTestId("suscripcion")).toContainText("Al día");
+
+      const pago = page.getByTestId("pago");
+      await expect(pago).toHaveCount(1);
+      await expect(pago).toHaveAttribute("data-voided", "false");
+      await pago.locator("summary").click();
+      // El aviso dice a qué fecha vuelve el vencimiento y en qué estado queda la cuenta.
+      await expect(pago.getByTestId("aviso-anular-pago")).toContainText("El vencimiento vuelve al");
+      await expect(pago.getByTestId("aviso-anular-pago")).toContainText("Vencida, en período de gracia");
+
+      const form = pago.locator("form");
+      await form.getByLabel("Motivo de la anulación").fill("Se cargó de más");
+      await form.getByLabel("Entiendo que el vencimiento cambia en el acto.").check();
+      await form.getByRole("button", { name: "Anular pago" }).click();
+
+      // La confirmación es el cambio en la lista (el formulario desaparece con el botón): el pago sigue, marcado; ya no se
+      // ofrece anularlo; la cuenta vuelve a lo que decían las fechas.
+      await expect(page.getByTestId("suscripcion")).toContainText("Vencida, en período de gracia");
+      await expect(page.getByTestId("pago")).toHaveCount(1);
+      await expect(page.getByTestId("pago")).toHaveAttribute("data-voided", "true");
+      await expect(page.getByTestId("pago-anulado")).toContainText("Anulado");
+      await expect(page.getByTestId("pago-anulado")).toContainText("motivo: Se cargó de más");
+      await expect(page.locator("summary", { hasText: "Anular este pago" })).toHaveCount(0);
+      const movimiento = page.getByTestId("auditoria").filter({ hasText: "Pago anulado" });
+      await expect(movimiento).toContainText("motivo: Se cargó de más");
+      await expect(movimiento).toContainText(`por ${ADMIN_EMAIL}`);
+
+      // El Dueño ve el pago anulado y el movimiento, pero no el motivo.
+      const dueno = await browser.newPage();
+      await login(dueno, t.owner.email, t.owner.password, `/panel/${t.slug}/suscripcion`);
+      await expect(dueno.getByTestId("pago")).toHaveAttribute("data-voided", "true");
+      await expect(dueno.getByTestId("pago")).toContainText("Anulado el");
+      await expect(dueno.getByTestId("historial")).toContainText("Pago anulado");
+      await expect(dueno.getByText("Se cargó de más")).toHaveCount(0);
+      await dueno.close();
+
+      // Corregir = cargar el pago correcto con el formulario de siempre.
+      const alta = formulario(page, "Registrar pago");
+      await alta.getByLabel("Importe").fill("20000");
+      await alta.getByLabel("Moneda").selectOption("ARS");
+      await alta.getByLabel("Cómo se pagó").selectOption("transfer");
+      await alta.getByRole("button", { name: "Registrar pago" }).click();
+      await expect(alta.getByRole("status")).toContainText("el pago quedó registrado");
+      await expect(page.getByTestId("suscripcion")).toContainText("Al día");
+      await expect(page.getByTestId("pago")).toHaveCount(2);
+      await expect(page.getByTestId("pago").filter({ has: page.locator("summary") })).toHaveCount(1); // solo el nuevo se puede anular
+    } finally {
+      await limpiarAuditoria(t.orgId);
+      await t.cleanup();
+    }
+  });
+
+  test("con dos pagos solo se ofrece anular el último; sin motivo no se anula", async ({ page }) => {
+    const t = await createTenant("adm-anula2", "active");
+    try {
+      const primero = await cargarPago(t.orgId, 30);
+      await cargarPago(t.orgId, 60);
+      await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(t.slug));
+
+      await expect(page.locator("summary", { hasText: "Anular este pago" })).toHaveCount(1);
+      const ultimo = page.getByTestId("pago").filter({ has: page.locator("summary") });
+      await ultimo.locator("summary").click();
+      const form = ultimo.locator("form");
+      await form.getByLabel("Entiendo que el vencimiento cambia en el acto.").check();
+      await form.getByRole("button", { name: "Anular pago" }).click(); // el motivo es obligatorio: el navegador no lo envía
+      await expect(page.getByTestId("pago-anulado")).toHaveCount(0);
+      expect((await service().from("payment_voids").select("id").eq("organization_id", t.orgId)).data).toEqual([]);
+
+      await form.getByLabel("Motivo de la anulación").fill("fecha equivocada");
+      await form.getByRole("button", { name: "Anular pago" }).click();
+      await expect(page.getByTestId("pago-anulado")).toHaveCount(1);
+      // Ahora el que se ofrece es el primero.
+      await expect(page.locator("summary", { hasText: "Anular este pago" })).toHaveCount(1);
+      const voids = (await service().from("payment_voids").select("payment_id").eq("organization_id", t.orgId)).data!;
+      expect(voids).toHaveLength(1);
+      expect(voids[0].payment_id).not.toBe(primero);
+    } finally {
+      await limpiarAuditoria(t.orgId);
+      await t.cleanup();
+    }
+  });
+
+  test("a 390 px: un pago anulado con motivo de 200 caracteres y el formulario abierto no desbordan", async ({ page }) => {
+    const t = await createTenant("adm-anula3", "active");
+    try {
+      await cargarPago(t.orgId, 30, { reference: "R".repeat(120) });
+      const segundo = await cargarPago(t.orgId, 60, { reference: "S".repeat(120) });
+      const r = await service().rpc("admin_void_payment", { p_actor: ADMIN_ID, p_org: t.orgId, p_payment: segundo, p_reason: "M".repeat(200) });
+      expect(r.error).toBeNull();
+
+      await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(t.slug));
+      await expect(page.getByTestId("pago-anulado")).toContainText("M".repeat(200));
+      await page.locator("summary", { hasText: "Anular este pago" }).click();
+      await expect(page.getByTestId("aviso-anular-pago")).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    } finally {
+      await limpiarAuditoria(t.orgId);
+      await t.cleanup();
+    }
+  });
+});
+
 test.describe("la prueba gratuita", () => {
   test("se ve como prueba (no como mora), el pago la convierte en período propio y el Dueño ve cada etapa", async ({ page, browser }) => {
     const t = await createTenant("adm-prueba");

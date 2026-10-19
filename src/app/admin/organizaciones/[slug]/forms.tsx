@@ -2,7 +2,7 @@
 
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { dangerButtonClass, inputClass, labelClass } from "@/components/panel/styles";
-import { addExistingOwnerAction, changePlanAction, registerPaymentAction, setSuspensionAction } from "../../actions";
+import { addExistingOwnerAction, changePlanAction, registerPaymentAction, setSuspensionAction, voidPaymentAction } from "../../actions";
 
 const PLAN_OPTIONS = [
   { value: "basic", label: "Básico" },
@@ -226,6 +226,57 @@ export function PaymentForm({ slug, today, proposedCoversUntil }: { slug: string
         </>
       )}
     </ActionForm>
+  );
+}
+
+/**
+ * Anular un pago (ficha anular-pagos). Va dentro del pago, plegado: no es una acción de todos los días. El aviso de qué
+ * pasa con el vencimiento lo arma la página (`consequence`) y la persona lo confirma con una casilla.
+ */
+export function VoidPaymentForm({ slug, paymentId, consequence }: { slug: string; paymentId: string; consequence: string }) {
+  return (
+    <details className="mt-2">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-base text-danger underline underline-offset-2">Anular este pago</summary>
+      <ActionForm action={voidPaymentAction} className="mt-2 grid max-w-md gap-4">
+        {(state) => (
+          <>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="paymentId" value={paymentId} />
+            <p className="max-w-prose text-base leading-relaxed" data-testid="aviso-anular-pago">
+              {consequence}
+            </p>
+            <div>
+              <label htmlFor={`anular-motivo-${paymentId}`} className={labelClass}>
+                Motivo de la anulación
+              </label>
+              <input
+                id={`anular-motivo-${paymentId}`}
+                name="reason"
+                type="text"
+                required
+                maxLength={200}
+                autoComplete="off"
+                aria-describedby={`anular-motivo-hint-${paymentId}`}
+                defaultValue={state.values?.reason ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+              <p id={`anular-motivo-hint-${paymentId}`} className="mt-1 text-sm text-muted">
+                {REASON_HINT}
+              </p>
+            </div>
+            <label className="flex min-h-11 items-start gap-3 text-base">
+              <input type="checkbox" name="confirmed" required className="mt-1 size-5 shrink-0" />
+              <span>Entiendo que el vencimiento cambia en el acto.</span>
+            </label>
+            <div>
+              <SubmitButton pendingLabel="Anulando…" className={dangerButtonClass}>
+                Anular pago
+              </SubmitButton>
+            </div>
+          </>
+        )}
+      </ActionForm>
+    </details>
   );
 }
 

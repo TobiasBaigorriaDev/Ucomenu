@@ -99,8 +99,11 @@ export function purgePaymentsWhere(condicion: string): void {
   asegurarDestinoLocal(contenedor);
   const consulta =
     `begin; alter table public.payments disable trigger payments_no_update_delete; ` +
+    `alter table public.payment_voids disable trigger payment_voids_no_update_delete; ` +
+    `delete from public.payment_voids where payment_id in (select id from public.payments where ${condicion}); ` +
     `delete from public.payments where ${condicion}; ` +
-    `alter table public.payments enable trigger payments_no_update_delete; commit`;
+    `alter table public.payments enable trigger payments_no_update_delete; ` +
+    `alter table public.payment_voids enable trigger payment_voids_no_update_delete; commit`;
   try {
     execFileSync("docker", ["exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c", consulta], {
       encoding: "utf8",
@@ -111,9 +114,9 @@ export function purgePaymentsWhere(condicion: string): void {
 }
 
 /**
- * Limpia de una vez lo que bloquea el borrado de una organización de prueba: historial de precios y pagos del
- * SuperAdmin (ambos RESTRICT y solo-agregado) de las organizaciones que cumplan `condicionOrg` (SQL sobre
- * `public.organizations o`). Una sola transacción y un solo `docker exec`, con los dos triggers apagados un momento.
+ * Limpia de una vez lo que bloquea el borrado de una organización de prueba: historial de precios, pagos del
+ * SuperAdmin y sus anulaciones (todos RESTRICT y solo-agregado) de las organizaciones que cumplan `condicionOrg` (SQL sobre
+ * `public.organizations o`). Una sola transacción y un solo `docker exec`, con los triggers apagados un momento.
  * La auditoría NO se toca acá: no bloquea el borrado (sin clave foránea) y hay pruebas que comprueban que sobrevive.
  */
 export function purgeOrgRecordsWhere(condicionOrg: string): void {
@@ -124,10 +127,13 @@ export function purgeOrgRecordsWhere(condicionOrg: string): void {
     `begin; ` +
     `alter table public.price_history disable trigger price_history_no_update_delete; ` +
     `alter table public.payments disable trigger payments_no_update_delete; ` +
+    `alter table public.payment_voids disable trigger payment_voids_no_update_delete; ` +
     `delete from public.price_history where organization_id in ${orgs}; ` +
+    `delete from public.payment_voids where organization_id in ${orgs}; ` +
     `delete from public.payments where organization_id in ${orgs}; ` +
     `alter table public.price_history enable trigger price_history_no_update_delete; ` +
-    `alter table public.payments enable trigger payments_no_update_delete; commit`;
+    `alter table public.payments enable trigger payments_no_update_delete; ` +
+    `alter table public.payment_voids enable trigger payment_voids_no_update_delete; commit`;
   try {
     execFileSync("docker", ["exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c", consulta], {
       encoding: "utf8",

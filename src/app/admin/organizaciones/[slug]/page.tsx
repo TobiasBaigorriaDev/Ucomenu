@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
 import { AUDIT_LIMIT } from "@/lib/admin/organizations";
 import { listAdminBranches } from "@/lib/admin/branches";
-import { getOrganizationDetail, PAYMENTS_LIMIT, type PaymentRow } from "@/lib/admin/subscriptions";
+import { getOrganizationDetail, isVoidable, PAYMENTS_LIMIT, type PaymentRow } from "@/lib/admin/subscriptions";
 import { isBillingCycle, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { accountState, BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
@@ -13,7 +13,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { StatusPill } from "../../status-pill";
-import { AddOwnerForm, ChangePlanForm, PaymentForm, SuspensionForm } from "./forms";
+import { AddOwnerForm, ChangePlanForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
@@ -38,20 +38,38 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function PaymentItem({ payment }: { payment: PaymentRow }) {
+/** Qué pasa al anular un pago: el vencimiento vuelve al de antes y la cuenta queda en el estado que digan las fechas. */
+function voidConsequence(payment: PaymentRow, suspendedByHand: boolean, now: Date): string {
+  const back = accountState(payment.previousPeriodEnd, false, now);
+  const lands =
+    back === "active"
+      ? "La cuenta sigue al día."
+      : `La cuenta quedará «${BILLING_STATE_LABEL[back]}» por sus fechas: la carta y el panel cambian en el acto.`;
+  const hand = suspendedByHand ? " Sigue suspendida a mano hasta que se la reactive." : "";
+  return `El vencimiento vuelve al ${formatDateWithYear(payment.previousPeriodEnd)}. ${lands}${hand} El pago queda en el historial como anulado; para corregirlo, después registrá el pago correcto.`;
+}
+
+function PaymentItem({ payment, slug, voidable, suspendedByHand, now }: { payment: PaymentRow; slug: string; voidable: boolean; suspendedByHand: boolean; now: Date }) {
+  const voided = payment.voided;
   return (
-    <li className="border-b border-ink/15 py-3" data-testid="pago">
-      <p className="text-base break-words">
+    <li className="border-b border-ink/15 py-3" data-testid="pago" data-voided={voided ? "true" : "false"}>
+      <p className={`text-base break-words ${voided ? "text-muted line-through" : ""}`}>
         <span className="font-medium">{formatMoney(payment.amountCents, payment.currency)}</span> ·{" "}
         {METHOD_LABEL[payment.method] ?? payment.method} · {PLAN_NAME[payment.plan] ?? payment.plan},{" "}
         {CYCLE_LABEL[payment.billingCycle] ?? payment.billingCycle}
       </p>
+      {voided ? (
+        <p className="mt-1 text-base break-words" data-testid="pago-anulado">
+          <span className="rounded-full bg-suspended-bg px-2.5 py-0.5 text-suspended-ink">Anulado</span> el {dateTime.format(new Date(voided.at))} · motivo: {voided.reason}
+        </p>
+      ) : null}
       <p className="mt-1 text-sm break-words text-muted">
         Pagado el {formatDateWithYear(`${payment.paidOn}T12:00:00-03:00`)} · cubre hasta el {formatDateWithYear(payment.coversUntil)} (antes:{" "}
         {formatDateWithYear(payment.previousPeriodEnd)})
         {payment.reference ? ` · ref. ${payment.reference}` : ""}
       </p>
       <p className="mt-1 text-sm text-muted">Registrado el {dateTime.format(new Date(payment.createdAt))}</p>
+      {voidable ? <VoidPaymentForm slug={slug} paymentId={payment.id} consequence={voidConsequence(payment, suspendedByHand, now)} /> : null}
     </li>
   );
 }
@@ -187,7 +205,8 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           Registrar un pago
         </h2>
         <p className="mt-2 max-w-prose leading-relaxed text-muted">
-          El pago queda guardado y no se puede modificar ni borrar. Mueve el vencimiento a la fecha que indiques y restablece la
+          El pago queda guardado y no se puede modificar ni borrar: si se cargó mal, se anula (con motivo) desde la lista de pagos y se
+          registra el correcto. Mueve el vencimiento a la fecha que indiques y restablece la
           cuenta si estaba en mora. Se registra con el plan y el ciclo actuales: si hay que cambiarlos, hacelo antes.
         </p>
         <PaymentForm
@@ -207,7 +226,14 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           <>
             <ul className="mt-3 panel-list">
               {org.payments.map((payment) => (
-                <PaymentItem key={payment.id} payment={payment} />
+                <PaymentItem
+                  key={payment.id}
+                  payment={payment}
+                  slug={org.slug}
+                  voidable={isVoidable(payment, org.currentPeriodEnd)}
+                  suspendedByHand={suspended}
+                  now={now}
+                />
               ))}
             </ul>
             {org.payments.length === PAYMENTS_LIMIT ? (

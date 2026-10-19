@@ -56,6 +56,11 @@ export type AdminError =
   | "already_suspended"
   | "not_suspended"
   | "payment_not_extending"
+  // Anular un pago (ficha anular-pagos)
+  | "payment_not_found"
+  | "payment_already_voided"
+  | "payment_not_latest"
+  | "payment_history_inconsistent"
   | "uncertain_change"; // se perdió la respuesta de un cambio: pudo quedar hecho
 
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: AdminError };
@@ -105,6 +110,12 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   not_suspended: "La organización no está suspendida a mano, así que no hay nada que reactivar.",
   payment_not_extending:
     "«Cubre hasta» tiene que ser posterior al vencimiento actual y a hoy. Si ya cargaste este pago, no lo repitas: mirá el historial de pagos.",
+  payment_not_found: "No encontramos ese pago en esta organización.",
+  payment_already_voided: "Ese pago ya está anulado: no hay nada que hacer. Si hace falta, registrá el pago correcto.",
+  payment_not_latest:
+    "Solo se puede anular el último pago vigente, el que define el vencimiento actual. Si hay pagos más nuevos, anulá primero esos; también puede que la página esté desactualizada: recargala.",
+  payment_history_inconsistent:
+    "Los pagos de esta organización no cuadran entre sí (se tocaron a mano), así que no se anula automáticamente. No se cambió nada: hay que revisarlo con acceso a la base.",
   uncertain_change:
     "No pudimos confirmar si el cambio quedó hecho. No lo repitas todavía: recargá esta página y mirá el estado y los últimos movimientos.",
 };

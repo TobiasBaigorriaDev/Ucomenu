@@ -23,6 +23,8 @@ export type PaymentRow = {
   reference: string | null;
   previousPeriodEnd: string;
   coversUntil: string;
+  /** Cuándo se anuló, o `null` si sigue vigente. El motivo y quién lo hizo no llegan al Dueño. */
+  voidedAt: string | null;
 };
 
 export type HistoryAction =
@@ -31,6 +33,7 @@ export type HistoryAction =
   | "subscription.suspended"
   | "subscription.reactivated"
   | "payment.registered"
+  | "payment.voided"
   | "owner.added";
 
 export type HistoryRow = { id: string; createdAt: string; action: HistoryAction; detail: Record<string, unknown> };
@@ -41,6 +44,7 @@ const ACTIONS: readonly string[] = [
   "subscription.suspended",
   "subscription.reactivated",
   "payment.registered",
+  "payment.voided",
   "owner.added",
 ];
 
@@ -54,6 +58,8 @@ function parsePayment(raw: unknown): PaymentRow | null {
   if (!isStr(r.id) || !isDate(r.created_at) || !isStr(r.paid_on) || !/^\d{4}-\d{2}-\d{2}$/.test(r.paid_on)) return null;
   if (!isStr(r.plan_code) || !isStr(r.billing_cycle) || !isStr(r.currency) || !isStr(r.method)) return null;
   if (typeof r.amount_cents !== "number" || !Number.isFinite(r.amount_cents) || !isDate(r.previous_period_end) || !isDate(r.covers_until)) return null;
+  // `voided_at` es nulo si el pago sigue vigente; cualquier otra cosa que no sea una fecha es una respuesta rota.
+  if (r.voided_at != null && !isDate(r.voided_at)) return null;
   return {
     id: r.id,
     createdAt: r.created_at,
@@ -66,6 +72,7 @@ function parsePayment(raw: unknown): PaymentRow | null {
     reference: isStr(r.reference) ? r.reference : null,
     previousPeriodEnd: r.previous_period_end,
     coversUntil: r.covers_until,
+    voidedAt: isDate(r.voided_at) ? r.voided_at : null,
   };
 }
 
@@ -168,18 +175,25 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
       if (isDate(d.period_end)) lines.push(`Cubre hasta el ${formatDateWithYear(d.period_end)}`);
       return { title: "Pago registrado", lines };
     }
+    case "payment.voided": {
+      if (typeof d.amount_cents === "number" && isStr(d.currency)) lines.push(formatMoney(d.amount_cents, d.currency));
+      if (isStr(d.method)) lines.push(METHOD_LABEL[d.method] ?? d.method);
+      if (isDate(d.period_end)) lines.push(`Tu vencimiento vuelve al ${formatDateWithYear(d.period_end)}`);
+      return { title: "Pago anulado", lines };
+    }
     case "owner.added":
       return { title: d.promoted === true ? "Una persona del equipo pasó a Dueño" : "Se sumó una persona como Dueño", lines };
   }
 }
 
 /** Un pago para la lista: el importe y las líneas de detalle (medio, plan, período que cubre y referencia). */
-export function describePayment(row: PaymentRow): { amount: string; lines: string[] } {
+export function describePayment(row: PaymentRow): { amount: string; voided: boolean; lines: string[] } {
   const lines = [
     `${METHOD_LABEL[row.method] ?? row.method} · Plan ${planLabel(row.plan, row.billingCycle)}`,
     `Cubre hasta el ${formatDateWithYear(row.coversUntil)} (antes vencía el ${formatDateWithYear(row.previousPeriodEnd)})`,
     `Registrado el ${formatDateTime(row.createdAt)}`,
   ];
   if (row.reference) lines.push(`Referencia: ${row.reference}`);
-  return { amount: formatMoney(row.amountCents, row.currency), lines };
+  if (row.voidedAt) lines.unshift(`Anulado el ${formatDateTime(row.voidedAt)}: este pago ya no cuenta para tu vencimiento`);
+  return { amount: formatMoney(row.amountCents, row.currency), voided: row.voidedAt !== null, lines };
 }

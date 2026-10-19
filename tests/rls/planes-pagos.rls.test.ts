@@ -251,7 +251,7 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
     for (const consulta of [
       `update public.payments set amount_cents = 1 where id = '${id}'`,
       `delete from public.payments where id = '${id}'`,
-      `truncate public.payments`,
+      `truncate public.payments, public.payment_voids`, // sola, la frena la clave foránea de payment_voids antes que el trigger
     ]) {
       expect(() => sql(consulta), consulta).toThrow(/solo de agregado|payments es de solo agregado/);
     }

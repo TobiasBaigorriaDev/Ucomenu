@@ -35,3 +35,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0021 | [El Dueño lee los pagos y el historial de su cuenta por funciones con proyección segura](0021-el-dueno-lee-pagos-y-auditoria.md) | aceptada (decisión técnica) | 2026-10-18 |
 | 0022 | [Analítica básica: contadores anónimos por día y lectura solo para el Dueño con plan](0022-analitica-basica.md) | aceptada | 2026-10-18 |
 | 0023 | [Carta en varios idiomas: traducciones escritas por el local, sin servicios externos](0023-carta-en-varios-idiomas.md) | aceptada | 2026-10-18 |
+| 0024 | [Un pago mal cargado se anula con un asiento compensatorio; la vigencia vuelve a la de antes del pago](0024-anular-pagos-con-asiento-compensatorio.md) | aceptada | 2026-10-19 |

@@ -209,6 +209,38 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"payment_voids": {
+                  Row: {
+                    "created_at": string,"id": string,"organization_id": string,"payment_id": string,"period_end_after": string,"period_end_before": string,"reason": string,"subscription_id": string,"voided_by": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"organization_id": string,"payment_id": string,"period_end_after": string,"period_end_before": string,"reason": string,"subscription_id": string,"voided_by": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"organization_id"?: string,"payment_id"?: string,"period_end_after"?: string,"period_end_before"?: string,"reason"?: string,"subscription_id"?: string,"voided_by"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "payment_voids_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "payment_voids_payment_id_fkey"
+      columns: ["payment_id"]
+isOneToOne: true
+      referencedRelation: "payments"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "payment_voids_subscription_id_fkey"
+      columns: ["subscription_id"]
+isOneToOne: false
+      referencedRelation: "subscriptions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"payments": {
                   Row: {
                     "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"organization_id": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string | null,"registered_by": string,"subscription_id": string
@@ -492,6 +524,9 @@ isOneToOne: false
 "admin_set_suspension":
 { Args: { "p_actor": string,"p_org": string,"p_reason": string,"p_suspend": boolean }; Returns: undefined
                            },
+"admin_void_payment":
+{ Args: { "p_actor": string,"p_org": string,"p_payment": string,"p_reason": string }; Returns: string
+                           },
 "create_waiter_call":
 { Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json
                            },
@@ -513,7 +548,7 @@ isOneToOne: false
                            },
 "owner_payments":
 { Args: { "p_before"?: string,"p_before_id"?: string,"p_limit"?: number,"p_org": string }; Returns: {
-              "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string
+              "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string,"voided_at": string
             }[]
                            },
 "owner_top_dishes":

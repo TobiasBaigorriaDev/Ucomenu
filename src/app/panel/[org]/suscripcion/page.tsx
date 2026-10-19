@@ -107,11 +107,11 @@ function PaymentsSection({ page, more, first }: { page: Page<PaymentRow>; more: 
       ) : (
         <ul className="mt-3 panel-list">
           {page.rows.map((row) => {
-            const { amount, lines } = describePayment(row);
+            const { amount, voided, lines } = describePayment(row);
             return (
-              <li key={row.id} className="border-b border-ink/15 py-3" data-testid="pago">
+              <li key={row.id} className="border-b border-ink/15 py-3" data-testid="pago" data-voided={voided ? "true" : "false"}>
                 <p className="flex flex-wrap items-baseline gap-x-3 text-lg">
-                  <span className="font-medium tabular-nums">{amount}</span>
+                  <span className={`font-medium tabular-nums ${voided ? "text-muted line-through" : ""}`}>{amount}</span>
                   <span className="text-base text-muted">Recibido el {formatDay(row.paidOn)}</span>
                 </p>
                 {lines.map((line) => (

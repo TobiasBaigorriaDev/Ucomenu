@@ -194,7 +194,7 @@ describe("qué NO sale", () => {
     const p = await pagos(local.owner.db, local.id);
     const h = await historial(local.owner.db, local.id);
     expect(Object.keys(p.data![0]).sort()).toEqual(
-      ["amount_cents", "billing_cycle", "covers_until", "created_at", "currency", "id", "method", "paid_on", "plan_code", "previous_period_end", "reference"].sort(),
+      ["amount_cents", "billing_cycle", "covers_until", "created_at", "currency", "id", "method", "paid_on", "plan_code", "previous_period_end", "reference", "voided_at"].sort(),
     );
     for (const fila of h.data!) expect(Object.keys(fila).sort()).toEqual(["action", "created_at", "detail", "id"]);
 

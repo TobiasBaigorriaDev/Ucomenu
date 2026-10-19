@@ -38,6 +38,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   is_push_endpoint: [false, false, false], // pura; la usa la restricción CHECK de push_subscriptions (aviso de llamados, ADR 0020)
   is_platform_admin: [true, false, true], // usada por la política de lectura de audit_log y de payments (SuperAdmin)
   payments_append_only: [false, false, false], // trigger de payments: rechaza UPDATE, DELETE y TRUNCATE (SuperAdmin)
+  payment_voids_append_only: [false, false, false], // trigger de payment_voids: rechaza UPDATE, DELETE y TRUNCATE (anular pagos)
   trial_status: [false, false, false], // pura; la usa org_entitlements (estado de la prueba gratuita)
   enforce_option_group_cap: [false, false, false], // trigger de option_groups: tope técnico de 20 grupos por plato (variantes y adicionales)
   enforce_option_cap: [false, false, false], // trigger de options: tope técnico de 60 opciones por grupo (variantes y adicionales)
@@ -51,6 +52,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_create_organization: [false, false], // SuperAdmin (ADR 0013): solo service_role, desde la acción de servidor
   admin_register_payment: [false, false], // SuperAdmin: registra un pago y mueve la vigencia; solo service_role
   admin_set_suspension: [false, false], // SuperAdmin: suspende o reactiva a mano; solo service_role
+  admin_void_payment: [false, false], // SuperAdmin (ficha anular-pagos): anula el último pago vigente y restaura la vigencia; solo service_role
   drop_push_subscriptions: [false, false], // aviso de llamados (ADR 0020): limpia suscripciones muertas; solo service_role
   create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],
@@ -184,7 +186,7 @@ describe("RLS y permisos de tablas", () => {
     expect(permisos("service_role")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
   });
 
-  it("las acciones de SuperAdmin (alta, Dueño existente, plan, suspensión, pago): solo service_role puede ejecutarlas", () => {
+  it("las acciones de SuperAdmin (alta, Dueño existente, plan, suspensión, pago, anular pago): solo service_role puede ejecutarlas", () => {
     const filas = sql(`
       select p.proname, has_function_privilege('anon', p.oid, 'execute'), has_function_privilege('authenticated', p.oid, 'execute'),
              has_function_privilege('public', p.oid, 'execute'), has_function_privilege('service_role', p.oid, 'execute')
@@ -196,10 +198,11 @@ describe("RLS y permisos de tablas", () => {
       ["admin_create_organization", "f", "f", "f", "t"],
       ["admin_register_payment", "f", "f", "f", "t"],
       ["admin_set_suspension", "f", "f", "f", "t"],
+      ["admin_void_payment", "f", "f", "f", "t"],
     ]);
   });
 
-  it("platform_admins, audit_log y payments: anon sin permisos; authenticated solo lee; service_role solo lee (nada escribe por la API)", () => {
+  it("platform_admins, audit_log, payments y payment_voids: anon sin permisos; authenticated solo lee; service_role solo lee (nada escribe por la API)", () => {
     const permisos = (rol: string, tabla: string) =>
       sql(
         `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
@@ -207,7 +210,7 @@ describe("RLS y permisos de tablas", () => {
           .join(", ")}`,
       )[0];
 
-    for (const tabla of ["platform_admins", "audit_log", "payments"]) {
+    for (const tabla of ["platform_admins", "audit_log", "payments", "payment_voids"]) {
       expect(permisos("anon", tabla), `${tabla}: anon`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
       expect(permisos("authenticated", tabla), `${tabla}: authenticated`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
       expect(permisos("service_role", tabla), `${tabla}: service_role`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);

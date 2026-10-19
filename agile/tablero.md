@@ -7,7 +7,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
 ## En curso
-- (vacío)
+- [C] SuperAdmin anula un pago mal cargado (asiento compensatorio con motivo; la vigencia se recalcula) → [ficha](cambios/anular-pagos.md)
 
 ## Seleccionado
 - (vacío)
@@ -32,7 +32,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] SuperAdmin, incrementos pendientes: add-ons y desactivar organizaciones (la lectura de la auditoría y de los pagos por el Dueño está en «Hecho»). **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012). Pendiente de producto: pantalla para corregir un pago mal cargado (hoy, SQL)
+- [C] SuperAdmin, incrementos pendientes: add-ons y desactivar organizaciones (la lectura de la auditoría y de los pagos por el Dueño está en «Hecho»). **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012).
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)

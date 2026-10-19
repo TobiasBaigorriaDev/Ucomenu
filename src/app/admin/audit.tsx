@@ -8,6 +8,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "subscription.suspended": "Suspensión a mano",
   "subscription.reactivated": "Reactivación a mano",
   "payment.registered": "Pago registrado",
+  "payment.voided": "Pago anulado",
   "owner.added": "Dueño sumado",
 };
 
@@ -38,6 +39,11 @@ function details(entry: AuditEntry): string[] {
     if (method) out.push(METHOD_LABEL[method] ?? method);
     const until = str(after.period_end);
     if (until) out.push(`cubre hasta el ${formatDateWithYear(until)}`);
+  }
+  if (entry.action === "payment.voided") {
+    if (typeof after.amount_cents === "number" && str(after.currency)) out.push(formatMoney(after.amount_cents, String(after.currency)));
+    const until = str(after.period_end);
+    if (until) out.push(`vencimiento vuelto al ${formatDateWithYear(until)}`);
   }
   const reason = str(after.reason);
   if (reason) out.push(`motivo: ${reason}`);

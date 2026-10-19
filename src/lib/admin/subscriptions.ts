@@ -1,3 +1,4 @@
+import { asUuid } from "@/lib/carta/validation";
 import { accountState, trialStatus, type BillingState, type TrialStatus } from "@/lib/entitlements";
 import {
   fail,
@@ -54,6 +55,10 @@ const DB_ERRORS: Record<string, AdminError> = {
   already_suspended: "already_suspended",
   not_suspended: "not_suspended",
   payment_not_extending: "payment_not_extending",
+  payment_not_found: "payment_not_found",
+  payment_already_voided: "payment_already_voided",
+  payment_not_latest: "payment_not_latest",
+  payment_history_inconsistent: "payment_history_inconsistent",
 };
 
 /**
@@ -164,6 +169,32 @@ export async function registerPayment(
   return ok({ paymentId: data });
 }
 
+export type VoidPaymentInput = { slug: unknown; paymentId: unknown; reason: unknown };
+
+/**
+ * Anula un pago (ficha anular-pagos): asiento compensatorio con motivo; la vigencia vuelve a la de antes del pago. Solo el
+ * último pago vigente; el pago no se modifica. Corregir = anular y registrar el correcto.
+ */
+export async function voidPayment(ctx: AdminContext, input: VoidPaymentInput): Promise<Result<{ voidId: string }>> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  const reason = parseReason(input.reason);
+  if (!reason) return fail("invalid_reason");
+  const paymentId = asUuid(input.paymentId);
+  if (!paymentId) return fail("payment_not_found");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const { data, error } = await ctx.admin.rpc("admin_void_payment", {
+    p_actor: ctx.actorId,
+    p_org: org.data,
+    p_payment: paymentId,
+    p_reason: reason,
+  });
+  if (error) return dbFailure(error);
+  if (typeof data !== "string") return fail("uncertain_change");
+  return ok({ voidId: data });
+}
+
 // ---------------------------------------------------------------------------
 // Lectura: detalle de una organización
 // ---------------------------------------------------------------------------
@@ -180,7 +211,18 @@ export type PaymentRow = {
   billingCycle: string;
   previousPeriodEnd: string;
   coversUntil: string;
+  /** Anulación (cuándo y por qué), o `null` si el pago sigue vigente. */
+  voided: { at: string; reason: string } | null;
 };
+
+/**
+ * ¿Se puede anular este pago? Solo el que define la vigencia actual (el último vigente): su «cubre hasta» es el
+ * `current_period_end` de la suscripción. La base decide de verdad; esto solo evita ofrecer un botón que daría error.
+ */
+export function isVoidable(payment: Pick<PaymentRow, "coversUntil" | "voided">, currentPeriodEnd: string | null): boolean {
+  if (payment.voided !== null || currentPeriodEnd === null) return false;
+  return new Date(payment.coversUntil).getTime() === new Date(currentPeriodEnd).getTime();
+}
 
 export type OrganizationDetail = {
   id: string;
@@ -241,6 +283,19 @@ export async function getOrganizationDetail(
   ]);
   if (sub.error || !sub.data || owners.error || payments.error || !audit.ok) return fail("unexpected");
 
+  // Anulaciones de los pagos que se muestran (RLS: solo SuperAdmin).
+  const voids = payments.data.length
+    ? await ctx.session
+        .from("payment_voids")
+        .select("payment_id, created_at, reason")
+        .in(
+          "payment_id",
+          payments.data.map((p) => p.id),
+        )
+    : { data: [], error: null };
+  if (voids.error) return fail("unexpected");
+  const voidedById = new Map(voids.data.map((v) => [v.payment_id, { at: v.created_at, reason: v.reason }]));
+
   const emails = await Promise.all(
     owners.data.map(async (m) => (await ctx.admin.auth.admin.getUserById(m.user_id)).data.user?.email ?? "(sin email)"),
   );
@@ -274,6 +329,7 @@ export async function getOrganizationDetail(
       billingCycle: p.billing_cycle,
       previousPeriodEnd: p.previous_period_end,
       coversUntil: p.covers_until,
+      voided: voidedById.get(p.id) ?? null,
     })),
     audit: audit.data,
   });
