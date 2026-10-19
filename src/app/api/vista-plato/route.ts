@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { readBodyLimited } from "@/lib/analitica/cuerpo";
 import { recordDishView } from "@/lib/analitica/registrar";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
@@ -15,8 +16,9 @@ const MAX_BODY_BYTES = 512;
 
 export async function POST(request: Request) {
   try {
-    const text = await request.text();
-    if (text.length > MAX_BODY_BYTES) return NextResponse.json({ counted: false }, { status: 413, headers: NO_STORE });
+    // El tope se aplica MIENTRAS se lee (no después): un pedido anónimo enorme o que nunca termina no se queda con la memoria.
+    const text = await readBodyLimited(request, MAX_BODY_BYTES);
+    if (text === null) return NextResponse.json({ counted: false }, { status: 413, headers: NO_STORE });
     const body: unknown = JSON.parse(text);
     const { branch, product } = typeof body === "object" && body !== null ? (body as Record<string, unknown>) : {};
     const counted = await recordDishView(createPublicClient(), branch, product);
