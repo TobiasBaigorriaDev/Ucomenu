@@ -4,20 +4,20 @@ Actualizado: 2026-10-19 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-Sin trabajo en curso: el tablero no tiene ítems en curso, seleccionados ni para verificar. Último cierre: [carta en varios idiomas](cambios/carta-en-varios-idiomas.md) (M, [ADR 0023](../docs/decisiones/0023-carta-en-varios-idiomas.md)), aprobada por el usuario e integrada a `main`; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`, sin servicios externos de traducción.
+[Anular un pago mal cargado](cambios/anular-pagos.md) (C, [ADR 0024](../docs/decisiones/0024-anular-pagos-con-asiento-compensatorio.md)): implementado en `main` (commits `48dc4f6` y `659e750`), probado y revisado por Codex (aprobó en la ronda 2). El SuperAdmin anula el último pago vigente desde `/admin/organizaciones/{slug}` con motivo; el pago queda intacto, el vencimiento vuelve al de antes y el Dueño lo ve marcado «Anulado». Corregir = anular + registrar el correcto. **Falta la prueba y la aprobación del usuario.**
 
-Staging (`https://ucomenu-staging.fly.dev`): migración `20261028100000` aplicada y app desplegada (2026-10-18; `/`, `/login`, `/m/demo/centro` responden 200). La organización `demo` no tiene traducciones cargadas: para ver el selector hay que escribir alguna en el panel de su Dueño.
+La migración `20261029100000_anular_pagos.sql` está aplicada solo en la base local. **Staging y producción no la tienen:** aplicarla en staging y desplegar necesita aprobación del usuario.
 
-Claves de staging rotadas (2026-10-19): una clave de servicio se imprimió por error en una sesión; se creó una `sb_secret_` nueva, se cargó en Fly y se **desactivaron las claves heredadas** (`anon`/`service_role` JWT). Staging usa solo `sb_publishable_` y `sb_secret_`. En producción, empezar así.
+Staging (`https://ucomenu-staging.fly.dev`): carta en varios idiomas desplegada; claves heredadas de Supabase desactivadas (solo `sb_publishable_` y `sb_secret_`; en producción, empezar así). Pruebas en teléfono real de legales, alta desde `/admin` y «Llamados»: bien. Queda una: el vencimiento a las 3 h del ticket de visita (el usuario lo dejó corriendo la noche del 2026-10-19).
 
 ## Bloqueos y riesgos
 
-- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Los textos legales siguen solo en español (la carta traducida enlaza a ellos).
-- E2E: usar `--workers=1`. En una corrida completa el servidor de pruebas (`next start`) dejó de responder a mitad y el resto falló por conexión; repetir los archivos restantes en tandas de ~10 pasó todo.
-- La corrida completa de RLS falló una vez sin causa conocida; mutaciones: correrlas de ~6 en ~6.
-- Límite aceptado de las traducciones: dos personas guardando idiomas distintos de la misma fila en el mismo instante, gana la última.
+- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`).
+- E2E: usar `--workers=1`; una prueba de suspensión falló una vez y pasó sola (ajena). La corrida completa de RLS tarda ~11 min; mutaciones de ~6 en ~6.
+- Anular y volver a cargar son dos pasos: entre ambos la cuenta puede quedar vencida. Un solo paso (anular + registrar) queda como incremento posible.
 
 ## Próximo paso
 
-1. Queda una sola prueba del usuario en teléfono real contra staging (ítem S del [tablero](tablero.md), «Mejoras y deuda técnica»): el vencimiento a las 3 h del ticket de visita, dejado en marcha la noche del 2026-10-19; el usuario revisa por la mañana. Textos legales, alta desde `/admin` y «Llamados» ya salieron bien.
-2. Después, elegir del tablero: pantalla para corregir un pago mal cargado (C), spike de `<model-viewer>` (S) o add-ons y desactivar organizaciones de SuperAdmin (C). Esto último necesita antes que el usuario defina la retención de `price_history` y `payments`. «Sugerir traducción» (DeepL Free o traductor de Chrome) requiere aprobación.
+1. El usuario prueba la anulación en local (`pnpm db:reset`, `pnpm dev`, `/admin/organizaciones/{slug}` con un pago cargado) y la aprueba; después, con su aprobación, aplicar la migración en staging y desplegar.
+2. Resultado de la prueba de las 3 h del ticket de visita.
+3. Después, del [tablero](tablero.md): spike de `<model-viewer>` (S), o add-ons y desactivar organizaciones (C; antes el usuario define la retención de `price_history`, `payments` y `payment_voids`).

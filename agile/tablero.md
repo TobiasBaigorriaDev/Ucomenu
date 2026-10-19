@@ -7,13 +7,13 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
 ## En curso
-- [C] SuperAdmin anula un pago mal cargado (asiento compensatorio con motivo; la vigencia se recalcula) → [ficha](cambios/anular-pagos.md)
+- (vacío)
 
 ## Seleccionado
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [C] SuperAdmin anula un pago mal cargado (asiento compensatorio con motivo; la vigencia se recalcula). Implementado, probado y revisado por Codex; falta que el usuario lo pruebe y lo apruebe, y aplicar la migración en staging (con su aprobación) → [ficha](cambios/anular-pagos.md) · ADR 0024
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md

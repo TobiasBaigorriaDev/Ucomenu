@@ -1,5 +1,5 @@
 # Cambio: SuperAdmin anula un pago mal cargado
-Estado: implementado y verificado en `main` (commit `48dc4f6`), **pendiente la revisión independiente de Codex** y la aprobación final del usuario · plan aprobado por el usuario el 2026-10-19 (anulación como asiento compensatorio; la vigencia se recalcula a partir de los pagos vigentes). La migración **no** se aplicó fuera de la base local.
+Estado: implementado, verificado y revisado por Codex (APROBAR en la ronda 2) en `main` (commits `48dc4f6` y `659e750`); **pendiente la prueba y aprobación del usuario** · plan aprobado por el usuario el 2026-10-19 (anulación como asiento compensatorio; la vigencia se recalcula a partir de los pagos vigentes). La migración **no** se aplicó fuera de la base local.
 Nivel: C (dinero: vigencia, mora y pagos; autorización: nueva escritura solo de SuperAdmin; exposición: el Dueño ve el efecto)
 
 ## Objetivo
@@ -77,5 +77,5 @@ Base local (`pnpm db:reset` con todas las migraciones y el seed), sobre el commi
   2. *Rollback documentado inválido* (restaurar el `unique` falla si ya hay un pago corregido con la misma cobertura). **Corregido** en la cabecera de la migración: va en una transacción y ese paso se omite si falla con `23505`.
   3. *Prueba de TRUNCATE enmascarada* (truncar ambas tablas dejaba que el trigger de `payment_voids` tapara la ausencia del de `payments`). **Corregido:** cada consulta exige el mensaje de `payments` con su operación; **falla sin `payments_no_truncate`** (comprobado quitándolo).
 - Tras las correcciones: `pnpm test` 654/654, RLS de los cuatro archivos afectados 89/89, `pnpm build` OK, E2E de las dos specs afectadas 18/18 (una corrida previa falló en «reactivar una cuenta con las fechas vencidas», ajena al cambio —suspensión, sin pagos—, y pasó sola y en la repetición de las dos specs).
-- **Ronda 2 (verificación):** pendiente.
+- **Ronda 2 (verificación, commit `659e750`):** APROBAR, sin hallazgos nuevos; los tres previos, corregidos. Revisión estática (Codex no ejecutó suites); la ejecución está en la sección «Evidencia».
 - **Aprobación humana:** pendiente. La migración no se aplicó fuera de la base local; aplicarla en staging necesita su aprobación.
