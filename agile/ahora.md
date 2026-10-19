@@ -8,6 +8,8 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 Staging (`https://ucomenu-staging.fly.dev`): migración `20261028100000` aplicada y **app desplegada** (2026-10-18, imagen de `main` con `fly deploy` por Docker; `/`, `/login`, `/m/demo/centro` responden 200 y `/panel/demo/carta/traducciones` redirige al login). La organización `demo` no tiene traducciones cargadas: para ver el selector hay que escribir alguna en el panel de su Dueño.
 
+Claves de staging rotadas (2026-10-19): una clave de servicio se imprimió por error en una sesión; se creó una `sb_secret_` nueva, se cargó en Fly y se **desactivaron las claves heredadas** (`anon`/`service_role` JWT). Staging usa solo `sb_publishable_` y `sb_secret_`. En producción, empezar así.
+
 Antes (ya en staging): pagos y auditoría del Dueño, analítica básica, aviso de llamados por Web Push.
 
 ## Bloqueos y riesgos
