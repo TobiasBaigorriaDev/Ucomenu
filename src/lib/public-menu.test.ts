@@ -56,11 +56,25 @@ describe("loadRows: categorías y platos paginados", () => {
     expect(rows.categories).toHaveLength(n);
     expect(rows.products).toHaveLength(n);
     for (let i = 0; i < n; i++) {
-      expect(rows.categories[i]).toEqual(expected.categories[i]);
-      expect(rows.products[i]).toEqual(expected.products[i]);
+      // La lectura agrega `translations` (vacío si la fila no trae traducciones).
+      expect(rows.categories[i]).toEqual({ ...expected.categories[i], translations: {} });
+      expect(rows.products[i]).toEqual({ ...expected.products[i], translations: {} });
     }
     expect(rows.optionGroups).toEqual([]);
     expect(rows.options).toEqual([]);
+  });
+
+  it("lee las traducciones con tolerancia: lo que no tiene la forma esperada se ignora y la carta no se rompe", async () => {
+    const { categories, products } = mockPostgrest(3);
+    Object.assign(categories[0], { translations: { en: { name: "Coffee" }, fr: { name: "Café" } } });
+    Object.assign(products[0], { translations: { en: { name: "Dish", description: "Tasty" }, pt: "roto" } });
+    Object.assign(products[1], { translations: [1, 2, 3] });
+    Object.assign(products[2], { translations: null });
+    const rows = await loadRows(ORG_ID);
+    expect(rows.categories.find((c) => c.id === categories[0].id)?.translations).toEqual({ en: { name: "Coffee" } });
+    expect(rows.products.find((p) => p.id === products[0].id)?.translations).toEqual({ en: { name: "Dish", description: "Tasty" } });
+    expect(rows.products.find((p) => p.id === products[1].id)?.translations).toEqual({});
+    expect(rows.products.find((p) => p.id === products[2].id)?.translations).toEqual({});
   });
 
   it.each([

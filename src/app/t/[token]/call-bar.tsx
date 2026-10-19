@@ -2,7 +2,8 @@
 
 import { useActionState, useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { SESSION_EXPIRED_MESSAGE } from "@/lib/llamados/result";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 import { createWaiterCallAction, type CallState } from "./actions";
 
 /** Celdas del dock: mismo lenguaje que el bento de categorías (radio grande y colores de la paleta del local). */
@@ -17,8 +18,9 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
-function Buttons() {
+function Buttons({ lang }: { lang: Lang }) {
   const { pending } = useFormStatus();
+  const t = TEXTOS[lang].call;
   return (
     <div className="grid grid-cols-2 gap-2">
       <button type="submit" name="kind" value="waiter" disabled={pending} className={`${cellBase} bg-[var(--carta-green)] text-white`}>
@@ -27,14 +29,14 @@ function Buttons() {
           <path d="M4 17h16" />
           <path d="M10 20.5h4" />
         </Icon>
-        {pending ? "Enviando…" : "Llamar al mozo"}
+        {pending ? t.sending : t.waiter}
       </button>
       <button type="submit" name="kind" value="bill" disabled={pending} className={`${cellBase} bg-[var(--carta-blush)] text-ink`}>
         <Icon>
           <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
           <path d="M9 8h6M9 12h6" />
         </Icon>
-        {pending ? "Enviando…" : "Pedir la cuenta"}
+        {pending ? t.sending : t.bill}
       </button>
     </div>
   );
@@ -76,23 +78,24 @@ function useSessionExpired(ttlMs: number): boolean {
  * llamar desde esta mesa. La confirmación es la respuesta del envío (sin tiempo real para el comensal). Lleva el
  * ticket de visita emitido al abrir la página; vencido el plazo, en vez de los botones pide escanear el QR de nuevo.
  */
-export function CallBar({ token, ticket, ttlMs }: { token: string; ticket: string; ttlMs: number }) {
+export function CallBar({ token, ticket, ttlMs, lang }: { token: string; ticket: string; ttlMs: number; lang: Lang }) {
   const [state, formAction] = useActionState<CallState, FormData>(createWaiterCallAction, {});
   const sessionExpired = useSessionExpired(ttlMs) || state.expired === true;
 
   return (
     <form
       action={formAction}
-      aria-label="Avisar al personal"
+      aria-label={TEXTOS[lang].call.form}
       data-testid="barra-llamado"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-20 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
     >
       <input type="hidden" name="token" value={token} />
       <input type="hidden" name="ticket" value={ticket} />
+      <input type="hidden" name="lang" value={lang} />
       <div className="pointer-events-auto mx-auto max-w-xl rounded-[1.75rem] bg-porcelain/95 p-2 shadow-[0_10px_28px_-10px_rgb(0_0_0/0.4)] ring-1 ring-ink/15 backdrop-blur">
         {sessionExpired ? (
           <p role="status" data-testid="sesion-vencida" className="px-2 py-1 text-[0.9375rem] leading-snug font-medium text-ink">
-            {SESSION_EXPIRED_MESSAGE}
+            {TEXTOS[lang].call.expired}
           </p>
         ) : null}
         {!sessionExpired && state.message ? (
@@ -105,7 +108,7 @@ export function CallBar({ token, ticket, ttlMs }: { token: string; ticket: strin
             {state.message}
           </p>
         ) : null}
-        {sessionExpired ? null : <Buttons />}
+        {sessionExpired ? null : <Buttons lang={lang} />}
       </div>
     </form>
   );

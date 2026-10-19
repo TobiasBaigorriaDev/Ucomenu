@@ -2,6 +2,9 @@ import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { attachOptions, groupMenu, type MenuSection } from "@/lib/menu";
 import { isPalette, type Palette } from "@/lib/identidad/palettes";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { offeredLanguages } from "@/lib/idiomas/localizar";
+import { parseTranslations, type Translations } from "@/lib/idiomas/traducciones";
 import { readAllPages } from "@/lib/paginar";
 import { isValidSlug } from "@/lib/slug";
 import { loadSoldOutProducts } from "@/lib/carta/availability";
@@ -10,7 +13,10 @@ import { createPublicClient } from "@/lib/supabase/public-client";
 export type PublicMenu = {
   organization: { id: string; name: string; slug: string; menu_palette: Palette; logo_path?: string | null };
   branch: { id: string; name: string; slug: string };
+  /** Textos originales (en español) con sus traducciones; la página los resuelve al idioma elegido con `localizeSections`. */
   sections: MenuSection[];
+  /** Idiomas que ofrece el local: el español y los que tengan al menos un texto traducido. */
+  languages: Lang[];
 };
 
 /**
@@ -38,7 +44,7 @@ export const cartaTag = (orgId: string) => `carta:${orgId}`;
 export const CARTA_CACHE_SECONDS = 60;
 
 type CartaRows = {
-  categories: { id: string; name: string; sort_order: number }[];
+  categories: { id: string; name: string; sort_order: number; translations: Translations }[];
   products: {
     id: string;
     category_id: string;
@@ -48,6 +54,7 @@ type CartaRows = {
     sort_order: number;
     image_path: string | null;
     dietary_tags: string[];
+    translations: Translations;
   }[];
   /** Variantes y adicionales publicados (la base solo entrega lo activo de platos visibles). */
   optionGroups: {
@@ -57,8 +64,9 @@ type CartaRows = {
     min_choices: number;
     max_choices: number;
     sort_order: number;
+    translations: Translations;
   }[];
-  options: { id: string; group_id: string; name: string; price_delta_cents: number; sort_order: number }[];
+  options: { id: string; group_id: string; name: string; price_delta_cents: number; sort_order: number; translations: Translations }[];
 };
 
 /**
@@ -71,7 +79,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
     readAllPages((from, to) =>
       supabase
         .from("categories")
-        .select("id, name, sort_order")
+        .select("id, name, sort_order, translations")
         .eq("organization_id", orgId)
         .order("id")
         .range(from, to),
@@ -79,7 +87,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
     readAllPages((from, to) =>
       supabase
         .from("products")
-        .select("id, category_id, name, description, price_cents, sort_order, image_path, dietary_tags")
+        .select("id, category_id, name, description, price_cents, sort_order, image_path, dietary_tags, translations")
         .eq("organization_id", orgId)
         .order("id")
         .range(from, to),
@@ -87,7 +95,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
     readAllPages((from, to) =>
       supabase
         .from("option_groups")
-        .select("id, product_id, name, min_choices, max_choices, sort_order")
+        .select("id, product_id, name, min_choices, max_choices, sort_order, translations")
         .eq("organization_id", orgId)
         .order("id")
         .range(from, to),
@@ -95,7 +103,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
     readAllPages((from, to) =>
       supabase
         .from("options")
-        .select("id, group_id, name, price_delta_cents, sort_order")
+        .select("id, group_id, name, price_delta_cents, sort_order, translations")
         .eq("organization_id", orgId)
         .order("id")
         .range(from, to),
@@ -106,17 +114,20 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
   if (optionGroups.error) throw new Error(`No se pudieron leer los grupos de opciones: ${optionGroups.error.message}`);
   if (options.error) throw new Error(`No se pudieron leer las opciones: ${options.error.message}`);
+  // La base garantiza la forma de `translations` (CHECK), pero la carta pública no confía en ella: se lee con tolerancia.
+  const withTranslations = <T extends { translations: unknown }>(rows: T[] | null) =>
+    (rows ?? []).map((row) => ({ ...row, translations: parseTranslations(row.translations) }));
   return {
-    categories: categories.data ?? [],
-    products: products.data ?? [],
-    optionGroups: optionGroups.data ?? [],
-    options: options.data ?? [],
+    categories: withTranslations(categories.data),
+    products: withTranslations(products.data),
+    optionGroups: withTranslations(optionGroups.data),
+    options: withTranslations(options.data),
   };
 }
 
 /**
  * Categorías, platos y sus variantes/adicionales publicados de una organización, con caché (la clave lleva la versión de
- * la forma de lo cacheado: `v3` agrega etiquetas dietarias, para no leer entradas con la forma anterior). Solo se cachea esto, que cambia únicamente cuando el
+ * la forma de lo cacheado: `v4` agrega las traducciones (`v3`, las etiquetas dietarias), para no leer entradas con la forma anterior). Solo se cachea esto, que cambia únicamente cuando el
  * local edita su carta; todo lo que decide si la carta se puede mostrar (que la organización exista y esté activa, que la
  * cuenta no esté suspendida, que la sucursal exista) se consulta SIEMPRE en vivo en `getPublicMenu` antes de llegar acá.
  * Por eso una caché vieja nunca publica la carta de una cuenta suspendida ni de otra organización: la clave lleva el id
@@ -129,7 +140,7 @@ export async function loadRows(orgId: string): Promise<CartaRows> {
  * guardar los datos anteriores después de la invalidación; dura como máximo lo mismo (`CARTA_CACHE_SECONDS`).
  */
 function readRows(orgId: string): Promise<CartaRows> {
-  return unstable_cache(() => loadRows(orgId), ["carta-publica-v3", orgId], {
+  return unstable_cache(() => loadRows(orgId), ["carta-publica-v4", orgId], {
     tags: [cartaTag(orgId)],
     revalidate: CARTA_CACHE_SECONDS,
   })();
@@ -163,6 +174,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
     loadSoldOutProducts(supabase, org.id, branch.id),
   ]);
 
+  const sections = groupMenu(categories, attachOptions(products.map((product) => ({ ...product, is_available: !soldOut.has(product.id) })), optionGroups, options));
   return {
     kind: "menu",
     menu: {
@@ -172,7 +184,8 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
         logo_path: org.logo_path,
       },
       branch: { id: branch.id, name: branch.name, slug: branch.slug },
-      sections: groupMenu(categories, attachOptions(products.map((product) => ({ ...product, is_available: !soldOut.has(product.id) })), optionGroups, options)),
+      sections,
+      languages: offeredLanguages(sections),
     },
   };
 });

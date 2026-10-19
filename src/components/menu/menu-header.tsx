@@ -1,5 +1,7 @@
 import "./carta.css";
 import Image from "next/image";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 
 /**
  * Cabecera editorial: logo y nombre del local lado a lado, en display grande y alineados a la izquierda; debajo, un
@@ -10,6 +12,7 @@ export function MenuHeader({
   branchName,
   tableLabel,
   logo,
+  lang = "es",
 }: {
   organizationName: string;
   /** La pantalla de «carta no disponible» no muestra sucursal. */
@@ -17,7 +20,9 @@ export function MenuHeader({
   /** Solo cuando se entró por el QR de una mesa activa. */
   tableLabel?: string | null;
   logo?: string | null;
+  lang?: Lang;
 }) {
+  const t = TEXTOS[lang];
   return (
     <header>
       <div className="mx-auto max-w-3xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 sm:pb-12">
@@ -25,7 +30,7 @@ export function MenuHeader({
           {logo ? (
             <Image
               src={logo}
-              alt={`Logo de ${organizationName}`}
+              alt={t.logoAlt(organizationName)}
               width={192}
               height={192}
               className="size-16 shrink-0 object-contain sm:size-24"
@@ -54,7 +59,7 @@ export function MenuHeader({
                   <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
                   <circle cx="12" cy="9.5" r="2.5" />
                 </svg>
-                <span className="[overflow-wrap:anywhere]">Sucursal {branchName}</span>
+                <span className="[overflow-wrap:anywhere]">{t.branch(branchName)}</span>
               </p>
             ) : null}
             {tableLabel ? (

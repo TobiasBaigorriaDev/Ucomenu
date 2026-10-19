@@ -41,6 +41,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   trial_status: [false, false, false], // pura; la usa org_entitlements (estado de la prueba gratuita)
   enforce_option_group_cap: [false, false, false], // trigger de option_groups: tope técnico de 20 grupos por plato (variantes y adicionales)
   enforce_option_cap: [false, false, false], // trigger de options: tope técnico de 60 opciones por grupo (variantes y adicionales)
+  translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
 };
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.

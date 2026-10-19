@@ -1,23 +1,23 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-19 · agente saliente: Claude Code · historial anterior en `agile/historial.md`.
+Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en `agile/historial.md`.
 
 ## Punto de retomada
 
-Hechas e integradas a `main` y **desplegadas a staging** (`https://ucomenu-staging.fly.dev`, migraciones hasta `20261027100000`) en esta tanda, todas aprobadas por el usuario:
-- [El Dueño lee sus pagos y el historial de su cuenta](cambios/dueno-lee-pagos-y-auditoria.md) (C, [ADR 0021](../docs/decisiones/0021-el-dueno-lee-pagos-y-auditoria.md)): `/panel/{slug}/suscripcion`.
-- [Analítica básica](cambios/analitica-basica.md) (C, [ADR 0022](../docs/decisiones/0022-analitica-basica.md)): `/panel/{slug}/analitica`, solo Dueño con plan Pro; vistas de platos como contadores anónimos (ruta `/api/vista-plato`, nada en el dispositivo) y llamados por hora de los últimos 14 días, con detalle al pasar el cursor o tocar.
-- Antes: aviso de llamados desde el panel y en iPhone ([ADR 0020](../docs/decisiones/0020-aviso-de-llamados-por-web-push.md)).
+Rama **`feat/carta-multiidioma`** (sin integrar a `main`): [Carta en varios idiomas](cambios/carta-en-varios-idiomas.md) (M, [ADR 0023](../docs/decisiones/0023-carta-en-varios-idiomas.md)), implementada y verificada (lint, typecheck, build, unitarias, RLS y E2E; evidencia en la ficha). El local escribe las traducciones al inglés y portugués en `/panel/{slug}/carta/traducciones`; la carta ofrece el selector al cargar el primer texto, entra en el idioma del navegador y cae al español campo por campo. Sin servicios externos de traducción.
 
-`main` está varios commits por delante de `origin`: **falta el push** (el usuario no lo pidió). La base local tiene datos de ejemplo de analítica y `cafe-ejemplo` en Pro: `pnpm db:reset` antes de las pruebas. El servidor local (puerto 3000) puede seguir encendido.
+Falta: **que el usuario la pruebe** (con `pnpm db:reset`, `pnpm build` y `pnpm start`, o `pnpm dev`; cargar unas traducciones en el panel del Dueño de `cafe-ejemplo` y abrir `/m/cafe-ejemplo/centro?lang=en`). Si la aprueba: integrar a `main`, pasar el ítem a «Hecho» y, con aprobación, aplicar la migración `20261028100000` en staging.
+
+Antes (ya en `main` y desplegado a staging, migraciones hasta `20261027100000`): pagos y auditoría del Dueño, analítica básica, aviso de llamados por Web Push. `main` está varios commits por delante de `origin`: **falta el push** (no se pidió).
 
 ## Bloqueos y riesgos
 
-- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). La revisión legal debe incluir la oración nueva de `/privacidad` sobre el conteo de vistas. Al salir hace falta otro par VAPID y un `VAPID_SUBJECT` real.
-- Abuso aceptado de la analítica: cualquiera puede inflar el contador de una carta (sin límite por IP a propósito, para no guardar un identificador del comensal).
-- E2E: usar `--workers=1`; algún fallo por tiempo ajeno (p. ej. `carta.spec.ts:266`) pasa al repetirlo solo. La corrida completa de RLS falló una vez sin causa conocida y pasó al repetirla.
-- Mutaciones: correrlas en tandas de ~6 (una sola corrida larga se cortó por falta de memoria).
+- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`). Los textos legales siguen solo en español (la carta traducida enlaza a ellos).
+- E2E: usar `--workers=1`. En la corrida completa de esta tanda el servidor de pruebas (`next start`) dejó de responder a mitad y el resto falló por conexión; repetir los archivos restantes en tandas de ~10 pasó todo.
+- La corrida completa de RLS falló una vez sin causa conocida en tandas anteriores; mutaciones: correrlas de ~6 en ~6.
+- Límite aceptado de las traducciones: dos personas guardando idiomas distintos de la misma fila en el mismo instante, gana la última.
 
 ## Próximo paso
 
-Elegir del [tablero](tablero.md) (hoy «Seleccionado» está vacío). Desbloqueadas: carta en varios idiomas (M), subdominio o dominio propio por organización (M), add-ons y desactivar organizaciones de SuperAdmin (C). La retención de `price_history` necesita política del usuario.
+1. Prueba y aprobación del usuario de la carta en varios idiomas.
+2. Después, elegir del [tablero](tablero.md): subdominio o dominio propio por organización (M), add-ons y desactivar organizaciones de SuperAdmin (C). Incremento posible sobre este: «sugerir traducción» (DeepL Free o traductor de Chrome; requiere aprobación). La retención de `price_history` necesita política del usuario.

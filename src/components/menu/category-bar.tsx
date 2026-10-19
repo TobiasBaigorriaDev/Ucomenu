@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuSection } from "@/lib/menu";
 import { categoryAnchor, MOSAIC_ID } from "./anchors";
 
@@ -14,7 +16,7 @@ const CLICK_LOCK_MS = 900;
  * está leyendo. Mientras está oculta es `inert` (no recibe foco ni la leen los lectores de pantalla), así que el
  * primer Tab de la página cae en el mosaico. No ocupa lugar en el flujo: no mueve el contenido al aparecer.
  */
-export function CategoryBar({ sections }: { sections: MenuSection[] }) {
+export function CategoryBar({ sections, lang }: { sections: MenuSection[]; lang: Lang }) {
   const [activeId, setActiveId] = useState(sections[0]?.category.id);
   const [visible, setVisible] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
@@ -74,7 +76,7 @@ export function CategoryBar({ sections }: { sections: MenuSection[] }) {
 
   return (
     <nav
-      aria-label="Cambiar de categoría"
+      aria-label={TEXTOS[lang].categories.bar}
       inert={!visible}
       className={`carta-bar fixed inset-x-0 top-0 z-10 border-b border-ink/10 bg-porcelain/95 backdrop-blur motion-safe:transition-[transform,opacity] motion-safe:duration-300 ${
         visible ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0"

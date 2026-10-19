@@ -3,6 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { imageUrl } from "@/lib/carta/images";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct } from "@/lib/menu";
 import { formatArs } from "@/lib/money";
 import { DietaryLabels } from "./dietary-labels";
@@ -34,7 +36,7 @@ const PHOTO_SIZES: Record<CardSpan, string> = {
  * una foto. Solo se confía en `onError`: una imagen diferida (`lazy`) que aún no empezó a cargar figura como `complete` con
  * ancho 0, así que mirar ese estado al hidratar la marcaba como rota por error. El tamaño lo fija la proporción, así que la grilla no salta al cargar. Ver ficha rendimiento-carta-publica.
  */
-function CardPhoto({ src, name, span }: { src: string; name: string; span: CardSpan }) {
+function CardPhoto({ src, name, span, lang }: { src: string; name: string; span: CardSpan; lang: Lang }) {
   const [failed, setFailed] = useState(false);
   const frame = `relative w-full overflow-hidden bg-[var(--carta-sand)] ${PHOTO_RATIO[span]}`;
 
@@ -53,7 +55,7 @@ function CardPhoto({ src, name, span }: { src: string; name: string; span: CardS
     <div className={frame}>
       <Image
         src={src}
-        alt={`Foto de ${name}`}
+        alt={TEXTOS[lang].dish.photoAlt(name)}
         width={span === "featured" ? 640 : 384}
         height={span === "featured" ? 400 : 288}
         sizes={PHOTO_SIZES[span]}
@@ -69,7 +71,8 @@ function CardPhoto({ src, name, span }: { src: string; name: string; span: CardS
  * Card de un plato: foto (o una card tipográfica teñida con la paleta si no hay), nombre en display, precio, descripción
  * corta, etiquetas y opciones. Toda la card abre el detalle: el botón del nombre se estira sobre ella.
  */
-export function DishCard({ product, span, onSelect }: { product: MenuProduct; span: CardSpan; onSelect?: (product: MenuProduct) => void }) {
+export function DishCard({ product, span, onSelect, lang }: { product: MenuProduct; span: CardSpan; onSelect?: (product: MenuProduct) => void; lang: Lang }) {
+  const t = TEXTOS[lang].dish;
   const photo = imageUrl(product.image_path);
   const featured = span === "featured";
   const soldOut = product.is_available === false;
@@ -79,7 +82,7 @@ export function DishCard({ product, span, onSelect }: { product: MenuProduct; sp
         <button
           type="button"
           onClick={() => onSelect(product)}
-          aria-label={`Ver detalle de ${product.name}`}
+          aria-label={t.viewDetail(product.name)}
           className="scroll-mt-40 scroll-mb-32 text-left after:absolute after:inset-0 after:content-[''] focus-visible:outline-none"
         >
           {product.name}
@@ -97,7 +100,7 @@ export function DishCard({ product, span, onSelect }: { product: MenuProduct; sp
           photo ? "bg-porcelain" : "bg-[var(--carta-sand)]"
         }`}
       >
-        {photo ? <CardPhoto src={photo} name={product.name} span={span} /> : null}
+        {photo ? <CardPhoto src={photo} name={product.name} span={span} lang={lang} /> : null}
         {!photo ? (
           // Inicial editorial: llena el espacio de una card sin foto sin sumarle altura ni información (es decorativa).
           <span aria-hidden="true" className="pointer-events-none absolute -right-1 -bottom-4 font-display text-[7rem] leading-none text-[var(--carta-green)]/10 select-none md:text-[9rem]">
@@ -105,10 +108,10 @@ export function DishCard({ product, span, onSelect }: { product: MenuProduct; sp
           </span>
         ) : null}
         {photo && soldOut ? (
-          <p className="absolute top-3 left-3 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">Agotado</p>
+          <p className="absolute top-3 left-3 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p>
         ) : null}
         <div className={`flex flex-col gap-2 p-4 ${featured ? "md:flex-none" : "flex-1"}`}>
-          {!photo && soldOut ? <p className="w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">Agotado</p> : null}
+          {!photo && soldOut ? <p className="w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p> : null}
           {name}
           <p className="text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums">{formatArs(product.price_cents)}</p>
           {product.description ? (
@@ -116,10 +119,10 @@ export function DishCard({ product, span, onSelect }: { product: MenuProduct; sp
               {product.description}
             </p>
           ) : null}
-          <DietaryLabels tags={product.dietary_tags} />
+          <DietaryLabels tags={product.dietary_tags} lang={lang} />
           {product.option_groups && product.option_groups.length > 0 ? (
             <div className="mt-auto pt-1">
-              <DishOptions productId={product.id} groups={product.option_groups} maxRows={span === "normal" ? 6 : undefined} />
+              <DishOptions productId={product.id} groups={product.option_groups} maxRows={span === "normal" ? 6 : undefined} lang={lang} />
             </div>
           ) : null}
         </div>

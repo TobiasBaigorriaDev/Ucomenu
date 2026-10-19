@@ -1,5 +1,7 @@
 import Image from "next/image";
 import { imageUrl } from "@/lib/carta/images";
+import type { Lang } from "@/lib/idiomas/idiomas";
+import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuSection } from "@/lib/menu";
 import { categoryAnchor, MOSAIC_ID } from "./anchors";
 import { mosaicLayout, type TileShape } from "./mosaic";
@@ -32,18 +34,19 @@ function nameSize(name: string, shape: TileShape): string {
  * si no hay ninguna, un bloque de color de la paleta del local. Es la navegación principal de la carta; al bajar
  * aparece la barra fija (`CategoryBar`).
  */
-export function CategoryMosaic({ sections }: { sections: MenuSection[] }) {
+export function CategoryMosaic({ sections, lang }: { sections: MenuSection[]; lang: Lang }) {
+  const t = TEXTOS[lang];
   const shapes = mosaicLayout(sections.length);
   const photos = sections.map(({ products }) => imageUrl(products.find((product) => product.image_path)?.image_path));
   const firstPhoto = photos.findIndex(Boolean);
 
   return (
-    <nav id={MOSAIC_ID} aria-label="Categorías de la carta" className="mx-auto max-w-3xl px-4 sm:px-6">
+    <nav id={MOSAIC_ID} aria-label={t.categories.index} className="mx-auto max-w-3xl px-4 sm:px-6">
       {/* Las filas miden como mínimo 8,5 rem pero crecen si un nombre largo lo necesita: nunca se recorta. */}
       <ul className="grid auto-rows-[minmax(8.5rem,auto)] grid-cols-2 gap-3 sm:auto-rows-[minmax(11rem,auto)] sm:gap-4">
         {sections.map(({ category, products }, i) => {
           const photo = photos[i];
-          const count = products.length === 1 ? "1 plato" : `${products.length} platos`;
+          const count = t.count.dishes(products.length);
           return (
             <li key={category.id} className={SPAN[shapes[i]]}>
               <a

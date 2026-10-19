@@ -577,10 +577,10 @@ describe("catálogo de la base", () => {
         where grantee = '${rol}' and privilege_type = '${privilegio}' and table_schema = 'public' and table_name = '${tabla}'
         order by column_name`).flat();
 
-    expect(columnas("authenticated", "INSERT", "option_groups")).toEqual(["is_active", "max_choices", "min_choices", "name", "organization_id", "product_id", "sort_order"]);
-    expect(columnas("authenticated", "UPDATE", "option_groups")).toEqual(["is_active", "max_choices", "min_choices", "name", "sort_order"]);
-    expect(columnas("authenticated", "INSERT", "options")).toEqual(["group_id", "is_active", "name", "organization_id", "price_delta_cents", "sort_order"]);
-    expect(columnas("authenticated", "UPDATE", "options")).toEqual(["is_active", "name", "price_delta_cents", "sort_order"]);
+    expect(columnas("authenticated", "INSERT", "option_groups")).toEqual(["is_active", "max_choices", "min_choices", "name", "organization_id", "product_id", "sort_order", "translations"]);
+    expect(columnas("authenticated", "UPDATE", "option_groups")).toEqual(["is_active", "max_choices", "min_choices", "name", "sort_order", "translations"]);
+    expect(columnas("authenticated", "INSERT", "options")).toEqual(["group_id", "is_active", "name", "organization_id", "price_delta_cents", "sort_order", "translations"]);
+    expect(columnas("authenticated", "UPDATE", "options")).toEqual(["is_active", "name", "price_delta_cents", "sort_order", "translations"]);
     for (const tabla of ["option_groups", "options"]) {
       expect(columnas("anon", "INSERT", tabla), `${tabla}: INSERT de anon`).toEqual([]);
       expect(columnas("anon", "UPDATE", tabla), `${tabla}: UPDATE de anon`).toEqual([]);
