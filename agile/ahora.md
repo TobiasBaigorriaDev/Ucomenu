@@ -4,11 +4,13 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-Rama **`feat/carta-multiidioma`** (sin integrar a `main`): [Carta en varios idiomas](cambios/carta-en-varios-idiomas.md) (M, [ADR 0023](../docs/decisiones/0023-carta-en-varios-idiomas.md)), implementada y verificada (lint, typecheck, build, unitarias, RLS y E2E; evidencia en la ficha). El local escribe las traducciones al inglés y portugués en `/panel/{slug}/carta/traducciones`; la carta ofrece el selector al cargar el primer texto, entra en el idioma del navegador y cae al español campo por campo. Sin servicios externos de traducción.
+[Carta en varios idiomas](cambios/carta-en-varios-idiomas.md) (M, [ADR 0023](../docs/decisiones/0023-carta-en-varios-idiomas.md)): aprobada por el usuario e **integrada a `main`** (sin servicios externos de traducción; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`).
 
-Falta: **que el usuario la pruebe** (con `pnpm db:reset`, `pnpm build` y `pnpm start`, o `pnpm dev`; cargar unas traducciones en el panel del Dueño de `cafe-ejemplo` y abrir `/m/cafe-ejemplo/centro?lang=en`). Si la aprueba: integrar a `main`, pasar el ítem a «Hecho» y, con aprobación, aplicar la migración `20261028100000` en staging.
+Falta, en staging (`https://ucomenu-staging.fly.dev`, migraciones hasta `20261027100000`):
+1. **Aplicar la migración `20261028100000`**: el usuario la aprobó, pero el control de permisos bloqueó `supabase db push` al agente. La corre el usuario: `pnpm exec supabase db push --dry-run` y luego `pnpm exec supabase db push` (proyecto enlazado `oasixhsdyigimwvcxtkx`). Es aditiva; el código viejo la ignora.
+2. **Desplegar la app** a staging (Fly, `docs/produccion.md` paso 3b) cuando la migración esté aplicada; sin ella el código nuevo falla al leer `translations`. No se pidió ni se hizo.
 
-Antes (ya en `main` y desplegado a staging, migraciones hasta `20261027100000`): pagos y auditoría del Dueño, analítica básica, aviso de llamados por Web Push. `main` está varios commits por delante de `origin`: **falta el push** (no se pidió).
+Antes (ya en staging): pagos y auditoría del Dueño, analítica básica, aviso de llamados por Web Push.
 
 ## Bloqueos y riesgos
 

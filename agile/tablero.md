@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [M] Carta en varios idiomas: español, inglés y portugués; el local escribe las traducciones en el panel y la carta cae al español donde falta; sin servicios externos; implementada en la rama `feat/carta-multiidioma` y verificada, falta que el usuario la pruebe → [ficha](cambios/carta-en-varios-idiomas.md) · ADR 0023
+- (vacío)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -60,6 +60,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [M] Carta en varios idiomas: español, inglés y portugués; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`, la carta cae al español donde falta y no usa servicios externos; probada y aprobada por el usuario, integrada a `main` (2026-10-18; falta aplicar la migración y desplegar a staging) → [ficha](cambios/carta-en-varios-idiomas.md) · ADR 0023
 - [C] Analítica básica para el Dueño con plan Pro: platos más vistos (contadores anónimos por día, sin guardar nada del comensal) y llamados por hora de los últimos 14 días, con detalle al pasar el cursor o tocar; revisado por Codex en tres rondas y aprobado por el usuario (2026-10-19) → [ficha](cambios/analitica-basica.md) · ADR 0022
 - [C] El Dueño lee los pagos y el historial de cambios de su cuenta en Suscripción: dos funciones de base solo de lectura con proyección segura (lista blanca, sin actor, motivo ni ids de terceros); revisado por Codex en dos rondas y aprobado por el usuario (2026-10-18); → [ficha](cambios/dueno-lee-pagos-y-auditoria.md) · ADR 0021
 - [M] Aviso de llamados en iPhone y iPad: la sala y el panel se instalan como app (manifiesto, íconos, instrucciones en pantalla) y el aviso siempre se muestra en Apple; probado y aprobado por el usuario en un iPhone real contra staging (2026-10-18; desplegado a staging) → [ficha](cambios/aviso-push-iphone.md)

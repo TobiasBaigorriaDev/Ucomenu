@@ -1,5 +1,5 @@
 # Cambio: Carta en varios idiomas
-Estado: verificado (pendiente de que el usuario la pruebe; rama `feat/carta-multiidioma`, sin integrar a `main`)
+Estado: integrado a `main` (aprobado por el usuario el 2026-10-18; migración pendiente en staging)
 Nivel: M (esquema nuevo, pero sin tocar autorización, dinero ni borrados; ver «Nivel»)
 
 ## Objetivo
@@ -43,3 +43,7 @@ Ejecutada el 2026-10-18 sobre `pnpm db:reset` (migración `20261028100000_carta_
 ## Aprendizajes
 - Las políticas públicas de lectura hacen legible lo publicado para cualquier persona autenticada, no solo para anónimos: una prueba de aislamiento de lectura tiene que mirar lo OCULTO (plato inactivo), no lo activo.
 - `Accept-Language` por defecto de Playwright es `en-US`; `playwright.config.ts` fija `es-AR`, así que ninguna prueba existente cambia de idioma. Las pruebas del idioma del navegador crean su propio contexto.
+
+## Integración
+- Aprobada por el usuario tras probarla en local (2026-10-18) e integrada a `main` con `Merge feat/carta-multiidioma`. Sin revisión independiente, por su nivel.
+- Migración `20261028100000` **aún no aplicada en staging**: el usuario la aprobó, pero el control de permisos del agente bloqueó `supabase db push`; la corre el usuario (`pnpm exec supabase db push --dry-run` y luego `pnpm exec supabase db push`, proyecto enlazado `oasixhsdyigimwvcxtkx`). Es aditiva y el código anterior la ignora, así que puede ir antes del despliegue. El despliegue de la app a staging tampoco se hizo.
