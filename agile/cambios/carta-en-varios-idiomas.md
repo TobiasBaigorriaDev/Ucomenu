@@ -1,5 +1,5 @@
 # Cambio: Carta en varios idiomas
-Estado: integrado a `main` (aprobado por el usuario el 2026-10-18; migración pendiente en staging)
+Estado: integrado a `main` (aprobado por el usuario el 2026-10-18; migración aplicada en staging; falta desplegar la app)
 Nivel: M (esquema nuevo, pero sin tocar autorización, dinero ni borrados; ver «Nivel»)
 
 ## Objetivo
@@ -46,4 +46,4 @@ Ejecutada el 2026-10-18 sobre `pnpm db:reset` (migración `20261028100000_carta_
 
 ## Integración
 - Aprobada por el usuario tras probarla en local (2026-10-18) e integrada a `main` con `Merge feat/carta-multiidioma`. Sin revisión independiente, por su nivel.
-- Migración `20261028100000` **aún no aplicada en staging**: el usuario la aprobó, pero el control de permisos del agente bloqueó `supabase db push`; la corre el usuario (`pnpm exec supabase db push --dry-run` y luego `pnpm exec supabase db push`, proyecto enlazado `oasixhsdyigimwvcxtkx`). Es aditiva y el código anterior la ignora, así que puede ir antes del despliegue. El despliegue de la app a staging tampoco se hizo.
+- Migración `20261028100000` **aplicada en staging** (2026-10-18): `supabase db push --dry-run` listó solo esa y `db push` la aplicó; `migration list` la muestra en local y remoto. (Un primer intento fue bloqueado por el control de permisos; salió al repetirlo con la orden explícita del usuario.) Es aditiva y el código anterior la ignora. El despliegue de la app a staging no se hizo.

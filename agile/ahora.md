@@ -6,9 +6,9 @@ Actualizado: 2026-10-18 · agente saliente: Claude Code · historial anterior en
 
 [Carta en varios idiomas](cambios/carta-en-varios-idiomas.md) (M, [ADR 0023](../docs/decisiones/0023-carta-en-varios-idiomas.md)): aprobada por el usuario e **integrada a `main`** (sin servicios externos de traducción; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`).
 
-Falta, en staging (`https://ucomenu-staging.fly.dev`, migraciones hasta `20261027100000`):
-1. **Aplicar la migración `20261028100000`**: el usuario la aprobó, pero el control de permisos bloqueó `supabase db push` al agente. La corre el usuario: `pnpm exec supabase db push --dry-run` y luego `pnpm exec supabase db push` (proyecto enlazado `oasixhsdyigimwvcxtkx`). Es aditiva; el código viejo la ignora.
-2. **Desplegar la app** a staging (Fly, `docs/produccion.md` paso 3b) cuando la migración esté aplicada; sin ella el código nuevo falla al leer `translations`. No se pidió ni se hizo.
+Staging (`https://ucomenu-staging.fly.dev`): la migración `20261028100000` **ya está aplicada** (2026-10-18, `supabase db push` tras `--dry-run` que listó solo esa). Es aditiva: la app que hoy corre en staging la ignora.
+
+Falta **desplegar la app** a staging (Fly, `docs/produccion.md` paso 3b) para ver la carta en varios idiomas allá. Ya no hay nada que lo bloquee; no se pidió ni se hizo.
 
 Antes (ya en staging): pagos y auditoría del Dueño, analítica básica, aviso de llamados por Web Push.
 
