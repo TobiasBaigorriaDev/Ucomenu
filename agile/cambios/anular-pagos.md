@@ -1,5 +1,5 @@
 # Cambio: SuperAdmin anula un pago mal cargado
-Estado: implementado, verificado y revisado por Codex (APROBAR en la ronda 2) en `main` (commits `48dc4f6` y `659e750`); **pendiente la prueba y aprobación del usuario** · plan aprobado por el usuario el 2026-10-19 (anulación como asiento compensatorio; la vigencia se recalcula a partir de los pagos vigentes). La migración **no** se aplicó fuera de la base local.
+Estado: integrado a `main` y subido a `origin` (2026-10-19); migración aplicada y app desplegada en staging · plan aprobado por el usuario el 2026-10-19 (anulación como asiento compensatorio; la vigencia se recalcula a partir de los pagos vigentes); implementado, verificado y revisado por Codex (APROBAR en la ronda 2; commits `48dc4f6` y `659e750`).
 Nivel: C (dinero: vigencia, mora y pagos; autorización: nueva escritura solo de SuperAdmin; exposición: el Dueño ve el efecto)
 
 ## Objetivo
@@ -78,4 +78,5 @@ Base local (`pnpm db:reset` con todas las migraciones y el seed), sobre el commi
   3. *Prueba de TRUNCATE enmascarada* (truncar ambas tablas dejaba que el trigger de `payment_voids` tapara la ausencia del de `payments`). **Corregido:** cada consulta exige el mensaje de `payments` con su operación; **falla sin `payments_no_truncate`** (comprobado quitándolo).
 - Tras las correcciones: `pnpm test` 654/654, RLS de los cuatro archivos afectados 89/89, `pnpm build` OK, E2E de las dos specs afectadas 18/18 (una corrida previa falló en «reactivar una cuenta con las fechas vencidas», ajena al cambio —suspensión, sin pagos—, y pasó sola y en la repetición de las dos specs).
 - **Ronda 2 (verificación, commit `659e750`):** APROBAR, sin hallazgos nuevos; los tres previos, corregidos. Revisión estática (Codex no ejecutó suites); la ejecución está en la sección «Evidencia».
-- **Aprobación humana:** pendiente. La migración no se aplicó fuera de la base local; aplicarla en staging necesita su aprobación.
+- **Aprobación humana:** dada por el usuario el 2026-10-19 tras probarlo en local («todo bien»), con la orden de subir a `origin` y actualizar staging.
+- **Staging (2026-10-19):** `supabase db push --dry-run` listó solo `20261029100000_anular_pagos.sql` y `db push` la aplicó; `migration list` muestra todas iguales en local y remoto. App desplegada con `fly deploy -c fly.staging.toml` (imagen oficial de `flyctl` en Docker): máquina sana; `/`, `/login` y `/m/demo/centro` responden 200 y `/panel/demo/suscripcion` y `/admin/organizaciones/demo` redirigen al login. No probado: la pantalla nueva con sesión de SuperAdmin en staging (queda para el usuario).

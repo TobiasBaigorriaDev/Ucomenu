@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [C] SuperAdmin anula un pago mal cargado (asiento compensatorio con motivo; la vigencia se recalcula). Implementado, probado y revisado por Codex; falta que el usuario lo pruebe y lo apruebe, y aplicar la migración en staging (con su aprobación) → [ficha](cambios/anular-pagos.md) · ADR 0024
+- (vacío)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -59,6 +59,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] SuperAdmin anula un pago mal cargado: asiento compensatorio con motivo, solo el último pago vigente, el vencimiento vuelve al de antes y el Dueño lo ve marcado; revisado por Codex en dos rondas y aprobado por el usuario (2026-10-19; migración aplicada y desplegado en staging) → [ficha](cambios/anular-pagos.md) · ADR 0024
 - [S] Prueba en un teléfono real sobre staging: textos legales (`/terminos`, `/privacidad`, `/alergenos`), alta de una organización desde `/admin` y pantalla «Llamados» en el salón; todo bien según el usuario (2026-10-19)
 - [M] Carta en varios idiomas: español, inglés y portugués; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`, la carta cae al español donde falta y no usa servicios externos; probada y aprobada por el usuario, integrada a `main` (2026-10-18; migración aplicada y desplegada a staging) → [ficha](cambios/carta-en-varios-idiomas.md) · ADR 0023
 - [C] Analítica básica para el Dueño con plan Pro: platos más vistos (contadores anónimos por día, sin guardar nada del comensal) y llamados por hora de los últimos 14 días, con detalle al pasar el cursor o tocar; revisado por Codex en tres rondas y aprobado por el usuario (2026-10-19) → [ficha](cambios/analitica-basica.md) · ADR 0022
