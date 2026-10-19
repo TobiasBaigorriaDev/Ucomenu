@@ -252,6 +252,130 @@ test.describe("la pantalla de analítica del Dueño", () => {
     await context.close();
   });
 
+  test("al pasar el cursor por una barra del gráfico se ve la hora exacta y cuántos llamaron; al sacarlo se va", async ({ browser }) => {
+    const l = await nuevoLocal("ana-hover");
+    await sembrarAnalitica(l);
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await login(page, l.t.owner.email, l.t.owner.password);
+    await page.goto(`/panel/${l.t.slug}/analitica`);
+    const grafico = page.getByTestId("grafico-horas");
+    const tooltip = page.getByTestId("tooltip-hora");
+    await expect(tooltip).toHaveCount(0);
+
+    await grafico.locator('[data-hora="13"]').hover();
+    await expect(tooltip).toContainText("13 a 14 h");
+    await expect(tooltip).toContainText("1 llama al mozo");
+    await expect(tooltip).toContainText("1 pide la cuenta");
+    await expect(tooltip).toContainText("2 llamados en total");
+
+    // Otra hora: cambia; una hora sin llamados lo dice (no una barra vacía muda).
+    await grafico.locator('[data-hora="21"]').hover();
+    await expect(tooltip).toContainText("21 a 22 h");
+    await expect(tooltip).toContainText("1 llama al mozo");
+    await expect(tooltip).toContainText("0 piden la cuenta");
+    await grafico.locator('[data-hora="4"]').hover();
+    await expect(tooltip).toContainText("4 a 5 h");
+    await expect(tooltip).toContainText("Sin llamados");
+
+    // Se puede señalar la columna entera (no solo la barra), aunque no tenga alto: la hora 4 no tiene barra y respondió.
+    await page.getByRole("heading", { name: "Analítica" }).hover();
+    await expect(tooltip).toHaveCount(0);
+    await context.close();
+  });
+
+  test("en el teléfono, tocar una barra muestra la hora y la cantidad; se queda, se mueve al tocar otra y se va al tocar afuera; en los bordes no se corta", async ({ browser }) => {
+    const l = await nuevoLocal("ana-tactil");
+    await sembrarAnalitica(l);
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    await login(page, l.t.owner.email, l.t.owner.password);
+    await page.goto(`/panel/${l.t.slug}/analitica`);
+    const grafico = page.getByTestId("grafico-horas");
+    const tooltip = page.getByTestId("tooltip-hora");
+
+    await grafico.locator('[data-hora="13"]').tap();
+    await expect(tooltip).toContainText("13 a 14 h");
+    await expect(tooltip).toContainText("2 llamados en total");
+    await page.waitForTimeout(400);
+    await expect(tooltip).toBeVisible(); // al soltar el dedo se queda
+
+    await grafico.locator('[data-hora="21"]').tap();
+    await expect(tooltip).toContainText("21 a 22 h");
+
+    // Los bordes (0 h y 23 h): el cartel queda dentro de la pantalla.
+    for (const hora of [0, 23]) {
+      await grafico.locator(`[data-hora="${hora}"]`).tap();
+      await expect(tooltip).toContainText(`${hora} a ${hora + 1} h`);
+      const caja = (await tooltip.boundingBox())!;
+      expect(caja.x, `hora ${hora}`).toBeGreaterThanOrEqual(0);
+      expect(caja.x + caja.width, `hora ${hora}`).toBeLessThanOrEqual(390);
+    }
+    await expectNoHorizontalOverflow(page);
+
+    // Tocar afuera lo cierra.
+    await page.getByRole("heading", { name: "Analítica" }).tap();
+    await expect(tooltip).toHaveCount(0);
+    await context.close();
+  });
+
+  test("con el teclado: se entra a una barra, las flechas recorren las horas y Escape cierra el cartel", async ({ browser }) => {
+    const l = await nuevoLocal("ana-teclado");
+    await sembrarAnalitica(l);
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await login(page, l.t.owner.email, l.t.owner.password);
+    await page.goto(`/panel/${l.t.slug}/analitica`);
+    const grafico = page.getByTestId("grafico-horas");
+    const tooltip = page.getByTestId("tooltip-hora");
+
+    // Una sola barra entra con Tab (la hora pico, la 13); el resto, con las flechas.
+    await expect(grafico.locator("button[tabindex='0']")).toHaveCount(1);
+    await grafico.locator('[data-hora="13"]').focus();
+    await expect(tooltip).toContainText("13 a 14 h");
+    await page.keyboard.press("ArrowRight");
+    await expect(grafico.locator('[data-hora="14"]')).toBeFocused();
+    await expect(tooltip).toContainText("14 a 15 h");
+    await page.keyboard.press("End");
+    await expect(tooltip).toContainText("23 a 24 h");
+    await page.keyboard.press("Home");
+    await expect(tooltip).toContainText("0 a 1 h");
+    await page.keyboard.press("ArrowLeft"); // en el borde no se sale
+    await expect(grafico.locator('[data-hora="0"]')).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(tooltip).toHaveCount(0);
+    // Cada columna se anuncia con su hora y su cantidad.
+    await expect(grafico.locator('[data-hora="13"]')).toHaveAttribute("aria-label", "13 a 14 h: 1 llama al mozo, 1 pide la cuenta");
+    await context.close();
+  });
+
+  test("la página no se estira por contenido oculto: al achicar y volver a agrandar la ventana no queda un espacio en blanco abajo", async ({ browser }) => {
+    const l = await nuevoLocal("ana-espacio");
+    await sembrarAnalitica(l);
+    const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await context.newPage();
+    await login(page, l.t.owner.email, l.t.owner.password);
+    await page.goto(`/panel/${l.t.slug}/analitica`);
+    await expect(page.getByTestId("grafico-horas")).toBeVisible();
+
+    // Cuánto sobra por debajo del marco del panel (lo que se vería como un hueco en blanco al final de la página).
+    const sobrante = () =>
+      page.evaluate(() => {
+        const marco = document.querySelector(".panel")!.getBoundingClientRect();
+        return Math.round(document.documentElement.scrollHeight - (marco.bottom + window.scrollY));
+      });
+    expect(await sobrante()).toBeLessThanOrEqual(2);
+
+    // «Achicar la página» (el zoom del navegador cambia el tamaño de la ventana en píxeles CSS) y volver.
+    await page.setViewportSize({ width: 2560, height: 1800 });
+    expect(await sobrante()).toBeLessThanOrEqual(2);
+    await page.setViewportSize({ width: 1280, height: 900 });
+    expect(await sobrante()).toBeLessThanOrEqual(2);
+    await page.setViewportSize({ width: 390, height: 844 });
+    expect(await sobrante()).toBeLessThanOrEqual(2);
+    await context.close();
+  });
+
   test("sin datos, cada sección lo explica", async ({ browser }) => {
     const l = await nuevoLocal("ana-vacia");
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });

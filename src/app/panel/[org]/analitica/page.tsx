@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HoursChart } from "@/components/analitica/hours-chart";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { loadAnalytics } from "@/lib/analitica/cargar";
 import {
@@ -148,7 +149,6 @@ function TopDishesSection({ dishes, total, failed }: { dishes: DishViews[] | nul
 
 function CallsSection({ hours }: { hours: HourCalls[] | null }) {
   const total = hours ? totalCalls(hours) : 0;
-  const max = Math.max(0, ...(hours ?? []).map(callsOf));
   const peaks = hours ? peakHours(hours) : [];
   return (
     <section aria-labelledby="horas-titulo" className="mt-12" data-testid="llamados-horas">
@@ -174,32 +174,11 @@ function CallsSection({ hours }: { hours: HourCalls[] | null }) {
             {peaks.length > 1 ? " cada una" : ""})
           </p>
 
-          <div className="panel-cell mt-4" aria-hidden>
-            <div className="flex h-44 items-end gap-[3px] sm:gap-1" data-testid="grafico-horas">
-              {hours.map((hour) => (
-                <div key={hour.hour} className="flex h-full min-w-0 flex-1 flex-col justify-end" data-hora={hour.hour} data-total={callsOf(hour)}>
-                  <div className="w-full rounded-t-sm bg-blush ring-1 ring-ink/25 ring-inset" style={{ height: `${barPercent(hour.bill, max)}%` }} />
-                  <div className="w-full bg-brand" style={{ height: `${barPercent(hour.waiter, max)}%` }} />
-                </div>
-              ))}
-            </div>
-            <div className="mt-2 flex justify-between text-xs text-muted tabular-nums">
-              {[0, 6, 12, 18].map((hour) => (
-                <span key={hour}>{hour} h</span>
-              ))}
-              <span>24 h</span>
-            </div>
-            <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-              <span className="inline-flex items-center gap-2">
-                <i className="size-3 bg-brand" /> Llaman al mozo
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <i className="size-3 bg-blush ring-1 ring-ink/25 ring-inset" /> Piden la cuenta
-              </span>
-            </p>
-          </div>
+          <HoursChart hours={hours} />
 
-          <table className="sr-only" data-testid="tabla-horas">
+          {/* Un `div` oculto (NO la tabla con `sr-only`): una tabla ignora el recorte y sus filas, ubicadas fuera del marco, estiraban la página con un hueco en blanco abajo. */}
+          <div className="sr-only">
+          <table data-testid="tabla-horas">
             <caption>Llamados por hora del día, últimos {ANALYTICS_DAYS} días</caption>
             <thead>
               <tr>
@@ -218,6 +197,7 @@ function CallsSection({ hours }: { hours: HourCalls[] | null }) {
               ))}
             </tbody>
           </table>
+          </div>
         </>
       )}
     </section>
