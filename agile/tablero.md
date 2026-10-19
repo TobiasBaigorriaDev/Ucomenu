@@ -26,8 +26,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 1 — MVP · Menú digital (plan Básico)
 
 ### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
-- [S] Probar en un teléfono real, a futuro: (1) el **ticket de visita** —dejar la carta abierta con la pantalla apagada más de 3 h, volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta— y (2) la pantalla **«Llamados»** (silenciar una mesa, cooldown, nombre largo con varios estados) en el salón; receta en `agile/historial.md` («Para usar la app en local»)
-- [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`): los **textos legales** (`/terminos`, `/privacidad`, `/alergenos`) y el **alta** de una organización desde `/admin`, además de lo del ítem anterior (pendiente de «Salida a producción»)
+- [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`), el **ticket de visita**: dejar la carta abierta con la pantalla apagada más de 3 h (la prueba quedó en marcha la noche del 2026-10-19), volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta
 
 ### Fase 1 — MVP · Llamado al mozo (plan Pro)
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
@@ -60,6 +59,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [S] Prueba en un teléfono real sobre staging: textos legales (`/terminos`, `/privacidad`, `/alergenos`), alta de una organización desde `/admin` y pantalla «Llamados» en el salón; todo bien según el usuario (2026-10-19)
 - [M] Carta en varios idiomas: español, inglés y portugués; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`, la carta cae al español donde falta y no usa servicios externos; probada y aprobada por el usuario, integrada a `main` (2026-10-18; migración aplicada y desplegada a staging) → [ficha](cambios/carta-en-varios-idiomas.md) · ADR 0023
 - [C] Analítica básica para el Dueño con plan Pro: platos más vistos (contadores anónimos por día, sin guardar nada del comensal) y llamados por hora de los últimos 14 días, con detalle al pasar el cursor o tocar; revisado por Codex en tres rondas y aprobado por el usuario (2026-10-19) → [ficha](cambios/analitica-basica.md) · ADR 0022
 - [C] El Dueño lee los pagos y el historial de cambios de su cuenta en Suscripción: dos funciones de base solo de lectura con proyección segura (lista blanca, sin actor, motivo ni ids de terceros); revisado por Codex en dos rondas y aprobado por el usuario (2026-10-18); → [ficha](cambios/dueno-lee-pagos-y-auditoria.md) · ADR 0021

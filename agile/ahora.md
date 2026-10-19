@@ -19,5 +19,5 @@ Claves de staging rotadas (2026-10-19): una clave de servicio se imprimió por e
 
 ## Próximo paso
 
-1. Prueba del usuario en un teléfono real contra staging (dos ítems S del [tablero](tablero.md), sección «Mejoras y deuda técnica»): textos legales, alta de una organización desde `/admin`, ticket de visita y pantalla «Llamados».
+1. Queda una sola prueba del usuario en teléfono real contra staging (ítem S del [tablero](tablero.md), «Mejoras y deuda técnica»): el vencimiento a las 3 h del ticket de visita, dejado en marcha la noche del 2026-10-19; el usuario revisa por la mañana. Textos legales, alta desde `/admin` y «Llamados» ya salieron bien.
 2. Después, elegir del tablero: pantalla para corregir un pago mal cargado (C), spike de `<model-viewer>` (S) o add-ons y desactivar organizaciones de SuperAdmin (C). Esto último necesita antes que el usuario defina la retención de `price_history` y `payments`. «Sugerir traducción» (DeepL Free o traductor de Chrome) requiere aprobación.
