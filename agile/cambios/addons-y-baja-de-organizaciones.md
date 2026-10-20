@@ -1,5 +1,5 @@
 # Cambio: SuperAdmin gestiona los add-ons y da de baja / reactiva organizaciones
-Estado: para verificar — implementado, verificado en local y aprobado por Codex (rama `feat/addons-y-baja-organizaciones`); falta la aprobación humana, integrar a `main` y aplicar la migración en staging. Alcance elegido por el usuario el 2026-10-19: add-ons con packs y fin, baja completa (nadie entra) y **sin borrado**.
+Estado: integrado a `main` y subido a `origin` (2026-10-20), aprobado por el usuario; la migración `20261030100000` todavía no se aplicó en staging (`db push --dry-run` listó solo esa). Alcance elegido por el usuario el 2026-10-19: add-ons con packs y fin, baja completa (nadie entra) y **sin borrado**.
 Nivel: C (autorización: nueva escritura solo de SuperAdmin y corte de acceso por RLS; exposición: el acceso del local a su información; dinero: el cupo y la feature que paga el add-on)
 
 ## Objetivo
@@ -75,4 +75,5 @@ Base local (`pnpm db:reset` con todas las migraciones y el seed), 2026-10-19; el
 - **Ronda 2 (verificación, `9bf56df`):** APROBAR CON CAMBIOS, un hallazgo Importante, **válido**: las regresiones esperaban 600 ms a que psql arrancara y podían pasar sin la defensa. **Corregido** (`d0eda43`): esperan a ver la sesión dentro de `pg_sleep` en `pg_stat_activity` (si no aparece, la prueba falla) y se volvió a comprobar que fallan con `now()`. Además se toleró el desfase del reloj del Docker local (~60 ms adelantado) en dos aserciones.
 - **Ronda 3 (verificación, `d0eda43`):** **APROBAR**, sin hallazgos nuevos; los dos previos, corregidos. Revisión estática (Codex no ejecutó suites).
 - Tras las correcciones: `addons-y-baja` 37/37, `acl`, `owner-lectura`, `planes-pagos` y `availability` en verde, `pnpm lint` y `typecheck` limpios.
-- **Aprobación humana:** pendiente (permisos y corte de acceso: nivel C). Nada se aplicó en staging ni en producción.
+- **Aprobación humana:** dada por el usuario el 2026-10-20 («Apruebo todo»); integrado a `main` (merge `6e93fbd`) y subido a `origin`.
+- **Staging:** `supabase db push --dry-run` contra `ucomenu-staging` (enlazado, `ACTIVE_HEALTHY`) listó solo `20261030100000_addons_y_baja_de_organizaciones.sql`. El `db push` real lo bloqueó el control de permisos de la sesión: **pendiente** aplicarlo y desplegar la app. Nada se tocó en producción.

@@ -4,9 +4,9 @@ Actualizado: 2026-10-19 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-Rama `feat/addons-y-baja-organizaciones` (sin integrar a `main`): [add-ons y baja de organizaciones](cambios/addons-y-baja-de-organizaciones.md) (C, [ADR 0025](../docs/decisiones/0025-baja-de-organizaciones-y-addons.md)), implementado y verificado en local. El SuperAdmin activa, cambia (packs, fin) y finaliza WebAR, y da de baja / reactiva una organización desde `/admin/organizaciones/{slug}`. La baja cierra el acceso del local por RLS (`is_org_member`/`is_org_owner` exigen `is_active`), no borra nada y se revierte. Alcance elegido por el usuario: **sin borrado**.
+Integrado a `main` y a `origin` (merge `6e93fbd`, 2026-10-20, aprobado por el usuario): [add-ons y baja de organizaciones](cambios/addons-y-baja-de-organizaciones.md) (C, [ADR 0025](../docs/decisiones/0025-baja-de-organizaciones-y-addons.md)), implementado y verificado en local. El SuperAdmin activa, cambia (packs, fin) y finaliza WebAR, y da de baja / reactiva una organización desde `/admin/organizaciones/{slug}`. La baja cierra el acceso del local por RLS (`is_org_member`/`is_org_owner` exigen `is_active`), no borra nada y se revierte. Alcance elegido por el usuario: **sin borrado**.
 
-Falta: revisión independiente de Codex (nivel C: `ciclo-revision-codex`), aprobación humana, integrar a `main` y, con aprobación, aplicar la migración `20261030100000` en staging y desplegar. Nada se tocó fuera de local.
+Revisado por Codex en tres rondas (APROBAR). **Falta aplicar la migración `20261030100000` en staging y desplegar la app**: el `db push --dry-run` listó solo esa; el `db push` real lo bloqueó el control de permisos de la sesión (hay que correr `pnpm exec supabase db push` y el despliegue a Fly, o dar el permiso). Nada se tocó en producción.
 
 Anterior: [anular pagos](cambios/anular-pagos.md) ya está en `main` y en staging (migración y app, 2026-10-19). Falta que el usuario pruebe esa pantalla con su sesión de SuperAdmin en staging. La organización `demo` no tiene traducciones ni pagos.
 
@@ -21,6 +21,5 @@ Pendiente del usuario: resultado del vencimiento a las 3 h del ticket de visita 
 
 ## Próximo paso
 
-1. Revisión de Codex del commit de la rama y corregir lo que haga falta.
-2. Aprobación del usuario → integrar a `main`; aplicar la migración en staging solo con su OK.
-3. Elegir del [tablero](tablero.md): spike de `<model-viewer>` (S) u otro ítem desbloqueado.
+1. Aplicar la migración en staging y desplegar (docs/produccion.md, pasos 1 y 3b); probar la pantalla nueva con la sesión de SuperAdmin.
+2. Elegir del [tablero](tablero.md): spike de `<model-viewer>` (S) u otro ítem desbloqueado.
