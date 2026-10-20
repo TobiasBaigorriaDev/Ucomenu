@@ -103,7 +103,18 @@ async function conRelojViejo(llamada: string, esperaSegundos: number, enMedio: (
     () => ({ error: null as string | null }),
     (e: { stderr?: string }) => ({ error: String(e.stderr ?? e) }),
   );
-  await new Promise((resolve) => setTimeout(resolve, 600)); // que la transacción lenta ya haya empezado
+  // Sincronización explícita: no sigue hasta que la base muestre esa sesión DENTRO de pg_sleep (o sea, con la transacción ya
+  // iniciada y su `now()` fijado). Un tiempo fijo podría dejar que `enMedio` confirme antes y la prueba no probaría nada.
+  const marca = llamada.replaceAll("'", "''");
+  let durmiendo = false;
+  for (let intento = 0; intento < 50 && !durmiendo; intento++) {
+    durmiendo =
+      sql(
+        `select count(*) from pg_stat_activity where pid <> pg_backend_pid() and wait_event = 'PgSleep' and query like '%${marca}%'`,
+      )[0][0] === "1";
+    if (!durmiendo) await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  if (!durmiendo) throw new Error("la transacción con el reloj viejo no llegó a dormir: la prueba no sería válida");
   await enMedio();
   return lenta;
 }
@@ -310,7 +321,7 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     expect((await finalizar(local, "Dejó de pagarlo")).ok).toBe(true);
     const [fila] = await contratos(local.id);
     expect(fila.extra_packs).toBe(3);
-    expect(new Date(fila.ends_at!).getTime()).toBeLessThanOrEqual(Date.now());
+    expect(new Date(fila.ends_at!).getTime()).toBeLessThanOrEqual(Date.now() + 5_000); // el reloj del Docker local puede ir adelantado
     const ent = (await entitlements(local.owner, local.id))!;
     expect(ent.features).not.toContain("webar");
     expect(ent.limits.models_3d).toBe(0);
@@ -426,6 +437,8 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     expect(await leer()).toMatchObject({ allowedByPlan: false, contract: { active: true } });
     await setSubscription(service, local.id, { plan: "pro" });
     expect((await finalizar(local)).ok).toBe(true);
+    // El fin queda en el reloj de la base y la ficha compara con el del servidor: el Docker local puede ir ~100 ms adelantado.
+    await new Promise((resolve) => setTimeout(resolve, 500));
     expect(await leer()).toMatchObject({ contract: { active: false, extraPacks: 1 } });
   });
 });
