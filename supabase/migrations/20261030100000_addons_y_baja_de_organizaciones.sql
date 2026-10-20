@@ -31,7 +31,7 @@
 --  * El borrado y la purga de organizaciones NO se implementan (ADR 0012: falta definir la retención de `price_history`,
 --    `payments` y `payment_voids`).
 --  * Add-ons: solo sobre un plan que lo admite (`addons.allowed_plans`); packs extra entre 0 y 50; fin opcional, futuro y a
---    lo sumo a 731 días. Finalizar conserva la fila (y los packs) y pone `ends_at = now()`. El motivo es obligatorio y no
+--    lo sumo a 731 días. Finalizar conserva la fila (y los packs) y pone `ends_at` en el instante real de la finalización (`clock_timestamp()` tras los locks). El motivo es obligatorio y no
 --    llega al Dueño. Los packs y la fecha no se reescriben en silencio: cada cambio queda en `audit_log`.
 
 -- ---------------------------------------------------------------------------
@@ -146,6 +146,7 @@ declare
   v_cur public.subscription_addons%rowtype;
   v_found boolean;
   v_was_active boolean;
+  v_now timestamptz;
   v_slug text;
 begin
   if p_actor is null or not exists (select 1 from public.platform_admins a where a.user_id = p_actor) then
@@ -182,7 +183,10 @@ begin
   where a.organization_id = p_org and a.addon_code = p_addon
   for update;
   v_found := found;
-  v_was_active := v_found and (v_cur.ends_at is null or v_cur.ends_at > now());
+  -- Instante REAL, tomado con los locks ya adquiridos: `now()` es el inicio de la transacción y, si esta esperó el lock, un
+  -- cambio confirmado por otra mientras tanto tendría un `ends_at` «del futuro» y el contrato parecería vigente.
+  v_now := clock_timestamp();
+  v_was_active := v_found and (v_cur.ends_at is null or v_cur.ends_at > v_now);
 
   if v_was_active and v_cur.extra_packs = p_extra_packs and v_cur.ends_at is not distinct from p_ends_at then
     raise exception 'addon_unchanged' using errcode = '55000';
@@ -241,6 +245,7 @@ declare
   v_reason text;
   v_sub public.subscriptions%rowtype;
   v_cur public.subscription_addons%rowtype;
+  v_now timestamptz;
   v_slug text;
 begin
   if p_actor is null or not exists (select 1 from public.platform_admins a where a.user_id = p_actor) then
@@ -264,14 +269,16 @@ begin
   from public.subscription_addons a
   where a.organization_id = p_org and a.addon_code = p_addon
   for update;
-  if not found or (v_cur.ends_at is not null and v_cur.ends_at <= now()) then
+  -- Instante real tras los locks (ver admin_set_addon): validación, escritura y auditoría usan el mismo valor.
+  v_now := clock_timestamp();
+  if not found or (v_cur.ends_at is not null and v_cur.ends_at <= v_now) then
     raise exception 'addon_not_active' using errcode = '55000';
   end if;
 
   select o.slug into v_slug from public.organizations o where o.id = p_org;
   select u.email into v_actor_email from auth.users u where u.id = p_actor;
 
-  update public.subscription_addons set ends_at = now() where id = v_cur.id;
+  update public.subscription_addons set ends_at = v_now where id = v_cur.id;
 
   insert into public.audit_log (actor_id, actor_email, action, organization_id, before, after)
   values (
@@ -280,7 +287,7 @@ begin
     'addon.ended',
     p_org,
     jsonb_build_object('active', true, 'extra_packs', v_cur.extra_packs, 'ends_at', v_cur.ends_at),
-    jsonb_build_object('slug', v_slug, 'addon', p_addon, 'extra_packs', v_cur.extra_packs, 'ends_at', now(), 'reason', v_reason)
+    jsonb_build_object('slug', v_slug, 'addon', p_addon, 'extra_packs', v_cur.extra_packs, 'ends_at', v_now, 'reason', v_reason)
   );
 end;
 $$;

@@ -1,9 +1,11 @@
+import { execFile } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { promisify } from "node:util";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { AdminContext } from "@/lib/admin/organizations";
 import { endAddon, getOrganizationDetail, registerPayment, setAddon, setOrganizationActive } from "@/lib/admin/subscriptions";
 import { parseEntitlements } from "@/lib/entitlements";
-import { purgeAuditLogWhere } from "./purge-price-history";
+import { asegurarDestinoLocal, purgeAuditLogWhere } from "./purge-price-history";
 import {
   addMembership,
   anonClient,
@@ -82,6 +84,29 @@ const baja = (local: Pick<Local, "slug">, active: boolean, reason: unknown = "Ci
 
 const estadoCarta = (local: Pick<Local, "slug">, branch = "principal") =>
   anonClient().rpc("public_menu_status", { p_org_slug: local.slug, p_branch_slug: branch });
+
+const execFileAsync = promisify(execFile);
+
+/**
+ * Una llamada con el reloj de transacción VIEJO: una sola transacción de psql que fija `now()` al empezar, espera y recién
+ * entonces llama a la función. Es lo que le pasa a un pedido que esperó el lock mientras otro confirmaba su cambio, pero sin
+ * depender de la suerte del orden: con `now()` en lugar del instante real, ve «del futuro» lo que el otro confirmó.
+ */
+async function conRelojViejo(llamada: string, esperaSegundos: number, enMedio: () => Promise<unknown>) {
+  const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+  asegurarDestinoLocal(contenedor);
+  const lenta = execFileAsync(
+    "docker",
+    ["exec", contenedor, "psql", "-U", "postgres", "-At", "-c", `select now(); select pg_sleep(${esperaSegundos}); select ${llamada};`],
+    { encoding: "utf8" },
+  ).then(
+    () => ({ error: null as string | null }),
+    (e: { stderr?: string }) => ({ error: String(e.stderr ?? e) }),
+  );
+  await new Promise((resolve) => setTimeout(resolve, 600)); // que la transacción lenta ya haya empezado
+  await enMedio();
+  return lenta;
+}
 
 beforeAll(async () => {
   service = serviceClient();
@@ -339,6 +364,36 @@ describe("add-ons: activar, cambiar y finalizar", () => {
       expect(await accionesDe(local.id)).toEqual(["addon.activated"]);
     }
   });
+
+  it("un pedido con el reloj viejo (esperó mientras otro finalizaba) no finaliza de nuevo ni retrocede la fecha", async () => {
+    const local = await crearLocal("pro");
+    expect((await activar(local)).ok).toBe(true);
+    const lenta = await conRelojViejo(`public.admin_end_addon('${admin.id}', '${local.id}', 'webar', 'lenta')`, 3, async () => {
+      expect((await finalizar(local, "primera")).ok).toBe(true);
+    });
+    expect(lenta.error).toMatch(/addon_not_active/);
+    expect(await accionesDe(local.id)).toEqual(["addon.activated", "addon.ended"]);
+    expect((await auditoria(local.id)).at(-1)!.after).toMatchObject({ reason: "primera" });
+    // La fecha de fin es la de la primera finalización, no la del pedido viejo.
+    const [fila] = await contratos(local.id);
+    expect(new Date(fila.ends_at!).getTime()).toBe(new Date(((await auditoria(local.id)).at(-1)!.after as { ends_at: string }).ends_at).getTime());
+  }, 30_000);
+
+  it("un pedido de activación con el reloj viejo ve el add-on ya finalizado: es una activación, no un cambio", async () => {
+    const local = await crearLocal("pro");
+    expect((await activar(local, { extraPacks: "1" })).ok).toBe(true);
+    const lenta = await conRelojViejo(
+      `public.admin_set_addon('${admin.id}', '${local.id}', 'webar', 2, null, 'lenta')`,
+      3,
+      async () => {
+        expect((await finalizar(local, "primera")).ok).toBe(true);
+      },
+    );
+    expect(lenta.error).toBeNull();
+    expect(await accionesDe(local.id)).toEqual(["addon.activated", "addon.ended", "addon.activated"]);
+    expect((await auditoria(local.id)).at(-1)!.before).toMatchObject({ active: false });
+    expect((await entitlements(local.owner, local.id))!.limits.models_3d).toBe(35);
+  }, 30_000);
 
   it("dos finalizaciones simultáneas dejan una sola", async () => {
     const local = await crearLocal("pro");
