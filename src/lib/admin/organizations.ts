@@ -61,6 +61,15 @@ export type AdminError =
   | "payment_already_voided"
   | "payment_not_latest"
   | "payment_history_inconsistent"
+  // Add-ons y baja de organizaciones (ficha addons-y-baja-de-organizaciones)
+  | "invalid_addon"
+  | "invalid_packs"
+  | "invalid_ends_at"
+  | "addon_not_allowed"
+  | "addon_unchanged"
+  | "addon_not_active"
+  | "already_inactive"
+  | "already_active"
   | "uncertain_change"; // se perdió la respuesta de un cambio: pudo quedar hecho
 
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: AdminError };
@@ -116,6 +125,14 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
     "Solo se puede anular el último pago vigente, el que define el vencimiento actual. Si hay pagos más nuevos, anulá primero esos; también puede que la página esté desactualizada: recargala.",
   payment_history_inconsistent:
     "Los pagos de esta organización no cuadran entre sí (se tocaron a mano), así que no se anula automáticamente. No se cambió nada: hay que revisarlo con acceso a la base.",
+  invalid_addon: "Elegí un add-on válido.",
+  invalid_packs: "Los packs extra tienen que ser un número entero de 0 a 50.",
+  invalid_ends_at: "«Termina el» tiene que ser una fecha futura, de hasta 2 años (o dejalo vacío para que no tenga fin).",
+  addon_not_allowed: "El plan actual de la organización no admite este add-on (hace falta Pro o Premium). Cambiá el plan primero.",
+  addon_unchanged: "El add-on ya está vigente con esos packs y esa fecha de fin: no hay nada que cambiar.",
+  addon_not_active: "Ese add-on no está vigente en esta organización, así que no hay nada que finalizar. Recargá la página para ver su estado.",
+  already_inactive: "La organización ya está dada de baja.",
+  already_active: "La organización ya está activa: no hay nada que reactivar.",
   uncertain_change:
     "No pudimos confirmar si el cambio quedó hecho. No lo repitas todavía: recargá esta página y mirá el estado y los últimos movimientos.",
 };

@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [C] SuperAdmin: add-ons (activar, cambiar packs y fin, finalizar) y baja/reactivación de organizaciones (cierra el acceso del local por RLS, sin borrar nada); implementado y verificado en local en la rama `feat/addons-y-baja-organizaciones`; falta revisión independiente, aprobación y aplicar la migración en staging → [ficha](cambios/addons-y-baja-de-organizaciones.md) · ADR 0025
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -32,7 +32,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] SuperAdmin, incrementos pendientes: add-ons y desactivar organizaciones (la lectura de la auditoría y de los pagos por el Dueño está en «Hecho»). **Antes de implementar el borrado de organizaciones: definir retención y purga de `price_history` y de `payments`** (`ON DELETE RESTRICT`, ADR 0012).
+- [C] SuperAdmin: borrar y purgar organizaciones (la baja reversible ya está hecha; este ítem es el borrado definitivo) (bloqueado por: definir retención y purga de `price_history`, `payments` y `payment_voids`, `ON DELETE RESTRICT`, ADR 0012/0025; el usuario tiene que decidirlo antes de implementar)
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Retención y purga de `price_history` (política y procedimiento aprobados, apagando el trigger a propósito): **prerrequisito del borrado de organizaciones en SuperAdmin** — surgido de «Historial de cambios de precio»
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)

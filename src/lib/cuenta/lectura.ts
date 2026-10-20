@@ -34,7 +34,11 @@ export type HistoryAction =
   | "subscription.reactivated"
   | "payment.registered"
   | "payment.voided"
-  | "owner.added";
+  | "owner.added"
+  | "organization.reactivated"
+  | "addon.activated"
+  | "addon.changed"
+  | "addon.ended";
 
 export type HistoryRow = { id: string; createdAt: string; action: HistoryAction; detail: Record<string, unknown> };
 
@@ -46,7 +50,13 @@ const ACTIONS: readonly string[] = [
   "payment.registered",
   "payment.voided",
   "owner.added",
+  "organization.reactivated",
+  "addon.activated",
+  "addon.changed",
+  "addon.ended",
 ];
+
+const ADDON_LABEL: Record<string, string> = { webar: "WebAR" };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 const isStr = (value: unknown): value is string => typeof value === "string" && value !== "";
@@ -183,6 +193,20 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
     }
     case "owner.added":
       return { title: d.promoted === true ? "Una persona del equipo pasó a Dueño" : "Se sumó una persona como Dueño", lines };
+    case "organization.reactivated":
+      return { title: "Local reactivado por UcoMenu", lines };
+    case "addon.activated":
+    case "addon.changed":
+    case "addon.ended": {
+      const name = isStr(d.addon) ? (ADDON_LABEL[d.addon] ?? d.addon) : "Add-on";
+      if (row.action !== "addon.ended" && typeof d.extra_packs === "number") lines.push(d.extra_packs === 0 ? "Sin packs extra" : `${d.extra_packs} packs extra`);
+      if (row.action === "addon.ended") {
+        if (isDate(d.ends_at)) lines.push(`Finalizó el ${formatDateWithYear(d.ends_at)}`);
+        return { title: `${name} finalizado por UcoMenu`, lines };
+      }
+      lines.push(isDate(d.ends_at) ? `Vigente hasta el ${formatDateWithYear(d.ends_at)}` : "Sin fecha de fin");
+      return { title: row.action === "addon.activated" ? `${name} activado por UcoMenu` : `${name} modificado por UcoMenu`, lines };
+    }
   }
 }
 

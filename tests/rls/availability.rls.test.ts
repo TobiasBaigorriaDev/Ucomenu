@@ -119,6 +119,8 @@ describe("disponibilidad por sucursal: aislamiento y persistencia", () => {
     await service.from("categories").update({ is_active: true }).eq("id", e.category);
     await service.from("organizations").update({ is_active: false }).eq("id", e.org);
     expect((await visible()).data).toEqual([]);
-    expect((await loadProductAvailability(owner.db, e.org, e.product)).find((b) => b.id === e.branch)?.is_available).toBe(false);
+    // Dada de baja la organización, ni su Dueño la lee (ficha addons-y-baja-de-organizaciones, ADR 0025); el dato sigue ahí.
+    expect(await loadProductAvailability(owner.db, e.org, e.product)).toEqual([]);
+    expect((await service.from("product_availability").select().eq("organization_id", e.org)).data).toHaveLength(1);
   });
 });

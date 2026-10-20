@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import type { AdminContext } from "./organizations";
-import { changePlan, isVoidable, registerPayment, setSuspension, voidPayment } from "./subscriptions";
+import { changePlan, endAddon, isAddonActive, isVoidable, registerPayment, setAddon, setOrganizationActive, setSuspension, voidPayment } from "./subscriptions";
 import { accountState, parseEntitlements, trialStatus, moraNotice } from "@/lib/entitlements";
 import { formatMoney } from "./format";
 import {
   AMOUNT_MAX_CENTS,
+  isAddonCode,
   isCurrency,
   isPaymentMethod,
+  parseAddonEnd,
   parseAmountToCents,
+  parseExtraPacks,
   parsePaidOn,
   parseReason,
   parseReference,
@@ -336,5 +339,84 @@ describe("anular un pago (ficha anular-pagos)", () => {
     expect(isVoidable(pago, "2026-12-20T15:00:00+00:00")).toBe(false); // hay un pago más nuevo
     expect(isVoidable(pago, null)).toBe(false); // sin período propio
     expect(isVoidable({ ...pago, voided: { at: "2026-10-19T10:00:00+00:00", reason: "x" } }, "2026-11-20T15:00:00+00:00")).toBe(false);
+  });
+});
+
+describe("add-ons (ficha addons-y-baja-de-organizaciones)", () => {
+  const addon = { slug: "local-1", addon: "webar", extraPacks: "2", endsOn: "", reason: "Contrató WebAR" };
+
+  it("parseExtraPacks: enteros de 0 a 50; vacío cuenta como 0", () => {
+    expect(parseExtraPacks("0")).toBe(0);
+    expect(parseExtraPacks(" 7 ")).toBe(7);
+    expect(parseExtraPacks("50")).toBe(50);
+    expect(parseExtraPacks("")).toBe(0);
+    expect(parseExtraPacks(undefined)).toBe(0);
+    for (const malo of ["51", "-1", "1.5", "1,5", "abc", "1e2", "0x10", "1000", 3, {}]) expect(parseExtraPacks(malo), String(malo)).toBeNull();
+  });
+
+  it("parseAddonEnd: vacío = sin fin; una fecha real y futura = fin de ese día; lo demás no sirve", () => {
+    expect(parseAddonEnd("", NOW)).toBeNull();
+    expect(parseAddonEnd("  ", NOW)).toBeNull();
+    expect(parseAddonEnd(undefined, NOW)).toBeNull();
+    expect(parseAddonEnd("2026-12-31", NOW)).toBe("2027-01-01T02:59:59.000Z");
+    for (const malo of ["2020-01-01", "2026-02-31", "ayer", "2030-01-01", 5]) expect(parseAddonEnd(malo, NOW), String(malo)).toBeUndefined();
+  });
+
+  it("isAddonCode y isAddonActive", () => {
+    expect(isAddonCode("webar")).toBe(true);
+    expect(isAddonCode("otro")).toBe(false);
+    expect(isAddonActive(null, NOW)).toBe(true);
+    expect(isAddonActive("2026-10-15T00:00:00Z", NOW)).toBe(true);
+    expect(isAddonActive("2026-10-14T15:00:00Z", NOW)).toBe(false);
+    expect(isAddonActive("2026-10-01T00:00:00Z", NOW)).toBe(false);
+  });
+
+  it("activar llega a la base con los datos ya validados (fin vacío = null)", async () => {
+    const { ctx, llamadas } = fakeContext({ data: null });
+    expect(await setAddon(ctx, addon, NOW)).toEqual({ ok: true, data: undefined });
+    expect(llamadas).toEqual(["admin_set_addon"]);
+  });
+
+  it("lo inválido se rechaza antes de llamar a la base", async () => {
+    const { ctx, llamadas } = fakeContext({ data: null });
+    expect(await setAddon(ctx, { ...addon, addon: "otro" }, NOW)).toEqual({ ok: false, error: "invalid_addon" });
+    expect(await setAddon(ctx, { ...addon, extraPacks: "51" }, NOW)).toEqual({ ok: false, error: "invalid_packs" });
+    expect(await setAddon(ctx, { ...addon, endsOn: "2020-01-01" }, NOW)).toEqual({ ok: false, error: "invalid_ends_at" });
+    expect(await setAddon(ctx, { ...addon, reason: " " }, NOW)).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await endAddon(ctx, { slug: "local-1", addon: "otro", reason: "x" })).toEqual({ ok: false, error: "invalid_addon" });
+    expect(await endAddon(ctx, { slug: "local-1", addon: "webar", reason: "" })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await setOrganizationActive(ctx, { slug: "local-1", active: false, reason: "" })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await setOrganizationActive(ctx, { slug: "No Es Un Slug!", active: false, reason: "x" })).toEqual({ ok: false, error: "org_not_found" });
+    expect(llamadas).toEqual([]);
+  });
+
+  it("cada error estable de la base se traduce a su error de la aplicación", async () => {
+    const casos: Array<[RpcError, string]> = [
+      [{ code: "42501", message: "not_platform_admin" }, "forbidden"],
+      [{ code: "22023", message: "invalid_addon" }, "invalid_addon"],
+      [{ code: "22023", message: "invalid_packs" }, "invalid_packs"],
+      [{ code: "22023", message: "invalid_ends_at" }, "invalid_ends_at"],
+      [{ code: "55000", message: "addon_not_allowed" }, "addon_not_allowed"],
+      [{ code: "55000", message: "addon_unchanged" }, "addon_unchanged"],
+      [{ code: "55000", message: "addon_not_active" }, "addon_not_active"],
+      [{ code: "55000", message: "already_inactive" }, "already_inactive"],
+      [{ code: "55000", message: "already_active" }, "already_active"],
+      [{ code: "P0002", message: "organization_not_found" }, "org_not_found"],
+    ];
+    for (const [error, esperado] of casos) {
+      const { ctx } = fakeContext({ error });
+      expect(await setAddon(ctx, addon, NOW), esperado).toEqual({ ok: false, error: esperado });
+      expect(await endAddon(ctx, { slug: "local-1", addon: "webar", reason: "x" }), esperado).toEqual({ ok: false, error: esperado });
+      expect(await setOrganizationActive(ctx, { slug: "local-1", active: false, reason: "x" }), esperado).toEqual({ ok: false, error: esperado });
+    }
+  });
+
+  it("sin SQLSTATE el resultado es INCIERTO: no se asume éxito ni fallo", async () => {
+    for (const error of [{ code: "", message: "TypeError: fetch failed" }, { message: "timeout" }, { code: "PGRST000", message: "x" }]) {
+      const { ctx } = fakeContext({ error });
+      expect(await setAddon(ctx, addon, NOW)).toEqual({ ok: false, error: "uncertain_change" });
+      expect(await endAddon(ctx, { slug: "local-1", addon: "webar", reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
+      expect(await setOrganizationActive(ctx, { slug: "local-1", active: true, reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
+    }
   });
 });

@@ -10,7 +10,14 @@ export const ACTION_LABEL: Record<string, string> = {
   "payment.registered": "Pago registrado",
   "payment.voided": "Pago anulado",
   "owner.added": "Dueño sumado",
+  "organization.deactivated": "Baja de la organización",
+  "organization.reactivated": "Organización reactivada",
+  "addon.activated": "Add-on activado",
+  "addon.changed": "Add-on modificado",
+  "addon.ended": "Add-on finalizado",
 };
+
+const ADDON_NAME: Record<string, string> = { webar: "WebAR" };
 
 const dateTime = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -44,6 +51,17 @@ function details(entry: AuditEntry): string[] {
     if (typeof after.amount_cents === "number" && str(after.currency)) out.push(formatMoney(after.amount_cents, String(after.currency)));
     const until = str(after.period_end);
     if (until) out.push(`vencimiento vuelto al ${formatDateWithYear(until)}`);
+  }
+  if (entry.action.startsWith("addon.")) {
+    const addon = str(after.addon);
+    if (addon) out.push(ADDON_NAME[addon] ?? addon);
+    if (typeof after.extra_packs === "number") out.push(`${after.extra_packs} packs extra`);
+    const ends = str(after.ends_at);
+    if (entry.action === "addon.ended") {
+      if (ends) out.push(`finalizado el ${formatDateWithYear(ends)}`);
+    } else {
+      out.push(ends ? `termina el ${formatDateWithYear(ends)}` : "sin fecha de fin");
+    }
   }
   const reason = str(after.reason);
   if (reason) out.push(`motivo: ${reason}`);

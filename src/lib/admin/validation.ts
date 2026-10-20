@@ -82,6 +82,36 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const isCurrency = (value: unknown): value is Currency => CURRENCIES.some((c) => c === value);
 export const isPaymentMethod = (value: unknown): value is PaymentMethod => PAYMENT_METHODS.some((m) => m === value);
 
+// ---------------------------------------------------------------------------
+// Add-ons (ficha addons-y-baja-de-organizaciones)
+// ---------------------------------------------------------------------------
+
+export const ADDON_CODES = ["webar"] as const;
+export type AddonCode = (typeof ADDON_CODES)[number];
+/** Mismo tope que la base (`admin_set_addon`): packs extra de 0 a 50. */
+export const MAX_EXTRA_PACKS = 50;
+
+export const isAddonCode = (value: unknown): value is AddonCode => ADDON_CODES.some((code) => code === value);
+
+/** Packs extra: un entero de 0 a 50 («» cuenta como 0). `null` si no sirve. */
+export function parseExtraPacks(raw: unknown): number | null {
+  if (raw === undefined || raw === null) return 0;
+  if (typeof raw !== "string") return null;
+  const text = raw.trim();
+  if (text === "") return 0;
+  if (!/^\d{1,3}$/.test(text)) return null;
+  const packs = Number(text);
+  return packs <= MAX_EXTRA_PACKS ? packs : null;
+}
+
+/** Fin del add-on: opcional. `""` = sin fecha de fin; si no, la misma regla que «vigente hasta». `undefined` si no sirve. */
+export function parseAddonEnd(raw: unknown, now: Date): string | null | undefined {
+  if (raw === undefined || raw === null) return null;
+  if (typeof raw !== "string") return undefined;
+  if (raw.trim() === "") return null;
+  return parsePeriodEnd(raw.trim(), now) ?? undefined;
+}
+
 /** Motivo de un cambio: de 1 a 200 caracteres sin espacios en los bordes. `null` si no sirve. */
 export function parseReason(raw: unknown): string | null {
   if (typeof raw !== "string") return null;

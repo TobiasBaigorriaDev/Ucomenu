@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
-import { changePlan, registerPayment, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
+import { changePlan, endAddon, registerPayment, setAddon, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
 import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
@@ -157,6 +157,57 @@ export async function voidPaymentAction(_previous: FormState, formData: FormData
   revalidatePath("/admin");
   revalidatePath(prepared.page);
   return { ok: true, message: "Listo: el pago quedó anulado y el vencimiento volvió al de antes. Si había que cargarlo bien, registrá el pago correcto." };
+}
+
+// ---------------------------------------------------------------------------
+// Add-ons y baja de la organización (ficha addons-y-baja-de-organizaciones)
+// ---------------------------------------------------------------------------
+
+export async function setAddonAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { addon: text(formData, "addon"), extraPacks: text(formData, "extraPacks"), endsOn: text(formData, "endsOn"), reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await setAddon(prepared.ctx, { slug: prepared.slug, ...values });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  return { ok: true, message: "Listo: el add-on quedó registrado con esos packs y esa fecha de fin, y el cambio figura en los movimientos." };
+}
+
+export async function endAddonAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await endAddon(prepared.ctx, { slug: prepared.slug, addon: text(formData, "addon"), reason: values.reason });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  return { ok: true, message: "Listo: el add-on quedó finalizado. Se conservan los packs por si se vuelve a activar." };
+}
+
+export async function setOrganizationActiveAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+  const active = text(formData, "active") === "true";
+
+  const result = await setOrganizationActive(prepared.ctx, { slug: prepared.slug, active, reason: values.reason });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  revalidatePath(`/sala/${prepared.slug}`, "layout");
+  return {
+    ok: true,
+    message: active
+      ? "Listo: la organización está activa otra vez. Su carta, sus QR y el acceso del personal vuelven a funcionar según su suscripción."
+      : "Listo: la organización quedó dada de baja. Su carta y sus QR dejaron de abrirse y nadie del local puede entrar. No se borró nada.",
+  };
 }
 
 // ---------------------------------------------------------------------------
