@@ -164,3 +164,37 @@ describe("historial", () => {
     expect(JSON.stringify({ title, lines })).not.toMatch(/nota interna|equipo@/);
   });
 });
+
+describe("add-ons y reactivación (ficha addons-y-baja-de-organizaciones)", () => {
+  const conocidas = ["addon.activated", "addon.changed", "addon.ended", "organization.reactivated"];
+
+  it("la pantalla conoce las acciones nuevas", () => {
+    const filas = parseHistory(conocidas.map((action, i) => ({ id: String(i), created_at: "2026-10-19T10:00:00+00:00", action, detail: {} })))!;
+    expect(filas.map((f) => f.action)).toEqual(conocidas);
+  });
+
+  it("«add-on activado» dice cuál, los packs y hasta cuándo, y nada más", () => {
+    const { title, lines } = describeHistory(
+      fila("addon.activated", { addon: "webar", extra_packs: 2, ends_at: "2026-12-01T02:59:59+00:00", reason: "nota interna", actor_email: "equipo@ucomenu.test" }),
+    );
+    expect(title).toBe("WebAR activado por UcoMenu");
+    expect(lines).toEqual(["2 packs extra", "Vigente hasta el 30 de noviembre de 2026"]);
+    expect(JSON.stringify({ title, lines })).not.toMatch(/nota interna|equipo@/);
+  });
+
+  it("sin packs ni fin: «sin packs extra» y «sin fecha de fin»", () => {
+    const { lines } = describeHistory(fila("addon.changed", { addon: "webar", extra_packs: 0 }));
+    expect(lines).toEqual(["Sin packs extra", "Sin fecha de fin"]);
+  });
+
+  it("«add-on finalizado» dice cuándo terminó", () => {
+    const { title, lines } = describeHistory(fila("addon.ended", { addon: "webar", ends_at: "2026-10-19T14:30:00+00:00" }));
+    expect(title).toBe("WebAR finalizado por UcoMenu");
+    expect(lines).toEqual(["Finalizó el 19 de octubre de 2026"]);
+  });
+
+  it("un add-on desconocido se muestra con su código y la reactivación va sin detalle", () => {
+    expect(describeHistory(fila("addon.ended", { addon: "otro" })).title).toBe("otro finalizado por UcoMenu");
+    expect(describeHistory(fila("organization.reactivated", { reason: "x" }))).toEqual({ title: "Local reactivado por UcoMenu", lines: [] });
+  });
+});

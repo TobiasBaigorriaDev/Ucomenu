@@ -6,14 +6,14 @@ import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
 import { AUDIT_LIMIT } from "@/lib/admin/organizations";
 import { listAdminBranches } from "@/lib/admin/branches";
 import { getOrganizationDetail, isVoidable, PAYMENTS_LIMIT, type PaymentRow } from "@/lib/admin/subscriptions";
-import { isBillingCycle, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
+import { isBillingCycle, MAX_EXTRA_PACKS, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { accountState, BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { StatusPill } from "../../status-pill";
-import { AddOwnerForm, ChangePlanForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
+import { AddOwnerForm, AddonForm, ChangePlanForm, EndAddonForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
@@ -186,6 +186,55 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         <ChangePlanForm slug={org.slug} plan={org.plan} billingCycle={org.billingCycle} />
       </section>
 
+      <section aria-labelledby="seccion-addons" className="panel-cell mt-6">
+        <h2 id="seccion-addons" className="font-display text-2xl">
+          Add-ons
+        </h2>
+        <p className="mt-2 max-w-prose leading-relaxed text-muted">
+          Se activan a mano, sobre un plan que los admite, y quedan en los movimientos con su motivo. El Dueño ve el cambio en su
+          historial, sin el motivo.
+        </p>
+        <ul className="mt-3 divide-y divide-ink/15">
+          {org.addons.map((addon) => (
+            <li key={addon.code} data-testid="addon" data-addon={addon.code} data-active={addon.contract?.active ? "true" : "false"} className="py-5">
+              <h3 className="font-display text-xl">{addon.name}</h3>
+              <p className="mt-1 text-base break-words" data-testid="addon-estado">
+                {addon.contract === null
+                  ? "Nunca contratado."
+                  : addon.contract.active
+                    ? `Vigente · ${addon.contract.quota} platos 3D (${addon.baseQuota} base${addon.contract.extraPacks ? ` + ${addon.contract.extraPacks} × ${addon.packSize}` : ""}) · ${
+                        addon.contract.endsAt ? `termina el ${formatDateWithYear(addon.contract.endsAt)}` : "sin fecha de fin"
+                      }`
+                    : `Finalizado el ${formatDateWithYear(addon.contract.endsAt ?? "")} · tenía ${addon.contract.extraPacks} packs extra.`}
+              </p>
+              {addon.contract?.active && !addon.allowedByPlan ? (
+                <p className="mt-1 text-base text-danger" data-testid="addon-sin-plan">
+                  El plan actual no lo admite, así que no da nada hasta que vuelva a un plan {addon.allowedPlans.map((p) => PLAN_NAME[p] ?? p).join(" o ")}.
+                </p>
+              ) : null}
+              {addon.allowedByPlan ? (
+                <>
+                  <AddonForm
+                    slug={org.slug}
+                    addon={addon.code}
+                    active={addon.contract?.active === true}
+                    extraPacks={addon.contract?.extraPacks ?? 0}
+                    endsOn={addon.contract?.active && addon.contract.endsAt ? todayInArgentina(new Date(addon.contract.endsAt)) : ""}
+                    maxPacks={MAX_EXTRA_PACKS}
+                  />
+                  {addon.contract?.active ? <EndAddonForm slug={org.slug} addon={addon.code} name={addon.name} /> : null}
+                </>
+              ) : (
+                <p className="mt-2 max-w-prose text-base text-muted" data-testid="addon-plan-no-admitido">
+                  Hace falta un plan {addon.allowedPlans.map((p) => PLAN_NAME[p] ?? p).join(" o ")}. Cambiá el plan primero.
+                </p>
+              )}
+              {!addon.allowedByPlan && addon.contract?.active ? <EndAddonForm slug={org.slug} addon={addon.code} name={addon.name} /> : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+
       <section aria-labelledby="seccion-suspension" className="panel-cell mt-6">
         <h2 id="seccion-suspension" className="font-display text-2xl">
           {suspended ? "Reactivar" : "Suspender"}
@@ -198,6 +247,18 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
             : "La carta deja de mostrarse y el panel pasa a solo lectura, aunque las fechas estén al día. Los datos se conservan. Registrar un pago no levanta la suspensión: se reactiva aparte."}
         </p>
         <SuspensionForm slug={org.slug} suspended={suspended} />
+      </section>
+
+      <section aria-labelledby="seccion-baja" className="panel-cell mt-6">
+        <h2 id="seccion-baja" className="font-display text-2xl">
+          {org.isActive ? "Dar de baja" : "Reactivar la organización"}
+        </h2>
+        <p className="mt-2 max-w-prose leading-relaxed text-muted" data-testid="aviso-baja">
+          {org.isActive
+            ? "Es distinto de suspender: la carta y los QR dejan de abrirse (el público ve «no encontrada», como si no existieran), no hay llamados y nadie del local (Dueño ni personal) puede entrar al panel ni a la sala. No se borra nada ni se toca la suscripción, y se puede revertir. Para una mora o un corte temporal, suspendé."
+            : "La organización está dada de baja: su carta y sus QR no abren y su personal no puede entrar. Al reactivarla todo vuelve a funcionar según su suscripción actual (si venció, queda en mora como corresponda)."}
+        </p>
+        <OrganizationActiveForm slug={org.slug} active={org.isActive} name={org.name} />
       </section>
 
       <section aria-labelledby="seccion-pago" className="panel-cell mt-6">

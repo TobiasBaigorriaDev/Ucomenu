@@ -4,19 +4,23 @@ Actualizado: 2026-10-19 · agente saliente: Claude Code · historial anterior en
 
 ## Punto de retomada
 
-Sin trabajo en curso: el tablero no tiene ítems en curso, seleccionados ni para verificar. Último cierre: [anular un pago mal cargado](cambios/anular-pagos.md) (C, [ADR 0024](../docs/decisiones/0024-anular-pagos-con-asiento-compensatorio.md)), aprobado por el usuario, en `main` y subido a `origin`. El SuperAdmin anula el último pago vigente desde `/admin/organizaciones/{slug}` con motivo; el vencimiento vuelve al de antes y el Dueño lo ve marcado «Anulado». Corregir = anular + registrar el correcto.
+Rama `feat/addons-y-baja-organizaciones` (sin integrar a `main`): [add-ons y baja de organizaciones](cambios/addons-y-baja-de-organizaciones.md) (C, [ADR 0025](../docs/decisiones/0025-baja-de-organizaciones-y-addons.md)), implementado y verificado en local. El SuperAdmin activa, cambia (packs, fin) y finaliza WebAR, y da de baja / reactiva una organización desde `/admin/organizaciones/{slug}`. La baja cierra el acceso del local por RLS (`is_org_member`/`is_org_owner` exigen `is_active`), no borra nada y se revierte. Alcance elegido por el usuario: **sin borrado**.
 
-Staging (`https://ucomenu-staging.fly.dev`): migración `20261029100000` aplicada y app desplegada (2026-10-19; rutas públicas 200). Falta que el usuario pruebe la pantalla nueva con su sesión de SuperAdmin en staging. Claves heredadas de Supabase desactivadas (solo `sb_publishable_` y `sb_secret_`; en producción, empezar así). La organización `demo` no tiene traducciones cargadas ni pagos.
+Falta: revisión independiente de Codex (nivel C: `ciclo-revision-codex`), aprobación humana, integrar a `main` y, con aprobación, aplicar la migración `20261030100000` en staging y desplegar. Nada se tocó fuera de local.
 
-Pendiente del usuario: el vencimiento a las 3 h del ticket de visita en teléfono real (lo dejó corriendo la noche del 2026-10-19).
+Anterior: [anular pagos](cambios/anular-pagos.md) ya está en `main` y en staging (migración y app, 2026-10-19). Falta que el usuario pruebe esa pantalla con su sesión de SuperAdmin en staging. La organización `demo` no tiene traducciones ni pagos.
+
+Pendiente del usuario: resultado del vencimiento a las 3 h del ticket de visita en teléfono real.
 
 ## Bloqueos y riesgos
 
 - **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`).
-- E2E: usar `--workers=1`; una prueba de suspensión falló una vez y pasó sola. La corrida completa de RLS tarda ~11 min; mutaciones de ~6 en ~6.
-- Anular y volver a cargar son dos pasos; entre ambos la cuenta puede quedar vencida. Un solo paso queda como incremento posible.
+- **Borrado de organizaciones:** bloqueado hasta que el usuario defina la retención y purga de `price_history`, `payments` y `payment_voids` (ADR 0012/0025).
+- E2E: usar `--workers=1`. En esta sesión el servidor de pruebas se cayó a mitad de la corrida completa (`ERR_CONNECTION_REFUSED` desde `idiomas`); se repitieron los archivos restantes. RLS completo ~12 min; RLS y E2E no se corren a la vez.
+- Una baja pública devuelve 404 (como una organización inexistente); un «no disponible» para quien escanea un QR es una mejora aparte.
 
 ## Próximo paso
 
-1. Resultado de la prueba de las 3 h del ticket de visita.
-2. Elegir del [tablero](tablero.md): spike de `<model-viewer>` (S), o add-ons y desactivar organizaciones de SuperAdmin (C). Esto último necesita antes que el usuario defina la retención de `price_history`, `payments` y `payment_voids`.
+1. Revisión de Codex del commit de la rama y corregir lo que haga falta.
+2. Aprobación del usuario → integrar a `main`; aplicar la migración en staging solo con su OK.
+3. Elegir del [tablero](tablero.md): spike de `<model-viewer>` (S) u otro ítem desbloqueado.

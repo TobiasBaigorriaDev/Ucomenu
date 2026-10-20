@@ -2,7 +2,16 @@
 
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { dangerButtonClass, inputClass, labelClass } from "@/components/panel/styles";
-import { addExistingOwnerAction, changePlanAction, registerPaymentAction, setSuspensionAction, voidPaymentAction } from "../../actions";
+import {
+  addExistingOwnerAction,
+  changePlanAction,
+  endAddonAction,
+  registerPaymentAction,
+  setAddonAction,
+  setOrganizationActiveAction,
+  setSuspensionAction,
+  voidPaymentAction,
+} from "../../actions";
 
 const PLAN_OPTIONS = [
   { value: "basic", label: "Básico" },
@@ -277,6 +286,191 @@ export function VoidPaymentForm({ slug, paymentId, consequence }: { slug: string
         )}
       </ActionForm>
     </details>
+  );
+}
+
+/**
+ * Activar un add-on o cambiar sus packs y su fecha de fin (ficha addons-y-baja-de-organizaciones). Los valores iniciales
+ * son los vigentes; en el aviso se ve qué cupo queda. La base valida de nuevo (plan que lo admite, tope de packs, fecha).
+ */
+export function AddonForm({
+  slug,
+  addon,
+  active,
+  extraPacks,
+  endsOn,
+  maxPacks,
+}: {
+  slug: string;
+  addon: string;
+  active: boolean;
+  extraPacks: number;
+  endsOn: string;
+  maxPacks: number;
+}) {
+  return (
+    <ActionForm action={setAddonAction} className="mt-4 grid max-w-md gap-4">
+      {(state) => (
+        <>
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="addon" value={addon} />
+          <div>
+            <label htmlFor={`addon-packs-${addon}`} className={labelClass}>
+              Packs extra
+            </label>
+            <input
+              id={`addon-packs-${addon}`}
+              name="extraPacks"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={maxPacks}
+              step={1}
+              required
+              aria-describedby={`addon-packs-hint-${addon}`}
+              defaultValue={state.values?.extraPacks ?? String(extraPacks)}
+              className={`${inputClass} mt-1`}
+            />
+            <p id={`addon-packs-hint-${addon}`} className="mt-1 text-sm text-muted">
+              Cada pack suma platos al cupo base. De 0 a {maxPacks}.
+            </p>
+          </div>
+          <div>
+            <label htmlFor={`addon-fin-${addon}`} className={labelClass}>
+              Termina el (opcional)
+            </label>
+            <input
+              id={`addon-fin-${addon}`}
+              name="endsOn"
+              type="date"
+              aria-describedby={`addon-fin-hint-${addon}`}
+              defaultValue={state.values?.endsOn ?? endsOn}
+              className={`${inputClass} mt-1`}
+            />
+            <p id={`addon-fin-hint-${addon}`} className="mt-1 text-sm text-muted">
+              Vale hasta el final de ese día. Vacío = sin fecha de fin.
+            </p>
+          </div>
+          <div>
+            <label htmlFor={`addon-motivo-${addon}`} className={labelClass}>
+              {active ? "Motivo del cambio" : "Motivo de la activación"}
+            </label>
+            <input
+              id={`addon-motivo-${addon}`}
+              name="reason"
+              type="text"
+              required
+              maxLength={200}
+              autoComplete="off"
+              aria-describedby={`addon-motivo-hint-${addon}`}
+              defaultValue={state.values?.reason ?? ""}
+              className={`${inputClass} mt-1`}
+            />
+            <p id={`addon-motivo-hint-${addon}`} className="mt-1 text-sm text-muted">
+              {REASON_HINT}
+            </p>
+          </div>
+          <div>
+            <SubmitButton pendingLabel="Guardando…">{active ? "Guardar cambios" : "Activar add-on"}</SubmitButton>
+          </div>
+        </>
+      )}
+    </ActionForm>
+  );
+}
+
+/** Finalizar un add-on vigente. Plegado: no es de todos los días. */
+export function EndAddonForm({ slug, addon, name }: { slug: string; addon: string; name: string }) {
+  return (
+    <details className="mt-4">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-base text-danger underline underline-offset-2">Finalizar {name}</summary>
+      <ActionForm action={endAddonAction} className="mt-2 grid max-w-md gap-4">
+        {(state) => (
+          <>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="addon" value={addon} />
+            <p className="max-w-prose text-base leading-relaxed">
+              El add-on deja de estar vigente en el acto. Se conservan los packs extra y los datos; se puede volver a activar después.
+            </p>
+            <div>
+              <label htmlFor={`addon-fin-motivo-${addon}`} className={labelClass}>
+                Motivo
+              </label>
+              <input
+                id={`addon-fin-motivo-${addon}`}
+                name="reason"
+                type="text"
+                required
+                maxLength={200}
+                autoComplete="off"
+                aria-describedby={`addon-fin-motivo-hint-${addon}`}
+                defaultValue={state.values?.reason ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+              <p id={`addon-fin-motivo-hint-${addon}`} className="mt-1 text-sm text-muted">
+                {REASON_HINT}
+              </p>
+            </div>
+            <div>
+              <SubmitButton pendingLabel="Finalizando…" className={dangerButtonClass}>
+                Finalizar add-on
+              </SubmitButton>
+            </div>
+          </>
+        )}
+      </ActionForm>
+    </details>
+  );
+}
+
+/**
+ * Dar de baja o reactivar la organización (ficha addons-y-baja-de-organizaciones). La baja corta el acceso del personal y
+ * oculta la carta: pide una casilla de confirmación. Reactivar no la pide (devuelve el acceso, no lo quita).
+ */
+export function OrganizationActiveForm({ slug, active, name }: { slug: string; active: boolean; name: string }) {
+  return (
+    <ActionForm action={setOrganizationActiveAction} className="mt-4 grid max-w-md gap-4">
+      {(state) => (
+        <>
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="active" value={active ? "false" : "true"} />
+          <div>
+            <label htmlFor="baja-motivo" className={labelClass}>
+              {active ? "Motivo de la baja" : "Motivo de la reactivación"}
+            </label>
+            <input
+              id="baja-motivo"
+              name="reason"
+              type="text"
+              required
+              maxLength={200}
+              autoComplete="off"
+              aria-describedby="baja-motivo-hint"
+              defaultValue={state.values?.reason ?? ""}
+              className={`${inputClass} mt-1`}
+            />
+            <p id="baja-motivo-hint" className="mt-1 text-sm text-muted">
+              {REASON_HINT}
+            </p>
+          </div>
+          {active ? (
+            <label className="flex min-h-11 items-start gap-3 text-base">
+              <input type="checkbox" name="confirmed" required className="mt-1 size-5 shrink-0" />
+              <span className="min-w-0 [overflow-wrap:anywhere]">Entiendo que «{name}» deja de mostrar su carta y que su personal no podrá entrar hasta reactivarla.</span>
+            </label>
+          ) : null}
+          <div>
+            {active ? (
+              <SubmitButton pendingLabel="Dando de baja…" className={dangerButtonClass}>
+                Dar de baja la organización
+              </SubmitButton>
+            ) : (
+              <SubmitButton pendingLabel="Reactivando…">Reactivar la organización</SubmitButton>
+            )}
+          </div>
+        </>
+      )}
+    </ActionForm>
   );
 }
 

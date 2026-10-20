@@ -11,11 +11,14 @@ import {
   type Result,
 } from "./organizations";
 import {
+  isAddonCode,
   isBillingCycle,
   isCurrency,
   isPaymentMethod,
   isPlanCode,
+  parseAddonEnd,
   parseAmountToCents,
+  parseExtraPacks,
   parsePaidOn,
   parsePeriodEnd,
   parseReason,
@@ -59,6 +62,14 @@ const DB_ERRORS: Record<string, AdminError> = {
   payment_already_voided: "payment_already_voided",
   payment_not_latest: "payment_not_latest",
   payment_history_inconsistent: "payment_history_inconsistent",
+  invalid_addon: "invalid_addon",
+  invalid_packs: "invalid_packs",
+  invalid_ends_at: "invalid_ends_at",
+  addon_not_allowed: "addon_not_allowed",
+  addon_unchanged: "addon_unchanged",
+  addon_not_active: "addon_not_active",
+  already_inactive: "already_inactive",
+  already_active: "already_active",
 };
 
 /**
@@ -195,9 +206,104 @@ export async function voidPayment(ctx: AdminContext, input: VoidPaymentInput): P
   return ok({ voidId: data });
 }
 
+export type OrganizationActiveInput = { slug: unknown; active: boolean; reason: unknown };
+
+/**
+ * Da de baja (`active: false`) o reactiva una organización (ficha addons-y-baja-de-organizaciones, ADR 0025). No borra nada:
+ * la carta, los QR y los llamados quedan «no disponibles» y nadie del local entra hasta reactivarla.
+ */
+export async function setOrganizationActive(ctx: AdminContext, input: OrganizationActiveInput): Promise<Result> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  const reason = parseReason(input.reason);
+  if (!reason) return fail("invalid_reason");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const { error } = await ctx.admin.rpc("admin_set_organization_active", {
+    p_actor: ctx.actorId,
+    p_org: org.data,
+    p_active: input.active === true,
+    p_reason: reason,
+  });
+  return error ? dbFailure(error) : ok(undefined);
+}
+
+export type SetAddonInput = {
+  slug: unknown;
+  addon: unknown;
+  /** Packs extra como los escribe la persona («0», «2»). */
+  extraPacks: unknown;
+  /** `AAAA-MM-DD` o vacío: el add-on vale hasta el final de ese día (Argentina); vacío = sin fecha de fin. */
+  endsOn: unknown;
+  reason: unknown;
+};
+
+/** Activa un add-on o cambia sus packs extra y su fecha de fin. La base valida de nuevo (es la autoridad). */
+export async function setAddon(ctx: AdminContext, input: SetAddonInput, now: Date = new Date()): Promise<Result> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  if (!isAddonCode(input.addon)) return fail("invalid_addon");
+  const packs = parseExtraPacks(input.extraPacks);
+  if (packs === null) return fail("invalid_packs");
+  const endsAt = parseAddonEnd(input.endsOn, now);
+  if (endsAt === undefined) return fail("invalid_ends_at");
+  const reason = parseReason(input.reason);
+  if (!reason) return fail("invalid_reason");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const { error } = await ctx.admin.rpc("admin_set_addon", {
+    p_actor: ctx.actorId,
+    p_org: org.data,
+    p_addon: input.addon,
+    p_extra_packs: packs,
+    // La función acepta NULL (sin fecha de fin); el generador de tipos no marca los argumentos como anulables.
+    p_ends_at: endsAt as string,
+    p_reason: reason,
+  });
+  return error ? dbFailure(error) : ok(undefined);
+}
+
+export type EndAddonInput = { slug: unknown; addon: unknown; reason: unknown };
+
+/** Finaliza un add-on vigente (queda con fin = ahora; los packs se conservan por si se vuelve a activar). */
+export async function endAddon(ctx: AdminContext, input: EndAddonInput): Promise<Result> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  if (!isAddonCode(input.addon)) return fail("invalid_addon");
+  const reason = parseReason(input.reason);
+  if (!reason) return fail("invalid_reason");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const { error } = await ctx.admin.rpc("admin_end_addon", {
+    p_actor: ctx.actorId,
+    p_org: org.data,
+    p_addon: input.addon,
+    p_reason: reason,
+  });
+  return error ? dbFailure(error) : ok(undefined);
+}
+
 // ---------------------------------------------------------------------------
 // Lectura: detalle de una organización
 // ---------------------------------------------------------------------------
+
+/** Un add-on del catálogo y, si la organización lo contrató alguna vez, su estado. */
+export type AddonRow = {
+  code: string;
+  name: string;
+  baseQuota: number;
+  packSize: number;
+  allowedPlans: string[];
+  /** ¿Lo admite el plan actual de la organización? Si no, no se puede activar ni da nada aunque haya una fila. */
+  allowedByPlan: boolean;
+  /** `null` = nunca contratado. */
+  contract: { extraPacks: number; endsAt: string | null; active: boolean; quota: number } | null;
+};
+
+/** ¿Está vigente un add-on con este fin? Sin fin o con fin futuro. */
+export function isAddonActive(endsAt: string | null, now: Date): boolean {
+  return endsAt === null || new Date(endsAt).getTime() > now.getTime();
+}
 
 export type PaymentRow = {
   id: string;
@@ -240,6 +346,7 @@ export type OrganizationDetail = {
   state: BillingState;
   trial: TrialStatus;
   payments: PaymentRow[];
+  addons: AddonRow[];
   audit: AuditEntry[];
 };
 
@@ -266,7 +373,7 @@ export async function getOrganizationDetail(
   if (org.error) return fail("unexpected");
   if (!org.data) return fail("org_not_found");
 
-  const [sub, owners, payments, audit] = await Promise.all([
+  const [sub, owners, payments, audit, catalog, contracted] = await Promise.all([
     ctx.admin
       .from("subscriptions")
       .select("plan_code, billing_cycle, trial_ends_at, current_period_end, suspended_at")
@@ -281,8 +388,33 @@ export async function getOrganizationDetail(
       .order("id", { ascending: false })
       .limit(PAYMENTS_LIMIT),
     listAuditLog(ctx, { organizationId: org.data.id }),
+    ctx.admin.from("addons").select("code, name, base_model_quota, pack_size, allowed_plans").order("code"),
+    ctx.admin.from("subscription_addons").select("addon_code, extra_packs, ends_at").eq("organization_id", org.data.id),
   ]);
-  if (sub.error || !sub.data || owners.error || payments.error || !audit.ok) return fail("unexpected");
+  if (sub.error || !sub.data || owners.error || payments.error || !audit.ok || catalog.error || contracted.error) {
+    return fail("unexpected");
+  }
+
+  const planCode = sub.data.plan_code;
+  const addons: AddonRow[] = catalog.data.map((a) => {
+    const row = contracted.data.find((c) => c.addon_code === a.code);
+    return {
+      code: a.code,
+      name: a.name,
+      baseQuota: a.base_model_quota,
+      packSize: a.pack_size,
+      allowedPlans: a.allowed_plans,
+      allowedByPlan: a.allowed_plans.includes(planCode),
+      contract: row
+        ? {
+            extraPacks: row.extra_packs,
+            endsAt: row.ends_at,
+            active: isAddonActive(row.ends_at, now),
+            quota: a.base_model_quota + row.extra_packs * a.pack_size,
+          }
+        : null,
+    };
+  });
 
   // El pago que define la vigencia actual es el que se puede anular: tiene que estar en la lista aunque los últimos
   // PAYMENTS_LIMIT (vigentes y anulados) lo hayan dejado afuera (p. ej. tras muchas correcciones).
@@ -349,6 +481,7 @@ export async function getOrganizationDetail(
       coversUntil: p.covers_until,
       voided: voidedById.get(p.id) ?? null,
     })),
+    addons,
     audit: audit.data,
   });
 }

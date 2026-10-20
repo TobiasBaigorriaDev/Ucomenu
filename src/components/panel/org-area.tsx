@@ -47,7 +47,7 @@ export async function OrgEntry({ area }: { area: "panel" | "sala" }) {
             <h1 className="font-display">Tu cuenta no tiene ningún local</h1>
             <p className="mt-4 max-w-prose text-lg leading-relaxed text-muted">
               Ingresaste como {user.email}, pero esta cuenta todavía no está asociada a un local. Pedile al dueño que te dé de
-              alta, o contactá a UcoMenu.
+              alta, o contactá a UcoMenu. Si tu local estaba asociado y dejó de aparecer, puede haber sido dado de baja: también escribinos.
             </p>
           </>
         ) : (

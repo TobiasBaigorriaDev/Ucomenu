@@ -518,8 +518,17 @@ isOneToOne: false
 "admin_create_organization":
 { Args: { "p_actor": string,"p_billing_cycle": string,"p_branch_name"?: string,"p_branch_slug"?: string,"p_name": string,"p_owner": string,"p_period_end": string,"p_plan": string,"p_slug": string }; Returns: string
                            },
+"admin_end_addon":
+{ Args: { "p_actor": string,"p_addon": string,"p_org": string,"p_reason": string }; Returns: undefined
+                           },
 "admin_register_payment":
 { Args: { "p_actor": string,"p_amount_cents": number,"p_covers_until": string,"p_currency": string,"p_method": string,"p_org": string,"p_paid_on": string,"p_reference": string }; Returns: string
+                           },
+"admin_set_addon":
+{ Args: { "p_actor": string,"p_addon": string,"p_ends_at": string,"p_extra_packs": number,"p_org": string,"p_reason": string }; Returns: undefined
+                           },
+"admin_set_organization_active":
+{ Args: { "p_active": boolean,"p_actor": string,"p_org": string,"p_reason": string }; Returns: undefined
                            },
 "admin_set_suspension":
 { Args: { "p_actor": string,"p_org": string,"p_reason": string,"p_suspend": boolean }; Returns: undefined
