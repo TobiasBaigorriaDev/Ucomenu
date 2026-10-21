@@ -35,7 +35,7 @@ Base local con las migraciones hasta `20261110100000` (aplicada con `supabase mi
 - E2E (servidor `next dev` aparte en el puerto 3200 con `E2E_BASE_URL`, para no pisar el `.next` de los servidores 3000 y 3001 del usuario): `superadmin-addons-baja` 7/7 (una nueva: catálogo vacío), `superadmin-planes-pagos`, `superadmin` y `cuenta-pagos-historial`, 36/36.
 - **Ensayo de la migración sobre datos:** dentro de una transacción revertida, con tres contratos `webar` sembrados (sin fin, vencido, con fin futuro) → 2 entradas `addon.ended` del sistema, 0 contratos, catálogo vacío, planes con los valores esperados.
 - Tras la ronda 1: `retiro-webar` 2/2 (ver «Revisión»).
-- **Mutaciones** (defensas rotas de a una con `create or replace`, restauradas desde la migración; control 71/71): 7 probadas (con el `lock` del retiro), **7 detectadas** — `has_feature` sin `video_feed` en solo lectura, `has_feature` sin la suspensión, `has_feature` sin ningún filtro de mora, `plan_grants` que concede `video_feed` a todos, `org_limit` de videos sin límite y sin suscripción con límite.
+- **Mutaciones** (defensas rotas de a una con `create or replace`, restauradas desde la migración; control 71/71): 8 probadas (con el `lock` del retiro y su modo), **8 detectadas** — `has_feature` sin `video_feed` en solo lectura, `has_feature` sin la suspensión, `has_feature` sin ningún filtro de mora, `plan_grants` que concede `video_feed` a todos, `org_limit` de videos sin límite y sin suscripción con límite.
 - **No probado / límites:** `pnpm build` (reemplazaría el `.next` de los servidores del usuario; typecheck y lint sí, y las pantallas corrieron en `next dev`); la migración sobre una base con contratos reales (solo el ensayo en transacción: no hay datos en local; staging no se consultó); producción y staging no se tocaron.
 
 ## (C) Invariantes
@@ -43,7 +43,7 @@ Base local con las migraciones hasta `20261110100000` (aplicada con `supabase mi
 2. Básico y Pro no tienen cupo de videos (`0`); sin suscripción tampoco; cambiar el cupo es cambiar una fila de `plans`, que solo escribe el servidor.
 3. La mora apaga `video_feed` en suspendida y deja solo la visibilidad en solo lectura; la escritura sobre videos exigirá `org_can_write` (incrementos siguientes).
 4. Ningún permiso nuevo: `create or replace` conserva los `EXECUTE`; no se abre nada a `anon` ni a `authenticated` (la prueba `acl` sigue verde en la corrida completa).
-5. El retiro de WebAR deja rastro: cada contrato vigente tiene su `addon.ended` en `audit_log` (solo se agrega), también si otra sesión lo reactiva mientras la migración espera (bloqueo de tabla).
+5. El retiro de WebAR deja rastro: cada contrato vigente tiene su `addon.ended` en `audit_log` (solo se agrega), también si otra sesión lo reactiva mientras la migración espera (bloqueo de tabla `exclusive`).
 
 ## (C) Fallos y recuperación
 | Falla | Resultado |
@@ -59,4 +59,5 @@ Base local con las migraciones hasta `20261110100000` (aplicada con `supabase mi
 ## (C) Revisión y aprobación
 - **Aprobación del usuario (2026-10-21):** «Apruebo todo», sobre el resumen con lo pendiente (commit, revisión y migración en staging). Commit `88603fa`.
 - **Ronda 1 (Codex, `88603fa`):** APROBAR CON CAMBIOS, un hallazgo Importante, **real**: la migración auditaba los contratos vigentes y después los borraba sin bloquear la tabla; si `admin_set_addon` reactivaba un contrato vencido entre los dos pasos, se borraba sin su `addon.ended`. **Corregido:** `lock table public.subscription_addons in share row exclusive mode` al inicio del bloque de retiro. Regresión determinista en `tests/rls/retiro-webar.rls.test.ts`: reejecuta el bloque de la migración (entre las marcas `[retiro-webar:…]`) mientras otra sesión, dentro de `pg_sleep`, tiene el contrato reactivado sin confirmar; **falla sin el `lock`** (comprobado quitándolo) y pasa con él. La misma prueba fija que se audita solo lo vigente y se borra todo.
-- **Pendiente:** ronda de verificación y, después, `supabase db push` a staging (aprobado por el usuario con «Apruebo todo»; no se ejecuta antes del veredicto).
+- **Ronda 2 (verificación, `ae67c75`):** APROBAR CON CAMBIOS, un hallazgo Importante, **real**: `SHARE ROW EXCLUSIVE` deja pasar el `select … for update` de `admin_set_addon` / `admin_end_addon` pero bloquea su `update`, y el `delete` del retiro espera esa fila → interbloqueo (PostgreSQL aborta una de las dos). **Corregido:** el bloqueo pasa a `EXCLUSIVE`, que frena también el `for update`. Prueba nueva (sesión que toma la fila, tarda y escribe después): **falla con `share row exclusive` y sin bloqueo**, pasa con `exclusive` (`retiro-webar` 3/3).
+- **Pendiente:** ronda 3 (última) y, después, `supabase db push` a staging (aprobado por el usuario con «Apruebo todo»; no se ejecuta antes del veredicto).

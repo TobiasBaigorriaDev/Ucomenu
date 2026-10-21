@@ -103,4 +103,31 @@ describe("retiro de WebAR: reejecución del bloque de la migración", () => {
     expect(contratos(id)).toEqual([]);
     expect(retiros(id)).toEqual([["sistema (migración 20261110100000)", "4", "Add-on retirado del catálogo (ADR 0031)"]]);
   }, 30_000);
+
+  it("una función de add-ons que ya tomó la fila (for update) y aún no escribió no provoca un interbloqueo", async () => {
+    sembrar();
+    const id = await crearLocal("interbloqueo");
+    sql(`insert into public.subscription_addons (organization_id, addon_code, extra_packs, ends_at)
+         values ('${id}', 'webar', 5, now() - interval '1 hour')`);
+
+    // Sesión A: como admin_set_addon, toma la fila con `for update`, tarda y recién después escribe.
+    const marca = `fila-${sufijo}`;
+    const reactivacion = psql(
+      `begin; select '${marca}'; select 1 from public.subscription_addons where organization_id = '${id}' for update;
+       select pg_sleep(3); update public.subscription_addons set ends_at = null where organization_id = '${id}'; commit;`,
+    );
+    let durmiendo = false;
+    for (let intento = 0; intento < 50 && !durmiendo; intento++) {
+      durmiendo = sql(`select count(*) from pg_stat_activity where pid <> pg_backend_pid() and wait_event = 'PgSleep' and query like '%${marca}%'`)[0][0] === "1";
+      if (!durmiendo) await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    if (!durmiendo) throw new Error("la sesión que reactiva no llegó a dormir: la prueba no sería válida");
+
+    // Ninguna de las dos debe abortar (con un bloqueo más débil, PostgreSQL detecta el ciclo y aborta una).
+    const resultados = await Promise.allSettled([psql(bloqueDeRetiro()), reactivacion]);
+    expect(resultados.map((r) => r.status)).toEqual(["fulfilled", "fulfilled"]);
+
+    expect(contratos(id)).toEqual([]);
+    expect(retiros(id)).toEqual([["sistema (migración 20261110100000)", "5", "Add-on retirado del catálogo (ADR 0031)"]]);
+  }, 30_000);
 });

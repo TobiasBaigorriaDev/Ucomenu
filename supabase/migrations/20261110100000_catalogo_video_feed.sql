@@ -48,8 +48,9 @@ where code = 'premium';
 
 -- [retiro-webar:inicio] (una prueba de RLS reejecuta este bloque; no cambiar las marcas)
 -- Serializa con admin_set_addon / admin_end_addon: sin el bloqueo, un contrato reactivado entre la auditoría y el borrado
--- se perdería sin su `addon.ended`. Espera a que confirmen las escrituras en curso y frena las nuevas hasta el final.
-lock table public.subscription_addons in share row exclusive mode;
+-- se perdería sin su `addon.ended`. Modo EXCLUSIVE (no SHARE ROW EXCLUSIVE): también frena su `select … for update`, así
+-- ninguna sesión toma una fila antes y queda esperando el bloqueo de tabla (interbloqueo). Las lecturas simples siguen.
+lock table public.subscription_addons in exclusive mode;
 
 -- Los contratos vigentes quedan registrados como finalizados por el sistema antes de borrarse.
 insert into public.audit_log (actor_id, actor_email, action, organization_id, before, after)
