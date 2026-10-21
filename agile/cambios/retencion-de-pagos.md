@@ -1,5 +1,5 @@
 # Cambio: Retención y purga de `payments` y `payment_voids`
-Estado: **implementado, verificado en local y aprobado por Codex (2 rondas); falta la aprobación del usuario para integrar** (nivel C). Política elegida por el usuario el 2026-10-20; el plazo de 10 años queda por confirmar con el contador.
+Estado: **aprobado por el usuario, integrado en `main`, subido a `origin` y desplegado en staging el 2026-10-20 (Fly v14)**, tras revisión de Codex en 2 rondas (nivel C). Política elegida por el usuario el 2026-10-20; el plazo de 10 años queda por confirmar con el contador antes de producción.
 Nivel: C (dinero + eliminación irreversible de registros contables)
 
 ## Objetivo
@@ -23,10 +23,19 @@ Decidir qué pasa con los cobros de UcoMenu cuando se borra una organización y 
 - [x] Ningún rol de la API (`anon`, `authenticated`, `service_role`, `public`) tiene EXECUTE; `SECURITY DEFINER` de `postgres`, `search_path` vacío (matriz de `acl.rls.test.ts`).
 
 ## Evidencia
-Base local (`pnpm db:reset` con la migración nueva), 2026-10-20; el commit probado se anota al integrar:
+Base local (`pnpm db:reset` con la migración nueva), 2026-10-20; implementación en `2c0e5e0`, tipos corregidos en `a172d53`, aprobación registrada en `0321dfc`:
 - `tests/rls/retencion-de-pagos.rls.test.ts` **7/7**; `planes-pagos`, `anular-pagos` y `acl` OK con los cambios.
 - **Mutaciones (9, de a una, todas detectadas):** sin `enable trigger` (3 pruebas), plazo de 10 años a 0 (1), purgar también organizaciones vivas (4), sin comprobar al SuperAdmin (1), sin auditoría (1), sin validar el motivo (1), sin borrar las anulaciones (4), `EXECUTE` para `service_role` (1), volver a poner la clave foránea (5).
 - `pnpm test` 666/666 · `pnpm lint` y `pnpm typecheck` OK. `pnpm test:rls` completo **813/813** (36 archivos; sin restos `tt-*`/`e2e-*` ni pagos huérfanos). Sin E2E ni build (solo cambia una etiqueta de la auditoría de `/admin`).
+
+### Integración y staging — 2026-10-20
+- A pedido explícito del usuario, `git push origin main` publicó `2c0e5e0`, `a172d53` y `0321dfc` (`origin/main`: `1f4a4ec` → `0321dfc`). No se modificó código funcional durante el despliegue.
+- Supabase staging enlazado: `db push --dry-run` listó solo `20261031100000_purga_de_price_history.sql` y `20261101100000_retencion_de_pagos.sql`; `db push` aplicó ambas. `migration list` confirmó paridad local/remota y un segundo `db push --dry-run` devolvió `upToDate: true`, sin migraciones pendientes. Se instalaron las funciones, **sin ejecutar ni programar ninguna purga**.
+- App de `0321dfc`: build Next y TypeScript OK en Docker, con `fly deploy -c fly.staging.toml --local-only --depot=false` mediante la imagen oficial y la sesión existente. No se cambiaron secretos ni se tocó producción.
+- Fly **v14**, release `complete`, imagen `registry.fly.io/ucomenu-staging:deployment-01M5E0R70EA29W3GKQZKPM1534`, digest `sha256:7d5714842ea5aed114a5ba4326a04fa6939f1b7d9cbbb3ae7ff509cd0a096f5b`; máquina `78177dda131e38`, `gru`, `started`, control HTTP `passing`.
+- Comprobaciones sin sesión: `/`, `/login`, `/m/demo/centro`, `/privacidad`, `/terminos` y `/alergenos`: **200**; `/admin/organizaciones/demo`: **307** al login con `next`; `/sala/demo/estado`: **401 JSON** `no_session`.
+- No se repitieron las suites unitarias/RLS locales ni se ejecutaron E2E o purgas contra staging. La evidencia funcional e independiente sigue siendo la de los commits revisados arriba; el despliegue verificó construcción, migraciones y disponibilidad.
+- Recuperación de la app: imagen anterior `registry.fly.io/ucomenu-staging:deployment-01M5D7CSMGG4AFAXD45AC4MT0E` (v13). Revertir el esquema requiere comprobar antes que no haya pagos huérfanos, según la cabecera de la migración; no se ensayó rollback remoto.
 
 ## Revisión y aprobación
 - Codex, ronda 1 (commit `2c0e5e0`): **APROBAR CON CAMBIOS**. Un hallazgo, **real y corregido**: `database.types.ts` seguía declarando las 4 claves foráneas quitadas (AGENTS.md exige `pnpm db:types` al cambiar el esquema). Regenerado: el diff solo borra esas relaciones; typecheck y lint OK. Sin regresión funcional (ninguna consulta las usaba).
@@ -43,4 +52,4 @@ Base local (`pnpm db:reset` con la migración nueva), 2026-10-20; el commit prob
 - Riesgo aceptado: un `DELETE` de organización ya no se frena por los pagos; la barrera es la acción de borrado prevista (ADR 0027).
 
 ## (C) Aprobación humana
-Política aceptada por el usuario el 2026-10-20 (ADR 0027). Falta la aprobación de integrar (revisión independiente hecha). Por confirmar con el contador: el plazo de 10 años y desde cuándo se cuenta.
+Política aceptada por el usuario el 2026-10-20 (ADR 0027). Integración, publicación en `origin` y despliegue en staging autorizados explícitamente por el usuario el 2026-10-20, tras la revisión independiente. Por confirmar con el contador antes de producción: el plazo de 10 años y desde cuándo se cuenta.

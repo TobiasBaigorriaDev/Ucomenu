@@ -1,5 +1,5 @@
 # Cambio: Retención y purga de `price_history`
-Estado: **implementado, verificado en local y aprobado por Codex (1 ronda); integrado a `main` y subido a `origin` el 2026-10-20 por pedido del usuario (commits `6f14a10` y `1f4a4ec`)** (nivel C). Política elegida por el usuario el 2026-10-20.
+Estado: **implementado, verificado en local y aprobado por Codex (1 ronda); integrado a `main` y subido a `origin` el 2026-10-20 por pedido del usuario (commits `6f14a10` y `1f4a4ec`); migración aplicada en staging con el despliegue de retención de pagos** (nivel C). Política elegida por el usuario el 2026-10-20.
 Nivel: C (eliminación irreversible de un registro de auditoría de precios, con ids de personas)
 
 ## Objetivo
@@ -28,6 +28,7 @@ Base local, `pnpm db:reset` con la migración nueva, 2026-10-20 (commit probado:
 - `tests/rls/purga-de-price-history.rls.test.ts` **19/19** y `acl.rls.test.ts` (matriz con la función nueva) OK.
 - **Mutaciones (8, de a una, todas detectadas):** sin `enable trigger` (3 pruebas), plazo de 30 días a 0 (2), sin comprobar la auditoría (3), ignorar `is_active` (2), sin el lock (1), borrar todas las organizaciones (2), tomar el primer evento en vez del último (2), `EXECUTE` para `service_role` (1).
 - `pnpm test:rls` completo **806/806** (35 archivos, base reseteada con la migración; sin restos `tt-*`/`e2e-*`) · `pnpm lint` y `pnpm typecheck` OK. No se corrieron E2E ni build: no hay cambios de interfaz ni de aplicación. Sin cambios de tipos (función privada).
+- Staging, 2026-10-20: migración aplicada junto con la de pagos, sin ejecutar la purga; evidencia de aplicación y comprobaciones en [retención de pagos](retencion-de-pagos.md#integración-y-staging--2026-10-20). Producción no se tocó.
 
 ## (C) Invariantes
 - Solo se borran filas de `price_history` de la organización pedida, solo si está dada de baja y auditada hace 30 días o más; nada más (ni organización, ni platos, ni auditoría).
