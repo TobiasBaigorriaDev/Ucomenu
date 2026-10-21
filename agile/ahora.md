@@ -4,7 +4,7 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Vista por sucursal (nivel C) implementada y probada en local; falta la revisión de Codex y la aprobación humana.** [Ficha](cambios/vista-por-sucursal.md) · [ADR 0034](../docs/decisiones/0034-vista-por-sucursal.md) (propuesta). Migración nueva `20261106100000_vista_por_sucursal.sql` (tabla `member_branch_views`, `set_my_branch_view`, `my_branch_view` y `push_targets_for_call`). Staging **no** la tiene.
+**Vista por sucursal (nivel C) implementada, probada en local y revisada por Codex (3 rondas, 7 hallazgos corregidos); falta la aprobación humana y una decisión tuya sobre un criterio de aviso (ver la ficha).** Commits `ea42df4` … último de la serie. [Ficha](cambios/vista-por-sucursal.md) · [ADR 0034](../docs/decisiones/0034-vista-por-sucursal.md) (propuesta). Migración nueva `20261106100000_vista_por_sucursal.sql` (tabla `member_branch_views`, `set_my_branch_view`, `my_branch_view` y `push_targets_for_call`). Staging **no** la tiene.
 
 Cada persona (Dueño o Staff) elige qué sucursales mira: la sala, el cartel del panel, el sonido y el push siguen su elección; vacío = todas, y ante la duda se avisa. Es una preferencia, no un permiso (la membresía sigue por organización). La sala muestra cuántos llamados quedan en las otras sucursales; la analítica abre en la elegida. Fuera de alcance: asignar sucursales al Staff con restricción real.
 
@@ -20,6 +20,6 @@ Esperan aprobación humana, además: tanda 4 de UX ([ficha](cambios/detalle-reto
 
 ## Próximo paso
 
-1. Revisión de Codex de la vista por sucursal: `pnpm revision:codex --commit HEAD --ficha agile/cambios/vista-por-sucursal.md --nivel C`.
+1. **Decidir** el criterio de la ventana de aviso al cambiar de vista (ficha, «Revisión y aprobación», ronda 3): hoy gana «ante la duda, avisar».
 2. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
 3. Probar en teléfonos reales el push con dos personas eligiendo sucursales distintas.
