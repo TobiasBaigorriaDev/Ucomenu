@@ -32,7 +32,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] SuperAdmin: borrar y purgar organizaciones — implementado y probado en local, en revisión independiente; falta aprobación humana, integración y staging → [ficha](cambios/borrado-de-organizaciones.md) · ADR 0028
 - [S] Decidir qué hacer con las cuentas de Auth que quedan sin ningún local tras un borrado (hoy se conservan) — surgido de «borrar organizaciones»
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
@@ -59,6 +58,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] SuperAdmin: borrado definitivo de organizaciones tras baja auditada de 30 días, con identificador escrito, motivo y auditoría; revisado por Codex, aprobado por el usuario, integrado en `main`, subido a `origin` y desplegado con su migración en staging (2026-10-20) → [ficha](cambios/borrado-de-organizaciones.md) · ADR 0028
 - [C] Retención y purga de `payments` y `payment_voids`: sobreviven al borrado de la organización y se conservan 10 años; revisión independiente aprobada, integración autorizada por el usuario, subida a `origin` y desplegada en staging (2026-10-20; plazo por confirmar con el contador antes de producción) → agile/cambios/retencion-de-pagos.md · ADR 0027
 - [C] Retención y purga de `price_history`: se purga con la organización, tras 30 días de baja auditada, por una función que nadie de la API ejecuta; aprobada por Codex, subida a `origin` y migración aplicada en staging (2026-10-20) → agile/cambios/purga-de-price-history.md · ADR 0026
 - [C] SuperAdmin: add-ons (activar, cambiar packs y fin, finalizar) y baja/reactivación de organizaciones (cierra el acceso del local por RLS, sin borrar nada); revisado por Codex en tres rondas, aprobado por el usuario e integrado a `main` y a `origin`; migración y app en staging, pendiente prueba manual del usuario (2026-10-20) → [ficha](cambios/addons-y-baja-de-organizaciones.md) · ADR 0025
