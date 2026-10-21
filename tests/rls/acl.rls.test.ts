@@ -50,6 +50,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
   admin_add_owner: [false, false], // SuperAdmin (ficha dueno-existente): suma una cuenta existente como Dueño; solo service_role
+  admin_delete_organization: [false, false], // SuperAdmin (ficha borrado-de-organizaciones, ADR 0028): borra definitivamente una organización dada de baja hace 30 días; solo service_role
   admin_end_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): finaliza un add-on vigente; solo service_role
   admin_set_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): activa un add-on o cambia packs y fin; solo service_role
   admin_set_organization_active: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones, ADR 0025): da de baja o reactiva una organización; solo service_role
@@ -201,6 +202,7 @@ describe("RLS y permisos de tablas", () => {
       ["admin_add_owner", "f", "f", "f", "t"],
       ["admin_change_plan", "f", "f", "f", "t"],
       ["admin_create_organization", "f", "f", "f", "t"],
+      ["admin_delete_organization", "f", "f", "f", "t"],
       ["admin_end_addon", "f", "f", "f", "t"],
       ["admin_register_payment", "f", "f", "f", "t"],
       ["admin_set_addon", "f", "f", "f", "t"],

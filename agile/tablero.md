@@ -32,7 +32,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
 
 ### Fase 1 — MVP · Plataforma SaaS
-- [C] SuperAdmin: borrar y purgar organizaciones (la baja reversible ya está hecha; este ítem es el borrado definitivo) (desbloqueado: la retención de `price_history` (ADR 0026) y la de `payments`/`payment_voids` (ADR 0027) están decididas y sus funciones existen; falta la acción en sí: SuperAdmin recomprobado, baja previa de 30 días, slug escrito, motivo, purga del historial, borrado y auditoría `organization.deleted` con slug y nombre, todo en una transacción)
+- [C] SuperAdmin: borrar y purgar organizaciones — implementado y probado en local, en revisión independiente; falta aprobación humana, integración y staging → [ficha](cambios/borrado-de-organizaciones.md) · ADR 0028
+- [S] Decidir qué hacer con las cuentas de Auth que quedan sin ningún local tras un borrado (hoy se conservan) — surgido de «borrar organizaciones»
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [C] Borrado de categorías y platos: hoy solo se desactivan; borrar una categoría arrastra sus platos y sus fotos de Storage (hay que limpiar los archivos) — surgido de «Gestión de carta»

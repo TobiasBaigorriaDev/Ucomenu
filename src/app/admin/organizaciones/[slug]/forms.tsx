@@ -5,6 +5,7 @@ import { dangerButtonClass, inputClass, labelClass } from "@/components/panel/st
 import {
   addExistingOwnerAction,
   changePlanAction,
+  deleteOrganizationAction,
   endAddonAction,
   registerPaymentAction,
   setAddonAction,
@@ -467,6 +468,70 @@ export function OrganizationActiveForm({ slug, active, name }: { slug: string; a
             ) : (
               <SubmitButton pendingLabel="Reactivando…">Reactivar la organización</SubmitButton>
             )}
+          </div>
+        </>
+      )}
+    </ActionForm>
+  );
+}
+
+/**
+ * Borrado definitivo (ficha borrado-de-organizaciones, ADR 0028). Solo se muestra cuando la baja cumplió los 30 días. Pide el
+ * identificador escrito (no se puede pegar por error con un clic), el motivo y una casilla. La base lo vuelve a exigir todo.
+ */
+export function DeleteOrganizationForm({ slug, name }: { slug: string; name: string }) {
+  return (
+    <ActionForm action={deleteOrganizationAction} className="mt-4 grid max-w-md gap-4">
+      {(state) => (
+        <>
+          <input type="hidden" name="slug" value={slug} />
+          <div>
+            <label htmlFor="borrado-slug" className={labelClass}>
+              Escribí el identificador <span className="font-mono [overflow-wrap:anywhere]">{slug}</span> para confirmar
+            </label>
+            <input
+              id="borrado-slug"
+              name="confirmSlug"
+              type="text"
+              required
+              maxLength={64}
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              defaultValue={state.values?.confirmSlug ?? ""}
+              className={`${inputClass} mt-1 font-mono`}
+            />
+          </div>
+          <div>
+            <label htmlFor="borrado-motivo" className={labelClass}>
+              Motivo del borrado
+            </label>
+            <input
+              id="borrado-motivo"
+              name="reason"
+              type="text"
+              required
+              maxLength={200}
+              autoComplete="off"
+              aria-describedby="borrado-motivo-hint"
+              defaultValue={state.values?.reason ?? ""}
+              className={`${inputClass} mt-1`}
+            />
+            <p id="borrado-motivo-hint" className="mt-1 text-sm text-muted">
+              {REASON_HINT}
+            </p>
+          </div>
+          <label className="flex min-h-11 items-start gap-3 text-base">
+            <input type="checkbox" name="confirmed" required className="mt-1 size-5 shrink-0" />
+            <span className="min-w-0 [overflow-wrap:anywhere]">
+              Entiendo que se borra «{name}» con su carta, sus sucursales, sus mesas y QR, su suscripción y su personal, que no se puede
+              deshacer y que corrí el respaldo antes.
+            </span>
+          </label>
+          <div>
+            <SubmitButton pendingLabel="Borrando…" className={dangerButtonClass}>
+              Borrar definitivamente
+            </SubmitButton>
           </div>
         </>
       )}

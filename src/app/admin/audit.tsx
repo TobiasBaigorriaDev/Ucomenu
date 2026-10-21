@@ -16,6 +16,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "addon.changed": "Add-on modificado",
   "addon.ended": "Add-on finalizado",
   "payments.purged": "Pagos antiguos purgados",
+  "organization.deleted": "Organización borrada",
 };
 
 const ADDON_NAME: Record<string, string> = { webar: "WebAR" };
@@ -58,6 +59,14 @@ function details(entry: AuditEntry): string[] {
     if (typeof after.voids === "number" && after.voids > 0) out.push(`${after.voids} anulaciones`);
     const before = str(after.registered_before);
     if (before) out.push(`registrados antes del ${formatDateWithYear(before)}`);
+  }
+  if (entry.action === "organization.deleted") {
+    // Con el nombre y el id se identifican los pagos que quedan sin organización (ADR 0027) y sus archivos de Storage.
+    const name = str(after.name);
+    if (name) out.push(`«${name}»`);
+    if (entry.organizationId) out.push(`id ${entry.organizationId}`);
+    if (typeof after.payments_kept === "number" && after.payments_kept > 0) out.push(`${after.payments_kept} pagos conservados`);
+    if (typeof after.price_history_purged === "number") out.push(`${after.price_history_purged} cambios de precio purgados`);
   }
   if (entry.action.startsWith("addon.")) {
     const addon = str(after.addon);

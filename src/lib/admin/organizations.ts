@@ -70,6 +70,11 @@ export type AdminError =
   | "addon_not_active"
   | "already_inactive"
   | "already_active"
+  // Borrado definitivo (ficha borrado-de-organizaciones, ADR 0028)
+  | "slug_mismatch"
+  | "organization_still_active"
+  | "deactivation_not_audited"
+  | "deactivation_too_recent"
   | "uncertain_change"; // se perdió la respuesta de un cambio: pudo quedar hecho
 
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: AdminError };
@@ -133,6 +138,11 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   addon_not_active: "Ese add-on no está vigente en esta organización, así que no hay nada que finalizar. Recargá la página para ver su estado.",
   already_inactive: "La organización ya está dada de baja.",
   already_active: "La organización ya está activa: no hay nada que reactivar.",
+  slug_mismatch: "El identificador que escribiste no coincide con el de la organización. No se borró nada.",
+  organization_still_active: "Para borrarla primero hay que darla de baja y esperar 30 días. No se borró nada.",
+  deactivation_not_audited:
+    "La baja de esta organización no figura en los movimientos (o se reactivó después), así que no se puede borrar. Dala de baja desde esta pantalla y esperá 30 días. No se borró nada.",
+  deactivation_too_recent: "La baja tiene menos de 30 días: todavía se puede revertir y no se puede borrar. No se borró nada.",
   uncertain_change:
     "No pudimos confirmar si el cambio quedó hecho. No lo repitas todavía: recargá esta página y mirá el estado y los últimos movimientos.",
 };

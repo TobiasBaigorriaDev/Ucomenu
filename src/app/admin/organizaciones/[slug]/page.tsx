@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { canDeleteNow, DELETION_WAIT_DAYS, deletionAvailableAt } from "@/lib/admin/delete-organization";
 import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
 import { AUDIT_LIMIT } from "@/lib/admin/organizations";
 import { listAdminBranches } from "@/lib/admin/branches";
@@ -13,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { StatusPill } from "../../status-pill";
-import { AddOwnerForm, AddonForm, ChangePlanForm, EndAddonForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
+import { AddOwnerForm, AddonForm, ChangePlanForm, DeleteOrganizationForm, EndAddonForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
@@ -107,6 +108,8 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
   const suspended = org.suspendedAt !== null;
   const datesState = accountState(org.periodEnd, false, now);
   const cycle = isBillingCycle(org.billingCycle) ? org.billingCycle : "monthly";
+  const deletionAt = deletionAvailableAt(org.deactivatedAt);
+  const deletable = canDeleteNow(org.deactivatedAt, now);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
@@ -259,6 +262,34 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
             : "La organización está dada de baja: su carta y sus QR no abren y su personal no puede entrar. Al reactivarla todo vuelve a funcionar según su suscripción actual (si venció, queda en mora como corresponda)."}
         </p>
         <OrganizationActiveForm slug={org.slug} active={org.isActive} name={org.name} />
+      </section>
+
+      <section aria-labelledby="seccion-borrado" className="panel-cell mt-6">
+        <h2 id="seccion-borrado" className="font-display text-2xl">
+          Borrar definitivamente
+        </h2>
+        <p className="mt-2 max-w-prose leading-relaxed text-muted" data-testid="aviso-borrado">
+          Irreversible. Solo se puede con la organización dada de baja desde hace {DELETION_WAIT_DAYS} días. Se borran su carta, sus
+          sucursales, sus mesas y QR, su suscripción, su personal y su historial de precios, y las fotos y el logo. Se conservan los
+          pagos (10 años), los movimientos de esta pantalla y las cuentas de las personas. Antes, corré el respaldo (
+          <span className="font-mono text-base">pnpm respaldo</span>).
+        </p>
+        {org.isActive ? (
+          <p className="mt-3 max-w-prose" data-testid="borrado-estado">
+            Para poder borrarla primero hay que darla de baja y esperar {DELETION_WAIT_DAYS} días.
+          </p>
+        ) : deletionAt === null ? (
+          <p className="mt-3 max-w-prose" data-testid="borrado-estado">
+            La baja no figura en los movimientos (puede haberse hecho a mano), así que no se puede borrar. Reactivala y dala de baja desde
+            esta pantalla.
+          </p>
+        ) : !deletable ? (
+          <p className="mt-3 max-w-prose" data-testid="borrado-estado">
+            Se podrá borrar a partir del {formatDateWithYear(deletionAt.toISOString())}: hasta entonces la baja se puede revertir.
+          </p>
+        ) : (
+          <DeleteOrganizationForm slug={org.slug} name={org.name} />
+        )}
       </section>
 
       <section aria-labelledby="seccion-pago" className="panel-cell mt-6">

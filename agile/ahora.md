@@ -1,31 +1,31 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-20 · agente saliente: Codex · historial anterior en `agile/historial.md`.
+Actualizado: 2026-10-20 · agente saliente: Claude · historial anterior en `agile/historial.md`.
 
 ## Punto de retomada
 
-**Retención de pagos integrada y desplegada en staging**, por pedido explícito del usuario tras la revisión independiente. Rama `main`; código publicado y desplegado: `0321dfc` (implementación `2c0e5e0`, tipos corregidos `a172d53`). La documentación de cierre queda en el commit posterior; no hay cambios funcionales adicionales.
+**Borrado definitivo de organizaciones (C) implementado y probado en local**, rama `main`, commit de implementación local (sin subir a `origin`). [Ficha](cambios/borrado-de-organizaciones.md) y [ADR 0028](../docs/decisiones/0028-borrado-definitivo-de-organizaciones.md).
 
-Las dos retenciones decididas para desbloquear el borrado de organizaciones están en `origin` y en staging:
-- **`price_history`** ([ficha](cambios/purga-de-price-history.md), [ADR 0026](../docs/decisiones/0026-purga-del-historial-de-precios.md)): se purga con la organización, tras 30 días de baja auditada.
-- **`payments` y `payment_voids`** ([ficha](cambios/retencion-de-pagos.md), [ADR 0027](../docs/decisiones/0027-retencion-de-pagos.md)): sobreviven al borrado de la organización y se conservan 10 años; la función privada de purga no está disponible para la API. Evidencia y recuperación del despliegue en la ficha de pagos.
+- Una función de base `admin_delete_organization` (migración `20261102100000`) hace, en una transacción: SuperAdmin recomprobado, motivo, slug escrito, baja auditada de 30 días (vía la purga de `price_history`), borrado y auditoría `organization.deleted` con slug y nombre. Los pagos y las cuentas de Auth se conservan.
+- El servidor borra los archivos de Storage **después** de confirmar la transacción; si falla, la lista de `/admin` lo avisa.
+- Pantalla: sección «Borrar definitivamente» en `/admin/organizaciones/{slug}`.
+- Evidencia en la ficha (RLS completo 835/835, unitarias 680/680, E2E del borrado y vecinas, mutaciones).
 
-Se aplicaron las migraciones pendientes; no se ejecutó ni programó ninguna purga, no se borraron organizaciones ni se cambiaron secretos. Producción no se tocó.
+Pendiente de este cambio: revisión independiente de Codex (`ciclo-revision-codex`), aprobación humana, y recién entonces integrar, subir a `origin`, aplicar la migración en staging y desplegar (todo requiere pedido explícito del usuario).
 
-Integrado antes: [add-ons y baja de organizaciones](cambios/addons-y-baja-de-organizaciones.md) y [anular pagos](cambios/anular-pagos.md), ambos en staging; falta la prueba manual del usuario con SuperAdmin.
+Integrado antes: retenciones de `price_history` y pagos (staging Fly v14); [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md) y [anular pagos](cambios/anular-pagos.md) en staging, falta la prueba manual del usuario con SuperAdmin.
 
-Investigación abierta: [vencimiento en iPhone](cambios/ticket-de-visita.md#investigación-en-teléfono-real--2026-10-20); falta distinguir recarga de pestaña conservada.
+Investigación abierta: [vencimiento en iPhone](cambios/ticket-de-visita.md#investigación-en-teléfono-real--2026-10-20).
 
 ## Bloqueos y riesgos
 
 - **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`).
 - **Plazo de 10 años de los pagos:** por confirmar con el contador antes de producción.
-- **Borrar organizaciones:** desbloqueado en el tablero. La acción tiene que, en una transacción: recomprobar al SuperAdmin, exigir baja de 30 días, slug escrito y motivo, llamar `private.purge_organization_price_history`, borrar y auditar `organization.deleted` con slug y nombre (identifica los pagos huérfanos).
-- Un `DELETE` de organización ya no se frena por los pagos, también en staging (ADR 0027): la barrera será esa acción.
-- E2E: usar `--workers=1`. RLS completo ~12 min; RLS y E2E no se corren a la vez.
+- Borrado: irreversible; solo el respaldo (`pnpm respaldo`) lo cubre. Archivos de Storage sueltos posibles si el servidor se corta justo después del borrado (riesgo aceptado, ADR 0028).
+- E2E: usar `--workers=1`. RLS completo ~12 min; RLS y E2E no se corren a la vez. Un worker caído con `0xC0000409` se repite una vez.
 
 ## Próximo paso
 
-1. Implementar el borrado de organizaciones en SuperAdmin (C), cuando el usuario lo seleccione.
+1. Revisión de Codex del borrado y correcciones; luego aprobación humana.
 2. El usuario prueba en staging add-ons, baja/reactivación y anular pagos.
-3. Completar el diagnóstico del iPhone.
+3. Decidir qué pasa con las cuentas que quedan sin local; completar el diagnóstico del iPhone.

@@ -8,6 +8,7 @@ import {
   type OrganizationRow,
 } from "@/lib/admin/organizations";
 import { CYCLE_LABEL } from "@/lib/admin/format";
+import { parseSlug } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -67,8 +68,12 @@ function OrganizationItem({ org }: { org: OrganizationRow }) {
   );
 }
 
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   const user = await requirePlatformAdmin("/admin");
+  // Aviso tras un borrado definitivo (la acción redirige acá: la página de la organización ya no existe).
+  const query = await searchParams;
+  const deletedSlug = typeof query.borrada === "string" ? parseSlug(query.borrada) : null;
+  const filesPending = query.archivos === "pendientes";
   const session = await createSessionClient();
 
   let organizations: OrganizationRow[] | null = null;
@@ -83,6 +88,19 @@ export default async function AdminPage() {
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Organizaciones</h1>
+      {deletedSlug ? (
+        <div role="status" className="mt-4 max-w-prose break-words font-medium" data-testid="aviso-borrada">
+          <p>
+            Listo: «{deletedSlug}» se borró definitivamente. El borrado quedó en los movimientos y se conservan sus pagos.
+          </p>
+          {filesPending ? (
+            <p className="mt-2 text-danger" data-testid="aviso-archivos-pendientes">
+              Quedaron fotos o logos sin borrar de Storage. Anotá el identificador «{deletedSlug}» y avisá para repetir la limpieza: sus
+              archivos están en una carpeta con el id de la organización (figura en los movimientos).
+            </p>
+          ) : null}
+        </div>
+      ) : null}
       <p className="mt-4">
         <Link href="/admin/nueva" className={primaryButtonClass}>
           Nueva organización

@@ -70,6 +70,10 @@ const DB_ERRORS: Record<string, AdminError> = {
   addon_not_active: "addon_not_active",
   already_inactive: "already_inactive",
   already_active: "already_active",
+  slug_mismatch: "slug_mismatch",
+  organization_still_active: "organization_still_active",
+  deactivation_not_audited: "deactivation_not_audited",
+  deactivation_too_recent: "deactivation_too_recent",
 };
 
 /**
@@ -335,6 +339,8 @@ export type OrganizationDetail = {
   slug: string;
   name: string;
   isActive: boolean;
+  /** Cuándo se dio de baja (baja auditada vigente), o `null` si está activa o no hay baja auditada: el borrado la exige. */
+  deactivatedAt: string | null;
   ownerEmails: string[];
   plan: string;
   billingCycle: string;
@@ -373,7 +379,7 @@ export async function getOrganizationDetail(
   if (org.error) return fail("unexpected");
   if (!org.data) return fail("org_not_found");
 
-  const [sub, owners, payments, audit, catalog, contracted] = await Promise.all([
+  const [sub, owners, payments, audit, catalog, contracted, lifecycle] = await Promise.all([
     ctx.admin
       .from("subscriptions")
       .select("plan_code, billing_cycle, trial_ends_at, current_period_end, suspended_at")
@@ -390,10 +396,21 @@ export async function getOrganizationDetail(
     listAuditLog(ctx, { organizationId: org.data.id }),
     ctx.admin.from("addons").select("code, name, base_model_quota, pack_size, allowed_plans").order("code"),
     ctx.admin.from("subscription_addons").select("addon_code, extra_packs, ends_at").eq("organization_id", org.data.id),
+    // Último evento de ciclo de vida (baja o reactivación): de cuándo corre el plazo del borrado. No depende de AUDIT_LIMIT.
+    ctx.session
+      .from("audit_log")
+      .select("action, created_at")
+      .eq("organization_id", org.data.id)
+      .in("action", ["organization.deactivated", "organization.reactivated"])
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1),
   ]);
-  if (sub.error || !sub.data || owners.error || payments.error || !audit.ok || catalog.error || contracted.error) {
+  if (sub.error || !sub.data || owners.error || payments.error || !audit.ok || catalog.error || contracted.error || lifecycle.error) {
     return fail("unexpected");
   }
+  const lastLifecycle = lifecycle.data[0];
+  const deactivatedAt = !org.data.is_active && lastLifecycle?.action === "organization.deactivated" ? lastLifecycle.created_at : null;
 
   const planCode = sub.data.plan_code;
   const addons: AddonRow[] = catalog.data.map((a) => {
@@ -458,6 +475,7 @@ export async function getOrganizationDetail(
     slug: org.data.slug,
     name: org.data.name,
     isActive: org.data.is_active,
+    deactivatedAt,
     ownerEmails: emails.sort(),
     plan: sub.data.plan_code,
     billingCycle: sub.data.billing_cycle,

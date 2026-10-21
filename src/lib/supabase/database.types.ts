@@ -494,6 +494,9 @@ isOneToOne: false
 "admin_create_organization":
 { Args: { "p_actor": string,"p_billing_cycle": string,"p_branch_name"?: string,"p_branch_slug"?: string,"p_name": string,"p_owner": string,"p_period_end": string,"p_plan": string,"p_slug": string }; Returns: string
                            },
+"admin_delete_organization":
+{ Args: { "p_actor": string,"p_org": string,"p_reason": string,"p_slug": string }; Returns: Json
+                           },
 "admin_end_addon":
 { Args: { "p_actor": string,"p_addon": string,"p_org": string,"p_reason": string }; Returns: undefined
                            },

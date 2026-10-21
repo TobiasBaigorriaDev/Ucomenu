@@ -39,3 +39,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0025 | [Una organización se da de baja sin borrarla (cierra el acceso por RLS); los add-ons los gestiona el SuperAdmin con una función por acción](0025-baja-de-organizaciones-y-addons.md) | aceptada | 2026-10-19 |
 | 0026 | [El historial de precios se purga solo al borrar la organización, tras 30 días de baja, por una función que nadie de la API ejecuta](0026-purga-del-historial-de-precios.md) | aceptada | 2026-10-20 |
 | 0027 | [Los pagos sobreviven al borrado de la organización y se conservan 10 años; solo después se pueden purgar](0027-retencion-de-pagos.md) | aceptada | 2026-10-20 |
+| 0028 | [El borrado definitivo de una organización es una sola función de base, tras 30 días de baja, con el slug escrito; los archivos se limpian después de confirmar](0028-borrado-definitivo-de-organizaciones.md) | aceptada | 2026-10-20 |

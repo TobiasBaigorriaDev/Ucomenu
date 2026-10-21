@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { deleteOrganization } from "@/lib/admin/delete-organization";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
 import { changePlan, endAddon, registerPayment, setAddon, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
@@ -208,6 +210,39 @@ export async function setOrganizationActiveAction(_previous: FormState, formData
       ? "Listo: la organización está activa otra vez. Su carta, sus QR y el acceso del personal vuelven a funcionar según su suscripción."
       : "Listo: la organización quedó dada de baja. Su carta y sus QR dejaron de abrirse y nadie del local puede entrar. No se borró nada.",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Borrado definitivo (ficha borrado-de-organizaciones, ADR 0028)
+// ---------------------------------------------------------------------------
+
+/**
+ * Borra la organización. Si sale bien, la página de la organización deja de existir: se redirige a la lista con el aviso en
+ * la dirección (`?borrada=` y, si quedaron archivos sin borrar, `&archivos=pendientes`). Si falla, vuelve con el error.
+ */
+export async function deleteOrganizationAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { confirmSlug: text(formData, "confirmSlug"), reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await deleteOrganization(prepared.ctx, { slug: prepared.slug, ...values });
+  if (!result.ok) {
+    return {
+      error:
+        result.error === "uncertain_change"
+          ? "No pudimos confirmar si la organización se borró. No lo repitas todavía: mirá la lista de organizaciones; si ya no aparece, se borró."
+          : ADMIN_ERROR_MESSAGE[result.error],
+      values,
+    };
+  }
+
+  const slug = result.data.slug;
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${slug}`, "layout");
+  revalidatePath(`/sala/${slug}`, "layout");
+  revalidatePath(`/m/${slug}`, "layout");
+  redirect(`/admin?borrada=${encodeURIComponent(slug)}${result.data.files.complete ? "" : "&archivos=pendientes"}`);
 }
 
 // ---------------------------------------------------------------------------
