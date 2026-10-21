@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements } from "@/lib/entitlements";
-import { readAllPages } from "@/lib/paginar";
+import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { asUuid } from "@/lib/carta/validation";
 import { EXPIRY_MS, sortOldestFirst, type SalaCall, type SalaState } from "./types";
@@ -24,9 +24,10 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
   const enabled = parseEntitlements(ent.data)?.features.includes("waiter_call") === true;
 
   // Solo las sucursales activas: una desactivada sale de la Sala (sus llamados pendientes no se borran; vencen solos a los 30 minutos).
-  const branches = await readAllPages((from, to) =>
-    db.from("branches").select("id, name").eq("organization_id", orgId).eq("is_active", true).order("id").range(from, to),
-  );
+  const branches = await readAllByKey((after, limit) => {
+    const query = db.from("branches").select("id, name").eq("organization_id", orgId).eq("is_active", true);
+    return (after ? query.gt("id", after) : query).order("id").limit(limit);
+  });
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   const branchRows = branches.data ?? [];
   const multiBranch = branchRows.length > 1;
@@ -34,20 +35,18 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
   if (!enabled) return { serverNow, enabled: false, multiBranch, calls: [] };
 
   const since = new Date(now.getTime() - EXPIRY_MS).toISOString();
-  // Por páginas y con orden total (antigüedad, id): los pendientes de 30 minutos de varias sucursales pueden pasar de 1000 y
-  // PostgREST corta cada lectura sin avisar. Es una foto por sondeo: un llamado atendido a mitad de lectura puede correr una
-  // página y esconder otro hasta el sondeo siguiente (3 s); nunca se muestra uno de más.
-  const pending = await readAllPages((from, to) =>
-    db
+  // Por páginas y por clave (id): los pendientes de 30 minutos de varias sucursales pueden pasar de 1000 y PostgREST corta cada
+  // lectura sin avisar. Por clave, un llamado atendido a mitad de lectura no corre las páginas ni esconde otro. El orden
+  // «del más antiguo al más nuevo» lo pone `sortOldestFirst` al final.
+  const pending = await readAllByKey((after, limit) => {
+    const query = db
       .from("waiter_calls")
       .select("id, kind, table_id, branch_id, created_at, visit_started_at")
       .eq("organization_id", orgId)
       .eq("status", "pending")
-      .gt("created_at", since)
-      .order("created_at", { ascending: true })
-      .order("id", { ascending: true })
-      .range(from, to),
-  );
+      .gt("created_at", since);
+    return (after ? query.gt("id", after) : query).order("id").limit(limit);
+  });
   if (pending.error) throw new Error(`No se pudieron leer los llamados: ${pending.error.message}`);
   const pendingRows = pending.data ?? [];
 

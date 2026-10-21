@@ -7,7 +7,7 @@ Cuatro correcciones surgidas de una auditoría, confirmadas contra el código an
 ## 5. Truncamientos silenciosos de listas
 **Confirmado.** `loadCarta`, `loadMesas`, `loadLlamadoConfig`, `loadSala`, la guía de primeros pasos y las lecturas de `createCategory`/`moveCategory`/`nextProductOrder`/`moveProduct` pedían «todo» sin paginar; PostgREST corta en 1000. `productsOfCategory` y `loadProductOptions` ya paginaban: **no se tocaron**. Las opciones y los grupos (tope técnico de 60 y 20) caben en una página y se leen igual con el helper.
 
-**Decisión.** `readAllPages` con `order("id")` (orden total estable) en cada lectura de todo; en `loadSala`, orden total `(created_at, id)` y las mesas de los llamados se piden de a 100 ids (la lista viaja en la URL). La posición nueva sale de una sola fila (`order sort_order desc limit 1`). Los topes del plan (platos y mesas **activos**) no se tocan: los inactivos no tienen tope y por eso una lista puede pasar de 1000 sin romper ningún límite comercial.
+**Decisión.** Paginación **por clave** (`readAllByKey`: `id` mayor que el último recibido, `order("id")`) en cada lectura de todo de esta tanda: una baja o un alta entre páginas no corre las siguientes (con `offset` sí, y se salta una fila sin error: hallazgo de la revisión, ronda 1). En `loadSala` el orden «más antiguo primero» lo pone `sortOldestFirst` al final, y las mesas de los llamados se piden de a 100 ids (la lista viaja en la URL). La posición nueva sale de una sola fila (`order sort_order desc limit 1`). Los topes del plan (platos y mesas **activos**) no se tocan: los inactivos no tienen tope y por eso una lista puede pasar de 1000 sin romper ningún límite comercial.
 
 ## 6. Reordenamientos atómicos
 **Confirmado.** `applyOrder` hacía N `UPDATE` en `Promise.all`: un fallo del medio dejaba posiciones mezcladas, y la acción no vencía la caché pública cuando fallaba. Dos movimientos simultáneos calculaban sobre la misma lectura.
@@ -23,7 +23,7 @@ Cuatro correcciones surgidas de una auditoría, confirmadas contra el código an
 **Confirmado.** Cada foto elegida creaba una URL que nunca se revocaba. **Decisión.** Una sola URL viva en una referencia: se revoca al elegir otra foto, al descartar, cuando deja de mostrarse (terminó la acción) y al desmontar; no se crea si el componente se desmontó mientras se reducía la foto. La reducción de imágenes no cambia. (`LogoForm` ya revocaba.)
 
 ## Aceptación
-- [x] Las listas de más de 1000 filas (categorías, platos, mesas, llamados pendientes), mezclando activos e inactivos, se leen completas; mover y crear en ellas usa la lista completa.
+- [x] Las listas de más de 1000 filas (categorías, platos, mesas, llamados pendientes), mezclando activos e inactivos, se leen completas, también con altas y bajas entre páginas; mover y crear en ellas usa la lista completa.
 - [x] El tope comercial sigue contando solo activos; no depende del corte de la respuesta.
 - [x] Un fallo en el medio de un reordenamiento no deja ninguna posición cambiada (disparador de prueba en una fila).
 - [x] Dos movimientos que se cruzan quedan aplicados los dos (gancho determinista); cuatro simultáneos dejan posiciones únicas y contiguas; una transacción que bloquea a los hermanos hace esperar al movimiento.
@@ -49,7 +49,7 @@ Cuatro correcciones surgidas de una auditoría, confirmadas contra el código an
 | Falla el borrado del archivo saliente | La imagen vigente no se toca; aviso «el archivo anterior no se pudo borrar» y la ruta queda en el registro para limpiarla a mano. |
 | Se pierde la respuesta de la base al apuntar la imagen | Se mira el estado real: si apunta a la nueva, éxito con aviso de limpieza pendiente; si no se puede asegurar, no se borra nada y se informa «no pudimos confirmar» (puede quedar un archivo de más). |
 | La cuenta pasa a solo lectura entre la subida y apuntar | No cambia la referencia; la subida no se puede borrar (Storage también bloquea) y queda registrada. |
-| Migración mal aplicada | Rollback en la cabecera de `20261105100000_orden_e_imagenes_atomicos.sql`. |
+| Migración mal aplicada | Rollback en la cabecera de `20261105100000_orden_e_imagenes_atomicos.sql`: **primero se despliega el código anterior** (el nuevo llama a las funciones) y recién después se retiran. |
 
 ## Alcance / fuera de alcance
 Incluye: migración, `catalog.ts`, `options.ts`, `identity.ts`, `tables.ts`, `config.ts`, `pending.ts`, `primeros-pasos.ts`, acciones de carta y apariencia, `PhotoForm`, pruebas, ADR 0033. No incluye: barrido periódico de huérfanos; cambiar el modelo de posiciones; paginar listas acotadas por topes técnicos o comerciales (sucursales por plan en las pantallas que solo muestran las activas se paginaron igual por coherencia); `LogoForm` (ya revoca).
@@ -65,3 +65,7 @@ Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probad
 - **Mutaciones** (restauradas): borrar la referencia leída antes en vez de la devuelta por la base (2 pruebas fallan), quitar la comprobación de «lo leído» del SQL (2), `loadCarta` sin paginar (1), `PhotoForm` anterior (el E2E ve 2 URL vivas en vez de 1).
 - **Hallazgos durante la implementación:** (1) PostgREST **reintenta sin fin** los errores con SQLSTATE `40001`: `order_changed` usa `55000` (ADR 0033, decisión 6). (2) Con RLS un `UPDATE` filtrado afecta 0 filas sin error: la primera versión de `reorder_siblings` devolvía éxito en solo lectura; ahora lee desde el propio `FOR UPDATE` y verifica las filas cambiadas (lo detectó una prueba existente).
 - **No probado / límites:** staging (la migración no está allí); más de 5 movimientos cruzados seguidos sobre la misma lista; limpieza de huérfanos que quedan por fallos de Storage (solo se registran); un teléfono real con la vista previa.
+
+## Revisión y aprobación
+- **Codex, ronda 1 (commit `bd52a08`, nivel C, esfuerzo high): APROBAR CON CAMBIOS, 2 hallazgos importantes, ambos confirmados.** (1) La paginación por `offset` se salta una fila sin error si hay una baja entre páginas (reproducido con el helper en memoria): pasó a paginación por clave, con pruebas del helper (baja y alta entre páginas) y las de integración de más de 1000 filas intactas. (2) La cabecera de rollback decía que bastaba retirar las funciones, pero el código nuevo depende de ellas: ahora exige desplegar primero el código anterior. Quedan fuera, por ser lecturas anteriores a esta tanda, las que siguen con `readAllPages` (carta pública, idiomas, sucursales, opciones de un plato, disponibilidad).
+- Pendiente: ronda de verificación, y la **aprobación humana** (no está dada) antes de subir a `origin`, aplicar la migración en staging o desplegar.

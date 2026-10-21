@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
 import { sortByLabel } from "@/lib/mesas/labels";
-import { readAllPages } from "@/lib/paginar";
+import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { configErrorMessage, configWriteBlock, type ConfigError } from "./config-messages";
 import { muteUntil, parseCooldown, parseMuteMinutes } from "./config-rules";
@@ -38,19 +38,14 @@ export type ConfigBranch = { id: string; name: string; cooldown: number; tables:
 export async function loadLlamadoConfig(db: Db, orgId: string): Promise<ConfigBranch[]> {
   // Por páginas y con orden estable: PostgREST corta cada lectura en 1000 filas sin avisar (las mesas inactivas no tienen tope).
   const [branches, tables] = await Promise.all([
-    readAllPages((from, to) =>
-      db
-        .from("branches")
-        .select("id, name, waiter_call_cooldown_seconds")
-        .eq("organization_id", orgId)
-        .eq("is_active", true)
-        .order("name")
-        .order("id")
-        .range(from, to),
-    ),
-    readAllPages((from, to) =>
-      db.from("tables").select("id, branch_id, label, is_active, muted_until").eq("organization_id", orgId).order("id").range(from, to),
-    ),
+    readAllByKey((after, limit) => {
+      const query = db.from("branches").select("id, name, waiter_call_cooldown_seconds").eq("organization_id", orgId).eq("is_active", true);
+      return (after ? query.gt("id", after) : query).order("id").limit(limit);
+    }),
+    readAllByKey((after, limit) => {
+      const query = db.from("tables").select("id, branch_id, label, is_active, muted_until").eq("organization_id", orgId);
+      return (after ? query.gt("id", after) : query).order("id").limit(limit);
+    }),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   if (tables.error) throw new Error(`No se pudieron leer las mesas: ${tables.error.message}`);
@@ -61,12 +56,15 @@ export async function loadLlamadoConfig(db: Db, orgId: string): Promise<ConfigBr
     if (group) group.push(table);
     else byBranch.set(table.branch_id, [table]);
   }
-  return (branches.data ?? []).map((branch) => ({
-    id: branch.id,
-    name: branch.name,
-    cooldown: branch.waiter_call_cooldown_seconds,
-    tables: sortByLabel(byBranch.get(branch.id) ?? []),
-  }));
+  // Las sucursales se leen por clave (id): se muestran por nombre.
+  return [...(branches.data ?? [])]
+    .sort((a, b) => a.name.localeCompare(b.name, "es") || a.id.localeCompare(b.id))
+    .map((branch) => ({
+      id: branch.id,
+      name: branch.name,
+      cooldown: branch.waiter_call_cooldown_seconds,
+      tables: sortByLabel(byBranch.get(branch.id) ?? []),
+    }));
 }
 
 // ---------------------------------------------------------------------------

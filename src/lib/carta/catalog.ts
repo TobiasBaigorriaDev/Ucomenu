@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
-import { readAllPages } from "@/lib/paginar";
+import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { detectImage, IMAGE_BUCKET, imagePath, isOwnImagePath, MAX_IMAGE_BYTES } from "./images";
 import { cartaErrorMessage, writeBlock, type CartaError } from "./messages";
@@ -81,10 +81,14 @@ const PRODUCT_COLUMNS = "id, category_id, name, description, price_cents, sort_o
 export async function loadCarta(db: Db, orgId: string): Promise<CartaCategory[]> {
   // Por páginas y con orden estable (id): PostgREST corta cada lectura en 1000 filas sin avisar, y los inactivos no tienen tope.
   const [categories, products] = await Promise.all([
-    readAllPages((from, to) =>
-      db.from("categories").select("id, name, sort_order, is_active").eq("organization_id", orgId).order("id").range(from, to),
-    ),
-    readAllPages((from, to) => db.from("products").select(PRODUCT_COLUMNS).eq("organization_id", orgId).order("id").range(from, to)),
+    readAllByKey((after, limit) => {
+      const query = db.from("categories").select("id, name, sort_order, is_active").eq("organization_id", orgId);
+      return (after ? query.gt("id", after) : query).order("id").limit(limit);
+    }),
+    readAllByKey((after, limit) => {
+      const query = db.from("products").select(PRODUCT_COLUMNS).eq("organization_id", orgId);
+      return (after ? query.gt("id", after) : query).order("id").limit(limit);
+    }),
   ]);
   if (categories.error) throw new Error(`No se pudieron leer las categorías: ${categories.error.message}`);
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
@@ -364,19 +368,27 @@ type Sibling = { id: string; name: string; sort_order: number };
 /** Todos los hermanos, por páginas y con orden estable: un local puede tener más de 1000 categorías o platos (los inactivos no tienen tope). */
 async function readSiblings(db: Db, orgId: string, { table, scope }: OrderScope): Promise<Sibling[] | null> {
   const cols = "id, name, sort_order";
-  const page = (from: number, to: number) => {
+  const page = (after: string | null, limit: number) => {
     switch (table) {
-      case "categories":
-        return db.from("categories").select(cols).eq("organization_id", orgId).order("id").range(from, to);
-      case "products":
-        return db.from("products").select(cols).eq("organization_id", orgId).eq("category_id", scope).order("id").range(from, to);
-      case "option_groups":
-        return db.from("option_groups").select(cols).eq("organization_id", orgId).eq("product_id", scope).order("id").range(from, to);
-      case "options":
-        return db.from("options").select(cols).eq("organization_id", orgId).eq("group_id", scope).order("id").range(from, to);
+      case "categories": {
+        const query = db.from("categories").select(cols).eq("organization_id", orgId);
+        return (after ? query.gt("id", after) : query).order("id").limit(limit);
+      }
+      case "products": {
+        const query = db.from("products").select(cols).eq("organization_id", orgId).eq("category_id", scope);
+        return (after ? query.gt("id", after) : query).order("id").limit(limit);
+      }
+      case "option_groups": {
+        const query = db.from("option_groups").select(cols).eq("organization_id", orgId).eq("product_id", scope);
+        return (after ? query.gt("id", after) : query).order("id").limit(limit);
+      }
+      case "options": {
+        const query = db.from("options").select(cols).eq("organization_id", orgId).eq("group_id", scope);
+        return (after ? query.gt("id", after) : query).order("id").limit(limit);
+      }
     }
   };
-  const { data, error } = await readAllPages<Sibling>(page);
+  const { data, error } = await readAllByKey<Sibling>(page);
   return error ? null : data;
 }
 

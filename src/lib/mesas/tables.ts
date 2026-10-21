@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
-import { readAllPages } from "@/lib/paginar";
+import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { sortByLabel, validateLabel } from "./labels";
 import { mesasErrorMessage, mesasWriteBlock, type MesasError } from "./messages";
@@ -57,19 +57,26 @@ export async function loadMesas(db: Db, orgId: string): Promise<BranchWithTables
   // Por páginas y con orden estable (`id` desempata el nombre): PostgREST corta cada lectura en 1000 filas sin avisar y las
   // mesas inactivas no cuentan para el tope del plan, así que un local puede tener más.
   const [branches, tables] = await Promise.all([
-    readAllPages((from, to) =>
-      db.from("branches").select("id, slug, name").eq("organization_id", orgId).eq("is_active", true).order("name").order("id").range(from, to),
-    ),
-    readAllPages((from, to) => db.from("tables").select(TABLE_COLUMNS).eq("organization_id", orgId).order("id").range(from, to)),
+    readAllByKey((after, limit) => {
+      const query = db.from("branches").select("id, slug, name").eq("organization_id", orgId).eq("is_active", true);
+      return (after ? query.gt("id", after) : query).order("id").limit(limit);
+    }),
+    readAllByKey((after, limit) => {
+      const query = db.from("tables").select(TABLE_COLUMNS).eq("organization_id", orgId);
+      return (after ? query.gt("id", after) : query).order("id").limit(limit);
+    }),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   if (tables.error) throw new Error(`No se pudieron leer las mesas: ${tables.error.message}`);
 
   const byBranch = groupBy(tables.data ?? [], (table) => table.branch_id);
-  return (branches.data ?? []).map((branch) => ({
-    ...branch,
-    tables: sortByLabel(byBranch.get(branch.id) ?? []),
-  }));
+  // Las sucursales se leen por clave (id): se muestran por nombre.
+  return [...(branches.data ?? [])]
+    .sort((a, b) => a.name.localeCompare(b.name, "es") || a.id.localeCompare(b.id))
+    .map((branch) => ({
+      ...branch,
+      tables: sortByLabel(byBranch.get(branch.id) ?? []),
+    }));
 }
 
 // ---------------------------------------------------------------------------

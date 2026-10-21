@@ -18,7 +18,10 @@
 -- Errores: 55000 order_changed · 22023 order_invalid / invalid_table · 42501 order_forbidden (nada visible para quien pide:
 -- cuenta en solo lectura o sin permiso; el servidor lo explica leyendo el estado de la cuenta).
 --
--- Rollback (la carta vuelve a escribir fila por fila; sin datos que migrar):
+-- Rollback (sin datos que migrar). ORDEN OBLIGATORIO: el código de la aplicación de esta tanda (commit bd52a08 y siguientes)
+-- llama a estas tres funciones para mover elementos y para cambiar o quitar fotos y logos; si se las retira con ese código
+-- desplegado, esas acciones fallan por función inexistente. Primero se despliega el código ANTERIOR (el commit previo a esa
+-- tanda, que escribe fila por fila y no usa las funciones) y recién después:
 --   drop function public.reorder_siblings(text, uuid, uuid, jsonb, uuid[]);
 --   drop function public.replace_product_image(uuid, uuid, text);
 --   drop function public.replace_organization_logo(uuid, text);
