@@ -440,3 +440,126 @@ export async function removeProductImage(db: Db, orgId: string, productId: strin
   if (isOwnImagePath(product.image_path, orgId, productId)) await removeObject(db, product.image_path);
   return ok(undefined);
 }
+
+// ---------------------------------------------------------------------------
+// Borrado (ficha borrado-de-categorias-y-platos)
+// ---------------------------------------------------------------------------
+
+/** Resultado de limpiar Storage tras un borrado: `filesComplete: false` = quedaron archivos sin borrar (ya registrados). */
+export type DeleteOutcome = { filesComplete: boolean };
+
+const FILES_PAGE = 100;
+const FILES_PARALLEL = 8;
+/** Filas por lectura (PostgREST corta en 1000): se pagina para no contar ni limpiar de menos. */
+const ROWS_PAGE = 1000;
+
+/**
+ * Borra los archivos de `product-images/{org}/{plato}/` de platos que YA no existen: la ruta que tenían guardada y
+ * cualquier otro archivo suelto de su carpeta. Nunca lanza; si algo falla o Storage descarta un borrado (cero objetos,
+ * sin error) lo deja en el log con la organización y el plato y devuelve `false`.
+ */
+async function removeProductFolders(db: Db, orgId: string, products: { id: string; image_path: string | null }[]): Promise<boolean> {
+  let complete = true;
+  const bucket = db.storage.from(IMAGE_BUCKET);
+  const warn = (productId: string, reason: string) => {
+    complete = false;
+    console.error(`Fotos sin borrar del plato ${productId} (organización ${orgId}) tras borrarlo: ${reason}`);
+  };
+
+  async function cleanOne(product: { id: string; image_path: string | null }) {
+    try {
+      const paths = new Set<string>();
+      if (product.image_path && isOwnImagePath(product.image_path, orgId, product.id)) paths.add(product.image_path);
+
+      for (let offset = 0; ; offset += FILES_PAGE) {
+        const { data, error } = await bucket.list(`${orgId}/${product.id}`, { limit: FILES_PAGE, offset, sortBy: { column: "name", order: "asc" } });
+        if (error) {
+          warn(product.id, `no se pudo listar la carpeta: ${error.message}`);
+          break;
+        }
+        for (const entry of data) if (entry.id) paths.add(`${orgId}/${product.id}/${entry.name}`);
+        if (data.length < FILES_PAGE) break;
+      }
+
+      const all = [...paths];
+      for (let i = 0; i < all.length; i += FILES_PAGE) {
+        const chunk = all.slice(i, i + FILES_PAGE);
+        const { data, error } = await bucket.remove(chunk);
+        if (error) warn(product.id, error.message);
+        else if (!data || data.length < chunk.length) warn(product.id, `Storage borró ${data?.length ?? 0} de ${chunk.length} objetos.`);
+      }
+    } catch (error) {
+      warn(product.id, String(error));
+    }
+  }
+
+  for (let i = 0; i < products.length; i += FILES_PARALLEL) {
+    await Promise.all(products.slice(i, i + FILES_PARALLEL).map(cleanOne));
+  }
+  return complete;
+}
+
+/** Todos los platos de una categoría (id y foto), paginados. `null` si no se pudieron leer. */
+async function productsOfCategory(db: Db, orgId: string, categoryId: string) {
+  const rows: { id: string; image_path: string | null }[] = [];
+  for (let from = 0; ; from += ROWS_PAGE) {
+    const { data, error } = await db
+      .from("products")
+      .select("id, image_path")
+      .eq("organization_id", orgId)
+      .eq("category_id", categoryId)
+      .order("id")
+      .range(from, from + ROWS_PAGE - 1);
+    if (error) return null;
+    rows.push(...data);
+    if (data.length < ROWS_PAGE) return rows;
+  }
+}
+
+/**
+ * Borra un plato y, solo después de confirmar el borrado, su foto y los archivos sueltos de su carpeta. Las variantes, los
+ * adicionales y la disponibilidad se van por cascada; el historial de precios se conserva (ADR 0012).
+ */
+export async function deleteProduct(db: Db, orgId: string, id: string): Promise<Result<DeleteOutcome>> {
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+
+  const product = await loadProduct(db, orgId, id);
+  if (!product) return fail("not_found");
+
+  const { data, error } = await db.from("products").delete().eq("id", id).eq("organization_id", orgId).select("id");
+  if (error) return fail(await writeFailure(db, orgId, error));
+  if (data.length === 0) return fail(await explainZeroRows(db, orgId, "products", id));
+
+  return ok({ filesComplete: await removeProductFolders(db, orgId, [product]) });
+}
+
+/**
+ * Borra una categoría con todos sus platos. Solo borra lo que la persona vio: `expectedProducts` es la cantidad que se le
+ * mostró (si cambió, no se borra) y, si tiene platos, `confirmName` tiene que ser el nombre exacto. Las fotos se limpian
+ * después del borrado.
+ */
+export async function deleteCategory(
+  db: Db,
+  orgId: string,
+  id: string,
+  confirmation: { expectedProducts: number; confirmName: string },
+): Promise<Result<DeleteOutcome & { products: number }>> {
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+
+  const category = await db.from("categories").select("id, name").eq("id", id).eq("organization_id", orgId).maybeSingle();
+  if (category.error) return fail("unexpected");
+  if (!category.data) return fail("not_found");
+
+  const products = await productsOfCategory(db, orgId, id);
+  if (!products) return fail("unexpected");
+  if (products.length !== confirmation.expectedProducts) return fail("category_changed");
+  if (products.length > 0 && confirmation.confirmName.trim() !== category.data.name) return fail("confirm_mismatch");
+
+  const { data, error } = await db.from("categories").delete().eq("id", id).eq("organization_id", orgId).select("id");
+  if (error) return fail(await writeFailure(db, orgId, error));
+  if (data.length === 0) return fail(await explainZeroRows(db, orgId, "categories", id));
+
+  return ok({ products: products.length, filesComplete: await removeProductFolders(db, orgId, products) });
+}

@@ -25,6 +25,8 @@ export type CartaError =
   | "blocked_suspended" // idem, cuenta suspendida
   | "forbidden" // no es miembro del local (RLS)
   | "not_found"
+  | "category_changed" // la categoría ya no tiene los platos que la persona vio al confirmar el borrado
+  | "confirm_mismatch" // el nombre escrito para confirmar el borrado no coincide
   | "image_missing"
   | "image_type"
   | "image_big"
@@ -54,6 +56,8 @@ const STATIC_MESSAGE: Record<Exclude<CartaError, "limit">, string> = {
     "La cuenta está suspendida: no se puede editar la carta hasta regularizar el pago. No se guardó ningún cambio.",
   forbidden: "No tenés permiso para editar la carta de este local.",
   not_found: "No encontramos eso en tu carta. Puede que ya no exista: recargá la página.",
+  category_changed: "La categoría cambió mientras la mirabas (se agregaron o borraron platos). No se borró nada: recargá la página y revisala.",
+  confirm_mismatch: "El nombre escrito no coincide con el de la categoría. No se borró nada.",
   image_missing: "Elegí una foto.",
   image_type: "La foto tiene que ser JPG, PNG o WebP.",
   image_big: `La foto pesa más de ${MB} MB. Probá con una más liviana.`,

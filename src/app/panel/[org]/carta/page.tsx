@@ -9,6 +9,7 @@ import { writeBlockNotice } from "@/lib/carta/messages";
 import { formatArs } from "@/lib/money";
 import { createSessionClient } from "@/lib/supabase/server";
 import { CreateCategoryForm, RenameCategoryForm } from "./category-forms";
+import { DeleteCategoryForm } from "./delete-forms";
 import { ItemControls } from "./item-controls";
 
 export const metadata: Metadata = { title: "Carta" };
@@ -17,8 +18,23 @@ const badgeClass = "inline-flex items-center rounded-full border border-ink/25 b
 const linkButtonClass =
   "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/40 px-4 py-2 text-base font-medium text-ink";
 
-export default async function CartaPage({ params }: PageProps<"/panel/[org]/carta">) {
+/** Aviso tras un borrado (la acción redirige acá): nada de nombres en la URL, solo el tipo y cuántos platos se fueron. */
+function deletionNotice(query: { borrado?: string | string[]; platos?: string | string[]; archivos?: string | string[] }): string | null {
+  const one = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
+  const kind = one(query.borrado);
+  if (kind !== "plato" && kind !== "categoria") return null;
+  const count = Number(one(query.platos));
+  let message = "Plato borrado.";
+  if (kind === "categoria") {
+    message = Number.isSafeInteger(count) && count > 0 ? `Categoría borrada, con ${count} ${count === 1 ? "plato" : "platos"}.` : "Categoría borrada.";
+  }
+  if (one(query.archivos) === "pendientes") message += " Algunas fotos no se pudieron limpiar del almacenamiento: no se ven en la carta y quedó registrado para limpiarlas.";
+  return message;
+}
+
+export default async function CartaPage({ params, searchParams }: PageProps<"/panel/[org]/carta">) {
   const { org } = await params;
+  const deleted = deletionNotice(await searchParams);
   const { membership } = await requireMembership(org, `/panel/${org}/carta`);
   const db = await createSessionClient();
 
@@ -47,6 +63,11 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
       {atLimit ? (
         <p className="mt-1 max-w-prose text-base text-muted" data-testid="aviso-tope">
           Llegaste al tope de platos activos de tu plan. Para sumar otro, desactivá uno.
+        </p>
+      ) : null}
+      {deleted ? (
+        <p role="status" className="mt-3 max-w-prose text-base font-medium" data-testid="aviso-borrado">
+          {deleted}
         </p>
       ) : null}
       {notice ? (
@@ -112,6 +133,13 @@ export default async function CartaPage({ params }: PageProps<"/panel/[org]/cart
               canWrite={canWrite}
             />
             <RenameCategoryForm orgSlug={membership.org.slug} id={category.id} name={category.name} canWrite={canWrite} />
+            <DeleteCategoryForm
+              orgSlug={membership.org.slug}
+              id={category.id}
+              name={category.name}
+              productCount={category.products.length}
+              canWrite={canWrite}
+            />
           </div>
 
           {category.products.length > 0 ? (

@@ -5,6 +5,8 @@ import {
   cartaErrorMessage,
   createCategory,
   createProduct,
+  deleteCategory,
+  deleteProduct,
   moveCategory,
   moveProduct,
   removeProductImage,
@@ -113,4 +115,36 @@ export async function removePhotoAction(_previous: FormState, formData: FormData
   const id = asUuid(formData.get("id"));
   if (!id) return NOT_FOUND;
   return outcome(slug, orgId, await removeProductImage(db, orgId, id), "Foto quitada.");
+}
+
+// --- Borrado ----------------------------------------------------------------------
+
+const pendingFiles = (complete: boolean) => (complete ? "" : "&archivos=pendientes");
+
+/** Borra un plato (con su foto). Desde su pantalla de edición: al terminar vuelve a la carta con el aviso. */
+export async function deleteProductAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  if (!id) return NOT_FOUND;
+  const result = await deleteProduct(db, orgId, id);
+  if (!result.ok) return outcome(slug, orgId, result, "");
+  refresh(slug, orgId);
+  redirect(`/panel/${slug}/carta?borrado=plato${pendingFiles(result.data.filesComplete)}`);
+}
+
+/**
+ * Borra una categoría con sus platos. Lo que la persona vio (`expected`) y el nombre escrito viajan en el formulario, pero
+ * los comprueba `deleteCategory` contra la base: el navegador no decide qué se borra.
+ */
+export async function deleteCategoryAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  const expected = Number(text(formData, "expected"));
+  if (!id) return NOT_FOUND;
+  // Una cantidad ilegible no coincide con ninguna real: se trata como «cambió» (no borra).
+  const expectedProducts = Number.isSafeInteger(expected) && expected >= 0 ? expected : -1;
+  const result = await deleteCategory(db, orgId, id, { expectedProducts, confirmName: text(formData, "confirm") });
+  if (!result.ok) return outcome(slug, orgId, result, "");
+  refresh(slug, orgId);
+  redirect(`/panel/${slug}/carta?borrado=categoria&platos=${result.data.products}${pendingFiles(result.data.filesComplete)}`);
 }

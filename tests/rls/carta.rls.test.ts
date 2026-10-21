@@ -16,6 +16,8 @@ import {
 import {
   createCategory,
   createProduct,
+  deleteCategory,
+  deleteProduct,
   loadCarta,
   loadProduct,
   moveCategory,
@@ -549,6 +551,294 @@ describe("fotos", () => {
     expect(result.ok).toBe(false);
     expect(subidas).toHaveLength(1);
     expect(await existeObjeto(subidas[0])).toBe(false);
+  });
+});
+
+describe("borrado de platos y categorías", () => {
+  /** Una carta con fotos: cada plato con su foto vigente en Storage y, opcionalmente, un archivo suelto en su carpeta. */
+  async function conFotos(slug: string, plan: "basic" | "pro" = "basic") {
+    const org = await nuevaOrg(slug, plan);
+    const crear = async (nombre: string, categoria: string, suelto = false) => {
+      const plato = await createProduct(owner.db, org, { categoryId: categoria, name: nombre, description: "", price: "1000", active: true });
+      if (!plato.ok) throw new Error("plato");
+      expect((await setProductImage(owner.db, org, plato.data.id, png())).ok).toBe(true);
+      const foto = (await service.from("products").select("image_path").eq("id", plato.data.id).single()).data!.image_path!;
+      objects.push(foto);
+      let extra: string | null = null;
+      if (suelto) {
+        extra = `${org}/${plato.data.id}/${crypto.randomUUID()}.png`;
+        const subida = await service.storage.from(IMAGE_BUCKET).upload(extra, PNG, { contentType: "image/png" });
+        expect(subida.error).toBeNull();
+        objects.push(extra);
+      }
+      return { id: plato.data.id, foto, extra };
+    };
+    const categoria = async (nombre: string) => {
+      const cat = await createCategory(owner.db, org, { name: nombre });
+      if (!cat.ok) throw new Error("categoría");
+      return cat.data.id;
+    };
+    return { org, crear, categoria };
+  }
+
+  const existe = async (table: "categories" | "products", id: string) =>
+    ((await service.from(table).select("id").eq("id", id)).data ?? []).length === 1;
+
+  it("borra un plato (Staff) con su foto, el archivo suelto de su carpeta, sus opciones; el historial queda y los demás platos no se tocan", async () => {
+    const { org, crear, categoria } = await conFotos("tt-borrar-plato");
+    const cat = await categoria("Carta");
+    const objetivo = await crear("Para borrar", cat, true);
+    const vecino = await crear("Vecino", cat);
+
+    const grupo = await service
+      .from("option_groups")
+      .insert({ organization_id: org, product_id: objetivo.id, name: "Tamaño", min_choices: 1, max_choices: 1 })
+      .select("id")
+      .single();
+    expect(grupo.error).toBeNull();
+    // Un cambio de precio deja historial.
+    expect((await updateProduct(owner.db, org, objetivo.id, { categoryId: cat, name: "Para borrar", description: "", price: "2000" })).ok).toBe(true);
+
+    expect(await deleteProduct(staff.db, org, objetivo.id)).toEqual({ ok: true, data: { filesComplete: true } });
+
+    expect(await existe("products", objetivo.id)).toBe(false);
+    expect(await existeObjeto(objetivo.foto)).toBe(false);
+    expect(await existeObjeto(objetivo.extra!)).toBe(false);
+    expect((await service.from("option_groups").select("id").eq("id", grupo.data!.id)).data).toHaveLength(0);
+    expect((await service.from("price_history").select("id").eq("product_id", objetivo.id)).data).toHaveLength(1);
+    // El vecino y su foto siguen.
+    expect(await existe("products", vecino.id)).toBe(true);
+    expect(await existeObjeto(vecino.foto)).toBe(true);
+    // Borrarlo otra vez (otra persona a la vez) no es un éxito.
+    expect(await deleteProduct(owner.db, org, objetivo.id)).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("borrar un plato activo libera cupo en el tope del plan", async () => {
+    const org = await nuevaOrg("tt-borrar-cupo");
+    const cat = await createCategory(owner.db, org, { name: "Carta" });
+    if (!cat.ok) throw new Error("categoría");
+    const semilla = await insertProducts(service, org, cat.data.id, 79);
+    expect(semilla.error).toBeNull();
+    const ultimo = await createProduct(owner.db, org, { categoryId: cat.data.id, name: "Ochenta", description: "", price: "1", active: true });
+    if (!ultimo.ok) throw new Error("plato 80");
+    expect(await createProduct(owner.db, org, { categoryId: cat.data.id, name: "Ochenta y uno", description: "", price: "1", active: true })).toEqual({ ok: false, error: "limit" });
+    expect((await deleteProduct(owner.db, org, ultimo.data.id)).ok).toBe(true);
+    expect((await createProduct(owner.db, org, { categoryId: cat.data.id, name: "Ochenta otra vez", description: "", price: "1", active: true })).ok).toBe(true);
+  });
+
+  it("borra una categoría con sus platos y todos sus archivos, sin tocar otra categoría; exige el nombre y que la cantidad coincida", async () => {
+    const { org, crear, categoria } = await conFotos("tt-borrar-categoria");
+    const aBorrar = await categoria("Postres");
+    const otra = await categoria("Bebidas");
+    const p1 = await crear("Flan", aBorrar, true);
+    const p2 = await crear("Helado", aBorrar);
+    const sinFoto = await createProduct(owner.db, org, { categoryId: aBorrar, name: "Sin foto", description: "", price: "1", active: false });
+    if (!sinFoto.ok) throw new Error("plato");
+    const ajeno = await crear("Agua", otra);
+
+    // La cantidad que se vio no coincide (alguien agregó o borró un plato): no se borra nada.
+    expect(await deleteCategory(owner.db, org, aBorrar, { expectedProducts: 2, confirmName: "Postres" })).toEqual({ ok: false, error: "category_changed" });
+    expect(await deleteCategory(owner.db, org, aBorrar, { expectedProducts: -1, confirmName: "Postres" })).toEqual({ ok: false, error: "category_changed" });
+    // El nombre no coincide (ni en minúsculas).
+    for (const nombre of ["", "postres", "Otra", "Postre"]) {
+      expect(await deleteCategory(owner.db, org, aBorrar, { expectedProducts: 3, confirmName: nombre })).toEqual({ ok: false, error: "confirm_mismatch" });
+    }
+    expect(await existe("categories", aBorrar)).toBe(true);
+    for (const p of [p1, p2]) {
+      expect(await existe("products", p.id)).toBe(true);
+      expect(await existeObjeto(p.foto)).toBe(true);
+    }
+
+    // Con la cantidad y el nombre (con espacios sobrantes) se borra todo.
+    expect(await deleteCategory(staff.db, org, aBorrar, { expectedProducts: 3, confirmName: "  Postres " })).toEqual({
+      ok: true,
+      data: { products: 3, filesComplete: true },
+    });
+    expect(await existe("categories", aBorrar)).toBe(false);
+    for (const id of [p1.id, p2.id, sinFoto.data.id]) expect(await existe("products", id)).toBe(false);
+    for (const path of [p1.foto, p1.extra!, p2.foto]) expect(await existeObjeto(path)).toBe(false);
+    // La otra categoría y su foto siguen.
+    expect(await existe("categories", otra)).toBe(true);
+    expect(await existe("products", ajeno.id)).toBe(true);
+    expect(await existeObjeto(ajeno.foto)).toBe(true);
+    // Una categoría ya borrada no es un éxito.
+    expect(await deleteCategory(owner.db, org, aBorrar, { expectedProducts: 0, confirmName: "" })).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("una categoría vacía se borra sin escribir el nombre, pero solo si de verdad está vacía", async () => {
+    const { org, crear, categoria } = await conFotos("tt-borrar-vacia");
+    const vacia = await categoria("Vacía");
+    const conPlato = await categoria("Con plato");
+    await crear("Uno", conPlato);
+
+    expect(await deleteCategory(owner.db, org, conPlato, { expectedProducts: 0, confirmName: "" })).toEqual({ ok: false, error: "category_changed" });
+    expect(await deleteCategory(owner.db, org, vacia, { expectedProducts: 0, confirmName: "" })).toEqual({
+      ok: true,
+      data: { products: 0, filesComplete: true },
+    });
+    expect(await existe("categories", vacia)).toBe(false);
+    expect(await existe("categories", conPlato)).toBe(true);
+  });
+
+  it("un id de otra organización, o de una persona ajena, no se borra ni se le tocan los archivos", async () => {
+    const a = await conFotos("tt-borrar-aislada-a");
+    const b = await conFotos("tt-borrar-aislada-b");
+    const catB = await b.categoria("De B");
+    const platoB = await b.crear("Plato de B", catB);
+
+    // Dueño de A pidiendo, en A, ids de B.
+    expect(await deleteProduct(owner.db, a.org, platoB.id)).toEqual({ ok: false, error: "not_found" });
+    expect(await deleteCategory(owner.db, a.org, catB, { expectedProducts: 1, confirmName: "De B" })).toEqual({ ok: false, error: "not_found" });
+    // Una persona sin membresía en B pidiendo en B.
+    expect((await deleteProduct(stranger.db, b.org, platoB.id)).ok).toBe(false);
+    expect((await deleteCategory(stranger.db, b.org, catB, { expectedProducts: 1, confirmName: "De B" })).ok).toBe(false);
+
+    expect(await existe("products", platoB.id)).toBe(true);
+    expect(await existe("categories", catB)).toBe(true);
+    expect(await existeObjeto(platoB.foto)).toBe(true);
+  });
+
+  it.each([
+    ["solo lectura", 10, "blocked_read_only"],
+    ["suspendida", 20, "blocked_suspended"],
+  ] as const)("con la cuenta %s no se borra nada ni se toca Storage (Dueño y Staff), tampoco con el estado desactualizado", async (_nombre, dias, bloqueo) => {
+    const { org, crear, categoria } = await conFotos(`tt-borrar-mora-${bloqueo.slice(8, 12)}`);
+    const cat = await categoria("Carta");
+    const p = await crear("Plato", cat);
+    await setSubscription(service, org, { finEnMs: -dias * DIA_MS });
+
+    for (const db of [owner.db, staff.db]) {
+      expect(await deleteProduct(db, org, p.id)).toEqual({ ok: false, error: bloqueo });
+      expect(await deleteCategory(db, org, cat, { expectedProducts: 1, confirmName: "Carta" })).toEqual({ ok: false, error: bloqueo });
+    }
+
+    // Comprobación desactualizada: la primera lectura del estado dice que se puede escribir. La base descarta el DELETE.
+    const rezagado = (db: Db): Db => {
+      let primera = true;
+      return new Proxy(db, {
+        get(target, prop, receiver) {
+          if (prop === "rpc") {
+            return async (fn: string, args: { p_org: string }) => {
+              const real = await target.rpc("org_entitlements", args);
+              if (fn === "org_entitlements" && primera) {
+                primera = false;
+                return { ...real, data: { ...(real.data as object), can_write: true, state: "active" } };
+              }
+              return real;
+            };
+          }
+          return Reflect.get(target, prop, receiver);
+        },
+      });
+    };
+    expect(await deleteProduct(rezagado(owner.db), org, p.id)).toEqual({ ok: false, error: bloqueo });
+    expect(await deleteCategory(rezagado(staff.db), org, cat, { expectedProducts: 1, confirmName: "Carta" })).toEqual({ ok: false, error: bloqueo });
+
+    expect(await existe("products", p.id)).toBe(true);
+    expect(await existe("categories", cat)).toBe(true);
+    expect(await existeObjeto(p.foto)).toBe(true);
+  });
+
+  it("en gracia se borra con normalidad", async () => {
+    const { org, crear, categoria } = await conFotos("tt-borrar-gracia");
+    const cat = await categoria("Carta");
+    const p = await crear("Plato", cat);
+    await setSubscription(service, org, { finEnMs: -3 * DIA_MS });
+    expect((await deleteProduct(staff.db, org, p.id)).ok).toBe(true);
+    expect(await existeObjeto(p.foto)).toBe(false);
+  });
+
+  it("si Storage no borra (cero objetos, error o no lista), la fila ya se borró, se avisa con filesComplete=false y queda en el log", async () => {
+    const { org, crear, categoria } = await conFotos("tt-borrar-storage");
+    const cat = await categoria("Carta");
+
+    // Un Db cuyo Storage se comporta distinto según el caso; las tablas son las reales.
+    const conStorage = (comportamiento: { remove?: () => Promise<unknown>; list?: () => Promise<unknown> }): Db =>
+      new Proxy(owner.db, {
+        get(target, prop, receiver) {
+          if (prop === "storage") {
+            return {
+              ...target.storage,
+              from: (bucket: string) => {
+                const real = target.storage.from(bucket);
+                return {
+                  list: comportamiento.list ?? real.list.bind(real),
+                  remove: comportamiento.remove ?? real.remove.bind(real),
+                  upload: real.upload.bind(real),
+                };
+              },
+            };
+          }
+          return Reflect.get(target, prop, receiver);
+        },
+      });
+
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const cero = await crear("Cero", cat);
+      expect(await deleteProduct(conStorage({ remove: async () => ({ data: [], error: null }) }), org, cero.id)).toEqual({
+        ok: true,
+        data: { filesComplete: false },
+      });
+      expect(await existe("products", cero.id)).toBe(false);
+      expect(log).toHaveBeenCalledWith(expect.stringContaining(cero.id));
+      expect(log).toHaveBeenCalledWith(expect.stringContaining(org));
+
+      const conError = await crear("Con error", cat);
+      expect(await deleteProduct(conStorage({ remove: async () => ({ data: null, error: { message: "caído" } }) }), org, conError.id)).toEqual({
+        ok: true,
+        data: { filesComplete: false },
+      });
+
+      // Si no se puede listar la carpeta, igual se intenta borrar la ruta guardada.
+      const sinListar = await crear("Sin listar", cat);
+      const resultado = await deleteProduct(conStorage({ list: async () => ({ data: null, error: { message: "no lista" } }) }), org, sinListar.id);
+      expect(resultado).toEqual({ ok: true, data: { filesComplete: false } });
+      expect(await existeObjeto(sinListar.foto)).toBe(false);
+
+      // Categoría: lo mismo, con el conteo de platos informado.
+      const cat2 = await categoria("Otra");
+      await crear("Uno", cat2);
+      await crear("Dos", cat2);
+      expect(
+        await deleteCategory(conStorage({ remove: async () => ({ data: [], error: null }) }), org, cat2, { expectedProducts: 2, confirmName: "Otra" }),
+      ).toEqual({ ok: true, data: { products: 2, filesComplete: false } });
+      expect(await existe("categories", cat2)).toBe(false);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it("si el borrado de la fila no se concreta, Storage no se toca (los archivos solo se limpian después de confirmar)", async () => {
+    const { org, crear, categoria } = await conFotos("tt-borrar-orden");
+    const cat = await categoria("Carta");
+    const p = await crear("Plato", cat);
+
+    let storageTocado = false;
+    const db: Db = new Proxy(owner.db, {
+      get(target, prop, receiver) {
+        if (prop === "storage") storageTocado = true;
+        if (prop === "from") {
+          return (table: string) => {
+            const builder = target.from(table as "products");
+            if (table !== "products") return builder;
+            return new Proxy(builder, {
+              get(t, name, r) {
+                // El DELETE de products no encuentra la fila (como si RLS la descartara): 0 filas, sin error.
+                if (name === "delete") return () => t.delete().eq("id", "00000000-0000-0000-0000-000000000000");
+                return Reflect.get(t, name, r);
+              },
+            });
+          };
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+    const resultado = await deleteProduct(db, org, p.id);
+    expect(resultado.ok).toBe(false);
+    expect(storageTocado).toBe(false);
+    expect(await existe("products", p.id)).toBe(true);
+    expect(await existeObjeto(p.foto)).toBe(true);
   });
 });
 

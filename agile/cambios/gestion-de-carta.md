@@ -54,7 +54,7 @@ Que el Dueño y el Staff mantengan la carta desde el panel sin tocar la base: cr
 
 ## Alcance / fuera de alcance
 - Incluye: migración (`products.image_path` con su `check`, bucket `product-images` y políticas de `storage.objects`, permisos por columna); `db:start` con Storage; `next.config.ts` (límite del cuerpo); módulo `src/lib/carta` (validación, precio, orden, traducción de errores, firmas de imagen, subida) con pruebas unitarias; páginas y acciones de `/panel/{slug}/carta`; componente de reducción de fotos; foto en la carta pública; pruebas de base, E2E y mutaciones; actualización de `docs/producto.md`/`arquitectura.md` si cambian, ADR si la decisión de Storage lo amerita; tablero y handoff.
-- No incluye: **borrado** de categorías y platos; variantes y adicionales; etiquetas dietarias; disponibilidad por sucursal ni «agotado»; historial de precios; arrastrar y soltar; edición en lote o importación; optimización/caché de imágenes y medición de rendimiento; recorte o editor de fotos; modelos 3D; diseño gastronómico definitivo; múltiples fotos por plato.
+- No incluye: **borrado** de categorías y platos (hecho después: [borrado de categorías y platos](borrado-de-categorias-y-platos.md)); variantes y adicionales; etiquetas dietarias; disponibilidad por sucursal ni «agotado»; historial de precios; arrastrar y soltar; edición en lote o importación; optimización/caché de imágenes y medición de rendimiento; recorte o editor de fotos; modelos 3D; diseño gastronómico definitivo; múltiples fotos por plato.
 
 ## Dependencias y riesgos
 - **Dinero:** el precio es dato sensible de negocio y el Staff lo cambia sin historial hasta que exista `price_history` (decisión ya registrada en `producto.md`: ítem S siguiente). Riesgo aceptado y declarado.

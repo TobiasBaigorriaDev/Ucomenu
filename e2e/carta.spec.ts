@@ -555,3 +555,148 @@ test.describe("aislamiento entre locales y acceso", () => {
     expect(propio.data?.is_active).toBe(true);
   });
 });
+
+test.describe("borrado de platos y categorías", () => {
+  const archivosDe = async (t: Tenant, platoId: string) =>
+    (await service().storage.from("product-images").list(`${t.orgId}/${platoId}`)).data ?? [];
+
+  async function subirFoto(page: Page, t: Tenant, platoId: string) {
+    await page.goto(`/panel/${t.slug}/carta/platos/${platoId}`);
+    await page.getByLabel("Elegir una foto").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: FOTO_PNG });
+    await page.getByRole("button", { name: "Guardar foto" }).click();
+    await expect(estado(page)).toHaveText("Foto guardada.");
+  }
+
+  test("borra un plato en dos pasos desde su pantalla: desaparece de la carta, de la pública y de Storage", async ({ page }) => {
+    const t = await nuevoLocal("carta-borrar-plato");
+    const ids = await sembrar(t, [{ nombre: "Platos", platos: [{ nombre: "Milanesa" }, { nombre: "Ravioles" }] }]);
+    await ingresar(page, t.owner, t);
+    await subirFoto(page, t, ids.Milanesa);
+    expect(await archivosDe(t, ids.Milanesa)).toHaveLength(1);
+
+    await page.goto(`/panel/${t.slug}/carta/platos/${ids.Milanesa}`);
+    await expectNoHorizontalOverflow(page);
+    // Primer paso: solo explica; nada se borra todavía.
+    await page.locator("summary", { hasText: "Borrar plato" }).click();
+    await expect(page.getByText("No se puede deshacer.")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    expect((await service().from("products").select("id").eq("id", ids.Milanesa)).data).toHaveLength(1);
+
+    // Segundo paso.
+    await page.getByRole("button", { name: "Sí, borrar el plato definitivamente" }).click();
+    await expect(page).toHaveURL(new RegExp(`/panel/${t.slug}/carta\\?borrado=plato`));
+    await expect(page.getByTestId("aviso-borrado")).toHaveText("Plato borrado.");
+    await expect(plato(page, "Milanesa")).toHaveCount(0);
+    await expect(plato(page, "Ravioles")).toBeVisible();
+
+    expect((await service().from("products").select("id").eq("id", ids.Milanesa)).data).toHaveLength(0);
+    expect(await archivosDe(t, ids.Milanesa)).toHaveLength(0);
+    expect(await nombresPublicos(page, t)).not.toContain("Milanesa");
+    // La pantalla del plato borrado ya no existe.
+    expect((await page.goto(`/panel/${t.slug}/carta/platos/${ids.Milanesa}`))?.status()).toBe(404);
+  });
+
+  test("borra una categoría con platos: exige escribir el nombre, y borra platos y fotos de esa categoría solamente", async ({ page }) => {
+    const t = await nuevoLocal("carta-borrar-cat");
+    const ids = await sembrar(t, [
+      { nombre: "Postres", platos: [{ nombre: "Flan" }, { nombre: "Helado", activo: false }] },
+      { nombre: "Bebidas", platos: [{ nombre: "Agua" }] },
+    ]);
+    await ingresar(page, t.owner, t);
+    await subirFoto(page, t, ids.Flan);
+    await subirFoto(page, t, ids.Agua);
+
+    await page.goto(`/panel/${t.slug}/carta`);
+    const postres = categoria(page, "Postres");
+    await postres.locator("summary", { hasText: "Borrar categoría" }).click();
+    await expect(postres.getByText("2 platos")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    // Con un nombre equivocado, el servidor no borra.
+    await postres.getByLabel(/Para confirmar, escribí/).fill("postres");
+    await postres.getByRole("button", { name: "Sí, borrar la categoría definitivamente" }).click();
+    await expect(postres.getByRole("alert")).toContainText("no coincide");
+    expect((await service().from("categories").select("id").eq("id", ids.Postres)).data).toHaveLength(1);
+    expect(await archivosDe(t, ids.Flan)).toHaveLength(1);
+
+    await postres.getByLabel(/Para confirmar, escribí/).fill("Postres");
+    await postres.getByRole("button", { name: "Sí, borrar la categoría definitivamente" }).click();
+    await expect(page).toHaveURL(new RegExp(`/panel/${t.slug}/carta\\?borrado=categoria&platos=2`));
+    await expect(page.getByTestId("aviso-borrado")).toHaveText("Categoría borrada, con 2 platos.");
+    expect(await nombresDeCategorias(page)).toEqual(["Bebidas"]);
+
+    expect((await service().from("categories").select("id").eq("id", ids.Postres)).data).toHaveLength(0);
+    expect((await service().from("products").select("id").in("id", [ids.Flan, ids.Helado])).data).toHaveLength(0);
+    expect(await archivosDe(t, ids.Flan)).toHaveLength(0);
+    // La otra categoría conserva su plato y su foto.
+    expect(await archivosDe(t, ids.Agua)).toHaveLength(1);
+    expect(await nombresPublicos(page, t)).not.toContain("Postres");
+  });
+
+  test("una categoría vacía se borra sin escribir el nombre; si cambió mientras tanto, no se borra nada", async ({ page }) => {
+    const t = await nuevoLocal("carta-borrar-vacia");
+    const ids = await sembrar(t, [
+      { nombre: "Vacía", platos: [] },
+      { nombre: "Cambia", platos: [{ nombre: "Uno" }] },
+    ]);
+    await ingresar(page, t.owner, t);
+
+    const vacia = categoria(page, "Vacía");
+    await vacia.locator("summary", { hasText: "Borrar categoría" }).click();
+    await expect(vacia.getByLabel(/Para confirmar, escribí/)).toHaveCount(0);
+    await vacia.getByRole("button", { name: "Sí, borrar la categoría definitivamente" }).click();
+    await expect(page.getByTestId("aviso-borrado")).toHaveText("Categoría borrada.");
+
+    // «Cambia» se mostró con 1 plato; otra persona le agrega uno antes de confirmar.
+    const cambia = categoria(page, "Cambia");
+    await cambia.locator("summary", { hasText: "Borrar categoría" }).click();
+    await cambia.getByLabel(/Para confirmar, escribí/).fill("Cambia");
+    const nuevo = await service().from("products").insert({ organization_id: t.orgId, category_id: ids.Cambia, name: "Dos", price_cents: 1000, sort_order: 5 });
+    expect(nuevo.error).toBeNull();
+    await cambia.getByRole("button", { name: "Sí, borrar la categoría definitivamente" }).click();
+    await expect(cambia.getByRole("alert")).toContainText("cambió");
+    expect((await service().from("categories").select("id").eq("id", ids.Cambia)).data).toHaveLength(1);
+    expect((await service().from("products").select("id").eq("category_id", ids.Cambia)).data).toHaveLength(2);
+  });
+
+  test("el Staff también borra", async ({ page }) => {
+    const staffLocal = await nuevoLocal("carta-borrar-staff");
+    const idsStaff = await sembrar(staffLocal, [{ nombre: "Platos", platos: [{ nombre: "Milanesa" }] }]);
+    await ingresar(page, staffLocal.staff, staffLocal, `/carta/platos/${idsStaff.Milanesa}`);
+    await page.locator("summary", { hasText: "Borrar plato" }).click();
+    await page.getByRole("button", { name: "Sí, borrar el plato definitivamente" }).click();
+    await expect(page.getByTestId("aviso-borrado")).toHaveText("Plato borrado.");
+    expect((await service().from("products").select("id").eq("id", idsStaff.Milanesa)).data).toHaveLength(0);
+  });
+
+  for (const rol of ["owner", "staff"] as const) {
+    test(`en solo lectura (${rol}) el borrado está deshabilitado y una acción forzada no borra ni dice que borró`, async ({ page }) => {
+      const t = await nuevoLocal(`carta-borrar-ro-${rol}`, "read_only");
+      const ids = await sembrar(t, [{ nombre: "Platos", platos: [{ nombre: "Milanesa" }] }]);
+      await ingresar(page, t[rol], t);
+
+      const cat = categoria(page, "Platos");
+      await cat.locator("summary", { hasText: "Borrar categoría" }).click();
+      await expect(cat.getByRole("button", { name: "Sí, borrar la categoría definitivamente" })).toBeDisabled();
+
+      // Forzado: se habilita el bloque a mano y se confirma con el nombre.
+      await cat.locator("fieldset").filter({ has: page.getByRole("button", { name: "Sí, borrar la categoría definitivamente" }) })
+        .evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
+      await cat.getByLabel(/Para confirmar, escribí/).fill("Platos");
+      await cat.getByRole("button", { name: "Sí, borrar la categoría definitivamente" }).click();
+      await expect(cat.getByRole("alert")).toContainText("solo lectura");
+      await expect(cat.getByRole("status")).toHaveCount(0);
+
+      await page.goto(`/panel/${t.slug}/carta/platos/${ids.Milanesa}`);
+      await page.locator("summary", { hasText: "Borrar plato" }).click();
+      await expect(page.getByRole("button", { name: "Sí, borrar el plato definitivamente" })).toBeDisabled();
+      await page.locator("form").filter({ has: page.getByRole("button", { name: "Sí, borrar el plato definitivamente" }) })
+        .locator("fieldset").first().evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
+      await page.getByRole("button", { name: "Sí, borrar el plato definitivamente" }).click();
+      await expect(alerta(page)).toContainText("solo lectura");
+
+      expect((await service().from("products").select("id").eq("id", ids.Milanesa)).data).toHaveLength(1);
+      expect((await service().from("categories").select("id").eq("id", ids.Platos)).data).toHaveLength(1);
+    });
+  }
+});

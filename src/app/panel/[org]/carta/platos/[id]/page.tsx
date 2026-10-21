@@ -10,6 +10,7 @@ import { writeBlockNotice } from "@/lib/carta/messages";
 import { priceToInput } from "@/lib/carta/price";
 import { asUuid } from "@/lib/carta/validation";
 import { createSessionClient } from "@/lib/supabase/server";
+import { DeleteProductForm } from "../../delete-forms";
 import { PhotoForm } from "../../photo-form";
 import { ProductForm } from "../../product-form";
 import { OpcionesSection } from "./opciones-section";
@@ -89,6 +90,15 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} />
 
       <AvailabilityForms orgSlug={membership.org.slug} productId={product.id} branches={availability} canWrite={canWrite} />
+
+      <section aria-labelledby="borrar" className="panel-cell mt-6">
+        <h2 id="borrar" className="font-display text-2xl">
+          Borrar
+        </h2>
+        <div className="mt-3">
+          <DeleteProductForm orgSlug={membership.org.slug} id={product.id} name={product.name} canWrite={canWrite} />
+        </div>
+      </section>
 
       <p className="mt-12">
         <Link
