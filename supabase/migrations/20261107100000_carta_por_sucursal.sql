@@ -25,11 +25,18 @@
 --   drop trigger product_availability_record_price_update on public.product_availability;
 --   drop function private.record_branch_price_change();
 --   alter table public.product_availability drop column price_cents, drop column is_visible;
---   -- price_history.branch_id: si hay filas con branch_id, CONSERVAR la columna (es historial de auditoría); si no:
---   --   alter table public.price_history drop column branch_id;
--- LIMITACIÓN DEL ROLLBACK: el código anterior lee `price_history` sin conocer `branch_id`, así que las filas de una sucursal se
--- mostrarían mezcladas con las del precio general (sin decir de qué sucursal son). Los datos no se pierden; para leerlos bien hay
--- que volver al código nuevo o consultar la columna `branch_id` directamente.
+--   -- price_history.branch_id: el código anterior no la conoce y mostraría las filas de una sucursal como cambios del precio
+--   -- general. Para que el historial viejo siga siendo correcto, se ARCHIVAN esas filas (no se pierden) y se retiran, como dueño de
+--   -- la tabla y en una sola transacción (apagar el trigger de solo-agregado es transaccional, igual que la purga del ADR 0026):
+--   begin;
+--   create table public.price_history_branch_archive as select * from public.price_history where branch_id is not null;
+--   alter table public.price_history_branch_archive enable row level security; -- sin políticas ni permisos: solo el dueño de la base
+--   revoke all on public.price_history_branch_archive from anon, authenticated;
+--   alter table public.price_history disable trigger price_history_no_update_delete;
+--   delete from public.price_history where branch_id is not null;
+--   alter table public.price_history enable trigger price_history_no_update_delete;
+--   alter table public.price_history drop column branch_id;
+--   commit;
 
 alter table public.product_availability
   add column is_visible boolean not null default true,

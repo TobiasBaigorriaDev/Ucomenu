@@ -1,5 +1,5 @@
 # Cambio: Carta central con precio, disponibilidad y visibilidad por sucursal (nivel 2a)
-Estado: **implementado y probado en local; revisión de Codex en curso (ronda 1 corregida); falta la aprobación humana** (nada subido, staging sin la migración)
+Estado: **implementado y probado en local; revisión de Codex en curso (rondas 1 y 2 corregidas, ronda 3 pendiente); falta la aprobación humana** (nada subido, staging sin la migración)
 Nivel: C (precios y publicación de la carta; nuevas escrituras y una RPC con `EXECUTE` para `authenticated`; el historial de precios es un registro de auditoría de solo-agregado). No cambia permisos, planes ni cupos. [ADR 0035](../../docs/decisiones/0035-carta-central-con-ajustes-por-sucursal.md).
 
 ## Objetivo
@@ -41,7 +41,7 @@ La organización conserva **un solo catálogo** (categorías y orden, identidad,
 | Alta del plato con cupo agotado o sucursal inválida | Sin plato ni ajustes (transacción única). |
 | Dos personas cambian lo mismo a la vez | Gana el último estado deseado; el historial registra cada cambio efectivo. |
 | Se desactiva una sucursal | Sus ajustes se conservan para cuando se reactive. |
-| Migración mal aplicada | Rollback en la cabecera de la migración (retirar la RPC, el trigger y las columnas nuevas). Limitación: tras volver al código anterior, las filas del historial con `branch_id` se verían mezcladas con las del precio general (los datos no se pierden). |
+| Migración mal aplicada | Rollback en la cabecera de la migración (retirar la RPC, el trigger y las columnas nuevas). El rollback archiva las filas del historial con `branch_id` en `price_history_branch_archive` y las retira (transacción única, como dueño de la tabla), para que el código anterior no las muestre como cambios del precio general; probado en local con datos de prueba (2 filas → 1 + 1 archivada, trigger de solo-agregado vuelto a habilitar). |
 | El alta no puede leer las sucursales | No se crea el plato (mensaje de error): nunca se publica en todas contra lo que se eligió. |
 | Se desactiva una sucursal y queda una sola activa con ajustes | La pantalla del plato mantiene los controles mientras haya ajustes, para poder deshacerlos; sin ajustes vuelve a la de siempre. |
 
@@ -61,4 +61,5 @@ Commit probado: `2c9c465` (ronda 1) y el commit de correcciones que le sigue. To
 Ronda 1 sobre `2c9c465`: RECHAZAR con 3 hallazgos «importantes», los tres confirmados:
 1. El alta ignoraba un error al leer las sucursales y publicaba el plato en todas → ahora `loadBranchesToHide` devuelve `null` y no se crea nada.
 2. Con una sola sucursal activa quedaban inaccesibles los ajustes existentes → los controles se muestran mientras haya ajustes y el listado los marca; con prueba E2E.
-3. El rollback deja el historial por sucursal mal rotulado para el código anterior → limitación documentada en la migración y en esta ficha (no se cambió el diseño: solo afecta a un retroceso).
+3. El rollback dejaba el historial por sucursal mal rotulado para el código anterior → la ronda 2 rechazó la sola documentación. Ahora el procedimiento de la cabecera de la migración archiva esas filas y las retira antes de quitar la columna (probado en local).
+Ronda 2 (verificación) sobre `789133a`: los hallazgos 1 y 2 corregidos, sin regresiones nuevas; el 3 seguía abierto (corregido en el commit siguiente).
