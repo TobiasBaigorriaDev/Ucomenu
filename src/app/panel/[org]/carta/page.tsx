@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { toneFor } from "@/components/menu/tones";
-import { loadSettingsSummary, type SettingsSummary } from "@/lib/carta/availability";
+import { describeSettings, loadSettingsSummary, type SettingsSummary } from "@/lib/carta/availability";
 import { loadCarta } from "@/lib/carta/catalog";
 import { imageUrl } from "@/lib/carta/images";
 import { writeBlockNotice } from "@/lib/carta/messages";
@@ -31,17 +31,6 @@ function deletionNotice(query: { borrado?: string | string[]; platos?: string | 
   }
   if (one(query.archivos) === "pendientes") message += " Algunas fotos no se pudieron limpiar del almacenamiento: no se ven en la carta y quedó registrado para limpiarlas.";
   return message;
-}
-
-/** «Oculto en 1 sucursal», «Precio propio en 2», «Agotado en 1»: lo que hace distinto a un plato en alguna sucursal. */
-function settingsLabels(summary: SettingsSummary | undefined): string[] {
-  if (!summary) return [];
-  const branches = (n: number) => `${n} ${n === 1 ? "sucursal" : "sucursales"}`;
-  return [
-    ...(summary.hidden > 0 ? [`Oculto en ${branches(summary.hidden)}`] : []),
-    ...(summary.priced > 0 ? [`Precio propio en ${branches(summary.priced)}`] : []),
-    ...(summary.soldOut > 0 ? [`Agotado en ${branches(summary.soldOut)}`] : []),
-  ];
 }
 
 export default async function CartaPage({ params, searchParams }: PageProps<"/panel/[org]/carta">) {
@@ -190,7 +179,7 @@ export default async function CartaPage({ params, searchParams }: PageProps<"/pa
                           <span className="shrink-0 tabular-nums">{formatArs(product.price_cents)}</span>
                         </div>
                         {product.is_active ? null : <span className={`${badgeClass} mt-1`}>Inactivo</span>}
-                        {settingsLabels(settings.get(product.id)).map((label) => (
+                        {describeSettings(settings.get(product.id)).map((label) => (
                           <span key={label} className={`${badgeClass} mt-1 mr-1`} data-testid="ajuste-sucursal">
                             {label}
                           </span>

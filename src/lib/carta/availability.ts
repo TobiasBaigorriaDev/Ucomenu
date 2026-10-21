@@ -102,19 +102,32 @@ export async function loadBranchesToHide(db: Db, orgId: string, shown: ReadonlyS
 // Resumen para el listado del panel
 // ---------------------------------------------------------------------------
 
-export type SettingsSummary = { hidden: number; priced: number; soldOut: number };
+/** Nombres de las sucursales activas donde el plato está oculto, tiene precio propio o está agotado (orden alfabético). */
+export type SettingsSummary = { hidden: string[]; priced: string[]; soldOut: string[] };
+
+const listFormat = new Intl.ListFormat("es-AR", { style: "long", type: "conjunction" });
+
+/** «Oculto en Norte», «Precio propio en Centro y Norte», «Agotado en Centro, Norte y Sur»: una etiqueta por ajuste que exista. */
+export function describeSettings(summary: SettingsSummary | undefined): string[] {
+  if (!summary) return [];
+  return [
+    ...(summary.hidden.length ? [`Oculto en ${listFormat.format(summary.hidden)}`] : []),
+    ...(summary.priced.length ? [`Precio propio en ${listFormat.format(summary.priced)}`] : []),
+    ...(summary.soldOut.length ? [`Agotado en ${listFormat.format(summary.soldOut)}`] : []),
+  ];
+}
 
 /**
- * Cuántas sucursales ACTIVAS tienen cada ajuste, por plato (solo los que tienen alguno). Por clave compuesta
+ * En qué sucursales ACTIVAS (por nombre) tiene cada plato cada ajuste, por plato (solo los que tienen alguno). Por clave compuesta
  * (`product_id`, `branch_id`): una fila nunca se salta ni se repite si algo cambia mientras se lee.
  */
 export async function loadSettingsSummary(db: Db, orgId: string): Promise<Map<string, SettingsSummary>> {
-  const rows: { product_id: string; branch_id: string; is_available: boolean; is_visible: boolean; price_cents: number | null }[] = [];
+  const rows: { product_id: string; branch_id: string; is_available: boolean; is_visible: boolean; price_cents: number | null; branches: { name: string } | null }[] = [];
   let after: { product_id: string; branch_id: string } | null = null;
   for (;;) {
     let query = db
       .from("product_availability")
-      .select("product_id, branch_id, is_available, is_visible, price_cents, branches!inner(is_active)")
+      .select("product_id, branch_id, is_available, is_visible, price_cents, branches!inner(is_active, name)")
       .eq("organization_id", orgId)
       .eq("branches.is_active", true)
       .or("is_available.eq.false,is_visible.eq.false,price_cents.not.is.null");
@@ -132,11 +145,18 @@ export async function loadSettingsSummary(db: Db, orgId: string): Promise<Map<st
   }
   const summary = new Map<string, SettingsSummary>();
   for (const row of rows) {
-    const entry = summary.get(row.product_id) ?? { hidden: 0, priced: 0, soldOut: 0 };
-    if (!row.is_visible) entry.hidden += 1;
-    if (row.price_cents !== null) entry.priced += 1;
-    if (!row.is_available) entry.soldOut += 1;
+    const entry = summary.get(row.product_id) ?? { hidden: [], priced: [], soldOut: [] };
+    const name = row.branches?.name ?? "Otra sucursal";
+    if (!row.is_visible) entry.hidden.push(name);
+    if (row.price_cents !== null) entry.priced.push(name);
+    if (!row.is_available) entry.soldOut.push(name);
     summary.set(row.product_id, entry);
+  }
+  const byName = (a: string, b: string) => a.localeCompare(b, "es-AR", { numeric: true });
+  for (const entry of summary.values()) {
+    entry.hidden.sort(byName);
+    entry.priced.sort(byName);
+    entry.soldOut.sort(byName);
   }
   return summary;
 }

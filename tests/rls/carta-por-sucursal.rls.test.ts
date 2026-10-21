@@ -214,9 +214,9 @@ describe("ajustes por sucursal: valores por defecto y aislamiento", () => {
     await setProductVisibility(owner.db, l.id, l.product, l.norte, false);
     await setProductAvailability(owner.db, l.id, l.product, l.norte, false);
 
-    expect((await loadSettingsSummary(owner.db, l.id)).get(l.product)).toEqual({ hidden: 1, priced: 1, soldOut: 1 });
+    expect((await loadSettingsSummary(owner.db, l.id)).get(l.product)).toEqual({ hidden: ["Norte"], priced: ["Centro"], soldOut: ["Norte"] });
     await service.from("branches").update({ is_active: false }).eq("id", l.norte);
-    expect((await loadSettingsSummary(owner.db, l.id)).get(l.product)).toEqual({ hidden: 0, priced: 1, soldOut: 0 });
+    expect((await loadSettingsSummary(owner.db, l.id)).get(l.product)).toEqual({ hidden: [], priced: ["Centro"], soldOut: [] });
   });
 });
 

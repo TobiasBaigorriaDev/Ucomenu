@@ -116,8 +116,8 @@ test("precio propio, oculto y agotado de una sucursal se ven en su carta y no en
 
   // El listado del panel avisa qué tiene cada plato.
   await page.goto(`/panel/${e.t.slug}/carta`);
-  await expect(page.getByText("Oculto en 1 sucursal").first()).toBeVisible();
-  await expect(page.getByText("Precio propio en 1 sucursal")).toBeVisible();
+  await expect(page.getByText("Oculto en Norte").first()).toBeVisible();
+  await expect(page.getByText("Precio propio en Norte")).toBeVisible();
   await expectNoHorizontalOverflow(page);
   await page.screenshot({ path: testInfo.outputPath("carta-listado-ajustes.png"), fullPage: true });
 
@@ -193,7 +193,7 @@ test("al quedar una sola sucursal activa, los ajustes que ya tenía un plato sig
   await login(page, e.t.owner.email, e.t.owner.password);
 
   await page.goto(`/panel/${e.t.slug}/carta`);
-  await expect(page.getByText("Oculto en 1 sucursal")).toBeVisible();
+  await expect(page.getByText("Oculto en Centro")).toBeVisible();
   await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
   const centro = fila(page, e.centro);
   await expect(centro.getByTestId("estado-sucursal")).toContainText("Oculto");

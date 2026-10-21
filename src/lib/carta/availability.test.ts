@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { applyBranchSettings, loadBranchesToHide, loadBranchSettings, type BranchProductSetting } from "./availability";
+import { applyBranchSettings, describeSettings, loadBranchesToHide, loadBranchSettings, type BranchProductSetting } from "./availability";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -68,6 +68,20 @@ describe("loadBranchesToHide (alta de un plato)", () => {
   it("si no se pueden leer las sucursales devuelve null: el alta no debe publicar el plato en todas", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({ message: "no" }, { status: 500 })));
     expect(await loadBranchesToHide(cliente(), "org", new Set(["a"]))).toBeNull();
+  });
+});
+
+describe("describeSettings (etiquetas del listado)", () => {
+  it("nombra las sucursales de cada ajuste, en singular y en lista", () => {
+    expect(describeSettings({ hidden: ["Norte"], priced: ["Centro", "Norte"], soldOut: ["Centro", "Norte", "Sur"] })).toEqual([
+      "Oculto en Norte",
+      "Precio propio en Centro y Norte",
+      "Agotado en Centro, Norte y Sur",
+    ]);
+  });
+  it("sin ajustes no hay etiquetas", () => {
+    expect(describeSettings(undefined)).toEqual([]);
+    expect(describeSettings({ hidden: [], priced: [], soldOut: [] })).toEqual([]);
   });
 });
 
