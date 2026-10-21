@@ -31,6 +31,8 @@ export type CartaError =
   | "image_type"
   | "image_big"
   | "image_failed" // la subida falló (el plato no cambió)
+  | "order_changed" // otra persona movió elementos de la misma lista mientras tanto
+  | "uncertain" // se perdió la respuesta de la base: el cambio pudo haberse guardado
   | "unexpected";
 
 const MB = MAX_IMAGE_BYTES / (1024 * 1024);
@@ -62,6 +64,8 @@ const STATIC_MESSAGE: Record<Exclude<CartaError, "limit">, string> = {
   image_type: "La foto tiene que ser JPG, PNG o WebP.",
   image_big: `La foto pesa más de ${MB} MB. Probá con una más liviana.`,
   image_failed: "No se pudo subir la foto. El plato quedó como estaba; probá de nuevo.",
+  order_changed: "Otra persona cambió el orden mientras tanto. Mirá cómo quedó y volvé a moverlo si hace falta.",
+  uncertain: "No pudimos confirmar si el cambio se guardó. Recargá la página y mirá cómo quedó antes de repetirlo.",
   unexpected: "No se pudo completar la acción. Probá de nuevo en unos minutos.",
 };
 

@@ -1,10 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements } from "@/lib/entitlements";
+import { readAllPages } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { asUuid } from "@/lib/carta/validation";
 import { EXPIRY_MS, sortOldestFirst, type SalaCall, type SalaState } from "./types";
 
 type Db = SupabaseClient<Database>;
+
+/** Ids por pedido al buscar las mesas de los llamados (la lista viaja en la URL). */
+const TABLE_CHUNK = 100;
 
 /**
  * Estado de la sala de una organización, con el cliente de la PERSONA (RLS: solo ve lo de su organización).
@@ -20,32 +24,44 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
   const enabled = parseEntitlements(ent.data)?.features.includes("waiter_call") === true;
 
   // Solo las sucursales activas: una desactivada sale de la Sala (sus llamados pendientes no se borran; vencen solos a los 30 minutos).
-  const branches = await db.from("branches").select("id, name").eq("organization_id", orgId).eq("is_active", true);
+  const branches = await readAllPages((from, to) =>
+    db.from("branches").select("id, name").eq("organization_id", orgId).eq("is_active", true).order("id").range(from, to),
+  );
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
-  const multiBranch = branches.data.length > 1;
+  const branchRows = branches.data ?? [];
+  const multiBranch = branchRows.length > 1;
 
   if (!enabled) return { serverNow, enabled: false, multiBranch, calls: [] };
 
   const since = new Date(now.getTime() - EXPIRY_MS).toISOString();
-  const pending = await db
-    .from("waiter_calls")
-    .select("id, kind, table_id, branch_id, created_at, visit_started_at")
-    .eq("organization_id", orgId)
-    .eq("status", "pending")
-    .gt("created_at", since)
-    .order("created_at", { ascending: true });
+  // Por páginas y con orden total (antigüedad, id): los pendientes de 30 minutos de varias sucursales pueden pasar de 1000 y
+  // PostgREST corta cada lectura sin avisar. Es una foto por sondeo: un llamado atendido a mitad de lectura puede correr una
+  // página y esconder otro hasta el sondeo siguiente (3 s); nunca se muestra uno de más.
+  const pending = await readAllPages((from, to) =>
+    db
+      .from("waiter_calls")
+      .select("id, kind, table_id, branch_id, created_at, visit_started_at")
+      .eq("organization_id", orgId)
+      .eq("status", "pending")
+      .gt("created_at", since)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, to),
+  );
   if (pending.error) throw new Error(`No se pudieron leer los llamados: ${pending.error.message}`);
+  const pendingRows = pending.data ?? [];
 
-  const tableIds = [...new Set(pending.data.map((call) => call.table_id))];
-  const tables = tableIds.length
-    ? await db.from("tables").select("id, label").eq("organization_id", orgId).in("id", tableIds)
-    : { data: [], error: null };
-  if (tables.error) throw new Error(`No se pudieron leer las mesas: ${tables.error.message}`);
+  // `in (...)` va en la URL: se pide de a TABLE_CHUNK ids (cada pedido devuelve a lo sumo ese tanto de filas).
+  const tableIds = [...new Set(pendingRows.map((call) => call.table_id))];
+  const tableLabel = new Map<string, string>();
+  for (let i = 0; i < tableIds.length; i += TABLE_CHUNK) {
+    const chunk = await db.from("tables").select("id, label").eq("organization_id", orgId).in("id", tableIds.slice(i, i + TABLE_CHUNK));
+    if (chunk.error) throw new Error(`No se pudieron leer las mesas: ${chunk.error.message}`);
+    for (const table of chunk.data) tableLabel.set(table.id, table.label);
+  }
+  const branchName = new Map(branchRows.map((branch) => [branch.id, branch.name]));
 
-  const tableLabel = new Map(tables.data.map((table) => [table.id, table.label]));
-  const branchName = new Map(branches.data.map((branch) => [branch.id, branch.name]));
-
-  const calls: SalaCall[] = pending.data.flatMap((call) => {
+  const calls: SalaCall[] = pendingRows.flatMap((call) => {
     if (call.kind !== "waiter" && call.kind !== "bill") return [];
     if (!branchName.has(call.branch_id)) return [];
     return [

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
+import { readAllPages } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { sortByLabel, validateLabel } from "./labels";
 import { mesasErrorMessage, mesasWriteBlock, type MesasError } from "./messages";
@@ -41,18 +42,33 @@ export type BranchWithTables = { id: string; slug: string; name: string; tables:
 
 const TABLE_COLUMNS = "id, branch_id, label, qr_token, is_active";
 
+function groupBy<T>(rows: T[], key: (row: T) => string): Map<string, T[]> {
+  const groups = new Map<string, T[]>();
+  for (const row of rows) {
+    const group = groups.get(key(row));
+    if (group) group.push(row);
+    else groups.set(key(row), [row]);
+  }
+  return groups;
+}
+
 /** Las sucursales ACTIVAS de la organización con sus mesas (orden natural por nombre). Las inactivas conservan sus mesas pero no se gestionan acá. */
 export async function loadMesas(db: Db, orgId: string): Promise<BranchWithTables[]> {
+  // Por páginas y con orden estable (`id` desempata el nombre): PostgREST corta cada lectura en 1000 filas sin avisar y las
+  // mesas inactivas no cuentan para el tope del plan, así que un local puede tener más.
   const [branches, tables] = await Promise.all([
-    db.from("branches").select("id, slug, name").eq("organization_id", orgId).eq("is_active", true).order("name"),
-    db.from("tables").select(TABLE_COLUMNS).eq("organization_id", orgId),
+    readAllPages((from, to) =>
+      db.from("branches").select("id, slug, name").eq("organization_id", orgId).eq("is_active", true).order("name").order("id").range(from, to),
+    ),
+    readAllPages((from, to) => db.from("tables").select(TABLE_COLUMNS).eq("organization_id", orgId).order("id").range(from, to)),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   if (tables.error) throw new Error(`No se pudieron leer las mesas: ${tables.error.message}`);
 
-  return branches.data.map((branch) => ({
+  const byBranch = groupBy(tables.data ?? [], (table) => table.branch_id);
+  return (branches.data ?? []).map((branch) => ({
     ...branch,
-    tables: sortByLabel(tables.data.filter((table) => table.branch_id === branch.id)),
+    tables: sortByLabel(byBranch.get(branch.id) ?? []),
   }));
 }
 

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Entitlements, Role } from "@/lib/entitlements";
+import { readAllPages } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 
 /**
@@ -193,8 +194,9 @@ export async function loadGuideCounts(db: Db, orgId: string): Promise<GuideCount
     db.from("categories").select("id", { count: "exact", head: true }).eq("organization_id", orgId),
     visible(),
     visible().is("image_path", null),
-    db.from("tables").select("branch_id, is_active").eq("organization_id", orgId),
-    db.from("branches").select("id").eq("organization_id", orgId).eq("is_active", true),
+    // Las mesas inactivas no tienen tope: se leen por páginas (PostgREST corta en 1000 sin avisar).
+    readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("branches").select("id").eq("organization_id", orgId).eq("is_active", true).order("id").range(from, to)),
   ]);
   if (categories.error) throw new Error(`No se pudo leer el avance del local: ${categories.error.message}`);
   if (products.error) throw new Error(`No se pudo leer el avance del local: ${products.error.message}`);
@@ -203,8 +205,8 @@ export async function loadGuideCounts(db: Db, orgId: string): Promise<GuideCount
   if (branches.error) throw new Error(`No se pudo leer el avance del local: ${branches.error.message}`);
 
   // Las mesas de una sucursal desactivada no cuentan para la guía: su carta no está publicada.
-  const activeBranchIds = new Set(branches.data.map((branch) => branch.id));
-  const ofActiveBranches = tables.data.filter((table) => activeBranchIds.has(table.branch_id));
+  const activeBranchIds = new Set((branches.data ?? []).map((branch) => branch.id));
+  const ofActiveBranches = (tables.data ?? []).filter((table) => activeBranchIds.has(table.branch_id));
   const active = ofActiveBranches.filter((table) => table.is_active);
   return {
     categories: categories.count ?? 0,

@@ -49,7 +49,10 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
 };
 
-// Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito; ver ADR 0006.
+// Funciones de la API que NO son SECURITY DEFINER a propósito: corren con los permisos y la RLS de quien llama, así que no amplían nada.
+const INVOKER_FUNCTIONS = new Set(["reorder_siblings", "replace_organization_logo", "replace_product_image"]);
+
+// Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito (salvo INVOKER_FUNCTIONS); ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
   admin_add_owner: [false, false], // SuperAdmin (ficha dueno-existente): suma una cuenta existente como Dueño; solo service_role
   admin_delete_organization: [false, false], // SuperAdmin (ficha borrado-de-organizaciones, ADR 0028): borra definitivamente una organización dada de baja hace 30 días; solo service_role
@@ -77,6 +80,9 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   personnel_end_operation: [false, false], // personal: libera la reserva de la cuenta; solo service_role
   personnel_remove_member: [false, false], // personal: quita la membresía y reserva el borrado de la cuenta si corresponde; solo service_role
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
+  reorder_siblings: [false, true], // orden de la carta (ficha orden-e-imagenes-atomicos): SECURITY INVOKER, manda la RLS de quien llama
+  replace_organization_logo: [false, true], // logo del local: SECURITY INVOKER, devuelve el logo saliente; manda la RLS del Dueño
+  replace_product_image: [false, true], // foto del plato: SECURITY INVOKER, devuelve la foto saliente; manda la RLS de quien llama
   register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
   unregister_push_subscription: [false, true], // aviso de llamados (ADR 0020): borra solo las suscripciones propias
@@ -103,6 +109,7 @@ describe("funciones de autorización y entitlements", () => {
       expect(searchPath, `${nombre}: search_path vacío`).toBe("t");
       expect(postgres, `${nombre}: propietaria postgres`).toBe("t");
       if (esperado) expect(definer, `${nombre}: SECURITY DEFINER`).toBe(esperado[0] ? "t" : "f");
+      else if (INVOKER_FUNCTIONS.has(nombre)) expect(definer, `${nombre}: SECURITY INVOKER (manda la RLS de quien llama)`).toBe("f");
       else expect(definer, `${nombre}: SECURITY DEFINER en la API`).toBe("t");
     }
   });

@@ -33,6 +33,9 @@ export function refresh(slug: string, orgId: string) {
   updateTag(cartaTag(orgId));
 }
 
+/** Aviso cuando el cambio quedó hecho pero Storage no pudo borrar el archivo saliente (queda registrado para limpiarlo). */
+const FILE_LEFT_NOTICE = "El archivo anterior no se pudo borrar del almacenamiento: no se ve en la carta y quedó registrado para limpiarlo.";
+
 export async function outcome(
   slug: string,
   orgId: string,
@@ -40,9 +43,15 @@ export async function outcome(
   message: string,
   values?: Record<string, string>,
 ): Promise<FormState> {
-  if (!result.ok) return { error: cartaErrorMessage(result.error, await getEntitlements(orgId)), values };
+  if (!result.ok) {
+    // «No sé si se guardó» (se perdió la respuesta de la base): el cambio pudo haber quedado hecho, así que la caché de la
+    // carta pública se vence igual. Un fallo con respuesta de la base revirtió todo: no hay nada que invalidar.
+    if (result.error === "uncertain") refresh(slug, orgId);
+    return { error: cartaErrorMessage(result.error, await getEntitlements(orgId)), values };
+  }
   refresh(slug, orgId);
-  return { ok: true, message };
+  const leftFile = typeof result.data === "object" && result.data !== null && "filesComplete" in result.data && result.data.filesComplete === false;
+  return { ok: true, message: leftFile ? `${message} ${FILE_LEFT_NOTICE}` : message };
 }
 
 export const NOT_FOUND = { error: cartaErrorMessage("not_found", null) } satisfies FormState;

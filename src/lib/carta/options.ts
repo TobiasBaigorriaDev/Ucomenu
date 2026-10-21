@@ -2,17 +2,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { readAllPages } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import {
-  applyOrder,
   explainZeroRows,
   fail,
   guard,
   loadProduct,
+  moveSibling,
   ok,
   writeFailure,
   type CartaError,
   type Result,
 } from "./catalog";
-import { changesFor, moveWithin, nextSortOrder, sortForDisplay, type Direction } from "./ordering";
+import { nextSortOrder, sortForDisplay, type Direction } from "./ordering";
 import { parseChoices, parseDelta, type ChoicesProblem } from "./options-rules";
 import { validateName } from "./validation";
 
@@ -187,16 +187,8 @@ export async function moveGroup(db: Db, orgId: string, id: string, direction: Di
   const group = await loadGroup(db, orgId, id);
   if (!group) return fail("not_found");
 
-  const list = await db
-    .from("option_groups")
-    .select("id, name, sort_order")
-    .eq("organization_id", orgId)
-    .eq("product_id", group.product_id);
-  if (list.error) return fail("unexpected");
-
-  const final = moveWithin(list.data, id, direction);
-  if (!final) return ok(undefined);
-  return applyOrder(db, orgId, "option_groups", changesFor(list.data, final));
+  // Hasta 20 grupos por plato (tope técnico de la base): la lista cabe en una página.
+  return moveSibling(db, orgId, { table: "option_groups", scope: group.product_id }, id, direction);
 }
 
 // ---------------------------------------------------------------------------
@@ -275,14 +267,6 @@ export async function moveOption(db: Db, orgId: string, id: string, direction: D
   if (current.error) return fail("unexpected");
   if (!current.data) return fail("not_found");
 
-  const list = await db
-    .from("options")
-    .select("id, name, sort_order")
-    .eq("organization_id", orgId)
-    .eq("group_id", current.data.group_id);
-  if (list.error) return fail("unexpected");
-
-  const final = moveWithin(list.data, id, direction);
-  if (!final) return ok(undefined);
-  return applyOrder(db, orgId, "options", changesFor(list.data, final));
+  // Hasta 60 opciones por grupo (tope técnico de la base): la lista cabe en una página.
+  return moveSibling(db, orgId, { table: "options", scope: current.data.group_id }, id, direction);
 }

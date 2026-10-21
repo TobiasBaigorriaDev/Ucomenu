@@ -571,6 +571,15 @@ isOneToOne: false
 "register_push_subscription":
 { Args: { "p_auth": string,"p_endpoint": string,"p_org": string,"p_p256dh": string }; Returns: string
                            },
+"reorder_siblings":
+{ Args: { "p_current": Json,"p_final": (string)[],"p_org": string,"p_scope": string,"p_table": string }; Returns: undefined
+                           },
+"replace_organization_logo":
+{ Args: { "p_org": string,"p_path": string }; Returns: Json
+                           },
+"replace_product_image":
+{ Args: { "p_org": string,"p_path": string,"p_product": string }; Returns: Json
+                           },
 "resolve_table_qr":
 { Args: { "p_token": string }; Returns: Json
                            },

@@ -15,6 +15,7 @@ async function prepare(form: FormData) {
 }
 
 function outcome(slug: string, result: Result, message: string): FormState {
+  if (!result.ok && result.error === "uncertain") refresh(slug); // pudo haberse guardado: la carta pública no debe quedar vieja
   if (!result.ok) {
     if (result.error === "palette_invalid") return { error: "Elegí una de las paletas disponibles." };
     const logoErrors = {
@@ -25,10 +26,17 @@ function outcome(slug: string, result: Result, message: string): FormState {
     };
     return { error: result.error in logoErrors ? logoErrors[result.error as keyof typeof logoErrors] : cartaErrorMessage(result.error, null) };
   }
+  refresh(slug);
+  return {
+    ok: true,
+    message: result.filesComplete !== false ? message : `${message} El archivo anterior no se pudo borrar del almacenamiento: no se ve en la carta y quedó registrado para limpiarlo.`,
+  };
+}
+
+function refresh(slug: string) {
   revalidatePath(`/panel/${slug}/apariencia`);
   // La identidad se lee en vivo; no se incluye en la caché de categorías y platos.
   revalidatePath(`/m/${slug}`, "layout");
-  return { ok: true, message };
 }
 
 export async function paletteAction(_state: FormState, form: FormData): Promise<FormState> {

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useActionState, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { dangerButtonClass, labelClass } from "@/components/panel/styles";
 import { MAX_IMAGE_BYTES } from "@/lib/carta/images";
@@ -69,14 +69,40 @@ export function PhotoForm({ orgSlug, productId, productName, currentUrl, canWrit
   const [busy, setBusy] = useState(false);
   const current = picked && picked.at === state ? picked : null;
 
+  // La vista previa es una URL `blob:` que mantiene la imagen en memoria hasta que se la revoca. Se crea una por foto elegida y
+  // `previewUrl` guarda la única viva: se revoca al elegir otra foto, al descartarla, cuando deja de mostrarse (la acción
+  // terminó) y al desmontar. Nunca mientras se muestra.
+  const previewUrl = useRef<string | null>(null);
+  const mounted = useRef(false);
+  const dropPreview = useCallback(() => {
+    if (previewUrl.current) URL.revokeObjectURL(previewUrl.current);
+    previewUrl.current = null;
+  }, []);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      dropPreview();
+    };
+  }, [dropPreview]);
+
+  // La acción terminó (`current` ya no coincide con el estado): la vista previa dejó de mostrarse y se libera.
+  useEffect(() => {
+    if (!current) dropPreview();
+  }, [current, dropPreview]);
+
   async function onChange(event: React.ChangeEvent<HTMLInputElement>) {
     const input = event.currentTarget;
     const original = input.files?.[0];
+    dropPreview();
     setPicked(null);
     if (!original) return;
 
     setBusy(true);
     const prepared = await shrink(original);
+    // Si se desmontó mientras se reducía, no se crea una URL que nadie va a revocar.
+    if (!mounted.current) return;
     setBusy(false);
 
     if (prepared.size > MAX_IMAGE_BYTES) {
@@ -94,9 +120,11 @@ export function PhotoForm({ orgSlug, productId, productName, currentUrl, canWrit
       transfer.items.add(prepared);
       input.files = transfer.files;
     }
+    dropPreview();
+    previewUrl.current = URL.createObjectURL(prepared);
     setPicked({
       note: { text: `Foto lista (${kb(prepared.size)}). Tocá «Guardar foto».`, error: false },
-      preview: URL.createObjectURL(prepared),
+      preview: previewUrl.current,
       at: state,
     });
   }

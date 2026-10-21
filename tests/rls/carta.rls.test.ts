@@ -371,8 +371,9 @@ describe("cuenta que no puede escribir", () => {
           get(target, prop, receiver) {
             if (prop === "rpc") {
               return async (fn: string, args: { p_org: string }) => {
+                if (fn !== "org_entitlements") return (target.rpc as (...a: unknown[]) => unknown)(fn, args);
                 const real = await target.rpc("org_entitlements", args);
-                if (fn === "org_entitlements" && primera) {
+                if (primera) {
                   primera = false;
                   return { ...real, data: { ...(real.data as object), can_write: true, state: "active" } };
                 }
@@ -526,22 +527,10 @@ describe("fotos", () => {
             },
           };
         }
-        if (prop === "from") {
-          return (table: string) => {
-            const builder = target.from(table as "products");
-            if (table !== "products") return builder;
-            return new Proxy(builder, {
-              get(t, p, r) {
-                if (p === "update") {
-                  return (values: { image_path?: string | null }) =>
-                    values.image_path
-                      ? t.update({ image_path: `${org}/${plato.data.id}/no-es-uuid.png` }) // viola el check de la base
-                      : t.update(values);
-                }
-                return Reflect.get(t, p, r);
-              },
-            });
-          };
+        if (prop === "rpc") {
+          // La base rechaza la ruta (viola el check de `image_path`) y revierte: el plato no cambia.
+          return (fn: string, args: { p_path: string }) =>
+            (target.rpc as (...a: unknown[]) => unknown)(fn, fn === "replace_product_image" ? { ...args, p_path: `${org}/${plato.data.id}/no-es-uuid.png` } : args);
         }
         return Reflect.get(target, prop, receiver);
       },

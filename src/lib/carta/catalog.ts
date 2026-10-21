@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
+import { readAllPages } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { detectImage, IMAGE_BUCKET, imagePath, isOwnImagePath, MAX_IMAGE_BYTES } from "./images";
 import { cartaErrorMessage, writeBlock, type CartaError } from "./messages";
@@ -36,6 +37,12 @@ type PgError = { code?: string; message?: string } | null;
 const LIMIT_EXCEEDED = "53400"; // configuration_limit_exceeded (ADR 0006)
 const FOREIGN_KEY_VIOLATION = "23503";
 const INSUFFICIENT_PRIVILEGE = "42501";
+const OBJECT_NOT_IN_STATE = "55000"; // reorder_siblings: los hermanos cambiaron desde que se leyeron (no 40001: PostgREST lo reintenta solo)
+
+/** Un error con código vino de la base (que revirtió la escritura); sin código es la red: el resultado es incierto. */
+export function isDbError(error: { code?: string }): boolean {
+  return typeof error.code === "string" && error.code !== "";
+}
 
 const PRICE_ERROR: Record<PriceProblem, CartaError> = {
   blank: "price_blank",
@@ -72,16 +79,25 @@ const PRODUCT_COLUMNS = "id, category_id, name, description, price_cents, sort_o
 
 /** La carta completa de la organización, incluidos los elementos inactivos, en el orden en que se ve. */
 export async function loadCarta(db: Db, orgId: string): Promise<CartaCategory[]> {
+  // Por páginas y con orden estable (id): PostgREST corta cada lectura en 1000 filas sin avisar, y los inactivos no tienen tope.
   const [categories, products] = await Promise.all([
-    db.from("categories").select("id, name, sort_order, is_active").eq("organization_id", orgId),
-    db.from("products").select(PRODUCT_COLUMNS).eq("organization_id", orgId),
+    readAllPages((from, to) =>
+      db.from("categories").select("id, name, sort_order, is_active").eq("organization_id", orgId).order("id").range(from, to),
+    ),
+    readAllPages((from, to) => db.from("products").select(PRODUCT_COLUMNS).eq("organization_id", orgId).order("id").range(from, to)),
   ]);
   if (categories.error) throw new Error(`No se pudieron leer las categorías: ${categories.error.message}`);
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
 
-  return sortForDisplay(categories.data).map((category) => ({
+  const byCategory = new Map<string, CartaProduct[]>();
+  for (const product of products.data ?? []) {
+    const siblings = byCategory.get(product.category_id);
+    if (siblings) siblings.push(product);
+    else byCategory.set(product.category_id, [product]);
+  }
+  return sortForDisplay(categories.data ?? []).map((category) => ({
     ...category,
-    products: sortForDisplay(products.data.filter((product) => product.category_id === category.id)),
+    products: sortForDisplay(byCategory.get(category.id) ?? []),
   }));
 }
 
@@ -146,7 +162,13 @@ export async function createCategory(db: Db, orgId: string, input: { name: strin
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
 
-  const existing = await db.from("categories").select("sort_order").eq("organization_id", orgId);
+  // Solo hace falta la posición más alta: una fila, no la lista (que se cortaría en 1000).
+  const existing = await db
+    .from("categories")
+    .select("sort_order")
+    .eq("organization_id", orgId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
   if (existing.error) return fail("unexpected");
 
   const { data, error } = await db
@@ -195,13 +217,7 @@ export async function moveCategory(db: Db, orgId: string, id: string, direction:
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
 
-  const list = await db.from("categories").select("id, name, sort_order").eq("organization_id", orgId);
-  if (list.error) return fail("unexpected");
-  if (!list.data.some((item) => item.id === id)) return fail("not_found");
-
-  const final = moveWithin(list.data, id, direction);
-  if (!final) return ok(undefined); // ya está en el borde: nada que mover
-  return applyOrder(db, orgId, "categories", changesFor(list.data, final));
+  return moveSibling(db, orgId, { table: "categories", scope: orgId }, id, direction);
 }
 
 // ---------------------------------------------------------------------------
@@ -246,7 +262,9 @@ async function nextProductOrder(db: Db, orgId: string, categoryId: string): Prom
     .from("products")
     .select("sort_order")
     .eq("organization_id", orgId)
-    .eq("category_id", categoryId);
+    .eq("category_id", categoryId)
+    .order("sort_order", { ascending: false })
+    .limit(1);
   return error ? null : nextSortOrder(data);
 }
 
@@ -332,35 +350,83 @@ export async function moveProduct(db: Db, orgId: string, id: string, direction: 
   const product = await loadProduct(db, orgId, id);
   if (!product) return fail("not_found");
 
-  const list = await db
-    .from("products")
-    .select("id, name, sort_order")
-    .eq("organization_id", orgId)
-    .eq("category_id", product.category_id);
-  if (list.error) return fail("unexpected");
-
-  const final = moveWithin(list.data, id, direction);
-  if (!final) return ok(undefined);
-  return applyOrder(db, orgId, "products", changesFor(list.data, final));
+  return moveSibling(db, orgId, { table: "products", scope: product.category_id }, id, direction);
 }
 
-/** Aplica la renumeración. Cada fila se confirma: si alguna no cambió, el orden no se da por guardado. */
+/**
+ * Los «hermanos» entre los que se mueve un elemento: todas las categorías del local (`scope` = la organización), los platos de
+ * una categoría, los grupos de un plato o las opciones de un grupo.
+ */
+export type OrderScope = { table: OrderedTable; scope: string };
+
+type Sibling = { id: string; name: string; sort_order: number };
+
+/** Todos los hermanos, por páginas y con orden estable: un local puede tener más de 1000 categorías o platos (los inactivos no tienen tope). */
+async function readSiblings(db: Db, orgId: string, { table, scope }: OrderScope): Promise<Sibling[] | null> {
+  const cols = "id, name, sort_order";
+  const page = (from: number, to: number) => {
+    switch (table) {
+      case "categories":
+        return db.from("categories").select(cols).eq("organization_id", orgId).order("id").range(from, to);
+      case "products":
+        return db.from("products").select(cols).eq("organization_id", orgId).eq("category_id", scope).order("id").range(from, to);
+      case "option_groups":
+        return db.from("option_groups").select(cols).eq("organization_id", orgId).eq("product_id", scope).order("id").range(from, to);
+      case "options":
+        return db.from("options").select(cols).eq("organization_id", orgId).eq("group_id", scope).order("id").range(from, to);
+    }
+  };
+  const { data, error } = await readAllPages<Sibling>(page);
+  return error ? null : data;
+}
+
+/** El servidor reintenta con una lectura nueva si otro movimiento se coló entre su lectura y su escritura. */
+const MOVE_ATTEMPTS = 5;
+
+/**
+ * Sube o baja un elemento un lugar. Lee los hermanos, calcula el orden final y lo aplica con `applyOrder` (una transacción que
+ * bloquea a los hermanos y comprueba que siguen como se leyeron). Si dos personas mueven a la vez, la segunda recibe
+ * `order_changed`, vuelve a leer y mueve sobre el estado nuevo: los dos movimientos quedan aplicados, uno detrás del otro.
+ */
+export async function moveSibling(db: Db, orgId: string, order: OrderScope, id: string, direction: Direction): Promise<Result> {
+  for (let attempt = 1; ; attempt++) {
+    const siblings = await readSiblings(db, orgId, order);
+    if (!siblings) return fail("unexpected");
+    if (!siblings.some((item) => item.id === id)) return fail("not_found");
+
+    const final = moveWithin(siblings, id, direction);
+    if (!final) return ok(undefined); // ya está en el borde: nada que mover
+
+    const applied = await applyOrder(db, orgId, order, siblings, final);
+    if (applied.ok || applied.error !== "order_changed" || attempt >= MOVE_ATTEMPTS) return applied;
+  }
+}
+
+/**
+ * Aplica la renumeración con UNA llamada a la base (`reorder_siblings`): o cambian todas las posiciones o ninguna. La función
+ * corre con los permisos de la persona (RLS y GRANT por columna siguen mandando) y rechaza el pedido si los hermanos ya no son
+ * los que `current` describe (`order_changed`). Un fallo sin código de base (red cortada) es `uncertain`: pudo haberse aplicado.
+ */
 export async function applyOrder(
   db: Db,
   orgId: string,
-  table: OrderedTable,
-  changes: { id: string; sort_order: number }[],
+  order: OrderScope,
+  current: Sibling[],
+  finalIds: string[],
 ): Promise<Result> {
-  const results = await Promise.all(
-    changes.map((change) =>
-      db.from(table).update({ sort_order: change.sort_order }).eq("id", change.id).eq("organization_id", orgId).select("id"),
-    ),
-  );
-  for (const [index, result] of results.entries()) {
-    if (result.error) return fail(await writeFailure(db, orgId, result.error));
-    if (result.data.length === 0) return fail(await explainZeroRows(db, orgId, table, changes[index].id));
-  }
-  return ok(undefined);
+  if (changesFor(current, finalIds).length === 0) return ok(undefined);
+
+  const { error } = await db.rpc("reorder_siblings", {
+    p_table: order.table,
+    p_org: orgId,
+    p_scope: order.scope,
+    p_current: current.map((item) => ({ id: item.id, sort_order: item.sort_order })),
+    p_final: finalIds,
+  });
+  if (!error) return ok(undefined);
+  if (!isDbError(error)) return fail("uncertain");
+  if (error.code === OBJECT_NOT_IN_STATE && error.message === "order_changed") return fail("order_changed");
+  return fail(await writeFailure(db, orgId, error));
 }
 
 // ---------------------------------------------------------------------------
@@ -368,21 +434,63 @@ export async function applyOrder(
 // ---------------------------------------------------------------------------
 
 /**
- * Borra un archivo del bucket. Si falla no rompe nada (queda huérfano): se registra la ruta para limpiarlo.
+ * Borra un archivo del bucket. Si falla no rompe nada (queda huérfano): se registra la ruta para limpiarlo y se devuelve `false`.
  * Un borrado que Storage descarta por RLS devuelve CERO objetos y ningún error, así que también se cuenta.
  */
-async function removeObject(db: Db, path: string): Promise<void> {
-  const { data, error } = await db.storage.from(IMAGE_BUCKET).remove([path]);
-  if (error) console.error(`No se pudo borrar la foto huérfana ${path}: ${error.message}`);
-  else if (!data || data.length === 0) console.error(`No se pudo borrar la foto huérfana ${path}: Storage no borró ningún objeto.`);
+async function removeObject(db: Db, path: string): Promise<boolean> {
+  try {
+    const { data, error } = await db.storage.from(IMAGE_BUCKET).remove([path]);
+    if (error) {
+      console.error(`No se pudo borrar la foto huérfana ${path}: ${error.message}`);
+      return false;
+    }
+    if (!data || data.length === 0) {
+      console.error(`No se pudo borrar la foto huérfana ${path}: Storage no borró ningún objeto.`);
+      return false;
+    }
+    return true;
+  } catch (error) {
+    console.error(`No se pudo borrar la foto huérfana ${path}: ${String(error)}`);
+    return false;
+  }
+}
+
+/** Resultado de reemplazar o quitar una foto: `filesComplete: false` = el archivo saliente quedó sin borrar (ya registrado). */
+export type ImageOutcome = { filesComplete: boolean };
+
+export type Swap =
+  | { kind: "swapped"; previous: string | null }
+  | { kind: "none" } // 0 filas: no existe en esta organización o la base lo bloqueó
+  | { kind: "rejected"; error: NonNullable<PgError> } // la base lo rechazó y revirtió
+  | { kind: "uncertain" }; // sin respuesta de la base: pudo haberse aplicado
+
+/** Interpreta la respuesta de `replace_product_image` / `replace_organization_logo`. */
+export function parseSwap(result: { data: unknown; error: { code?: string; message?: string } | null }): Swap {
+  if (result.error) return isDbError(result.error) ? { kind: "rejected", error: result.error } : { kind: "uncertain" };
+  const data = result.data;
+  if (typeof data !== "object" || data === null || Array.isArray(data)) return { kind: "uncertain" };
+  const { updated, previous } = data as { updated?: unknown; previous?: unknown };
+  if (updated !== true) return { kind: "none" };
+  return { kind: "swapped", previous: typeof previous === "string" ? previous : null };
 }
 
 /**
- * Sube la foto de un plato y la deja como la vigente. Orden: validar → subir con nombre nuevo → apuntar el
- * plato → borrar la anterior. Si apuntar el plato falla, se borra la recién subida: no quedan huérfanas
- * por el camino normal.
+ * Cambia la foto de un plato (`path`) o la quita (`null`) con UNA llamada que bloquea la fila y devuelve la referencia que
+ * dejó de usarse. El archivo saliente se borra por esa ruta exacta: con dos reemplazos simultáneos cada uno borra lo que
+ * ÉL desplazó, nunca el vigente ni la subida del otro.
  */
-export async function setProductImage(db: Db, orgId: string, productId: string, file: File | null): Promise<Result> {
+async function swapProductImage(db: Db, orgId: string, productId: string, path: string | null): Promise<Swap> {
+  // `p_path` admite NULL en la base (quita la foto); el tipo generado no distingue argumentos opcionales.
+  return parseSwap(await db.rpc("replace_product_image", { p_org: orgId, p_product: productId, p_path: path as string }));
+}
+
+/**
+ * Sube la foto de un plato y la deja como la vigente. Orden: validar → subir con nombre nuevo → apuntar el plato (devuelve la
+ * foto anterior) → borrar esa anterior. Un fallo al apuntar borra la recién subida; un fallo al limpiar NO toca la foto vigente
+ * y se informa como limpieza incompleta (`filesComplete: false`). Si la respuesta de la base no llega (no se sabe si apuntó),
+ * NO se borra nada: se prefiere un archivo de más a dejar el plato apuntando a una foto inexistente.
+ */
+export async function setProductImage(db: Db, orgId: string, productId: string, file: File | null): Promise<Result<ImageOutcome>> {
   if (!file || file.size === 0) return fail("image_missing");
   if (file.size > MAX_IMAGE_BYTES) return fail("image_big");
 
@@ -403,42 +511,51 @@ export async function setProductImage(db: Db, orgId: string, productId: string, 
     return fail((await guard(db, orgId)) ?? "image_failed");
   }
 
-  const { data, error } = await db
-    .from("products")
-    .update({ image_path: path })
-    .eq("id", productId)
-    .eq("organization_id", orgId)
-    .select("id");
-  if (error || data.length === 0) {
+  const swap = await swapProductImage(db, orgId, productId, path);
+  if (swap.kind === "none") {
     await removeObject(db, path);
-    return fail(error ? await writeFailure(db, orgId, error) : await explainZeroRows(db, orgId, "products", productId));
+    return fail(await explainZeroRows(db, orgId, "products", productId));
+  }
+  if (swap.kind === "rejected") {
+    await removeObject(db, path);
+    return fail(await writeFailure(db, orgId, swap.error));
+  }
+  if (swap.kind === "uncertain") {
+    // Pudo haberse aplicado: se mira el estado real. Solo se da por hecho (y se sigue) si el plato ya apunta a la foto nueva.
+    const now = await loadProduct(db, orgId, productId).catch(() => null);
+    if (now?.image_path === path) {
+      console.error(`La foto ${path} quedó aplicada pero no se pudo saber cuál reemplazó: la anterior pudo quedar sin borrar.`);
+      return ok({ filesComplete: false });
+    }
+    console.error(`No se pudo confirmar si la foto ${path} quedó aplicada: no se borra por las dudas.`);
+    return fail("uncertain");
   }
 
-  if (product.image_path && isOwnImagePath(product.image_path, orgId, productId)) {
-    await removeObject(db, product.image_path);
+  const outgoing = swap.previous;
+  if (outgoing && outgoing !== path && isOwnImagePath(outgoing, orgId, productId)) {
+    return ok({ filesComplete: await removeObject(db, outgoing) });
   }
-  return ok(undefined);
+  return ok({ filesComplete: true });
 }
 
-export async function removeProductImage(db: Db, orgId: string, productId: string): Promise<Result> {
+export async function removeProductImage(db: Db, orgId: string, productId: string): Promise<Result<ImageOutcome>> {
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
 
   const product = await loadProduct(db, orgId, productId);
   if (!product) return fail("not_found");
-  if (!product.image_path) return ok(undefined);
 
-  const { data, error } = await db
-    .from("products")
-    .update({ image_path: null })
-    .eq("id", productId)
-    .eq("organization_id", orgId)
-    .select("id");
-  if (error) return fail(await writeFailure(db, orgId, error));
-  if (data.length === 0) return fail(await explainZeroRows(db, orgId, "products", productId));
+  // Siempre se escribe (aunque ya no tenga foto): así un cliente sin permiso no recibe un éxito vacío, y se borra la
+  // referencia que de verdad estaba guardada al bloquear la fila, no la que se leyó antes.
+  const swap = await swapProductImage(db, orgId, productId, null);
+  if (swap.kind === "none") return fail(await explainZeroRows(db, orgId, "products", productId));
+  if (swap.kind === "rejected") return fail(await writeFailure(db, orgId, swap.error));
+  if (swap.kind === "uncertain") return fail("uncertain");
 
-  if (isOwnImagePath(product.image_path, orgId, productId)) await removeObject(db, product.image_path);
-  return ok(undefined);
+  if (swap.previous && isOwnImagePath(swap.previous, orgId, productId)) {
+    return ok({ filesComplete: await removeObject(db, swap.previous) });
+  }
+  return ok({ filesComplete: true });
 }
 
 // ---------------------------------------------------------------------------

@@ -307,6 +307,70 @@ test.describe("fotos", () => {
     expect(vacia.data ?? []).toHaveLength(0);
   });
 
+  test("las vistas previas (blob:) se liberan al reemplazarlas, descartarlas, guardar y salir de la pantalla, sin revocar la que se muestra", async ({ page }) => {
+    const t = await nuevoLocal("carta-foto-blob");
+    const ids = await sembrar(t, [{ nombre: "Platos", platos: [{ nombre: "Milanesa" }] }]);
+    // Cuenta las URL blob: creadas y revocadas por la página (la navegación interna conserva la cuenta).
+    await page.addInitScript(() => {
+      const w = window as unknown as { __blobs: { created: string[]; revoked: string[] } };
+      w.__blobs = { created: [], revoked: [] };
+      const crear = URL.createObjectURL.bind(URL);
+      const revocar = URL.revokeObjectURL.bind(URL);
+      URL.createObjectURL = (objeto: Blob | MediaSource) => {
+        const url = crear(objeto);
+        w.__blobs.created.push(url);
+        return url;
+      };
+      URL.revokeObjectURL = (url: string) => {
+        w.__blobs.revoked.push(url);
+        revocar(url);
+      };
+    });
+    await ingresar(page, t.owner, t, `/carta/platos/${ids.Milanesa}`);
+    const vivas = () =>
+      page.evaluate(() => {
+        const { created, revoked } = (window as unknown as { __blobs: { created: string[]; revoked: string[] } }).__blobs;
+        return created.filter((url) => !revoked.includes(url)).length;
+      });
+    const creadas = () => page.evaluate(() => (window as unknown as { __blobs: { created: string[] } }).__blobs.created.length);
+    const previa = page.getByRole("img", { name: "Vista previa de la foto elegida" });
+    const seVe = () => expect.poll(() => previa.evaluate((el: HTMLImageElement) => el.naturalWidth)).toBeGreaterThan(0);
+
+    // Elegir una foto crea UNA vista previa y se ve (no se revoca mientras se muestra).
+    await page.getByLabel("Elegir una foto").setInputFiles({ name: "a.png", mimeType: "image/png", buffer: FOTO_PNG });
+    await expect(page.getByText("Foto lista")).toBeVisible();
+    await seVe();
+    expect(await vivas()).toBe(1);
+
+    // Elegir otra revoca la anterior: sigue habiendo una sola viva y la nueva se ve.
+    await page.getByLabel("Elegir una foto").setInputFiles({ name: "b.png", mimeType: "image/png", buffer: FOTO_PNG });
+    await expect.poll(creadas).toBe(2);
+    await seVe();
+    expect(await vivas()).toBe(1);
+
+    // Descartarla (sin archivo) la libera.
+    await page.getByLabel("Elegir una foto").setInputFiles([]);
+    await expect(previa).toHaveCount(0);
+    expect(await vivas()).toBe(0);
+
+    // Guardar: cuando la acción termina la vista previa deja de mostrarse y se libera.
+    await page.getByLabel("Elegir una foto").setInputFiles({ name: "c.png", mimeType: "image/png", buffer: FOTO_PNG });
+    await seVe();
+    expect(await vivas()).toBe(1);
+    await page.getByRole("button", { name: "Guardar foto" }).click();
+    await expect(estado(page)).toHaveText("Foto guardada.");
+    await expect(previa).toHaveCount(0);
+    expect(await vivas()).toBe(0);
+
+    // Salir de la pantalla (navegación interna, el componente se desmonta) libera la que quedara elegida.
+    await page.getByLabel("Reemplazar la foto").setInputFiles({ name: "d.png", mimeType: "image/png", buffer: FOTO_PNG });
+    await seVe();
+    expect(await vivas()).toBe(1);
+    await page.getByRole("link", { name: "Volver a la carta" }).click();
+    await page.waitForURL(`**/panel/${t.slug}/carta`);
+    expect(await vivas()).toBe(0);
+  });
+
   test("una foto grande se reduce en el navegador antes de subirla", async ({ page }) => {
     const t = await nuevoLocal("carta-foto-grande");
     const ids = await sembrar(t, [{ nombre: "Platos", platos: [{ nombre: "Milanesa" }] }]);

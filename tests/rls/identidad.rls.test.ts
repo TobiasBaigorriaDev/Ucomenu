@@ -75,15 +75,15 @@ describe("identidad por organización", () => {
   });
 
   it("sube, reemplaza y quita el logo con la sesión del Dueño, limpiando la versión anterior", async () => {
-    expect(await setLogo(owner.db, org, file())).toEqual({ ok: true });
+    expect(await setLogo(owner.db, org, file())).toEqual({ ok: true, filesComplete: true });
     const first = (await loadIdentity(owner.db, org)).logo_path!;
     expect(await exists(first)).toBe(true);
-    expect(await setLogo(owner.db, org, file())).toEqual({ ok: true });
+    expect(await setLogo(owner.db, org, file())).toEqual({ ok: true, filesComplete: true });
     const second = (await loadIdentity(owner.db, org)).logo_path!;
     expect(second).not.toBe(first);
     expect(await exists(first)).toBe(false);
     expect(await exists(second)).toBe(true);
-    expect(await removeLogo(owner.db, org)).toEqual({ ok: true });
+    expect(await removeLogo(owner.db, org)).toEqual({ ok: true, filesComplete: true });
     expect((await loadIdentity(owner.db, org)).logo_path).toBeNull();
     expect(await exists(second)).toBe(false);
   });
@@ -133,20 +133,14 @@ describe("identidad por organización", () => {
   });
 
   it("si falla apuntar a la subida nueva, la retira y conserva el logo anterior", async () => {
-    expect(await setLogo(owner.db, org, file())).toEqual({ ok: true });
+    expect(await setLogo(owner.db, org, file())).toEqual({ ok: true, filesComplete: true });
     const previous = await loadIdentity(owner.db, org);
     const uploaded: string[] = [];
     const failing = new Proxy(owner.db, {
       get(target, prop, receiver) {
-        if (prop === "from") return (table: string) => {
-          const builder = target.from(table as "organizations");
-          return new Proxy(builder, {
-            get(t, p, r) {
-              if (p === "update") return () => t.update({ menu_palette: "inválida" });
-              return Reflect.get(t, p, r);
-            },
-          });
-        };
+        // La base rechaza la ruta (viola el check de `logo_path`) y revierte: la referencia no cambia.
+        if (prop === "rpc") return (fn: string, args: { p_org: string; p_path: string }) =>
+          target.rpc(fn as "replace_organization_logo", fn === "replace_organization_logo" ? { ...args, p_path: `${args.p_org}/no-es-uuid.png` } : args);
         if (prop === "storage") return {
           from: (bucket: string) => {
             const real = target.storage.from(bucket);
@@ -179,7 +173,7 @@ describe("identidad por organización", () => {
     });
     const log = vi.spyOn(console, "error").mockImplementation(() => {});
     try {
-      expect(await removeLogo(db, org)).toEqual({ ok: true });
+      expect(await removeLogo(db, org)).toEqual({ ok: true, filesComplete: false });
       expect(log).toHaveBeenCalledWith(expect.stringContaining("cero archivos eliminados"));
     } finally { log.mockRestore(); }
   });
