@@ -9,7 +9,9 @@ type Page<T> = { data: T[] | null; error: { message: string } | null };
 /**
  * Como `readAllPages`, pero por CLAVE: cada página pide las filas con `id` mayor que el último recibido (`order("id")` y
  * `limit`). Una baja o un alta mientras se lee no corre las páginas siguientes: con `offset`, borrar una fila ya leída salta
- * la primera de la página siguiente SIN error. Las filas tienen que traer `id`.
+ * la primera de la página siguiente SIN error. Garantía: toda fila que existe durante TODA la lectura aparece una vez; una fila
+ * creada (o borrada) a mitad de lectura puede o no estar en ESA lectura, y la siguiente la trae (PostgREST no ofrece una
+ * transacción única entre pedidos). Las filas tienen que traer `id`.
  */
 export async function readAllByKey<T extends { id: string }>(
   fetchPage: (after: string | null, limit: number) => PromiseLike<Page<T>>,

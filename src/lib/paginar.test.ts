@@ -73,16 +73,22 @@ describe("readAllByKey", () => {
     expect(new Set(data?.map((row) => row.id)).size).toBe(data?.length);
   });
 
-  it("un alta entre dos páginas tampoco repite ni corre filas", async () => {
+  it("un alta entre dos páginas no repite ni corre filas; el alta misma puede quedar fuera de ESA lectura (la siguiente la trae)", async () => {
     const clave = tablaViva(PAGE_SIZE + 1);
+    const existianAntes = [...clave.ids];
     let paginas = 0;
     const { data } = await readAllByKey(async (after, limit) => {
       const page = await clave.porClave(after, limit);
-      if (++paginas === 1) clave.ids.unshift("id-00000-nuevo"); // entra delante de lo ya leído
+      if (++paginas === 1) clave.ids.unshift("id-00000-nuevo"); // entra detrás del cursor
       return page;
     });
     const vistos = data?.map((row) => row.id) ?? [];
-    expect(vistos).toContain("id-01000");
-    expect(new Set(vistos).size).toBe(vistos.length);
+    // Garantía: toda fila que existía durante toda la lectura aparece, una sola vez y en orden.
+    expect(vistos).toEqual(existianAntes);
+    // Tolerancia aceptada: la fila creada a mitad de lectura no está en esta lectura, pero sí en la siguiente.
+    expect(vistos).not.toContain("id-00000-nuevo");
+    const { data: siguiente } = await readAllByKey(clave.porClave);
+    expect(siguiente?.map((row) => row.id)).toContain("id-00000-nuevo");
   });
+});
 });
