@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { purgeAuditLogWhere } from "../tests/rls/purge-price-history";
-import { SEED, SEED_PASSWORD, TEST_PASSWORD, alerta, deleteAccountsByEmail, expectNoHorizontalOverflow, login, service } from "./support";
+import { SEED, SEED_PASSWORD, TEST_PASSWORD, alerta, createTenant, deleteAccountsByEmail, expectNoHorizontalOverflow, login, service } from "./support";
 import { sql } from "../tests/rls/helpers"; // después de ./support: este carga las variables de entorno
 
 /**
@@ -309,5 +309,50 @@ test.describe("alta de una organización", () => {
     } finally {
       await limpiar(slug, [email]);
     }
+  });
+});
+
+test.describe("Mi cuenta (/cuenta) según quién entra", () => {
+  test("el SuperAdmin ve el marco y el regreso de /admin, y sigue pudiendo cambiar su contraseña acá (móvil y escritorio)", async ({ page }) => {
+    await login(page, ADMIN_EMAIL, SEED_PASSWORD, "/cuenta");
+    await expect(page).toHaveURL(/\/cuenta$/);
+    await expect(page.getByRole("heading", { name: "Cambiar mi contraseña" })).toBeVisible();
+    await expect(page.getByText("SuperAdmin", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Volver a la administración" })).toHaveAttribute("href", "/admin");
+    await expect(page.getByRole("link", { name: "Volver al panel" })).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+
+    // Escritorio: el riel lateral es el de la administración.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const secciones = page.getByRole("navigation", { name: "Secciones de SuperAdmin" });
+    await expect(secciones.getByRole("link", { name: "Organizaciones" })).toBeVisible();
+    await expect(secciones.getByRole("link", { name: "Nueva organización" })).toBeVisible();
+    await page.getByRole("link", { name: "Volver a la administración" }).click();
+    await expect(page).toHaveURL(/\/admin$/);
+  });
+
+  test("un SuperAdmin que además trabaja en un local conserva el enlace a su panel", async ({ page }) => {
+    const t = await createTenant("cuenta-admin");
+    try {
+      sql(`insert into public.platform_admins (user_id) values ('${t.owner.id}')`);
+      await login(page, t.owner.email, t.owner.password, "/cuenta");
+      await expect(page).toHaveURL(/\/cuenta$/);
+      await expect(page.getByRole("link", { name: "Volver a la administración" })).toHaveAttribute("href", "/admin");
+      await expect(page.getByRole("link", { name: "Ir al panel de mi local" })).toHaveAttribute("href", `/panel/${t.slug}`);
+    } finally {
+      await t.cleanup();
+    }
+  });
+
+  test("el Dueño de un local vuelve a su panel y el de varios locales, al selector; ninguno ve el marco de SuperAdmin", async ({ page }) => {
+    await login(page, SEED.duenoCafe, SEED_PASSWORD, "/cuenta");
+    await expect(page.getByRole("link", { name: "Volver al panel" })).toHaveAttribute("href", "/panel/cafe-ejemplo");
+    await expect(page.getByText("SuperAdmin", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Volver a la administración" })).toHaveCount(0);
+
+    await page.context().clearCookies();
+    await login(page, SEED.multi, SEED_PASSWORD, "/cuenta");
+    await expect(page.getByRole("link", { name: "Volver al panel" })).toHaveAttribute("href", "/panel");
+    await expect(page.getByText("SuperAdmin", { exact: true })).toHaveCount(0);
   });
 });

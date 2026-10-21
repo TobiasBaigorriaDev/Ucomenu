@@ -263,3 +263,39 @@ test("el Staff también traduce, un texto largo se rechaza sin guardar y otro lo
   const respuesta = await page.goto(`/panel/${t.slug}/carta/traducciones`);
   expect(respuesta?.status()).not.toBe(200);
 });
+
+test("el resultado del guardado se ve junto al botón fijo, desde donde se guarda una carta larga, y se anuncia una sola vez", async ({ page }) => {
+  const t = await nuevoLocal("idi-resultado");
+  await sembrar(t);
+  // Una carta larga: el final de la página queda muy lejos del botón fijo.
+  const db = service();
+  const extra = Array.from({ length: 40 }, (_, i) => ({ organization_id: t.orgId, name: `Categoría larga ${String(i).padStart(2, "0")}`, sort_order: 10 + i }));
+  expect((await db.from("categories").insert(extra)).error).toBeNull();
+  await login(page, t.owner.email, t.owner.password);
+  await page.goto(`/panel/${t.slug}/carta/traducciones?idioma=en`);
+
+  const guardar = page.getByRole("button", { name: "Guardar traducciones al English" });
+  const barra = guardar.locator("xpath=ancestor::div[contains(@class,'sticky')]");
+  const altoPagina = await page.evaluate(() => document.documentElement.scrollHeight);
+  expect(altoPagina).toBeGreaterThan(3 * 844);
+
+  // Éxito: desde arriba de la lista (el final está a varias pantallas) el aviso se ve junto al botón, y es el único.
+  await page.getByLabel("Traducción al English de Categoría larga 00").fill("Long category 00");
+  await guardar.click();
+  const exito = barra.getByRole("status");
+  await expect(exito).toHaveText("Se guardó 1 cambio.");
+  await expect(exito).toBeInViewport();
+  await expect(page.locator("form").getByRole("status")).toHaveCount(1);
+
+  // Error: el servidor rechaza un texto largo; el aviso también se ve ahí, conserva lo escrito y no se repite.
+  const largo = page.getByLabel("Traducción al English de Categoría larga 01");
+  await largo.evaluate((el) => el.removeAttribute("maxlength"));
+  await largo.fill("a".repeat(81));
+  await guardar.click();
+  const error = barra.getByRole("alert");
+  await expect(error).toContainText("hasta 80 caracteres");
+  await expect(error).toBeInViewport();
+  await expect(alerta(page)).toHaveCount(1);
+  await expect(largo).toHaveValue("a".repeat(81));
+  await expectNoHorizontalOverflow(page);
+});

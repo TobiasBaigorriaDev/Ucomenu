@@ -13,6 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
+- [M] Formularios, cuenta y mensajes (tanda 3 de UX): alta de personal inactiva sin permiso de escritura, `/cuenta` con el marco y el regreso de SuperAdmin, resultado de traducciones junto al botón fijo y pantallas de error y «no encontrado» por zona; implementado y probado en local (E2E completo); falta la aprobación del usuario → agile/cambios/formularios-cuenta-y-mensajes.md
 - [C] Listas completas (más de 1000 filas), reordenamientos atómicos, reemplazo de fotos y logos sin huérfanos y vistas previas `blob:` liberadas: implementado y probado en local (RLS 907, E2E, mutaciones); migración nueva con tres funciones `SECURITY INVOKER`; aprobado por Codex (3 rondas); falta la aprobación humana → agile/cambios/orden-e-imagenes-atomicos.md · ADR 0033
 - [C] Cuentas globales de Auth (SuperAdmin intocable desde un local, reserva contra la carrera con `admin_add_owner`), falso 401 de la sala con Auth caído y logos en el respaldo: implementado y probado en local; aprobado por Codex; falta la aprobación humana → agile/cambios/proteger-cuentas-globales.md · ADR 0032
 - [C] Borrado de mesas junto con sus llamados: implementado y probado en local (RLS completo, E2E y mutaciones), con una migración mínima (`DELETE` sobre `tables`); revisado por Codex (aprobado); falta la aprobación del usuario (bloqueado por: eso) → [ficha](cambios/borrado-de-mesas.md) · ADR 0030

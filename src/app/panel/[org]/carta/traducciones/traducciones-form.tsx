@@ -61,7 +61,7 @@ export function TranslationsForm({
   canWrite: boolean;
 }) {
   return (
-    <ActionForm action={saveTranslationsAction} className="mt-6">
+    <ActionForm action={saveTranslationsAction} className="mt-6" inlineMessages>
       {(state) => {
         const field = (item: TranslationNode, part: "name" | "description") => {
           const name = `${PREFIX[item.kind]}:${item.id}:${part}`;
@@ -99,8 +99,21 @@ export function TranslationsForm({
                 {renderNode(category, 0)}
               </section>
             ))}
-            <div className="sticky bottom-0 -mx-4 border-t border-ink/15 bg-porcelain px-4 py-3 sm:mx-0 sm:rounded-2xl sm:border">
-              <SubmitButton pendingLabel="Guardando…">Guardar traducciones al {LANG_NAME[lang]}</SubmitButton>
+            {/* El resultado va junto al botón fijo: en una carta larga el final de la página queda lejos de donde se guarda. */}
+            <div className="sticky bottom-0 -mx-4 grid gap-2 border-t border-ink/15 bg-porcelain px-4 py-3 sm:mx-0 sm:rounded-2xl sm:border">
+              {state.error ? (
+                <p role="alert" className="max-h-[30vh] overflow-y-auto text-base font-medium text-danger">
+                  {state.error}
+                </p>
+              ) : null}
+              {state.message ? (
+                <p role="status" className="text-base font-medium text-ink">
+                  {state.message}
+                </p>
+              ) : null}
+              <div>
+                <SubmitButton pendingLabel="Guardando…">Guardar traducciones al {LANG_NAME[lang]}</SubmitButton>
+              </div>
             </div>
           </fieldset>
         );

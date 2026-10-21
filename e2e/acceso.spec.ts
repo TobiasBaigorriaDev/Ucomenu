@@ -438,3 +438,92 @@ test.describe("mi cuenta", () => {
     }
   });
 });
+
+test.describe("alta de personal con la cuenta en solo lectura", () => {
+  test("no se puede completar ni enviar el alta, y quitar personal y cambiar contraseñas siguen funcionando", async ({ page }) => {
+    const t = await createTenant("personal-lectura", "read_only");
+    try {
+      await login(page, t.owner.email, t.owner.password);
+      await page.goto(`/panel/${t.slug}/personal`);
+
+      // El aviso explica por qué y el formulario entero queda inactivo.
+      await expect(page.getByText("no se pueden sumar personas")).toBeVisible();
+      await expect(page.getByLabel("Email")).toBeDisabled();
+      await expect(page.getByLabel("Contraseña inicial")).toBeDisabled();
+      await expect(page.getByLabel("Rol")).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Crear cuenta" })).toBeDisabled();
+      await expectNoHorizontalOverflow(page);
+
+      // Lo que sigue permitido no se bloquea: cambiar la contraseña y quitar a una persona.
+      const fila = page.getByTestId("member-row").filter({ hasText: t.staff.email });
+      await fila.getByText("Cambiar contraseña").click();
+      await fila.getByLabel("Contraseña nueva").fill(NUEVA);
+      await fila.getByRole("button", { name: "Guardar contraseña" }).click();
+      await expect(page.getByRole("status").filter({ hasText: "Contraseña cambiada" })).toBeVisible();
+      await fila.getByText("Quitar", { exact: true }).click();
+      await fila.getByRole("button", { name: "Sí, quitar" }).click();
+      await expect(page.getByTestId("member-row").filter({ hasText: t.staff.email })).toHaveCount(0);
+    } finally {
+      await t.cleanup();
+    }
+  });
+
+  test("aunque se fuerce el envío desde el navegador, el servidor rechaza el alta y no crea la cuenta", async ({ page }) => {
+    const t = await createTenant("personal-forzado", "suspended");
+    const email = `e2e-forzado-${Date.now()}@example.test`;
+    try {
+      await login(page, t.owner.email, t.owner.password);
+      await page.goto(`/panel/${t.slug}/personal`);
+      await page.locator("#alta-email").evaluate((el) => {
+        const hoja = el.closest("fieldset");
+        hoja?.removeAttribute("disabled");
+      });
+      await page.getByLabel("Email").fill(email);
+      await page.getByLabel("Contraseña inicial").fill(NUEVA);
+      await page.getByRole("button", { name: "Crear cuenta" }).click();
+
+      await expect(alerta(page)).toContainText("solo lectura o suspendida");
+      const existe = await service().auth.admin.listUsers({ perPage: 1000 });
+      expect(existe.data.users.some((u) => u.email === email)).toBe(false);
+    } finally {
+      await t.cleanup();
+    }
+  });
+});
+
+test.describe("pantallas de «no encontrado»", () => {
+  test("un local ajeno y uno inexistente dan el mismo 404, sin hablar de la carta ni de escanear una mesa, con salida al panel", async ({ page }) => {
+    await login(page, SEED.duenoCafe, SEED_PASSWORD);
+    const textos: string[] = [];
+    for (const ruta of ["/panel/parrilla-demo", "/panel/no-existe-este-local", "/sala/parrilla-demo", "/sala/no-existe-este-local"]) {
+      const respuesta = await page.goto(ruta);
+      expect(respuesta?.status(), ruta).toBe(404);
+      await expect(page.getByRole("heading", { level: 1 }), ruta).toHaveText("No encontramos esta página");
+      await expect(page.locator("main"), ruta).not.toContainText(/carta|QR|mesa/i);
+      textos.push(await page.locator("main").innerText());
+      await expect(page.getByRole("link", { name: "Ir a mis locales" }), ruta).toBeVisible();
+      await expectNoHorizontalOverflow(page);
+    }
+    // Ajeno e inexistente son indistinguibles (mismo texto en cada área).
+    expect(textos[0]).toBe(textos[1]);
+    expect(textos[2]).toBe(textos[3]);
+  });
+
+  test("un plato que no existe se avisa dentro del panel, con el menú a la vista y camino de vuelta", async ({ page }) => {
+    await login(page, SEED.duenoCafe, SEED_PASSWORD);
+    const respuesta = await page.goto("/panel/cafe-ejemplo/carta/platos/00000000-0000-4000-8000-0000000000aa");
+    expect(respuesta?.status()).toBe(404);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("No encontramos eso en tu panel");
+    await expect(page.getByRole("navigation", { name: "Secciones del panel" }).getByRole("link", { name: "Carta" })).toBeVisible();
+    await page.getByRole("link", { name: "Ir al resumen" }).click();
+    await expect(page).toHaveURL(/\/panel\/cafe-ejemplo$/);
+  });
+
+  test("una página que no existe en ninguna zona da un mensaje general", async ({ page }) => {
+    const respuesta = await page.goto("/esta-pagina-no-existe");
+    expect(respuesta?.status()).toBe(404);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("No encontramos esta página");
+    await expect(page.locator("main")).not.toContainText(/carta|QR|mesa/i);
+    await expect(page.getByRole("link", { name: "Ir al inicio" })).toHaveAttribute("href", "/");
+  });
+});

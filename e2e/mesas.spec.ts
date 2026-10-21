@@ -299,7 +299,7 @@ test.describe("hoja imprimible", () => {
     await page.getByLabel("Email").fill(a.owner.email);
     await page.getByLabel("Contraseña").fill(a.owner.password);
     await page.getByRole("button", { name: "Ingresar" }).click();
-    await expect(page.getByRole("heading", { name: "No encontramos esta carta" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "No encontramos eso en tu panel" })).toBeVisible();
     await expect(page.getByText("Secreta")).toHaveCount(0);
   });
 
@@ -436,7 +436,7 @@ test.describe("acceso y aislamiento", () => {
     await page.getByRole("button", { name: "Agregar mesa" }).click();
     // La acción exige membresía del local pedido: para quien no la tiene es el mismo 404 de siempre
     // (y la base tampoco lo permitiría), no un mensaje del formulario.
-    await expect(page.getByRole("heading", { name: "No encontramos esta carta" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "No encontramos eso en tu panel" })).toBeVisible();
 
     // 2) En mi local, una sucursal que es del otro.
     await page.goto(`/panel/${a.slug}/mesas`);

@@ -205,7 +205,7 @@ test.describe("quién entra", () => {
     // 1) Cambia el campo oculto «org» por el local ajeno: para quien no es su Dueño es el 404 de siempre.
     await page.locator('form:has(#sucursal-nombre) input[name="org"]').evaluate((el: HTMLInputElement, slug) => (el.value = slug), b.slug);
     await crear(page, "Intrusa", "intrusa");
-    await expect(page.getByRole("heading", { name: "No encontramos esta carta" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "No encontramos eso en tu panel" })).toBeVisible();
 
     // 2) En mi local, el id de una sucursal del otro.
     await page.goto(`/panel/${a.slug}/sucursales`);

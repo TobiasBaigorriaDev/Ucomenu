@@ -25,27 +25,32 @@ export function SubmitButton({
 /**
  * Formulario con server action y mensajes de resultado. Los errores usan `role="alert"` y los
  * avisos de éxito `role="status"`, para que los lectores de pantalla los anuncien.
+ *
+ * `inlineMessages`: el formulario muestra el resultado él mismo, en el lugar que elija (p. ej. junto a un botón fijo en una
+ * pantalla larga), y este componente no lo repite al final: dos avisos con el mismo texto se anunciarían dos veces.
  */
 export function ActionForm({
   action,
   children,
   className,
+  inlineMessages = false,
 }: {
   action: (previous: FormState, formData: FormData) => Promise<FormState>;
   children: ReactNode | ((state: FormState) => ReactNode);
   className?: string;
+  inlineMessages?: boolean;
 }) {
   const [state, formAction] = useActionState(action, {});
 
   return (
     <form action={formAction} className={className}>
       {typeof children === "function" ? children(state) : children}
-      {state.error ? (
+      {!inlineMessages && state.error ? (
         <p role="alert" className="mt-3 text-base font-medium text-danger">
           {state.error}
         </p>
       ) : null}
-      {state.message ? (
+      {!inlineMessages && state.message ? (
         <p role="status" className="mt-3 text-base font-medium text-ink">
           {state.message}
         </p>
