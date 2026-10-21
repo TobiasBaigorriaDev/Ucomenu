@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [C] Cuentas globales de Auth (SuperAdmin intocable desde un local, reserva contra la carrera con `admin_add_owner`), falso 401 de la sala con Auth caído y logos en el respaldo: implementado y probado en local; falta la revisión de Codex y la aprobación humana → agile/cambios/proteger-cuentas-globales.md · ADR 0032
+- [C] Cuentas globales de Auth (SuperAdmin intocable desde un local, reserva contra la carrera con `admin_add_owner`), falso 401 de la sala con Auth caído y logos en el respaldo: implementado y probado en local; aprobado por Codex; falta la aprobación humana → agile/cambios/proteger-cuentas-globales.md · ADR 0032
 - [C] Borrado de mesas junto con sus llamados: implementado y probado en local (RLS completo, E2E y mutaciones), con una migración mínima (`DELETE` sobre `tables`); revisado por Codex (aprobado); falta la aprobación del usuario (bloqueado por: eso) → [ficha](cambios/borrado-de-mesas.md) · ADR 0030
 
 ## Bloqueado

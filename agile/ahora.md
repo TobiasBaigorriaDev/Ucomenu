@@ -4,7 +4,7 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Cuatro correcciones (C) implementadas y probadas en local; falta la revisión de Codex y la aprobación humana.** Rama `main`. [Ficha](cambios/proteger-cuentas-globales.md) · [ADR 0032](../docs/decisiones/0032-reserva-de-cuentas-globales.md) (propuesta).
+**Cuatro correcciones (C) implementadas, probadas en local y aprobadas por Codex (2 rondas: un hallazgo —la reserva no cubría `UPDATE` de `user_id`— corregido); falta la aprobación humana.** Rama `main`, commits `f648e81` y `7454a01`. [Ficha](cambios/proteger-cuentas-globales.md) · [ADR 0032](../docs/decisiones/0032-reserva-de-cuentas-globales.md) (propuesta).
 
 1. Una cuenta de SuperAdmin no se restablece ni se borra desde un local (aunque esté como Staff); la baja le quita el local y conserva la cuenta.
 2. Carrera con `admin_add_owner`: una *reserva* por cuenta, tomada junto con la comprobación en la base, impide que se sume una membresía mientras se cambia la contraseña o se borra la cuenta (`account_busy`).
@@ -24,6 +24,5 @@ Pendiente de antes: el [borrado de mesas](cambios/borrado-de-mesas.md) (aprobado
 
 ## Próximo paso
 
-1. `pnpm revision:codex --commit HEAD --ficha agile/cambios/proteger-cuentas-globales.md --nivel C`; corregir lo confirmado y registrarlo en la ficha.
-2. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
-3. Ensayar la restauración mensual incluyendo un logo.
+1. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
+2. Ensayar la restauración mensual incluyendo un logo.

@@ -1,5 +1,5 @@
 # Cambio: Cuentas globales de Auth, falso 401 de la sala y respaldo de logos
-Estado: **en curso** — implementado y probado en local; falta la revisión independiente de Codex y la aprobación humana
+Estado: **para verificar** — implementado y probado en local; aprobado por Codex (2 rondas); falta la aprobación humana
 Nivel: C (autorización: quién puede tomar o borrar una cuenta; exposición: un local no debe alcanzar la cuenta de otro ni la de plataforma; eliminación irreversible: borrado de cuentas de Auth y archivos de clientes sin respaldo)
 
 Cuatro correcciones surgidas de una revisión externa, confirmadas contra el código antes de tocarlas. Decisión duradera: [ADR 0032](../../docs/decisiones/0032-reserva-de-cuentas-globales.md).
@@ -67,4 +67,5 @@ Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probad
 
 ## Revisión y aprobación
 - **Codex, ronda 1 (commit `f648e81`, nivel C, esfuerzo high): APROBAR CON CAMBIOS.** Revisión estática. Un hallazgo *importante*, **confirmado**: el trigger de la reserva cubría solo `INSERT`; `service_role` puede reasignar `memberships.user_id` con `UPDATE` y sumar una membresía a una cuenta reservada (contraseña tomada o membresía borrada en cascada). Corrección: el trigger pasó a `BEFORE INSERT OR UPDATE OF user_id` (un `UPDATE` que no cambia `user_id`, p. ej. solo el rol, no se frena). Regresión nueva en `cuentas-globales.rls.test.ts` que **falla con el trigger solo de `INSERT`** (comprobado) y pasa con el actual; RLS de `cuentas-globales`, `acl`, `personnel`, `dueno-existente` y `tenancy` **128/128** tras la corrección.
-- Pendiente: ronda de verificación de Codex y la **aprobación humana** (no está dada) antes de subir a `origin`, aplicar la migración en staging o desplegar.
+- **Codex, ronda 2 de verificación (commit `7454a01`): APROBAR, sin hallazgos nuevos**; el hallazgo de la ronda 1 queda corregido y sin regresiones visibles (revisión estática).
+- Pendiente: la **aprobación humana** (no está dada) antes de subir a `origin`, aplicar la migración en staging o desplegar.
