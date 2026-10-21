@@ -86,12 +86,12 @@ export const isPaymentMethod = (value: unknown): value is PaymentMethod => PAYME
 // Add-ons (ficha addons-y-baja-de-organizaciones)
 // ---------------------------------------------------------------------------
 
-export const ADDON_CODES = ["webar"] as const;
-export type AddonCode = (typeof ADDON_CODES)[number];
+/** Mismo formato que `addons_code_check`. Que el add-on exista en el catálogo (hoy vacío, ADR 0031) lo decide la base. */
+const ADDON_CODE_PATTERN = /^[a-z][a-z0-9_]{0,31}$/;
 /** Mismo tope que la base (`admin_set_addon`): packs extra de 0 a 50. */
 export const MAX_EXTRA_PACKS = 50;
 
-export const isAddonCode = (value: unknown): value is AddonCode => ADDON_CODES.some((code) => code === value);
+export const isAddonCode = (value: unknown): value is string => typeof value === "string" && ADDON_CODE_PATTERN.test(value);
 
 /** Packs extra: un entero de 0 a 50 («» cuenta como 0). `null` si no sirve. */
 export function parseExtraPacks(raw: unknown): number | null {

@@ -49,7 +49,7 @@ Reemplaza a la realidad aumentada (WebAR), descartada el 2026-10-21 ([ADR 0031](
 - Un **feed de videos cortos con scroll vertical** (estilo Reels) dentro de la carta pública: el local publica videos del restaurante, del ambiente y de la preparación o presentación de sus platos.
 - El comensal los mira deslizando; desde el **QR de una mesa** puede darles **like** y **comentarlos**. Los comentarios se publican solo cuando el local los aprueba.
 - Incluido en el plan **Premium** y habilitado por *feature flag* según la suscripción de la organización.
-- *Pendiente de implementación:* en la base sigue el identificador heredado `webar` (add-on del catálogo `addons`, su feature y el límite `models_3d`); se retira o se migra a la feature de plan `video_feed` en el incremento de implementación.
+- *Catálogo implementado en local* ([ficha](../agile/cambios/catalogo-video-feed.md)): la feature `video_feed` y el límite `videos_published` están en `plans`; el add-on `webar` y el límite `models_3d` se retiraron de la base. Faltan la carga, el feed y las interacciones.
 
 ### 4. Fidelización con Wallet y recordatorio por cercanía — fase 3
 - Alta en mesa y tarjeta de fidelidad guardada en **Apple Wallet** o **Google Wallet**.

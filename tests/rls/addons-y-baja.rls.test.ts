@@ -26,9 +26,15 @@ import {
 /**
  * SuperAdmin: add-ons y baja de organizaciones (nivel C, ficha addons-y-baja-de-organizaciones, ADR 0025) contra el
  * Supabase local, con los mismos clientes que usa el servidor. El foco: quién puede, que cada rechazo no deje huella,
- * que el cupo y las features salgan del add-on vigente y del plan, y que una organización dada de baja quede cerrada por RLS
- * (nadie del local lee ni escribe) sin perder nada y vuelva entera al reactivarla.
+ * y que una organización dada de baja quede cerrada por RLS (nadie del local lee ni escribe) sin perder nada y vuelva
+ * entera al reactivarla.
+ *
+ * Desde ADR 0031 el catálogo real de add-ons está vacío (WebAR se retiró; ver `catalogo-video-feed`). Las funciones se
+ * conservan para futuros add-ons y se prueban con un add-on de ensayo (`tt_ensayo`) que esta prueba inserta y borra.
+ * Ese add-on no concede features ni cupos: solo el plan concede features.
  */
+
+const ADDON = "tt_ensayo";
 
 const sufijo = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 const hoyAr = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date());
@@ -76,9 +82,9 @@ async function entitlements(user: TestUser, orgId: string) {
 }
 
 const activar = (local: Pick<Local, "slug">, cambios: Partial<Parameters<typeof setAddon>[1]> = {}, quien: TestUser = admin) =>
-  setAddon(ctx(quien), { slug: local.slug, addon: "webar", extraPacks: "0", endsOn: "", reason: "Contrató WebAR", ...cambios });
+  setAddon(ctx(quien), { slug: local.slug, addon: ADDON, extraPacks: "0", endsOn: "", reason: "Contrató el ensayo", ...cambios });
 const finalizar = (local: Pick<Local, "slug">, reason: unknown = "Dejó de pagarlo", quien: TestUser = admin) =>
-  endAddon(ctx(quien), { slug: local.slug, addon: "webar", reason });
+  endAddon(ctx(quien), { slug: local.slug, addon: ADDON, reason });
 const baja = (local: Pick<Local, "slug">, active: boolean, reason: unknown = "Cierra el local", quien: TestUser = admin) =>
   setOrganizationActive(ctx(quien), { slug: local.slug, active, reason });
 
@@ -125,11 +131,14 @@ beforeAll(async () => {
   comun = await createUser(service, "addon-comun");
   users.push(admin, comun);
   sql(`insert into public.platform_admins (user_id) values ('${admin.id}')`);
+  sql(`insert into public.addons (code, name, monthly_price_usd_cents, base_model_quota, pack_size, pack_monthly_price_usd_cents, allowed_plans)
+       values ('${ADDON}', 'Ensayo', 1000, 15, 10, 500, array['pro', 'premium']) on conflict (code) do nothing`);
 });
 
 afterAll(async () => {
   purgeAuditLogWhere(`after->>'slug' like 'tt-addon-%'`);
   for (const id of orgs) await deleteOrg(service, id);
+  sql(`delete from public.addons where code = '${ADDON}'`);
   for (const u of users) await deleteUser(service, u);
 });
 
@@ -144,8 +153,8 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
       ["anon", anonClient(), admin.id],
     ] as const) {
       const llamadas = [
-        db.rpc("admin_set_addon", { p_actor: actor, p_org: local.id, p_addon: "webar", p_extra_packs: 0, p_ends_at: null as unknown as string, p_reason: "x" }),
-        db.rpc("admin_end_addon", { p_actor: actor, p_org: local.id, p_addon: "webar", p_reason: "x" }),
+        db.rpc("admin_set_addon", { p_actor: actor, p_org: local.id, p_addon: ADDON, p_extra_packs: 0, p_ends_at: null as unknown as string, p_reason: "x" }),
+        db.rpc("admin_end_addon", { p_actor: actor, p_org: local.id, p_addon: ADDON, p_reason: "x" }),
         db.rpc("admin_set_organization_active", { p_actor: actor, p_org: local.id, p_active: false, p_reason: "x" }),
       ];
       for (const r of await Promise.all(llamadas)) expect(r.error?.code, nombre).toBe("42501");
@@ -160,8 +169,8 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
     const local = await crearLocal();
     for (const actor of [local.owner.id, local.staff.id, comun.id, null, randomUUID()]) {
       const llamadas = [
-        service.rpc("admin_set_addon", { p_actor: actor as string, p_org: local.id, p_addon: "webar", p_extra_packs: 0, p_ends_at: null as unknown as string, p_reason: "x" }),
-        service.rpc("admin_end_addon", { p_actor: actor as string, p_org: local.id, p_addon: "webar", p_reason: "x" }),
+        service.rpc("admin_set_addon", { p_actor: actor as string, p_org: local.id, p_addon: ADDON, p_extra_packs: 0, p_ends_at: null as unknown as string, p_reason: "x" }),
+        service.rpc("admin_end_addon", { p_actor: actor as string, p_org: local.id, p_addon: ADDON, p_reason: "x" }),
         service.rpc("admin_set_organization_active", { p_actor: actor as string, p_org: local.id, p_active: false, p_reason: "x" }),
       ];
       for (const r of await Promise.all(llamadas)) {
@@ -188,7 +197,7 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
   it("el Dueño no escribe subscription_addons ni is_active por la API", async () => {
     const local = await crearLocal();
     expect((await activar(local)).ok).toBe(true);
-    const insertar = await local.owner.db.from("subscription_addons").insert({ organization_id: local.id, addon_code: "webar", extra_packs: 9 });
+    const insertar = await local.owner.db.from("subscription_addons").insert({ organization_id: local.id, addon_code: ADDON, extra_packs: 9 });
     expect(insertar.error).not.toBeNull();
     const actualizar = await local.owner.db.from("subscription_addons").update({ extra_packs: 40 }).eq("organization_id", local.id).select("id");
     expect(actualizar.error ?? actualizar.data?.length === 0 ? "bloqueado" : "escribió").toBe("bloqueado");
@@ -199,24 +208,44 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
   });
 });
 
+describe("catálogo real (WebAR retirado, ADR 0031)", () => {
+  it("WebAR ya no se puede activar ni finalizar: la base lo trata como un add-on inexistente, sin huella", async () => {
+    const local = await crearLocal("premium");
+    expect(await activar(local, { addon: "webar" })).toEqual({ ok: false, error: "invalid_addon" });
+    expect(await endAddon(ctx(admin), { slug: local.slug, addon: "webar", reason: "x" })).toEqual({ ok: false, error: "invalid_addon" });
+    expect((await service.rpc("admin_set_addon", { p_actor: admin.id, p_org: local.id, p_addon: "webar", p_extra_packs: 0, p_ends_at: null as unknown as string, p_reason: "x" })).error?.message).toBe("invalid_addon");
+    expect(await contratos(local.id)).toEqual([]);
+    expect(await auditoria(local.id)).toEqual([]);
+  });
+
+  it("un código con forma inválida ni llega a la base", async () => {
+    const local = await crearLocal("premium");
+    for (const addon of ["WebAR", "web-ar", "", "'; drop table addons; --", "a".repeat(33)]) {
+      expect(await activar(local, { addon }), addon).toEqual({ ok: false, error: "invalid_addon" });
+    }
+    expect(await auditoria(local.id)).toEqual([]);
+  });
+});
+
 describe("add-ons: activar, cambiar y finalizar", () => {
-  it("activa WebAR sobre Pro: cupo base, feature para el Dueño, una auditoría con motivo", async () => {
+  it("activa un add-on sobre Pro: queda el contrato y una auditoría con motivo; lo que concede el plan no cambia", async () => {
     const local = await crearLocal("pro");
+    const antes = (await entitlements(local.owner, local.id))!;
     expect(await activar(local)).toEqual({ ok: true, data: undefined });
 
     const [fila] = await contratos(local.id);
-    expect(fila).toMatchObject({ addon_code: "webar", extra_packs: 0, ends_at: null });
+    expect(fila).toMatchObject({ addon_code: ADDON, extra_packs: 0, ends_at: null });
     const ent = (await entitlements(local.owner, local.id))!;
-    expect(ent.features).toContain("webar");
-    expect(ent.limits.models_3d).toBe(15);
+    expect(ent.features).toEqual(antes.features);
+    expect(ent.limits).toEqual(antes.limits);
 
     const log = await auditoria(local.id);
     expect(log).toHaveLength(1);
     expect(log[0]).toMatchObject({ action: "addon.activated", actor_id: admin.id, before: { active: false } });
-    expect(log[0].after).toMatchObject({ slug: local.slug, addon: "webar", extra_packs: 0, ends_at: null, model_quota: 15, reason: "Contrató WebAR" });
+    expect(log[0].after).toMatchObject({ slug: local.slug, addon: ADDON, extra_packs: 0, ends_at: null, model_quota: 15, reason: "Contrató el ensayo" });
   });
 
-  it("con packs y fecha de fin: 15 + 2 × 10 platos; cambiar es «addon.changed» y guarda el antes", async () => {
+  it("con packs y fecha de fin: cupo 15 + 2 × 10; cambiar es «addon.changed» y guarda el antes", async () => {
     const local = await crearLocal("premium");
     expect((await activar(local)).ok).toBe(true);
     expect((await activar(local, { extraPacks: "2", endsOn: enDias(60), reason: "Pidió dos packs" })).ok).toBe(true);
@@ -224,7 +253,6 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     const [fila] = await contratos(local.id);
     expect(fila.extra_packs).toBe(2);
     expect(new Date(fila.ends_at!).getTime()).toBeGreaterThan(Date.now() + 59 * DIA_MS);
-    expect((await entitlements(local.owner, local.id))!.limits.models_3d).toBe(35);
 
     expect(await accionesDe(local.id)).toEqual(["addon.activated", "addon.changed"]);
     const cambio = (await auditoria(local.id))[1];
@@ -255,14 +283,10 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     expect(await auditoria(local.id)).toEqual([]);
   });
 
-  it("bajar el plan a Básico deja la fila pero sin feature ni cupo (lo concede el plan)", async () => {
+  it("bajar el plan a Básico deja la fila, que ya no se puede cambiar; sí finalizar", async () => {
     const local = await crearLocal("pro");
     expect((await activar(local)).ok).toBe(true);
-    expect((await entitlements(local.owner, local.id))!.features).toContain("webar");
     await setSubscription(service, local.id, { plan: "basic" });
-    const ent = (await entitlements(local.owner, local.id))!;
-    expect(ent.features).not.toContain("webar");
-    expect(ent.limits.models_3d).toBe(0);
     expect(await contratos(local.id)).toHaveLength(1);
     // Con Básico no se puede cambiar, pero sí finalizar.
     expect(await activar(local, { extraPacks: "3" })).toEqual({ ok: false, error: "addon_not_allowed" });
@@ -289,17 +313,17 @@ describe("add-ons: activar, cambiar y finalizar", () => {
 
   it("la base valida por su cuenta (sin pasar por el módulo): packs, fecha y addon", async () => {
     const local = await crearLocal("pro");
-    const llamar = (extra: number, fin: string | null, addon = "webar") =>
+    const llamar = (extra: number, fin: string | null, addon = ADDON) =>
       service.rpc("admin_set_addon", { p_actor: admin.id, p_org: local.id, p_addon: addon, p_extra_packs: extra, p_ends_at: fin as string, p_reason: "x" });
     expect((await llamar(-1, null)).error?.message).toBe("invalid_packs");
     expect((await llamar(51, null)).error?.message).toBe("invalid_packs");
     expect((await llamar(1, new Date(Date.now() - 1000).toISOString())).error?.message).toBe("invalid_ends_at");
     expect((await llamar(1, new Date(Date.now() + 800 * DIA_MS).toISOString())).error?.message).toBe("invalid_ends_at");
     expect((await llamar(1, null, "otro")).error?.message).toBe("invalid_addon");
-    expect((await service.rpc("admin_set_addon", { p_actor: admin.id, p_org: randomUUID(), p_addon: "webar", p_extra_packs: 0, p_ends_at: null as unknown as string, p_reason: "x" })).error?.message).toBe("subscription_not_found");
+    expect((await service.rpc("admin_set_addon", { p_actor: admin.id, p_org: randomUUID(), p_addon: ADDON, p_extra_packs: 0, p_ends_at: null as unknown as string, p_reason: "x" })).error?.message).toBe("subscription_not_found");
     for (const motivo of ["", "   ", "x".repeat(201)]) {
-      expect((await service.rpc("admin_set_addon", { p_actor: admin.id, p_org: local.id, p_addon: "webar", p_extra_packs: 1, p_ends_at: null as unknown as string, p_reason: motivo })).error?.message, motivo.length.toString()).toBe("invalid_reason");
-      expect((await service.rpc("admin_end_addon", { p_actor: admin.id, p_org: local.id, p_addon: "webar", p_reason: motivo })).error?.message).toBe("invalid_reason");
+      expect((await service.rpc("admin_set_addon", { p_actor: admin.id, p_org: local.id, p_addon: ADDON, p_extra_packs: 1, p_ends_at: null as unknown as string, p_reason: motivo })).error?.message, motivo.length.toString()).toBe("invalid_reason");
+      expect((await service.rpc("admin_end_addon", { p_actor: admin.id, p_org: local.id, p_addon: ADDON, p_reason: motivo })).error?.message).toBe("invalid_reason");
       expect((await service.rpc("admin_set_organization_active", { p_actor: admin.id, p_org: local.id, p_active: false, p_reason: motivo })).error?.message).toBe("invalid_reason");
     }
     expect((await organizacion(local.id)).is_active).toBe(true);
@@ -310,25 +334,21 @@ describe("add-ons: activar, cambiar y finalizar", () => {
   it("la tabla no admite dos contratos del mismo add-on, ni por SQL directo", async () => {
     const local = await crearLocal("pro");
     expect((await activar(local)).ok).toBe(true);
-    expect(() => sql(`insert into public.subscription_addons (organization_id, addon_code) values ('${local.id}', 'webar')`)).toThrow(/duplicate key|subscription_addons_organization_id_addon_code_key/);
+    expect(() => sql(`insert into public.subscription_addons (organization_id, addon_code) values ('${local.id}', '${ADDON}')`)).toThrow(/duplicate key|subscription_addons_organization_id_addon_code_key/);
   });
 
-  it("finalizar: deja de dar la feature y el cupo, conserva los packs y audita; no se puede finalizar dos veces", async () => {
+  it("finalizar: conserva los packs, deja la fecha de fin en el instante real y audita; no se puede finalizar dos veces", async () => {
     const local = await crearLocal("pro");
     expect((await activar(local, { extraPacks: "3" })).ok).toBe(true);
-    expect((await entitlements(local.owner, local.id))!.limits.models_3d).toBe(45);
 
     expect((await finalizar(local, "Dejó de pagarlo")).ok).toBe(true);
     const [fila] = await contratos(local.id);
     expect(fila.extra_packs).toBe(3);
     expect(new Date(fila.ends_at!).getTime()).toBeLessThanOrEqual(Date.now() + 5_000); // el reloj del Docker local puede ir adelantado
-    const ent = (await entitlements(local.owner, local.id))!;
-    expect(ent.features).not.toContain("webar");
-    expect(ent.limits.models_3d).toBe(0);
 
     const fin = (await auditoria(local.id)).at(-1)!;
     expect(fin).toMatchObject({ action: "addon.ended", before: { active: true, extra_packs: 3 } });
-    expect(fin.after).toMatchObject({ slug: local.slug, addon: "webar", extra_packs: 3, reason: "Dejó de pagarlo" });
+    expect(fin.after).toMatchObject({ slug: local.slug, addon: ADDON, extra_packs: 3, reason: "Dejó de pagarlo" });
 
     expect(await finalizar(local)).toEqual({ ok: false, error: "addon_not_active" });
     expect(await accionesDe(local.id)).toEqual(["addon.activated", "addon.ended"]);
@@ -339,7 +359,7 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     expect(await finalizar(local)).toEqual({ ok: false, error: "addon_not_active" });
     expect(await finalizar(local, "")).toEqual({ ok: false, error: "invalid_reason" });
     expect(await endAddon(ctx(admin), { slug: local.slug, addon: "otro", reason: "x" })).toEqual({ ok: false, error: "invalid_addon" });
-    expect(await endAddon(ctx(admin), { slug: "no-existe-nada", addon: "webar", reason: "x" })).toEqual({ ok: false, error: "org_not_found" });
+    expect(await endAddon(ctx(admin), { slug: "no-existe-nada", addon: ADDON, reason: "x" })).toEqual({ ok: false, error: "org_not_found" });
     expect(await auditoria(local.id)).toEqual([]);
   });
 
@@ -349,7 +369,6 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     expect((await finalizar(local)).ok).toBe(true);
     expect((await activar(local, { extraPacks: "2", reason: "Volvió" })).ok).toBe(true);
     expect(await accionesDe(local.id)).toEqual(["addon.activated", "addon.ended", "addon.activated"]);
-    expect((await entitlements(local.owner, local.id))!.limits.models_3d).toBe(35);
     expect((await auditoria(local.id)).at(-1)!.before).toMatchObject({ active: false, extra_packs: 2 });
   });
 
@@ -357,7 +376,6 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     const local = await crearLocal("pro");
     expect((await activar(local, { endsOn: enDias(10) })).ok).toBe(true);
     sql(`update public.subscription_addons set ends_at = now() - interval '1 minute' where organization_id = '${local.id}'`);
-    expect((await entitlements(local.owner, local.id))!.features).not.toContain("webar");
     // No hay nada que finalizar; activarlo de nuevo cuenta como activación.
     expect(await finalizar(local)).toEqual({ ok: false, error: "addon_not_active" });
     expect((await activar(local, { extraPacks: "1" })).ok).toBe(true);
@@ -379,7 +397,7 @@ describe("add-ons: activar, cambiar y finalizar", () => {
   it("un pedido con el reloj viejo (esperó mientras otro finalizaba) no finaliza de nuevo ni retrocede la fecha", async () => {
     const local = await crearLocal("pro");
     expect((await activar(local)).ok).toBe(true);
-    const lenta = await conRelojViejo(`public.admin_end_addon('${admin.id}', '${local.id}', 'webar', 'lenta')`, 3, async () => {
+    const lenta = await conRelojViejo(`public.admin_end_addon('${admin.id}', '${local.id}', '${ADDON}', 'lenta')`, 3, async () => {
       expect((await finalizar(local, "primera")).ok).toBe(true);
     });
     expect(lenta.error).toMatch(/addon_not_active/);
@@ -394,7 +412,7 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     const local = await crearLocal("pro");
     expect((await activar(local, { extraPacks: "1" })).ok).toBe(true);
     const lenta = await conRelojViejo(
-      `public.admin_set_addon('${admin.id}', '${local.id}', 'webar', 2, null, 'lenta')`,
+      `public.admin_set_addon('${admin.id}', '${local.id}', '${ADDON}', 2, null, 'lenta')`,
       3,
       async () => {
         expect((await finalizar(local, "primera")).ok).toBe(true);
@@ -403,7 +421,6 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     expect(lenta.error).toBeNull();
     expect(await accionesDe(local.id)).toEqual(["addon.activated", "addon.ended", "addon.activated"]);
     expect((await auditoria(local.id)).at(-1)!.before).toMatchObject({ active: false });
-    expect((await entitlements(local.owner, local.id))!.limits.models_3d).toBe(35);
   }, 30_000);
 
   it("dos finalizaciones simultáneas dejan una sola", async () => {
@@ -428,7 +445,7 @@ describe("add-ons: activar, cambiar y finalizar", () => {
     const leer = async () => {
       const r = await getOrganizationDetail(ctx(admin), local.slug);
       if (!r.ok) throw new Error("no se pudo leer la ficha");
-      return r.data.addons.find((a) => a.code === "webar")!;
+      return r.data.addons.find((a) => a.code === ADDON)!;
     };
     expect(await leer()).toMatchObject({ allowedByPlan: true, contract: null, baseQuota: 15, packSize: 10 });
     expect((await activar(local, { extraPacks: "1" })).ok).toBe(true);
@@ -453,7 +470,7 @@ describe("lo que ve el Dueño de los add-ons", () => {
     const filas = (await local.owner.db.rpc("owner_account_history", { p_org: local.id })).data!;
     expect(filas.map((f) => f.action)).toEqual(["addon.ended", "addon.activated"]);
     const activado = filas.find((f) => f.action === "addon.activated")!;
-    expect(activado.detail).toMatchObject({ addon: "webar", extra_packs: 2 });
+    expect(activado.detail).toMatchObject({ addon: ADDON, extra_packs: 2 });
     expect((activado.detail as { ends_at?: string }).ends_at).toBeTruthy();
     const terminado = filas.find((f) => f.action === "addon.ended")!;
     expect(Object.keys(terminado.detail as object).sort()).toEqual(["addon", "ends_at"]);

@@ -343,7 +343,7 @@ describe("anular un pago (ficha anular-pagos)", () => {
 });
 
 describe("add-ons (ficha addons-y-baja-de-organizaciones)", () => {
-  const addon = { slug: "local-1", addon: "webar", extraPacks: "2", endsOn: "", reason: "Contrató WebAR" };
+  const addon = { slug: "local-1", addon: "ensayo", extraPacks: "2", endsOn: "", reason: "Contrató el ensayo" };
 
   it("parseExtraPacks: enteros de 0 a 50; vacío cuenta como 0", () => {
     expect(parseExtraPacks("0")).toBe(0);
@@ -363,8 +363,10 @@ describe("add-ons (ficha addons-y-baja-de-organizaciones)", () => {
   });
 
   it("isAddonCode y isAddonActive", () => {
-    expect(isAddonCode("webar")).toBe(true);
-    expect(isAddonCode("otro")).toBe(false);
+    // Solo la forma: que exista en el catálogo (vacío desde ADR 0031) lo decide la base.
+    expect(isAddonCode("ensayo")).toBe(true);
+    expect(isAddonCode("add_on_2")).toBe(true);
+    for (const malo of ["", "Otro", "otro add", "2otro", "otro-uno", "x".repeat(33), "'; drop table addons", null, 3]) expect(isAddonCode(malo), String(malo)).toBe(false);
     expect(isAddonActive(null, NOW)).toBe(true);
     expect(isAddonActive("2026-10-15T00:00:00Z", NOW)).toBe(true);
     expect(isAddonActive("2026-10-14T15:00:00Z", NOW)).toBe(false);
@@ -379,12 +381,12 @@ describe("add-ons (ficha addons-y-baja-de-organizaciones)", () => {
 
   it("lo inválido se rechaza antes de llamar a la base", async () => {
     const { ctx, llamadas } = fakeContext({ data: null });
-    expect(await setAddon(ctx, { ...addon, addon: "otro" }, NOW)).toEqual({ ok: false, error: "invalid_addon" });
+    expect(await setAddon(ctx, { ...addon, addon: "No es un add-on" }, NOW)).toEqual({ ok: false, error: "invalid_addon" });
     expect(await setAddon(ctx, { ...addon, extraPacks: "51" }, NOW)).toEqual({ ok: false, error: "invalid_packs" });
     expect(await setAddon(ctx, { ...addon, endsOn: "2020-01-01" }, NOW)).toEqual({ ok: false, error: "invalid_ends_at" });
     expect(await setAddon(ctx, { ...addon, reason: " " }, NOW)).toEqual({ ok: false, error: "invalid_reason" });
-    expect(await endAddon(ctx, { slug: "local-1", addon: "otro", reason: "x" })).toEqual({ ok: false, error: "invalid_addon" });
-    expect(await endAddon(ctx, { slug: "local-1", addon: "webar", reason: "" })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await endAddon(ctx, { slug: "local-1", addon: "No es un add-on", reason: "x" })).toEqual({ ok: false, error: "invalid_addon" });
+    expect(await endAddon(ctx, { slug: "local-1", addon: "ensayo", reason: "" })).toEqual({ ok: false, error: "invalid_reason" });
     expect(await setOrganizationActive(ctx, { slug: "local-1", active: false, reason: "" })).toEqual({ ok: false, error: "invalid_reason" });
     expect(await setOrganizationActive(ctx, { slug: "No Es Un Slug!", active: false, reason: "x" })).toEqual({ ok: false, error: "org_not_found" });
     expect(llamadas).toEqual([]);
@@ -406,7 +408,7 @@ describe("add-ons (ficha addons-y-baja-de-organizaciones)", () => {
     for (const [error, esperado] of casos) {
       const { ctx } = fakeContext({ error });
       expect(await setAddon(ctx, addon, NOW), esperado).toEqual({ ok: false, error: esperado });
-      expect(await endAddon(ctx, { slug: "local-1", addon: "webar", reason: "x" }), esperado).toEqual({ ok: false, error: esperado });
+      expect(await endAddon(ctx, { slug: "local-1", addon: "ensayo", reason: "x" }), esperado).toEqual({ ok: false, error: esperado });
       expect(await setOrganizationActive(ctx, { slug: "local-1", active: false, reason: "x" }), esperado).toEqual({ ok: false, error: esperado });
     }
   });
@@ -415,7 +417,7 @@ describe("add-ons (ficha addons-y-baja-de-organizaciones)", () => {
     for (const error of [{ code: "", message: "TypeError: fetch failed" }, { message: "timeout" }, { code: "PGRST000", message: "x" }]) {
       const { ctx } = fakeContext({ error });
       expect(await setAddon(ctx, addon, NOW)).toEqual({ ok: false, error: "uncertain_change" });
-      expect(await endAddon(ctx, { slug: "local-1", addon: "webar", reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
+      expect(await endAddon(ctx, { slug: "local-1", addon: "ensayo", reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
       expect(await setOrganizationActive(ctx, { slug: "local-1", active: true, reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
     }
   });

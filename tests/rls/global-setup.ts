@@ -30,6 +30,10 @@ export default async function setup() {
   const orgs = await db.from("organizations").delete().like("slug", "tt-%");
   if (orgs.error) console.warn(`No se pudieron limpiar organizaciones de prueba: ${orgs.error.message}`);
 
+  // Add-ons de ensayo (`tt_*`) que dejó una corrida interrumpida: el catálogo real está vacío (ADR 0031).
+  const addons = await db.from("addons").delete().like("code", "tt\\_%");
+  if (addons.error) console.warn(`No se pudieron limpiar add-ons de prueba: ${addons.error.message}`);
+
   const users = await db.auth.admin.listUsers({ perPage: 1000 });
   for (const user of users.data?.users ?? []) {
     if (user.email?.startsWith("rls-")) await db.auth.admin.deleteUser(user.id);

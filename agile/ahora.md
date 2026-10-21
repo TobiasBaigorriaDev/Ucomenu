@@ -1,24 +1,17 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agile/historial.md`.
+Actualizado: 2026-10-21 · agente saliente: Claude Code. Historia anterior en Git y fichas.
 
 ## Punto de retomada
 
-**Todo lo pendiente está aprobado, subido a `origin/main` y desplegado en staging (2026-10-21).** Staging (`https://ucomenu-staging.fly.dev`, proyecto de Supabase `ucomenu-staging`) tiene las migraciones hasta `20261107100000` y la app de `main`; `supabase db push --dry-run` dice «up to date». Entró en bloque: borrado de mesas (ADR 0030), cuentas globales (0032), listas, orden e imágenes atómicos (0033), vista por sucursal (0034), carta central con precio, agotado y oculto por sucursal (0035) y las tandas 3 y 4 de UX. El tablero no tiene nada «Para verificar».
+Se implementó en local el primer ítem de la fase 2: [catálogo del feed de videos](cambios/catalogo-video-feed.md) (nivel C; ADR 0031). Migración `20261110100000`: `video_feed` y `max_videos_published` (10) en Premium, WebAR y `models_3d` fuera de la base, pantalla de add-ons de SuperAdmin con el catálogo vacío. Aceptación, decisiones, evidencia y mutaciones están en la ficha. Está **sin commit y sin revisión independiente**; la ficha dice cómo pedirla (`pnpm revision:codex`), que exige un commit.
 
-**Siguiente trabajo pedido por el usuario: una corrección de UI.** Todavía no se definió cuál; preguntar qué pantalla y qué se ve mal. El diseño vive en `DESIGN.md` y `PRODUCT.md` (skill Impeccable); la carta pública usa el sistema propio dentro de `.carta`, el panel y la sala usan los tokens globales. Una corrección solo visual es nivel S: implementar, comprobar a 390 px sin desborde (`expectNoHorizontalOverflow`) y leer el diff.
+Siguen sin commit, mezclados en el mismo árbol de `main` (HEAD base `68cfb60`), cuatro cambios anteriores: [corrección del selector de Sala](cambios/selector-sucursal-directo.md), [edición de platos por tarea](cambios/editor-plato-ux.md), [personalización de la carta](cambios/personalizacion-carta.md) (ADR 0036) y [temas de fechas](cambios/temas-de-fechas.md) (ADR 0037), con migraciones `20261108100000`, `20261108110000` y `20261109100000` aplicadas solo en local. Si se integra, commitear por cambio preservando el resto; `tools/escenarios-locales.mjs` es local y sin versionar. `database.types.ts`, `producto.md`, `tablero.md` y este archivo mezclan cambios de varios.
 
-Local: `pnpm db:reset` + `pnpm db:demo` + `node tools/escenarios-locales.mjs` (Café Ejemplo con dos sucursales; local, sin versionar) y `pnpm dev`. Usuarios `dueno@cafe-ejemplo.test` y `mozo@cafe-ejemplo.test`, clave `ucomenu-dev-2026`.
+## Bloqueos y límites
 
-## Bloqueos y riesgos
-
-- **Producción:** bloqueada (dominio, Supabase de producción, revisión legal).
-- Rollback de `20261107100000`: el código anterior mostraría el historial por sucursal mezclado con el general; los datos se conservan (decisión aceptada, ADR 0035).
-- Sin probar: push real y teléfono físico (solo dobles y emulación), lector de pantalla.
-- E2E con `--workers=1`; RLS y E2E no a la vez. `pnpm build` antes de `pnpm test:e2e`.
+Staging está en las migraciones hasta `20261107100000`; nada posterior se subió. La `20261110100000` **borra** contratos `webar` (solo de ensayo): aprobar antes de `supabase db push`. Producción sigue pendiente ([ficha](cambios/salida-a-produccion.md)). RLS y E2E comparten base: no correrlos a la vez. Con los escenarios locales cargados fallan 15 pruebas RLS y 3 E2E de `menu.spec` por datos extra, no por el código. No se hizo `pnpm build` para no pisar el `.next` de los servidores `next start` del usuario (3000 y 3001, con el build anterior): el E2E de SuperAdmin corrió contra `next dev` en 3200.
 
 ## Próximo paso
 
-1. Preguntar al usuario qué pantalla corregir y con qué criterio.
-2. Corregir, probar en local con capturas a 390 px y a escritorio, y mostrar antes de commitear.
-3. Cualquier despliegue nuevo a staging pide su aprobación (procedimiento en `docs/produccion.md`, flyctl por Docker).
+Pedir al usuario si commitea y pasa la revisión de Codex del catálogo. Luego, el ítem desbloqueado del tablero: carga y publicación de videos con Mux (nivel C); necesita las credenciales del plan Free de Mux (ADR 0031), que debe aportar el usuario. La carga debe exigir `org_can_write` además de `has_feature('video_feed')` y contar el uso en `org_entitlements`.

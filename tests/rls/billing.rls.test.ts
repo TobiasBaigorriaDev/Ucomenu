@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addMembership,
@@ -255,95 +256,136 @@ describe("alta de organizaciones", () => {
   });
 });
 
-describe("features por plan, add-on y estado", () => {
+describe("features por plan y estado (feed de videos, ADR 0031)", () => {
   type Caso = {
     etiqueta: string;
     plan: PlanCode;
     finEnMs: number;
-    addon?: { extraPacks: number; terminaEnMs?: number };
     features: string[];
-    models3d: number;
+    videosPublished: number;
   };
 
   const casosFeatures: Caso[] = [
-    { etiqueta: "Básico al día", plan: "basic", finEnMs: 3 * DIA_MS, features: ["menu"], models3d: 0 },
-    { etiqueta: "Pro al día", plan: "pro", finEnMs: 3 * DIA_MS, features: ["analytics", "menu", "waiter_call"], models3d: 0 },
+    { etiqueta: "Básico al día", plan: "basic", finEnMs: 3 * DIA_MS, features: ["menu"], videosPublished: 0 },
+    { etiqueta: "Pro al día", plan: "pro", finEnMs: 3 * DIA_MS, features: ["analytics", "menu", "waiter_call"], videosPublished: 0 },
     {
       etiqueta: "Premium al día",
       plan: "premium",
       finEnMs: 3 * DIA_MS,
-      features: ["analytics", "loyalty", "menu", "waiter_call"],
-      models3d: 0,
-    },
-    { etiqueta: "Básico con add-on (no permitido en Básico)", plan: "basic", finEnMs: 3 * DIA_MS, addon: { extraPacks: 0 }, features: ["menu"], models3d: 0 },
-    {
-      etiqueta: "Pro con add-on WebAR",
-      plan: "pro",
-      finEnMs: 3 * DIA_MS,
-      addon: { extraPacks: 0 },
-      features: ["analytics", "menu", "waiter_call", "webar"],
-      models3d: 15,
+      features: ["analytics", "loyalty", "menu", "video_feed", "waiter_call"],
+      videosPublished: 10,
     },
     {
-      etiqueta: "Premium con add-on y 2 packs extra",
-      plan: "premium",
-      finEnMs: 3 * DIA_MS,
-      addon: { extraPacks: 2 },
-      features: ["analytics", "loyalty", "menu", "waiter_call", "webar"],
-      models3d: 35,
-    },
-    {
-      etiqueta: "Pro con add-on vencido",
-      plan: "pro",
-      finEnMs: 3 * DIA_MS,
-      addon: { extraPacks: 1, terminaEnMs: -HORA_MS },
-      features: ["analytics", "menu", "waiter_call"],
-      models3d: 0,
-    },
-    {
-      etiqueta: "Pro en gracia con add-on: todo sigue",
+      etiqueta: "Pro en gracia: todo lo suyo sigue, sin video",
       plan: "pro",
       finEnMs: -2 * DIA_MS,
-      addon: { extraPacks: 0 },
-      features: ["analytics", "menu", "waiter_call", "webar"],
-      models3d: 15,
+      features: ["analytics", "menu", "waiter_call"],
+      videosPublished: 0,
     },
     {
-      etiqueta: "Premium en solo lectura con add-on: se apagan las interactivas",
+      etiqueta: "Premium en gracia: todo sigue",
+      plan: "premium",
+      finEnMs: -2 * DIA_MS,
+      features: ["analytics", "loyalty", "menu", "video_feed", "waiter_call"],
+      videosPublished: 10,
+    },
+    {
+      etiqueta: "Premium en solo lectura: el feed se sigue viendo, se apagan las interactivas",
       plan: "premium",
       finEnMs: -(9 * DIA_MS),
-      addon: { extraPacks: 0 },
+      features: ["analytics", "menu", "video_feed"],
+      videosPublished: 10,
+    },
+    {
+      etiqueta: "Pro en solo lectura: sin video",
+      plan: "pro",
+      finEnMs: -(9 * DIA_MS),
       features: ["analytics", "menu"],
-      models3d: 15,
+      videosPublished: 0,
     },
     {
       etiqueta: "Premium suspendida: nada",
       plan: "premium",
       finEnMs: -(30 * DIA_MS),
-      addon: { extraPacks: 0 },
       features: [],
-      models3d: 15,
+      videosPublished: 10,
     },
   ];
 
-  it.each(casosFeatures)("$etiqueta", async ({ plan, finEnMs, addon, features, models3d }) => {
-    await service.from("subscription_addons").delete().eq("organization_id", orgId);
+  it.each(casosFeatures)("$etiqueta", async ({ plan, finEnMs, features, videosPublished }) => {
     await setSubscription(service, orgId, { plan, finEnMs });
-    if (addon) {
-      const { error } = await service.from("subscription_addons").insert({
-        organization_id: orgId,
-        addon_code: "webar",
-        extra_packs: addon.extraPacks,
-        ends_at: addon.terminaEnMs === undefined ? null : new Date(Date.now() + addon.terminaEnMs).toISOString(),
-      });
-      expect(error).toBeNull();
-    }
 
     const owner = await ownerUser.db.rpc("org_entitlements", { p_org: orgId });
     const staff = await staffUser.db.rpc("org_entitlements", { p_org: orgId });
 
-    expect(owner.data).toMatchObject({ features, limits: { models_3d: models3d } });
+    expect(owner.data).toMatchObject({ features, limits: { videos_published: videosPublished } });
     expect(staff.data).toMatchObject({ features });
+  });
+
+  it("el catálogo: video_feed y 10 videos publicados solo en Premium; Básico y Pro, sin cupo", async () => {
+    const planes = await service.from("plans").select("code, features, max_videos_published").order("code");
+    expect(planes.data).toEqual([
+      { code: "basic", features: ["menu"], max_videos_published: 0 },
+      { code: "premium", features: ["menu", "waiter_call", "analytics", "loyalty", "video_feed"], max_videos_published: 10 },
+      { code: "pro", features: ["menu", "waiter_call", "analytics"], max_videos_published: 0 },
+    ]);
+  });
+
+  it("org_limit('videos_published') sale de la fila del plan; el tope no depende de la mora", async () => {
+    await setSubscription(service, orgId, { plan: "premium", finEnMs: -(30 * DIA_MS) });
+    expect(sql(`select private.org_limit('${orgId}', 'videos_published')`)[0][0]).toBe("10");
+    await setSubscription(service, orgId, { plan: "pro", finEnMs: 3 * DIA_MS });
+    expect(sql(`select private.org_limit('${orgId}', 'videos_published')`)[0][0]).toBe("0");
+    // Sin suscripción no hay cupo (falla cerrado), igual que los otros topes.
+    expect(sql(`select private.org_limit('${randomUUID()}', 'videos_published')`)[0][0]).toBe("0");
+  });
+
+  it("cambiar el cupo en la fila del plan lo cambia sin tocar código; null = sin límite", async () => {
+    await setSubscription(service, orgId, { plan: "premium", finEnMs: 3 * DIA_MS });
+    try {
+      sql(`update public.plans set max_videos_published = 25 where code = 'premium'`);
+      expect(sql(`select private.org_limit('${orgId}', 'videos_published')`)[0][0]).toBe("25");
+      sql(`update public.plans set max_videos_published = null where code = 'premium'`);
+      const ilimitado = await ownerUser.db.rpc("org_entitlements", { p_org: orgId });
+      expect((ilimitado.data as { limits: Record<string, unknown> }).limits.videos_published).toBeNull();
+    } finally {
+      sql(`update public.plans set max_videos_published = 10 where code = 'premium'`);
+    }
+  });
+
+  it("el catálogo rechaza features desconocidas y cupos negativos", () => {
+    expect(() => sql(`update public.plans set features = features || array['webar'] where code = 'pro'`)).toThrow(/plans_features_check/);
+    expect(() => sql(`update public.plans set max_videos_published = -1 where code = 'pro'`)).toThrow(/max_videos_published_check|check constraint/);
+  });
+
+  it("WebAR se retiró: ni feature, ni límite models_3d, ni fila en el catálogo, ni forma de volver a concederlo", async () => {
+    const webar = await service.from("addons").select("code").eq("code", "webar");
+    expect(webar.data).toEqual([]);
+    expect(sql(`select count(*) from public.subscription_addons where addon_code = 'webar'`)[0][0]).toBe("0");
+    expect(() => sql(`select private.org_limit('${orgId}', 'models_3d')`)).toThrow(/recurso desconocido/);
+    // Aunque alguien volviera a insertar la fila `webar` y un contrato, no concede nada: solo el plan concede features.
+    await setSubscription(service, orgId, { plan: "pro", finEnMs: 3 * DIA_MS });
+    try {
+      sql(`insert into public.addons (code, name, monthly_price_usd_cents, base_model_quota, pack_size, pack_monthly_price_usd_cents, allowed_plans)
+           values ('webar', 'WebAR', 2500, 15, 10, 1000, array['pro', 'premium'])`);
+      sql(`insert into public.subscription_addons (organization_id, addon_code) values ('${orgId}', 'webar')`);
+      expect(sql(`select private.has_feature('${orgId}', 'webar')`)[0][0]).toBe("f");
+      const ent = await ownerUser.db.rpc("org_entitlements", { p_org: orgId });
+      expect(JSON.stringify(ent.data)).not.toContain("webar");
+      expect(JSON.stringify(ent.data)).not.toContain("models_3d");
+    } finally {
+      sql(`delete from public.subscription_addons where addon_code = 'webar'`);
+      sql(`delete from public.addons where code = 'webar'`);
+    }
+  });
+
+  it("el código de un add-on solo admite minúsculas, dígitos y guion bajo", () => {
+    for (const malo of ["WebAR", "web-ar", "1abc", "", "a".repeat(33)]) {
+      expect(() =>
+        sql(`insert into public.addons (code, name, monthly_price_usd_cents, base_model_quota, pack_size, pack_monthly_price_usd_cents, allowed_plans)
+             values ('${malo}', 'x', 1, 1, 1, 1, array['pro'])`),
+      ).toThrow(/addons_code_check/);
+    }
   });
 
   it("los límites del plan salen de la tabla plans", async () => {
@@ -434,14 +476,20 @@ describe("tablas de planes y suscripciones", () => {
   });
 
   it("los add-ons contratados los ve solo el owner", async () => {
-    await service.from("subscription_addons").insert({ organization_id: orgId, addon_code: "webar" });
+    sql(`insert into public.addons (code, name, monthly_price_usd_cents, base_model_quota, pack_size, pack_monthly_price_usd_cents, allowed_plans)
+         values ('tt_ensayo', 'Ensayo', 100, 5, 5, 50, array['pro', 'premium']) on conflict (code) do nothing`);
+    try {
+      await service.from("subscription_addons").insert({ organization_id: orgId, addon_code: "tt_ensayo" });
 
-    const owner = await ownerUser.db.from("subscription_addons").select("addon_code").eq("organization_id", orgId);
-    const staff = await staffUser.db.from("subscription_addons").select("addon_code").eq("organization_id", orgId);
+      const owner = await ownerUser.db.from("subscription_addons").select("addon_code").eq("organization_id", orgId);
+      const staff = await staffUser.db.from("subscription_addons").select("addon_code").eq("organization_id", orgId);
 
-    expect(owner.data).toEqual([{ addon_code: "webar" }]);
-    expect(staff.data).toEqual([]);
-    await service.from("subscription_addons").delete().eq("organization_id", orgId);
+      expect(owner.data).toEqual([{ addon_code: "tt_ensayo" }]);
+      expect(staff.data).toEqual([]);
+    } finally {
+      await service.from("subscription_addons").delete().eq("organization_id", orgId);
+      sql(`delete from public.addons where code = 'tt_ensayo'`);
+    }
   });
 
   it("anon no lee ninguna de las cuatro tablas", async () => {
@@ -451,12 +499,18 @@ describe("tablas de planes y suscripciones", () => {
     }
   });
 
-  it("cualquier usuario con sesión lee el catálogo de planes y add-ons", async () => {
-    const planes = await staffUser.db.from("plans").select("code").order("code");
-    const addons = await staffUser.db.from("addons").select("code, base_model_quota, pack_size");
+  it("cualquier usuario con sesión lee el catálogo de planes y add-ons (vacío desde ADR 0031)", async () => {
+    const planes = await staffUser.db.from("plans").select("code, max_videos_published").order("code");
+    const addons = await staffUser.db.from("addons").select("code");
 
-    expect(planes.data?.map((p) => p.code)).toEqual(["basic", "premium", "pro"]);
-    expect(addons.data).toEqual([{ code: "webar", base_model_quota: 15, pack_size: 10 }]);
+    expect(planes.data).toEqual([
+      { code: "basic", max_videos_published: 0 },
+      { code: "premium", max_videos_published: 10 },
+      { code: "pro", max_videos_published: 0 },
+    ]);
+    // `addons-y-baja.rls` siembra un add-on de ensayo `tt_*` mientras corre; el catálogo real no tiene ninguno.
+    expect(addons.error).toBeNull();
+    expect(addons.data?.filter((a) => !a.code.startsWith("tt_"))).toEqual([]);
   });
 
   it("nadie escribe planes, add-ons ni suscripciones por la API", async () => {
@@ -466,18 +520,20 @@ describe("tablas de planes y suscripciones", () => {
         await db.from("plans").update({ max_active_products: 9999 }).eq("code", "basic"),
         await db.from("plans").insert({ code: "pro", name: "x", monthly_price_usd_cents: 1, yearly_price_usd_cents: 1 }),
         await db.from("plans").delete().eq("code", "basic"),
-        await db.from("addons").update({ base_model_quota: 9999 }).eq("code", "webar"),
+        await db.from("addons").insert({ code: "tt_x", name: "x", monthly_price_usd_cents: 1, base_model_quota: 1, pack_size: 1, pack_monthly_price_usd_cents: 1, allowed_plans: ["pro"] }),
+        await db.from("plans").update({ max_videos_published: 9999 }).eq("code", "pro"),
         await db.from("subscriptions").update({ plan_code: "premium" }).eq("organization_id", orgId),
         await db.from("subscriptions").update({ current_period_end: "2099-01-01" }).eq("organization_id", orgId),
         await db.from("subscriptions").insert({ organization_id: ORG_CAFE, plan_code: "premium", trial_ends_at: "2099-01-01" }),
         await db.from("subscriptions").delete().eq("organization_id", orgId),
-        await db.from("subscription_addons").insert({ organization_id: orgId, addon_code: "webar", extra_packs: 99 }),
+        await db.from("subscription_addons").insert({ organization_id: orgId, addon_code: "tt_x", extra_packs: 99 }),
         await db.from("subscription_addons").delete().eq("organization_id", orgId),
       ];
       for (const r of resultados) expect(r.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
     }
     const intacto = await service.from("plans").select("max_active_products").eq("code", "basic").single();
     expect(intacto.data?.max_active_products).toBe(80);
+    expect((await service.from("plans").select("max_videos_published").eq("code", "pro").single()).data?.max_videos_published).toBe(0);
   });
 
   it("la organización morosa del seed sigue suspendida y con sus datos", async () => {

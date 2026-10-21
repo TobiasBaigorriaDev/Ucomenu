@@ -19,6 +19,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "organization.deleted": "Organización borrada",
 };
 
+// WebAR ya no está en el catálogo (ADR 0031), pero sus movimientos siguen en la auditoría y se nombran.
 const ADDON_NAME: Record<string, string> = { webar: "WebAR" };
 
 const dateTime = new Intl.DateTimeFormat("es-AR", {

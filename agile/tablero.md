@@ -38,7 +38,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
-- [C] Catálogo: retirar el add-on `webar` y el límite `models_3d`, sumar la feature `video_feed` a Premium y el límite `videos_published` (10) en `plans`; resolver los contratos `webar` existentes y la pantalla de add-ons de SuperAdmin
+- [C] Catálogo: retirar el add-on `webar` y el límite `models_3d`, sumar la feature `video_feed` a Premium y el límite `videos_published` (10) en `plans`; resolver los contratos `webar` existentes y la pantalla de add-ons de SuperAdmin → [ficha](cambios/catalogo-video-feed.md) (implementado en local; falta la revisión independiente y la aprobación)
 - [C] Carga y publicación de videos desde el panel (Dueño y Staff): subida directa y reproducción por **Mux Video**, validación de duración, peso y formato, borrador y publicado, cupo, borrado con limpieza del asset en Mux; la prueba en iPhone y Android reales se hace al integrar la carga y el feed en staging con el plan Free de Mux (bloqueado por: catálogo)
 - [M] Feed vertical en la carta: scroll de a un video, carga y reproducción bajo demanda, enlace opcional al plato, comportamiento en solo lectura y suspendida (bloqueado por: carga y publicación)
 - [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (bloqueado por: feed)

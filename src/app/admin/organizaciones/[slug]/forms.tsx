@@ -335,7 +335,7 @@ export function AddonForm({
               className={`${inputClass} mt-1`}
             />
             <p id={`addon-packs-hint-${addon}`} className="mt-1 text-sm text-muted">
-              Cada pack suma platos al cupo base. De 0 a {maxPacks}.
+              Cada pack suma al cupo base. De 0 a {maxPacks}.
             </p>
           </div>
           <div>

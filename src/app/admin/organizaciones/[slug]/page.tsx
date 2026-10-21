@@ -197,6 +197,11 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           Se activan a mano, sobre un plan que los admite, y quedan en los movimientos con su motivo. El Dueño ve el cambio en su
           historial, sin el motivo.
         </p>
+        {org.addons.length === 0 ? (
+          <p className="mt-3 max-w-prose text-base text-muted" data-testid="addons-vacio">
+            Hoy no hay add-ons a la venta. El feed de videos cortos viene incluido en el plan Premium (no se activa acá).
+          </p>
+        ) : null}
         <ul className="mt-3 divide-y divide-ink/15">
           {org.addons.map((addon) => (
             <li key={addon.code} data-testid="addon" data-addon={addon.code} data-active={addon.contract?.active ? "true" : "false"} className="py-5">
@@ -205,7 +210,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
                 {addon.contract === null
                   ? "Nunca contratado."
                   : addon.contract.active
-                    ? `Vigente · ${addon.contract.quota} platos 3D (${addon.baseQuota} base${addon.contract.extraPacks ? ` + ${addon.contract.extraPacks} × ${addon.packSize}` : ""}) · ${
+                    ? `Vigente · cupo de ${addon.contract.quota} (${addon.baseQuota} base${addon.contract.extraPacks ? ` + ${addon.contract.extraPacks} × ${addon.packSize}` : ""}) · ${
                         addon.contract.endsAt ? `termina el ${formatDateWithYear(addon.contract.endsAt)}` : "sin fecha de fin"
                       }`
                     : `Finalizado el ${formatDateWithYear(addon.contract.endsAt ?? "")} · tenía ${addon.contract.extraPacks} packs extra.`}

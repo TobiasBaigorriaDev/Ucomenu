@@ -10,7 +10,7 @@ describe("parseEntitlements", () => {
       state: "grace",
       can_write: true,
       features: ["menu", "waiter_call"],
-      limits: { branches: 1, active_products: 80, models_3d: null },
+      limits: { branches: 1, active_products: 80, videos_published: null },
       usage: { branches: 1, active_products: 5 },
       plan: "basic",
       billing_cycle: "monthly",
@@ -25,7 +25,7 @@ describe("parseEntitlements", () => {
       billingCycle: "monthly",
       periodEnd: FIN,
       daysLate: 3,
-      limits: { branches: 1, active_products: 80, models_3d: null },
+      limits: { branches: 1, active_products: 80, videos_published: null },
       usage: { branches: 1, active_products: 5 },
     });
   });

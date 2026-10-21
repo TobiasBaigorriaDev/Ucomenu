@@ -56,6 +56,7 @@ const ACTIONS: readonly string[] = [
   "addon.ended",
 ];
 
+// WebAR ya no está en el catálogo (ADR 0031), pero sus movimientos siguen en el historial del Dueño y se nombran.
 const ADDON_LABEL: Record<string, string> = { webar: "WebAR" };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
