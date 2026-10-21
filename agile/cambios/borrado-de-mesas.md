@@ -1,5 +1,5 @@
 # Cambio: Borrar mesas (junto con su historial de llamados)
-Estado: **para verificar** — implementado y probado en local; falta la revisión independiente y la aprobación humana
+Estado: **para verificar** — implementado y probado en local; aprobado por Codex (`596704a`); falta la aprobación humana
 Nivel: C (eliminación irreversible: la mesa, su QR impreso y los llamados que cuelgan de ella; y un permiso de `DELETE` nuevo sobre `tables`)
 
 ## Objetivo
@@ -60,4 +60,5 @@ Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probad
 - **No probado / límites:** borrado autenticado en staging o producción (la migración todavía no está en staging); teléfono real y lector de pantalla; el panel de sala con un llamado pendiente de una mesa que se borra en ese instante (solo se prueba que sus filas desaparecen).
 
 ## Revisión y aprobación
-_(pendiente: revisión independiente de Codex y aprobación humana antes de integrar/desplegar)_
+- **Codex, ronda 1 (commit `596704a`, nivel C, esfuerzo high): APROBAR, sin hallazgos.** Revisión estática (no ejecutó suites ni mutaciones; esa evidencia es la de arriba). Observó que la prueba de «borrar dos veces» es secuencial y no demuestra concurrencia real: el segundo `DELETE` simultáneo recibe 0 filas por el bloqueo de fila de PostgreSQL y el módulo responde «no encontrado» (misma ruta que la prueba secuencial); no se agregó una prueba concurrente.
+- Pendiente: la **aprobación humana** (no está dada) antes de subir a `origin`, aplicar la migración en staging o desplegar.
