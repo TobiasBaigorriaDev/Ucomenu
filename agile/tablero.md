@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [C] Retención y purga de `payments` y `payment_voids`: sobreviven al borrado de la organización (sin clave foránea), se conservan 10 años y después se purgan con una función que nadie de la API ejecuta (implementada y probada en local; falta la revisión independiente y la aprobación de integrar; el plazo de 10 años por confirmar con el contador) → agile/cambios/retencion-de-pagos.md · ADR 0027
+- [C] Retención y purga de `payments` y `payment_voids`: sobreviven al borrado de la organización (sin clave foránea), se conservan 10 años y después se purgan con una función que nadie de la API ejecuta (implementada y probada en local; aprobado por Codex; falta la aprobación del usuario para integrar; el plazo de 10 años por confirmar con el contador) → agile/cambios/retencion-de-pagos.md · ADR 0027
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md

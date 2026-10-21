@@ -1,5 +1,5 @@
 # Cambio: Retención y purga de `payments` y `payment_voids`
-Estado: **implementado y verificado en local; sin revisión independiente todavía** (nivel C). Política elegida por el usuario el 2026-10-20; el plazo de 10 años queda por confirmar con el contador.
+Estado: **implementado, verificado en local y aprobado por Codex (2 rondas); falta la aprobación del usuario para integrar** (nivel C). Política elegida por el usuario el 2026-10-20; el plazo de 10 años queda por confirmar con el contador.
 Nivel: C (dinero + eliminación irreversible de registros contables)
 
 ## Objetivo
@@ -30,6 +30,7 @@ Base local (`pnpm db:reset` con la migración nueva), 2026-10-20; el commit prob
 
 ## Revisión y aprobación
 - Codex, ronda 1 (commit `2c0e5e0`): **APROBAR CON CAMBIOS**. Un hallazgo, **real y corregido**: `database.types.ts` seguía declarando las 4 claves foráneas quitadas (AGENTS.md exige `pnpm db:types` al cambiar el esquema). Regenerado: el diff solo borra esas relaciones; typecheck y lint OK. Sin regresión funcional (ninguna consulta las usaba).
+- Codex, ronda de verificación (commit `a172d53`): **APROBAR**, sin hallazgos; confirmó que el hallazgo quedó corregido. No ejecutó pruebas (la evidencia es la de arriba).
 
 ## (C) Invariantes
 - Un pago solo se borra si tiene más de 10 años y su organización ya no existe; una anulación solo se borra junto con su pago.
@@ -42,4 +43,4 @@ Base local (`pnpm db:reset` con la migración nueva), 2026-10-20; el commit prob
 - Riesgo aceptado: un `DELETE` de organización ya no se frena por los pagos; la barrera es la acción de borrado prevista (ADR 0027).
 
 ## (C) Aprobación humana
-Política aceptada por el usuario el 2026-10-20 (ADR 0027). Falta la revisión independiente y la aprobación de integrar. Por confirmar con el contador: el plazo de 10 años y desde cuándo se cuenta.
+Política aceptada por el usuario el 2026-10-20 (ADR 0027). Falta la aprobación de integrar (revisión independiente hecha). Por confirmar con el contador: el plazo de 10 años y desde cuándo se cuenta.
