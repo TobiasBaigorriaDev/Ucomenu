@@ -27,7 +27,7 @@ export function AvailabilityForms({ orgSlug, productId, branches, basePriceCents
     </>
   );
 
-  return <section aria-labelledby="availability-title" className="panel-cell mt-6">
+  return <section aria-labelledby="availability-title" className="panel-cell">
     <h2 id="availability-title" className="font-display text-2xl">{multi ? "Sucursales" : "Disponibilidad por sucursal"}</h2>
     {multi ? (
       <p className="mt-2 max-w-prose text-base text-muted">
@@ -38,7 +38,8 @@ export function AvailabilityForms({ orgSlug, productId, branches, basePriceCents
       <p className="mt-2 text-base text-muted">Agotado sigue visible en la carta con su aviso. El cambio solo afecta a la sucursal elegida.</p>
     )}
     {branches.length ? <ul className="mt-4 divide-y divide-ink/15">
-      {branches.map((branch) => <li key={branch.id} data-testid="disponibilidad-sucursal" data-branch={branch.id} className="py-4">
+      {branches.map((branch) => <li key={branch.id} data-testid="disponibilidad-sucursal" data-branch={branch.id} className="grid min-w-0 gap-x-6 gap-y-3 py-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="min-w-0">
         <p className="font-medium [overflow-wrap:anywhere]">{branch.name}</p>
         <p className="mt-1 text-sm text-muted" data-testid="estado-sucursal">
           {multi ? <><span>{branch.is_visible ? "Se muestra" : "Oculto"}</span>{" · "}</> : null}
@@ -66,8 +67,10 @@ export function AvailabilityForms({ orgSlug, productId, branches, basePriceCents
               </SubmitButton>
             </fieldset>
           </ActionForm>
-
-          <ActionForm action={branchPriceAction} className="mt-3 max-w-sm">
+        </> : null}
+        </div>
+        {multi ? <>
+          <ActionForm action={branchPriceAction} className="min-w-0 self-start">
             {(state) => (
               <fieldset disabled={!canWrite} className="grid gap-2">
                 {hidden(branch)}

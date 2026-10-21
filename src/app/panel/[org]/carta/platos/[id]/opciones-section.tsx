@@ -17,7 +17,7 @@ type Props = {
 /** «Variantes y adicionales» en la pantalla del plato: grupos, sus opciones y el alta de un grupo nuevo. */
 export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props) {
   return (
-    <section aria-labelledby="opciones" className="panel-cell mt-6" data-testid="opciones">
+    <section aria-labelledby="opciones" className="panel-cell" data-testid="opciones">
       <h2 id="opciones" className="font-display text-2xl">
         Variantes y adicionales
       </h2>
@@ -31,19 +31,21 @@ export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props)
           Este plato todavía no tiene variantes ni adicionales.
         </p>
       ) : (
-        <ul className="mt-5 space-y-6">
+        <ul className="mt-5 space-y-8">
           {groups.map((group, index) => {
             const activeOptions = group.options.filter((option) => option.is_active).length;
             return (
-              <li key={group.id} className="border-t border-ink/15 pt-5 first:border-t-0 first:pt-0" data-testid="grupo" data-name={group.name}>
+              <li key={group.id} className="min-w-0 border-t border-ink/25 pt-6 first:border-t-0 first:pt-0" data-testid="grupo" data-name={group.name}>
+                <div className="rounded-xl bg-sand px-4 py-3">
                 <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  <h3 className="min-w-0 font-display text-xl leading-tight [overflow-wrap:anywhere]">{group.name}</h3>
+                  <h3 className="min-w-0 font-display text-2xl leading-tight [overflow-wrap:anywhere]">{group.name}</h3>
                   <span className={badgeClass}>{isVariant(group.min_choices, group.max_choices) ? "Variante" : "Adicionales"}</span>
                   {group.is_active ? null : <span className={badgeClass}>Inactivo</span>}
                 </div>
                 <p className="mt-1 text-base text-muted" data-testid="regla">
                   {choiceRule(group.min_choices, group.max_choices)}
                 </p>
+                </div>
                 {group.is_active && isUnsatisfiable(group.min_choices, activeOptions) ? (
                   <p className="mt-1 max-w-prose text-sm font-medium" data-testid="grupo-incompleto">
                     {activeOptions === 0
@@ -121,7 +123,7 @@ export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props)
         </ul>
       )}
 
-      <div className="mt-8">
+      <div className="mt-8 border-t border-ink/25 pt-6">
         <h3 className="font-display text-xl">Nuevo grupo</h3>
         <CreateGroupForm orgSlug={orgSlug} productId={productId} canWrite={canWrite} />
       </div>

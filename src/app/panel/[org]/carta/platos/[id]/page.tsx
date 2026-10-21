@@ -15,6 +15,7 @@ import { PhotoForm } from "../../photo-form";
 import { ProductForm } from "../../product-form";
 import { OpcionesSection } from "./opciones-section";
 import { AvailabilityForms } from "../../availability-forms";
+import { EditorTabs } from "./editor-tabs";
 
 export const metadata: Metadata = { title: "Editar plato" };
 
@@ -42,10 +43,19 @@ export default async function EditProductPage({ params, searchParams }: PageProp
   const notice = writeBlockNotice(ent);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
-      <Link href={`/panel/${org}/carta`} className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2">
-        Volver a la carta
-      </Link>
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8 lg:px-10 lg:py-10">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-6 gap-y-1">
+        <Link href={`/panel/${org}/carta`} className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2">
+          Volver a la carta
+        </Link>
+        <Link
+          href={`/panel/${membership.org.slug}/carta/platos/${product.id}/historial`}
+          className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2"
+          data-testid="ver-historial-plato"
+        >
+          Ver el historial de precios de este plato
+        </Link>
+      </div>
       <h1 className="font-display text-4xl leading-tight break-words">{product.name}</h1>
       {nuevo ? (
         <p role="status" className="mt-2 text-lg font-medium" data-testid="plato-creado">
@@ -55,46 +65,54 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       {product.is_active ? null : <p className="mt-2 text-base text-muted">Este plato está inactivo: no se ve en la carta.</p>}
       {notice ? <p className="mt-3 max-w-prose text-base font-medium" data-testid="carta-bloqueada">{notice}</p> : null}
 
-      <section aria-labelledby="datos" className="panel-cell mt-8">
-        <h2 id="datos" className="font-display text-2xl">
-          Datos del plato
-        </h2>
-        <ProductForm
-          orgSlug={membership.org.slug}
-          productId={product.id}
-          categories={carta.map(({ id: categoryId, name }) => ({ id: categoryId, name }))}
-          initial={{
-            name: product.name,
-            description: product.description ?? "",
-            price: priceToInput(product.price_cents),
-            categoryId: product.category_id,
-            dietaryTags: product.dietary_tags,
-          }}
-          canWrite={canWrite}
-        />
-      </section>
+      <EditorTabs
+        general={
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+            <section aria-labelledby="datos" className="panel-cell min-w-0">
+              <h2 id="datos" className="font-display text-2xl">
+                Datos del plato
+              </h2>
+              <ProductForm
+                orgSlug={membership.org.slug}
+                productId={product.id}
+                categories={carta.map(({ id: categoryId, name }) => ({ id: categoryId, name }))}
+                initial={{
+                  name: product.name,
+                  description: product.description ?? "",
+                  price: priceToInput(product.price_cents),
+                  categoryId: product.category_id,
+                  dietaryTags: product.dietary_tags,
+                }}
+                canWrite={canWrite}
+              />
+            </section>
 
-      <section aria-labelledby="foto" className="panel-cell mt-6">
-        <h2 id="foto" className="font-display text-2xl">
-          Foto
-        </h2>
-        <PhotoForm
-          orgSlug={membership.org.slug}
-          productId={product.id}
-          productName={product.name}
-          currentUrl={imageUrl(product.image_path)}
-          canWrite={canWrite}
-        />
-      </section>
-
-      <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} />
-
-      <AvailabilityForms
-        orgSlug={membership.org.slug}
-        productId={product.id}
-        branches={availability}
-        basePriceCents={product.price_cents}
-        canWrite={canWrite}
+            <section aria-labelledby="foto" className="panel-cell min-w-0">
+              <h2 id="foto" className="font-display text-2xl">
+                Foto
+              </h2>
+              <PhotoForm
+                orgSlug={membership.org.slug}
+                productId={product.id}
+                productName={product.name}
+                currentUrl={imageUrl(product.image_path)}
+                canWrite={canWrite}
+              />
+            </section>
+          </div>
+        }
+        opciones={
+          <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} />
+        }
+        sucursales={
+          <AvailabilityForms
+            orgSlug={membership.org.slug}
+            productId={product.id}
+            branches={availability}
+            basePriceCents={product.price_cents}
+            canWrite={canWrite}
+          />
+        }
       />
 
       <section aria-labelledby="borrar" className="panel-cell mt-6">
@@ -106,15 +124,6 @@ export default async function EditProductPage({ params, searchParams }: PageProp
         </div>
       </section>
 
-      <p className="mt-12">
-        <Link
-          href={`/panel/${membership.org.slug}/carta/platos/${product.id}/historial`}
-          className="inline-flex min-h-11 items-center text-base text-cobalt underline underline-offset-2"
-          data-testid="ver-historial-plato"
-        >
-          Ver el historial de precios de este plato
-        </Link>
-      </p>
     </main>
   );
 }

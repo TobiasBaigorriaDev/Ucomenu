@@ -30,6 +30,7 @@ test("Dueño y Staff cambian disponibilidad sin afectar otra sucursal; carta, QR
   for (const url of [menu, other]) { await page.goto(url); await expect(page.getByText("Agotado", { exact: true })).toHaveCount(0); }
   await login(page, t.owner.email, t.owner.password);
   await page.goto(path);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   const centerRow = page.locator(`[data-branch="${center.data.id}"]`);
   const northRow = page.locator(`[data-branch="${branch.data.id}"]`);
   await centerRow.getByRole("button", { name: "Marcar agotado" }).click();
@@ -56,9 +57,11 @@ test("Dueño y Staff cambian disponibilidad sin afectar otra sucursal; carta, QR
   await page.context().clearCookies(); // Cambia de persona; /login con una sesión vigente redirige al panel.
   await login(page, t.staff.email, t.staff.password);
   await page.goto(path);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await centerRow.getByRole("button", { name: "Marcar disponible" }).click();
   await expect(centerRow.getByText("Disponible", { exact: true })).toBeVisible();
   await page.reload();
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await expect(centerRow.getByText("Disponible", { exact: true })).toBeVisible();
   await northRow.getByRole("button", { name: "Marcar agotado" }).click();
   await expect(northRow.getByText("Agotado", { exact: true })).toBeVisible();
@@ -83,6 +86,7 @@ for (const state of ["read_only", "suspended"] as const) {
     const { t, path } = await setup(`agotado-${state.replace("_", "-")}`, state);
     await login(page, t.staff.email, t.staff.password);
     await page.goto(path);
+    await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
     await expect(page.getByRole("button", { name: "Marcar agotado" })).toBeDisabled();
     await expect(page.getByTestId("carta-bloqueada")).toBeVisible();
     await expectNoHorizontalOverflow(page);

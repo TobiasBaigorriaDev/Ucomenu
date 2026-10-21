@@ -29,15 +29,15 @@ type Props = {
 /** Alta y edición de un plato. En el alta, el plato se puede crear oculto (si el plan ya llegó a su tope). */
 export function ProductForm({ orgSlug, productId, categories, branches, initial, canWrite }: Props) {
   return (
-    <ActionForm action={saveProductAction} className="mt-4 max-w-md">
+    <ActionForm action={saveProductAction} className={productId ? "mt-4" : "mt-4 max-w-md"}>
       {(state) => {
         const v = state.values;
         return (
-          <fieldset disabled={!canWrite} className="grid gap-4">
+          <fieldset disabled={!canWrite} className={`grid gap-4 ${productId ? "sm:grid-cols-2" : ""}`}>
             <input type="hidden" name="org" value={orgSlug} />
             {productId ? <input type="hidden" name="id" value={productId} /> : null}
 
-            <div>
+            <div className={productId ? "sm:col-span-2" : undefined}>
               <label htmlFor="plato-nombre" className={labelClass}>
                 Nombre
               </label>
@@ -52,7 +52,7 @@ export function ProductForm({ orgSlug, productId, categories, branches, initial,
               />
             </div>
 
-            <div>
+            <div className={productId ? "sm:col-span-2" : undefined}>
               <label htmlFor="plato-descripcion" className={labelClass}>
                 Descripción <span className="font-normal text-muted">(opcional)</span>
               </label>
@@ -137,9 +137,10 @@ export function ProductForm({ orgSlug, productId, categories, branches, initial,
               </fieldset>
             )}
 
-            <fieldset aria-describedby="dietary-help">
+            <fieldset aria-describedby="dietary-help" className={productId ? "sm:col-span-2" : undefined}>
               <legend className={labelClass}>Etiquetas dietarias</legend>
               <p id="dietary-help" className="mt-1 text-sm text-muted">Marcá solo lo que el local puede confirmar, incluyendo la preparación y sus opciones.</p>
+              <div className={productId ? "mt-1 flex flex-wrap gap-x-5" : undefined}>
               {DIETARY_TAGS.map((tag) => (
                 <label key={tag} className="flex min-h-11 items-center gap-3">
                   <input type="checkbox" name="dietary" value={tag} className="size-5 accent-cobalt"
@@ -147,6 +148,7 @@ export function ProductForm({ orgSlug, productId, categories, branches, initial,
                   {DIETARY_LABEL[tag]}
                 </label>
               ))}
+              </div>
             </fieldset>
 
             <div>

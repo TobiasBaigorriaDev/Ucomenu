@@ -69,6 +69,7 @@ test("precio propio, oculto y agotado de una sucursal se ven en su carta y no en
 
   await login(page, e.t.owner.email, e.t.owner.password);
   await page.goto(platoPanel);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await expectNoHorizontalOverflow(page);
 
   // Precio propio de Norte. El de Centro no cambia.
@@ -95,6 +96,7 @@ test("precio propio, oculto y agotado de una sucursal se ven en su carta y no en
 
   // Ocultar el plato en Norte: ni listado, ni búsqueda, ni detalle.
   await page.goto(platoPanel);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await fila(page, e.norte).getByRole("button", { name: "Ocultar en esta sucursal" }).click();
   await expect(fila(page, e.norte).getByTestId("estado-sucursal")).toContainText("Oculto");
   await page.goto(e.menuNorte);
@@ -107,6 +109,7 @@ test("precio propio, oculto y agotado de una sucursal se ven en su carta y no en
 
   // Una sucursal sin platos visibles en una categoría no la muestra: Flan oculto en Norte vacía «Postres».
   await page.goto(`/panel/${e.t.slug}/carta/platos/${e.flan}`);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await fila(page, e.norte).getByRole("button", { name: "Ocultar en esta sucursal" }).click();
   await expect(fila(page, e.norte).getByTestId("estado-sucursal")).toContainText("Oculto");
   await page.goto(e.menuNorte);
@@ -123,6 +126,7 @@ test("precio propio, oculto y agotado de una sucursal se ven en su carta y no en
 
   // Mostrar de nuevo + «Usar precio general».
   await page.goto(platoPanel);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await fila(page, e.norte).getByRole("button", { name: "Mostrar en esta sucursal" }).click();
   await expect(fila(page, e.norte).getByTestId("estado-sucursal")).toContainText("Se muestra");
   await fila(page, e.norte).getByRole("button", { name: "Usar precio general" }).click();
@@ -141,6 +145,7 @@ test("precio propio de cero se muestra como $ 0; un precio inválido no se guard
   const e = await setup("cero");
   await login(page, e.t.staff.email, e.t.staff.password);
   await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   const norte = fila(page, e.norte);
 
   await norte.getByLabel("Precio propio en pesos").fill("abc");
@@ -180,6 +185,7 @@ test("el alta de un plato elige en qué sucursales se muestra; con una sola sucu
   await page.goto(`/panel/${e.t.slug}/carta/platos/nuevo`);
   await expect(page.getByTestId("alta-sucursales")).toHaveCount(0);
   await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await expect(page.getByRole("button", { name: "Marcar agotado" })).toBeVisible();
   await expect(page.getByRole("button", { name: "Ocultar en esta sucursal" })).toHaveCount(0);
   await expect(page.getByLabel("Precio propio en pesos")).toHaveCount(0);
@@ -195,6 +201,7 @@ test("al quedar una sola sucursal activa, los ajustes que ya tenía un plato sig
   await page.goto(`/panel/${e.t.slug}/carta`);
   await expect(page.getByText("Oculto en Centro")).toBeVisible();
   await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   const centro = fila(page, e.centro);
   await expect(centro.getByTestId("estado-sucursal")).toContainText("Oculto");
   await centro.getByRole("button", { name: "Mostrar en esta sucursal" }).click();
@@ -205,6 +212,7 @@ test("al quedar una sola sucursal activa, los ajustes que ya tenía un plato sig
   await expect(page.getByText(/9\.500/)).toBeVisible();
   // Sin ajustes, la pantalla vuelve a ser la de siempre.
   await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await expect(page.getByRole("button", { name: "Ocultar en esta sucursal" })).toHaveCount(0);
 });
 
@@ -213,6 +221,7 @@ test("una cuenta en solo lectura ve los ajustes pero no puede cambiarlos", async
   await service().from("subscriptions").update({ current_period_end: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(), trial_ends_at: null }).eq("organization_id", e.t.orgId);
   await login(page, e.t.owner.email, e.t.owner.password);
   await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
+  await page.getByRole("tab", { name: "Sucursales", exact: true }).click();
   await expect(fila(page, e.norte).getByRole("button", { name: "Ocultar en esta sucursal" })).toBeDisabled();
   await expect(fila(page, e.norte).getByRole("button", { name: "Guardar precio" })).toBeDisabled();
 });

@@ -76,6 +76,7 @@ test("el Dueño arma una variante y adicionales con las plantillas y la carta p�
 
   await login(page, t.owner.email, t.owner.password);
   await page.goto(rutaPlato(t, productId));
+  await page.getByRole("tab", { name: "Variantes", exact: true }).click();
   await expect(page.getByTestId("sin-grupos")).toBeVisible();
 
   // Plantilla «Variante»: rellena nombre, mínimo y máximo, y se puede editar antes de guardar.
@@ -125,6 +126,7 @@ test("el Dueño arma una variante y adicionales con las plantillas y la carta p�
 
   // Desactivar una opción y un grupo desde el panel los saca de la carta al instante.
   await page.goto(rutaPlato(t, productId));
+  await page.getByRole("tab", { name: "Variantes", exact: true }).click();
   await grupo(page, "Tamaño").getByRole("button", { name: "Desactivar Grande" }).click();
   await expect(opcion(grupo(page, "Tamaño"), "Grande")).toContainText("Inactiva");
   await publica(page, t, "Café con leche");
@@ -132,6 +134,7 @@ test("el Dueño arma una variante y adicionales con las plantillas y la carta p�
   await expect(page.getByTestId("grupo-opciones").filter({ hasText: "Tamaño" })).toContainText("Chico");
 
   await page.goto(rutaPlato(t, productId));
+  await page.getByRole("tab", { name: "Variantes", exact: true }).click();
   await grupo(page, "Adicionales").getByRole("button", { name: "Desactivar Adicionales" }).click();
   await expect(grupo(page, "Adicionales")).toContainText("Inactivo");
   await publica(page, t, "Café con leche");
@@ -145,6 +148,7 @@ test("el Staff también gestiona variantes y adicionales; editar y ordenar se ve
 
   await login(page, t.staff.email, t.staff.password);
   await page.goto(rutaPlato(t, productId));
+  await page.getByRole("tab", { name: "Variantes", exact: true }).click();
   await crearGrupo(page, "Pan", "1", "1");
   await agregarOpcion(page, "Pan", "Blanco");
   await agregarOpcion(page, "Pan", "Integral", "150");
@@ -175,6 +179,7 @@ test("los errores se explican con lo escrito conservado, sin guardar nada", asyn
   const productId = await sembrar(t);
   await login(page, t.owner.email, t.owner.password);
   await page.goto(rutaPlato(t, productId));
+  await page.getByRole("tab", { name: "Variantes", exact: true }).click();
 
   const form = formNuevoGrupo(page);
   await form.getByLabel("Nombre del grupo").fill("Salsas");
@@ -219,6 +224,7 @@ test("nombres larguísimos no desbordan a 390 px, ni en el panel ni en la carta"
 
   await login(page, t.owner.email, t.owner.password);
   await page.goto(rutaPlato(t, productId));
+  await page.getByRole("tab", { name: "Variantes", exact: true }).click();
   await crearGrupo(page, largoGrupo, "1", "1");
   await expectNoHorizontalOverflow(page);
   await agregarOpcion(page, largoGrupo, largoOpcion, "10.000.000");
@@ -263,6 +269,7 @@ for (const [rotulo, cuenta] of [
     for (const persona of [t.owner, t.staff]) {
       await login(page, persona.email, persona.password);
       await page.goto(rutaPlato(t, productId));
+      await page.getByRole("tab", { name: "Variantes", exact: true }).click();
       await expect(page.getByTestId("carta-bloqueada")).toBeVisible();
       await expect(grupo(page, "Tamaño")).toBeVisible();
       await expect(grupo(page, "Tamaño").getByRole("button", { name: "Desactivar Tamaño" })).toBeDisabled();
