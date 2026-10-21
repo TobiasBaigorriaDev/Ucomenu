@@ -1,5 +1,5 @@
 # Cambio: Catálogo del feed de videos — `video_feed` y `videos_published` en `plans`; se retira WebAR
-Estado: **implementado y aprobado por el usuario; en revisión independiente (C).** Migración `20261110100000` aplicada solo en la base local.
+Estado: **implementado, aprobado por el usuario y por Codex (3 rondas, commit `b5ff895`); falta aplicarla en staging.** Migración `20261110100000` aplicada solo en la base local.
 Nivel: C (dinero: qué plan obtiene la feature y qué cupo; eliminación irreversible: se borran contratos `webar`)
 
 ## Objetivo
@@ -60,4 +60,5 @@ Base local con las migraciones hasta `20261110100000` (aplicada con `supabase mi
 - **Aprobación del usuario (2026-10-21):** «Apruebo todo», sobre el resumen con lo pendiente (commit, revisión y migración en staging). Commit `88603fa`.
 - **Ronda 1 (Codex, `88603fa`):** APROBAR CON CAMBIOS, un hallazgo Importante, **real**: la migración auditaba los contratos vigentes y después los borraba sin bloquear la tabla; si `admin_set_addon` reactivaba un contrato vencido entre los dos pasos, se borraba sin su `addon.ended`. **Corregido:** `lock table public.subscription_addons in share row exclusive mode` al inicio del bloque de retiro. Regresión determinista en `tests/rls/retiro-webar.rls.test.ts`: reejecuta el bloque de la migración (entre las marcas `[retiro-webar:…]`) mientras otra sesión, dentro de `pg_sleep`, tiene el contrato reactivado sin confirmar; **falla sin el `lock`** (comprobado quitándolo) y pasa con él. La misma prueba fija que se audita solo lo vigente y se borra todo.
 - **Ronda 2 (verificación, `ae67c75`):** APROBAR CON CAMBIOS, un hallazgo Importante, **real**: `SHARE ROW EXCLUSIVE` deja pasar el `select … for update` de `admin_set_addon` / `admin_end_addon` pero bloquea su `update`, y el `delete` del retiro espera esa fila → interbloqueo (PostgreSQL aborta una de las dos). **Corregido:** el bloqueo pasa a `EXCLUSIVE`, que frena también el `for update`. Prueba nueva (sesión que toma la fila, tarda y escribe después): **falla con `share row exclusive` y sin bloqueo**, pasa con `exclusive` (`retiro-webar` 3/3).
-- **Pendiente:** ronda 3 (última) y, después, `supabase db push` a staging (aprobado por el usuario con «Apruebo todo»; no se ejecuta antes del veredicto).
+- **Ronda 3 (verificación, `b5ff895`):** **APROBAR**, sin hallazgos nuevos; los dos previos, corregidos. Revisión estática (Codex no ejecutó suites).
+- **Staging: no aplicada.** `supabase db push --dry-run` (2026-10-21) listó cuatro migraciones: la mía y `20261108100000`, `20261108110000` y `20261109100000` (paletas, estilo y temas de fecha: sin commit y sin aprobación del usuario). `db push` no admite elegir una, así que se frenó a la espera de decisión del usuario.
