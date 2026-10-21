@@ -208,6 +208,131 @@ test.describe("anuncios con varias sucursales", () => {
   });
 });
 
+test.describe("vista por sucursal", () => {
+  const selector = (page: Page) => page.getByTestId("selector-sucursal");
+  const chip = (page: Page, nombre: string) => selector(page).getByRole("button", { name: nombre, exact: true });
+  const mesa1 = (mesas: { branch_id: string; label: string; qr_token: string }[], branch: string) => mesas.find((m) => m.branch_id === branch && m.label === "Mesa 1")!;
+  const elegir = async (page: Page, nombre: string) => {
+    await chip(page, nombre).click();
+    await expect(chip(page, nombre)).toHaveAttribute("aria-pressed", "true");
+  };
+
+  test("el Dueño y el Personal eligen sus sucursales por separado; la sala, el aviso y el título siguen a cada uno y la elección persiste", async ({ browser }) => {
+    const { t, mesas, branchIds } = await nuevoLocal("sala-vista", { sucursales: 2 });
+    const ctxDueno = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const ctxStaff = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const dueno = await abrirSala(ctxDueno, t.owner, t);
+    const staff = await abrirSala(ctxStaff, t.staff, t);
+    await expectNoHorizontalOverflow(staff);
+
+    // Por defecto se ve todo; el Personal elige solo Norte.
+    await expect(chip(staff, "Todas")).toHaveAttribute("aria-pressed", "true");
+    await elegir(staff, "Norte");
+    await expect(chip(staff, "Todas")).toHaveAttribute("aria-pressed", "false");
+    await expectNoHorizontalOverflow(staff);
+
+    await llamar(mesa1(mesas, branchIds[0]).qr_token); // Centro
+    await llamar(mesa1(mesas, branchIds[1]).qr_token, "bill"); // Norte
+    await expect(dueno.locator('[data-testid="llamado"]')).toHaveCount(2, { timeout: 12_000 });
+    await expect(staff.locator('[data-testid="llamado"]')).toHaveCount(1, { timeout: 12_000 });
+    await expect(staff.locator('[data-testid="llamado"]')).toContainText("Norte");
+    await expect(dueno).toHaveTitle("(2) Sala en vivo");
+    await expect(staff).toHaveTitle("(1) Sala en vivo");
+    // El anuncio del Personal es solo de Norte; no se entera de lo de Centro (pero sabe que existe).
+    await expect(staff.getByTestId("anuncio")).toHaveText("Nuevo llamado: Mesa 1, sucursal Norte, pide la cuenta.");
+    await expect(staff.getByTestId("otras-sucursales")).toContainText("Hay 1 llamado pendiente en otra sucursal");
+    await expect(dueno.getByTestId("otras-sucursales")).toHaveCount(0);
+
+    // La elección es de la persona y persiste: al recargar y desde otro dispositivo (otra sesión de la misma persona).
+    await staff.reload();
+    await expect(chip(staff, "Norte")).toHaveAttribute("aria-pressed", "true");
+    await expect(staff.locator('[data-testid="llamado"]')).toHaveCount(1);
+    const ctxOtro = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const otroDispositivo = await abrirSala(ctxOtro, t.staff, t);
+    await expect(chip(otroDispositivo, "Norte")).toHaveAttribute("aria-pressed", "true");
+    await expect(dueno.getByTestId("selector-sucursal").getByRole("button", { name: "Todas", exact: true })).toHaveAttribute("aria-pressed", "true");
+
+    // «Ver todas» desde el aviso vuelve a mostrar todo.
+    await staff.getByTestId("otras-sucursales").getByRole("button", { name: "Ver todas" }).click();
+    await expect(staff.locator('[data-testid="llamado"]')).toHaveCount(2);
+    await expect(chip(staff, "Todas")).toHaveAttribute("aria-pressed", "true");
+    await expect(staff.getByTestId("otras-sucursales")).toHaveCount(0);
+    await ctxDueno.close();
+    await ctxStaff.close();
+    await ctxOtro.close();
+  });
+
+  test("cambiar de sucursales no hace sonar ni anuncia lo que ya estaba pendiente; un llamado nuevo de lo que se mira sí suena", async ({ browser }) => {
+    const { t, mesas, branchIds } = await nuevoLocal("sala-vista-sonido", { sucursales: 2 });
+    await llamar(mesa1(mesas, branchIds[0]).qr_token);
+    await llamar(mesa1(mesas, branchIds[1]).qr_token);
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await conDobles(ctx);
+    const page = await abrirSala(ctx, t.staff, t);
+    // Se empieza mirando solo Norte (el llamado de Centro NO se vio nunca en esta pantalla) y se recarga con esa vista.
+    await elegir(page, "Norte");
+    await page.reload();
+    await expect(page.locator('[data-testid="llamado"]')).toHaveCount(1);
+    await page.getByRole("button", { name: "Activar alertas" }).click();
+    await expect(page.getByTestId("alertas-activas")).toBeVisible();
+    expect(await pitidos(page)).toBe(1); // el de confirmación
+
+    // Pasar a «Todas» muestra de golpe un llamado que ya estaba: no suena ni se anuncia.
+    await elegir(page, "Todas");
+    await expect(page.locator('[data-testid="llamado"]')).toHaveCount(2);
+    await page.waitForTimeout(1_500);
+    expect(await pitidos(page)).toBe(1);
+    await expect(page.getByTestId("anuncio")).toHaveText("");
+    await elegir(page, "Norte");
+    await expect(page.locator('[data-testid="llamado"]')).toHaveCount(1);
+    await page.waitForTimeout(1_500);
+    expect(await pitidos(page)).toBe(1);
+
+    // Con dos sucursales, elegir la otra estando en una suma las dos (= «Todas»): para mirar solo Centro se parte de «Todas».
+    await elegir(page, "Todas");
+    await elegir(page, "Centro");
+    await expect(page.locator('[data-testid="llamado"]')).toHaveCount(1);
+    await llamar(mesa1(mesas, branchIds[0]).qr_token, "bill"); // nuevo, en lo que mira
+    await expect(page.getByTestId("anuncio")).toHaveText("Nuevo llamado: Mesa 1, sucursal Centro, pide la cuenta.", { timeout: 12_000 });
+    await expect.poll(() => pitidos(page)).toBe(2);
+    await ctx.close();
+  });
+
+  test("el cartel del panel y la analítica siguen la elección", async ({ browser }) => {
+    const { t, mesas, branchIds } = await nuevoLocal("sala-vista-panel", { sucursales: 2 });
+    await llamar(mesa1(mesas, branchIds[0]).qr_token); // Centro
+    await llamar(mesa1(mesas, branchIds[1]).qr_token, "bill"); // Norte
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const sala = await abrirSala(ctx, t.owner, t);
+    await elegir(sala, "Norte");
+
+    await sala.goto(`/panel/${t.slug}`);
+    const aviso = sala.getByTestId("llamados-aviso");
+    await expect(aviso.getByTestId("llamados-aviso-titulo")).toHaveText("Una mesa necesita atención", { timeout: 12_000 });
+    await expect(aviso.getByTestId("llamados-aviso-lista")).toContainText("Norte");
+    await expect(aviso.getByTestId("llamados-aviso-lista")).not.toContainText("Centro");
+    await expect(aviso.getByTestId("llamados-aviso-vista")).toContainText("Mostrando: Norte");
+
+    // La analítica del Dueño abre en la sucursal elegida; «Todas las sucursales» la quita explícitamente.
+    await sala.goto(`/panel/${t.slug}/analitica`);
+    const filtro = sala.getByTestId("analitica-sucursales");
+    await expect(filtro.getByRole("link", { name: "Norte" })).toHaveAttribute("aria-current", "page");
+    await filtro.getByRole("link", { name: "Todas las sucursales" }).click();
+    await expect(sala).toHaveURL(/sucursal=todas/);
+    await expect(filtro.getByRole("link", { name: "Todas las sucursales" })).toHaveAttribute("aria-current", "page");
+    await ctx.close();
+  });
+
+  test("con una sola sucursal no hay selector", async ({ browser }) => {
+    const { t } = await nuevoLocal("sala-vista-una");
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.staff, t);
+    await expect(page.getByTestId("sala-vacia")).toBeVisible();
+    await expect(page.getByTestId("selector-sucursal")).toHaveCount(0);
+    await ctx.close();
+  });
+});
+
 test.describe("atender", () => {
   test("«Atendido» lo saca de la lista, lo registra con la hora y la persona, y otra pantalla lo ve desaparecer", async ({ browser }) => {
     const { t, mesas } = await nuevoLocal("sala-atiende");
@@ -434,7 +559,11 @@ test.describe("acceso", () => {
     expect(propio.status()).toBe(200);
     expect(propio.headers()["cache-control"]).toContain("no-store");
     const cuerpo = await propio.json();
-    expect(Object.keys(cuerpo).sort()).toEqual(["calls", "enabled", "multiBranch", "serverNow"]);
+    // La vista por sucursal agrega las sucursales activas del local (id y nombre), lo que mira esta persona y cuántos pendientes hay en las otras.
+    expect(Object.keys(cuerpo).sort()).toEqual(["branches", "calls", "enabled", "multiBranch", "othersPending", "serverNow", "view"]);
+    expect(Object.keys(cuerpo.branches[0]).sort()).toEqual(["id", "name"]);
+    expect(cuerpo.view).toEqual([]);
+    expect(cuerpo.othersPending).toBe(0);
     expect(Object.keys(cuerpo.calls[0]).sort()).toEqual(["branchName", "createdAt", "id", "kind", "tableLabel", "visitStartedAt"]);
     // visitStartedAt (cuándo escaneó el comensal) es lo único agregado por el ticket de visita: un instante o null, nunca un id ni la IP.
     expect(cuerpo.calls[0].visitStartedAt === null || !Number.isNaN(Date.parse(cuerpo.calls[0].visitStartedAt))).toBe(true);

@@ -122,7 +122,7 @@ Comensal (sin sesión, sin websocket)
 ```
 - **La tabla es la fuente de verdad; el evento es solo un aviso.** Al conectar o reconectar, el panel recarga los pendientes, y mantiene un sondeo lento de respaldo. Así un evento perdido nunca deja una mesa sin atender.
 - **Cooldown y unicidad se resuelven en la base**, de forma atómica, para que dos toques simultáneos no generen dos llamados. El límite de frecuencia por cliente también se cuenta en la base con un identificador que arma el servidor (HMAC de la IP); quien llame a la API directo puede elegir ese valor, por eso es una segunda línea (ADR 0010).
-- **Canal privado por sucursal** con autorización por RLS: el personal solo puede suscribirse a canales de sucursales de **su** organización (la membresía es por organización, no por sucursal), nunca a las de otra.
+- **Canal privado por sucursal** con autorización por RLS: el personal solo puede suscribirse a canales de sucursales de **su** organización (la membresía es por organización, no por sucursal; cada persona elige qué sucursales mira, ADR 0034), nunca a las de otra.
 - **Solo el personal mantiene conexiones en tiempo real.** El consumo de conexiones crece con los dispositivos del personal, no con los comensales.
 - El comensal recibe confirmación en la respuesta del POST; conocer el estado posterior («ya te atendieron») se resuelve con una consulta liviana.
 - Restricciones del navegador a tener en cuenta: el sonido requiere un gesto previo del usuario («activar alertas») y las pestañas en segundo plano se ralentizan; el panel debe pedir mantener la pantalla activa y se recomienda un dispositivo dedicado.

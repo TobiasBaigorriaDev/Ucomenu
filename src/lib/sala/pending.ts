@@ -3,6 +3,7 @@ import { parseEntitlements } from "@/lib/entitlements";
 import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { asUuid } from "@/lib/carta/validation";
+import { readBranchView, splitByView } from "@/lib/sucursales/vista";
 import { EXPIRY_MS, sortOldestFirst, type SalaCall, type SalaState } from "./types";
 
 type Db = SupabaseClient<Database>;
@@ -31,8 +32,11 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   const branchRows = branches.data ?? [];
   const multiBranch = branchRows.length > 1;
+  const branchList = branchRows.map((branch) => ({ id: branch.id, name: branch.name }));
+  // Lo que mira esta persona (vacío = todas). Si la lectura falla, la sala falla: no se filtra «a ciegas».
+  const view = multiBranch ? await readBranchView(db, orgId) : [];
 
-  if (!enabled) return { serverNow, enabled: false, multiBranch, calls: [] };
+  if (!enabled) return { serverNow, enabled: false, multiBranch, branches: branchList, view, othersPending: 0, calls: [] };
 
   const since = new Date(now.getTime() - EXPIRY_MS).toISOString();
   // Por páginas y por clave (id): los pendientes de 30 minutos de varias sucursales pueden pasar de 1000 y PostgREST corta cada
@@ -50,19 +54,23 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
   if (pending.error) throw new Error(`No se pudieron leer los llamados: ${pending.error.message}`);
   const pendingRows = pending.data ?? [];
 
+  // Los pendientes de sucursales activas y de un tipo conocido; los de la vista de la persona se muestran y de los demás solo se
+  // cuenta la cantidad (no suenan ni se anuncian: la persona eligió no mirarlos).
+  const branchName = new Map(branchRows.map((branch) => [branch.id, branch.name]));
+  const known = pendingRows.filter((call) => (call.kind === "waiter" || call.kind === "bill") && branchName.has(call.branch_id));
+  const { shown: inView, others } = splitByView(known.map((call) => ({ call, branchId: call.branch_id })), view);
+
   // `in (...)` va en la URL: se pide de a TABLE_CHUNK ids (cada pedido devuelve a lo sumo ese tanto de filas).
-  const tableIds = [...new Set(pendingRows.map((call) => call.table_id))];
+  const tableIds = [...new Set(inView.map(({ call }) => call.table_id))];
   const tableLabel = new Map<string, string>();
   for (let i = 0; i < tableIds.length; i += TABLE_CHUNK) {
     const chunk = await db.from("tables").select("id, label").eq("organization_id", orgId).in("id", tableIds.slice(i, i + TABLE_CHUNK));
     if (chunk.error) throw new Error(`No se pudieron leer las mesas: ${chunk.error.message}`);
     for (const table of chunk.data) tableLabel.set(table.id, table.label);
   }
-  const branchName = new Map(branchRows.map((branch) => [branch.id, branch.name]));
 
-  const calls: SalaCall[] = pendingRows.flatMap((call) => {
+  const calls: SalaCall[] = inView.flatMap(({ call }) => {
     if (call.kind !== "waiter" && call.kind !== "bill") return [];
-    if (!branchName.has(call.branch_id)) return [];
     return [
       {
         id: call.id,
@@ -75,7 +83,7 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
     ];
   });
 
-  return { serverNow, enabled: true, multiBranch, calls: sortOldestFirst(calls) };
+  return { serverNow, enabled: true, multiBranch, branches: branchList, view, othersPending: others.length, calls: sortOldestFirst(calls) };
 }
 
 export type AttendResult =

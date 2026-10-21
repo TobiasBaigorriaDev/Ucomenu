@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { setPendingCalls } from "./llamados-pendientes";
 import { armSoundOnFirstGesture, beepIfOn } from "./sonido-llamados";
-import { KIND_LABEL, newCalls, nextPollDelay, parseSalaState, sortOldestFirst, type SalaCall } from "@/lib/sala/types";
+import { KIND_LABEL, newCalls, nextPollDelay, parseSalaState, sortOldestFirst, type SalaBranch, type SalaCall } from "@/lib/sala/types";
 
 /**
  * Aviso de llamados DENTRO del panel (ficha aviso-push-desde-el-panel): quien edita la carta u otra pantalla del panel ve
@@ -16,14 +16,18 @@ import { KIND_LABEL, newCalls, nextPollDelay, parseSalaState, sortOldestFirst, t
 export function LlamadosBanner({ slug }: { slug: string }) {
   const [calls, setCalls] = useState<SalaCall[]>([]);
   const [multiBranch, setMultiBranch] = useState(false);
+  // Qué sucursales mira esta persona (vacío = todas) y cuáles hay: el cartel dice «Mostrando: …» cuando eligió algunas.
+  const [watching, setWatching] = useState<string[]>([]);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
   const stopped = useRef(false);
   // Los que ya había al cargar no suenan (como en la sala): solo los llamados que aparecen después.
   const seen = useRef<Set<string> | null>(null);
+  const lastView = useRef<string | null>(null);
 
   useEffect(() => {
     stopped.current = false;
     seen.current = null;
+    lastView.current = null;
     let disposed = false;
     let inFlight = false;
     let failures = 0;
@@ -66,8 +70,13 @@ export function LlamadosBanner({ slug }: { slug: string }) {
         failures = 0;
         if (!disposed) {
           const known = seen.current;
+          // Si la persona cambió de sucursales (desde la sala u otra pestaña), lo que aparece ya estaba pendiente: no suena.
+          const viewKey = next.view.join(",");
+          const viewChanged = lastView.current !== null && lastView.current !== viewKey;
+          lastView.current = viewKey;
           seen.current = new Set(next.calls.map((call) => call.id).concat(known ? [...known] : []));
-          if (known && newCalls(known, next.calls).length > 0) beepIfOn();
+          if (known && !viewChanged && newCalls(known, next.calls).length > 0) beepIfOn();
+          setWatching(next.view.length > 0 ? next.branches.filter((branch: SalaBranch) => next.view.includes(branch.id)).map((branch) => branch.name) : []);
           setCalls(next.calls);
           setPendingCalls(next.calls.length); // la navegación marca «Sala en vivo» mientras haya pendientes, estén o no ocultos en el cartel
           setMultiBranch(next.multiBranch);
@@ -115,6 +124,14 @@ export function LlamadosBanner({ slug }: { slug: string }) {
               ))}
               {shown.length > 4 ? <li>y {shown.length - 4} más</li> : null}
             </ul>
+            {watching.length > 0 ? (
+              <p className="basis-full text-sm" data-testid="llamados-aviso-vista">
+                Mostrando: {watching.join(", ")} ·{" "}
+                <Link href={`/sala/${slug}`} className="font-medium underline underline-offset-2">
+                  Cambiar
+                </Link>
+              </p>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               <Link
                 href={`/sala/${slug}`}

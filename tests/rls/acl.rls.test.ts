@@ -79,11 +79,13 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   personnel_begin_reset: [false, false], // personal (ficha proteger-cuentas-globales): comprueba y reserva la cuenta antes de cambiarle la contraseña; solo service_role
   personnel_end_operation: [false, false], // personal: libera la reserva de la cuenta; solo service_role
   personnel_remove_member: [false, false], // personal: quita la membresía y reserva el borrado de la cuenta si corresponde; solo service_role
+  my_branch_view: [false, true], // vista por sucursal (ficha vista-por-sucursal, ADR 0034): la vista efectiva de quien llama; solo lo propio
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
   reorder_siblings: [false, true], // orden de la carta (ficha orden-e-imagenes-atomicos): SECURITY INVOKER, manda la RLS de quien llama
   replace_organization_logo: [false, true], // logo del local: SECURITY INVOKER, devuelve el logo saliente; manda la RLS del Dueño
   replace_product_image: [false, true], // foto del plato: SECURITY INVOKER, devuelve la foto saliente; manda la RLS de quien llama
   register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
+  set_my_branch_view: [false, true], // vista por sucursal: guarda la elección de quien llama; valida adentro (miembro, sucursales activas del local)
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
   unregister_push_subscription: [false, true], // aviso de llamados (ADR 0020): borra solo las suscripciones propias
 };
@@ -265,6 +267,19 @@ describe("RLS y permisos de tablas", () => {
 
     for (const rol of ["anon", "authenticated", "service_role"]) {
       expect(permisos(rol), `account_leases: ${rol}`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    }
+  });
+
+  it("member_branch_views (vista por sucursal): nadie la toca por la API (ni anon, ni authenticated, ni service_role); solo funciones", () => {
+    const permisos = (rol: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'public.member_branch_views', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    for (const rol of ["anon", "authenticated", "service_role"]) {
+      expect(permisos(rol), `member_branch_views: ${rol}`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
     }
   });
 

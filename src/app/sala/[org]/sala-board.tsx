@@ -22,7 +22,8 @@ import {
 } from "@/lib/sala/types";
 import { AvisoPush } from "@/components/push/aviso-push";
 import { activateSound, beepIfOn, rememberedAlerts, silenceSound, useSoundState } from "@/components/panel/sonido-llamados";
-import { attendCallAction } from "./actions";
+import { attendCallAction, setBranchViewAction } from "./actions";
+import { SelectorDeSucursal } from "./selector-sucursal";
 
 /** Cuánto dura el resaltado de un llamado nuevo. */
 const FRESH_MS = 8_000;
@@ -62,10 +63,16 @@ export function SalaBoard({
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [globalNote, setGlobalNote] = useState("");
+  const [savingView, setSavingView] = useState(false);
+  const [viewNote, setViewNote] = useState("");
 
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
   const offset = useRef(0);
   const seen = useRef<Set<string>>(new Set(initial.calls.map((call) => call.id)));
+  // Qué sucursales miraba la última respuesta: si cambia (la persona eligió otras), lo que ya estaba pendiente no suena ni se anuncia.
+  const lastView = useRef(initial.view.join(","));
+  // Pide un sondeo ya (tras cambiar la vista); lo arma el efecto del sondeo.
+  const pollNow = useRef<(() => void) | null>(null);
   const alertsRef = useRef(alerts);
   const wakeLock = useRef<WakeLockSentinel | null>(null);
   // Sube cada vez que termina una atención: invalida las consultas que ya estaban en vuelo.
@@ -108,7 +115,10 @@ export function SalaBoard({
 
   // --- Un llamado nuevo: resalta, anuncia y, con las alertas activas, suena. Nunca al cargar los que ya había.
   const applyState = useCallback((next: SalaState) => {
-    const incoming = newCalls(seen.current, next.calls);
+    const viewChanged = next.view.join(",") !== lastView.current;
+    lastView.current = next.view.join(",");
+    // Con otra vista, todo lo que aparece ya estaba pendiente: se toma como base, sin sonido ni anuncio.
+    const incoming = viewChanged ? [] : newCalls(seen.current, next.calls);
     for (const call of next.calls) seen.current.add(call.id);
 
     offset.current = Date.parse(next.serverNow) - Date.now();
@@ -138,6 +148,7 @@ export function SalaBoard({
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
     let failures = 0;
+    let pollAgain = false;
 
     type Outcome = { kind: "expired" } | { kind: "gone" } | { kind: "state"; next: SalaState } | { kind: "error" };
 
@@ -191,7 +202,15 @@ export function SalaBoard({
           return;
         }
       }
-      timer = setTimeout(poll, nextPollDelay(!document.hidden, failures));
+      const again = pollAgain;
+      pollAgain = false;
+      timer = setTimeout(poll, again ? 0 : nextPollDelay(!document.hidden, failures));
+    };
+
+    // Tras cambiar la vista: si hay una consulta en vuelo (con la vista vieja) se repite apenas termine.
+    pollNow.current = () => {
+      if (inFlight) pollAgain = true;
+      else void poll();
     };
 
     timer = setTimeout(poll, VISIBLE_POLL_MS);
@@ -205,6 +224,7 @@ export function SalaBoard({
 
     return () => {
       disposed = true;
+      pollNow.current = null;
       clearTimeout(timer);
       controller?.abort();
       document.removeEventListener("visibilitychange", wake);
@@ -238,6 +258,25 @@ export function SalaBoard({
   async function silenceAlerts() {
     silenceSound();
     await releaseWakeLock();
+  }
+
+  async function chooseView(ids: string[]) {
+    setSavingView(true);
+    setViewNote("");
+    try {
+      const result = await setBranchViewAction(slug, ids);
+      if (result !== "ok") {
+        setViewNote("No se pudo guardar tu elección de sucursal. Probá de nuevo.");
+        return;
+      }
+      // Una respuesta que salió ANTES de guardar trae la vista vieja: se descarta (igual que tras atender) y se consulta de nuevo.
+      attendEpoch.current += 1;
+      pollNow.current?.();
+    } catch {
+      setViewNote("No se pudo guardar tu elección de sucursal. Probá de nuevo.");
+    } finally {
+      setSavingView(false);
+    }
   }
 
   async function attend(call: SalaCall) {
@@ -315,6 +354,24 @@ export function SalaBoard({
       {connection === "gone" ? (
         <p role="alert" className="mb-4 rounded-2xl bg-suspended-bg px-4 py-3 text-base text-suspended-ink ring-1 ring-inset ring-suspended-edge">
           <strong>Este local ya no está disponible para tu cuenta.</strong>
+        </p>
+      ) : null}
+
+      <SelectorDeSucursal branches={state.branches} view={state.view} saving={savingView} onChange={chooseView} />
+      {viewNote ? (
+        <p role="alert" className="mb-4 text-base font-medium text-danger">
+          {viewNote}
+        </p>
+      ) : null}
+      {state.othersPending > 0 ? (
+        // Red de seguridad: lo de las sucursales que no se miran no suena ni avisa, pero se sabe que existe. Sin región viva.
+        <p data-testid="otras-sucursales" className="mb-4 rounded-2xl bg-readonly-bg px-4 py-3 text-base text-readonly-ink ring-1 ring-inset ring-readonly-edge">
+          {state.othersPending === 1
+            ? "Hay 1 llamado pendiente en otra sucursal que no estás mirando."
+            : `Hay ${state.othersPending} llamados pendientes en otras sucursales que no estás mirando.`}{" "}
+          <button type="button" disabled={savingView} onClick={() => chooseView([])} className="font-medium underline underline-offset-2">
+            Ver todas
+          </button>
         </p>
       ) : null}
 

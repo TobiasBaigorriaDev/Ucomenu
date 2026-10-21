@@ -22,11 +22,19 @@ export type SalaState = {
   serverNow: string;
   /** `false` si el plan o la cuenta no permiten el llamado: no hay lista ni sondeo. */
   enabled: boolean;
-  /** Hay más de una sucursal (la tarjeta muestra cuál). */
+  /** Hay más de una sucursal activa en el local (la tarjeta muestra cuál). Es del local, no de lo que mira cada persona. */
   multiBranch: boolean;
-  /** Pendientes con menos de 30 minutos, el que más espera primero. */
+  /** Sucursales activas del local (para el selector de «qué sucursales miro»). */
+  branches: SalaBranch[];
+  /** Vista efectiva de la persona: ids de las sucursales que mira. Vacío = todas. */
+  view: string[];
+  /** Pendientes de las sucursales que la persona NO mira (se informa la cantidad, sin detalle: no suena ni avisa). */
+  othersPending: number;
+  /** Pendientes con menos de 30 minutos de la vista de la persona, el que más espera primero. */
   calls: SalaCall[];
 };
+
+export type SalaBranch = { id: string; name: string };
 
 /** Un pendiente más viejo vence solo (ADR 0010): la sala no lo muestra. */
 export const EXPIRY_MS = 30 * 60 * 1000;
@@ -53,12 +61,18 @@ function parseCall(raw: unknown): SalaCall | null {
 /** Lee la respuesta de la ruta de consulta. Cualquier forma inesperada es `null` (la pantalla lo trata como error). */
 export function parseSalaState(raw: unknown): SalaState | null {
   if (!isRecord(raw)) return null;
-  const { serverNow, enabled, multiBranch, calls } = raw;
+  const { serverNow, enabled, multiBranch, branches, view, othersPending, calls } = raw;
   if (typeof serverNow !== "string" || Number.isNaN(Date.parse(serverNow))) return null;
   if (typeof enabled !== "boolean" || typeof multiBranch !== "boolean" || !Array.isArray(calls)) return null;
+  if (!Array.isArray(branches) || !Array.isArray(view) || !view.every((id) => typeof id === "string")) return null;
+  if (typeof othersPending !== "number" || !Number.isInteger(othersPending) || othersPending < 0) return null;
+  const parsedBranches = branches.map((branch) =>
+    isRecord(branch) && typeof branch.id === "string" && typeof branch.name === "string" ? { id: branch.id, name: branch.name } : null,
+  );
+  if (parsedBranches.some((branch) => branch === null)) return null;
   const parsed = calls.map(parseCall);
   if (parsed.some((call) => call === null)) return null;
-  return { serverNow, enabled, multiBranch, calls: parsed as SalaCall[] };
+  return { serverNow, enabled, multiBranch, branches: parsedBranches as SalaBranch[], view: view as string[], othersPending, calls: parsed as SalaCall[] };
 }
 
 /** Milisegundos que lleva esperando un llamado, con la hora del servidor como referencia. */

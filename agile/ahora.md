@@ -4,14 +4,11 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Cuarta tanda (UX, nivel M) implementada y probada en local con emulación de teléfono; falta la aprobación del usuario.** Rama `main`. [Ficha](cambios/detalle-retorno-y-confirmaciones.md). Sin migración ni cambios de base.
+**Vista por sucursal (nivel C) implementada y probada en local; falta la revisión de Codex y la aprobación humana.** [Ficha](cambios/vista-por-sucursal.md) · [ADR 0034](../docs/decisiones/0034-vista-por-sucursal.md) (propuesta). Migración nueva `20261106100000_vista_por_sucursal.sql` (tabla `member_branch_views`, `set_my_branch_view`, `my_branch_view` y `push_targets_for_call`). Staging **no** la tiene.
 
-1. Detalle del plato: «Volver a la carta» queda fijo arriba y el scroll no pasa a la página de atrás.
-2. Textos legales: «Volver» (o «Ir a la portada» con acceso directo), sin guardar nada ni agregar parámetros.
-3. Sumar un Dueño: el hallazgo (cuenta y locales) va antes de la casilla; «Cancelar y cambiar el email» no escribe ni recarga.
-4. Sala con varias sucursales: el anuncio y «Atendido» nombran la sucursal; una sola región viva.
+Cada persona (Dueño o Staff) elige qué sucursales mira: la sala, el cartel del panel, el sonido y el push siguen su elección; vacío = todas, y ante la duda se avisa. Es una preferencia, no un permiso (la membresía sigue por organización). La sala muestra cuántos llamados quedan en las otras sucursales; la analítica abre en la elegida. Fuera de alcance: asignar sucursales al Staff con restricción real.
 
-Esperan aprobación humana, además de esta: la tanda 3 ([formularios, cuenta y mensajes](cambios/formularios-cuenta-y-mensajes.md), `1ea4ca6`), la 2 ([listas, orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos.md), ADR 0033, migración `20261105100000`), la 1 ([cuentas globales](cambios/proteger-cuentas-globales.md), ADR 0032, migración `20261104100000`) y el [borrado de mesas](cambios/borrado-de-mesas.md). Las tandas 1 y 2 están aprobadas por Codex; staging no tiene esas migraciones. Fase 2 = feed de videos con **Mux Video** ([ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)).
+Esperan aprobación humana, además: tanda 4 de UX ([ficha](cambios/detalle-retorno-y-confirmaciones.md), `06cd1bf`), tanda 3 ([ficha](cambios/formularios-cuenta-y-mensajes.md), `1ea4ca6`), [listas, orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos.md) (ADR 0033, migración `20261105100000`), [cuentas globales](cambios/proteger-cuentas-globales.md) (ADR 0032, migración `20261104100000`) y el [borrado de mesas](cambios/borrado-de-mesas.md). Las tres últimas con migración están aprobadas por Codex. Fase 2 = feed de videos con **Mux Video** ([ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)).
 
 ## Bloqueos y riesgos
 
@@ -23,5 +20,6 @@ Esperan aprobación humana, además de esta: la tanda 3 ([formularios, cuenta y 
 
 ## Próximo paso
 
-1. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
-2. Probar en un teléfono real (iPhone y Android) el detalle del plato con la barra de direcciones móvil, el «Volver» de los textos legales y la sala con dos sucursales.
+1. Revisión de Codex de la vista por sucursal: `pnpm revision:codex --commit HEAD --ficha agile/cambios/vista-por-sucursal.md --nivel C`.
+2. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
+3. Probar en teléfonos reales el push con dos personas eligiendo sucursales distintas.

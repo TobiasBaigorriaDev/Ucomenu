@@ -123,6 +123,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"member_branch_views": {
+                  Row: {
+                    "branch_ids": (string)[],"organization_id": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_ids"?: (string)[],"organization_id": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "branch_ids"?: (string)[],"organization_id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "member_branch_views_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "member_branch_views_user_id_organization_id_fkey"
+      columns: ["user_id","organization_id"]
+isOneToOne: true
+      referencedRelation: "memberships"
+      referencedColumns: ["user_id","organization_id"]
+    }
+                  ]
                 },"memberships": {
                   Row: {
                     "created_at": string,"id": string,"organization_id": string,"role": string,"user_id": string
@@ -521,6 +547,9 @@ isOneToOne: false
 "drop_push_subscriptions":
 { Args: { "p_ids": (string)[] }; Returns: number
                            },
+"my_branch_view":
+{ Args: { "p_org": string }; Returns: (string)[]
+                           },
 "org_entitlements":
 { Args: { "p_org": string }; Returns: Json
                            },
@@ -582,6 +611,9 @@ isOneToOne: false
                            },
 "resolve_table_qr":
 { Args: { "p_token": string }; Returns: Json
+                           },
+"set_my_branch_view":
+{ Args: { "p_branches": (string)[],"p_org": string }; Returns: string
                            },
 "unregister_push_subscription":
 { Args: { "p_endpoint": string,"p_org"?: string }; Returns: undefined

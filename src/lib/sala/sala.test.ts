@@ -104,12 +104,20 @@ describe("lectura de la respuesta del servidor", () => {
     serverNow: "2026-10-14T12:00:00.000Z",
     enabled: true,
     multiBranch: false,
+    branches: [{ id: "b1", name: "Centro" }],
+    view: [] as string[],
+    othersPending: 0,
     calls: [{ id: "x", kind: "bill", tableLabel: "Mesa 4", branchName: "Centro", createdAt: "2026-10-14T11:58:00.000Z", visitStartedAt: "2026-10-14T11:20:00.000Z" }],
   };
 
   it("lee una respuesta válida", () => {
     expect(parseSalaState(valido)).toEqual(valido);
     expect(parseSalaState({ ...valido, enabled: false, calls: [] })?.calls).toEqual([]);
+  });
+
+  it("lee la vista por sucursal: sucursales, las que mira la persona y cuántos llamados quedan en las otras", () => {
+    const conVista = { ...valido, multiBranch: true, branches: [{ id: "b1", name: "Centro" }, { id: "b2", name: "Norte" }], view: ["b2"], othersPending: 3 };
+    expect(parseSalaState(conVista)).toEqual(conVista);
   });
 
   it("el escaneo es opcional: sin la clave, nulo o ilegible se lee como «no se sabe» y no invalida la respuesta", () => {
@@ -121,7 +129,9 @@ describe("lectura de la respuesta del servidor", () => {
   });
 
   it("cualquier forma inesperada es null (la pantalla lo trata como error y reintenta)", () => {
-    for (const raro of [null, undefined, "x", 4, [], {}, { ...valido, serverNow: "ayer" }, { ...valido, enabled: "si" }, { ...valido, multiBranch: 1 }, { ...valido, calls: "no" }]) {
+    for (const raro of [null, undefined, "x", 4, [], {}, { ...valido, serverNow: "ayer" }, { ...valido, enabled: "si" }, { ...valido, multiBranch: 1 }, { ...valido, calls: "no" },
+      { ...valido, branches: "no" }, { ...valido, branches: [{ id: 1, name: "x" }] }, { ...valido, view: [1] }, { ...valido, view: "b1" },
+      { ...valido, othersPending: -1 }, { ...valido, othersPending: 1.5 }, { ...valido, othersPending: "2" }, { ...valido, othersPending: undefined }]) {
       expect(parseSalaState(raro), String(raro)).toBeNull();
     }
     const mal = (cambio: object) => ({ ...valido, calls: [{ ...valido.calls[0], ...cambio }] });
