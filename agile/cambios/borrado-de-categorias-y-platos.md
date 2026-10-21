@@ -1,12 +1,12 @@
 # Cambio: Borrar categorías y platos (con la limpieza de sus fotos en Storage)
-Estado: **para verificar** — implementado, probado en local y aprobado por Codex (2 rondas, `33d0c1c`); falta la aprobación humana
+Estado: **aprobado para publicación por el usuario, subido a `origin/main` y desplegado en staging (Fly v16, 2026-10-21)**, tras revisión de Codex en 2 rondas (`33d0c1c`). Se conserva la RLS vigente de Dueño y Staff; no hay migración ni permisos nuevos.
 Nivel: C (eliminación irreversible de datos de un cliente: platos con precios, variantes, adicionales, disponibilidad y archivos de Storage)
 
 ## Objetivo
 Hoy categorías y platos solo se desactivan ([gestión de carta](gestion-de-carta.md), decisión 7). Que el Dueño y el Staff puedan **borrarlos de verdad** desde el panel, sin dejar archivos huérfanos en `product-images`. Borrar una categoría arrastra a sus platos (clave foránea compuesta con `ON DELETE CASCADE`), y con ellos sus variantes y adicionales, su disponibilidad por sucursal, sus traducciones (columnas) y los contadores de vistas.
 
 ## Decisiones
-1. **Quién:** Dueño y Staff, como ya dice la RLS de `DELETE` (`is_org_member` + `org_can_write`) y `producto.md` (el Staff mantiene platos). No se cambia ningún permiso ni hay migración: la autoridad de fondo es la que ya existe y está probada. Si el usuario prefiere que solo el Dueño pueda borrar categorías con platos, es una política nueva (se pregunta al cerrar).
+1. **Quién:** Dueño y Staff, como ya dice la RLS de `DELETE` (`is_org_member` + `org_can_write`) y `producto.md` (el Staff mantiene platos). No se cambia ningún permiso ni hay migración: la autoridad de fondo es la que ya existe y está probada. El usuario autorizó publicar esta implementación; restringir categorías al Dueño sería un cambio de política aparte.
 2. **Con el cliente de la persona (RLS)**, nunca `service_role`. Un `DELETE` bloqueado afecta 0 filas sin error: se pide `.select("id")` y 0 filas = fallo con su causa (misma regla que el resto del módulo).
 3. **Storage después de la base** (igual que [ADR 0028](../../docs/decisiones/0028-borrado-definitivo-de-organizaciones.md)): primero se borra la fila y, **recién con el borrado confirmado**, se limpian `product-images/{org}/{plato}/…` (la ruta guardada y cualquier archivo suelto de esa carpeta). Nunca lanza: si falla, el plato/categoría ya no existe, se registra en el log del servidor con la organización y el plato, y la pantalla avisa «algunas fotos no se pudieron limpiar».
 4. **Confirmación en dos pasos, validada en el servidor:**
@@ -50,7 +50,7 @@ Hoy categorías y platos solo se desactivan ([gestión de carta](gestion-de-cart
 | Dos personas a la vez | Gana el primero; el segundo recibe «no encontrado». |
 
 ## Riesgos
-- **Permiso amplio:** el Staff puede borrar una categoría entera. Se compensa con la confirmación escrita; queda a decisión del usuario si debe ser solo del Dueño.
+- **Permiso amplio:** el Staff puede borrar una categoría entera. Se compensa con la confirmación escrita; una futura restricción al Dueño requiere decisión del usuario y cambio de política.
 - **Ventana de milisegundos:** un plato creado en esa categoría entre la lectura y el `DELETE` se borra sin haberse visto (no puede tener foto aún). Un plato **movido a** esa categoría en ese instante también, y su foto quedaría suelta (inofensiva, sin enlace). Aceptado. En sentido contrario (un plato **sacado** de la categoría en ese instante) sobrevive con su foto: tras el borrado se comprueba cuáles platos dejaron de existir y solo a esos se les limpia la carpeta (hallazgo de Codex, ronda 1).
 - Las estadísticas de vistas de los platos borrados se pierden (contadores sin identificación, ADR 0022).
 
@@ -62,7 +62,17 @@ Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probad
 - **Mutaciones** (de a una sobre `catalog.ts`, restauradas): 10 probadas, **10 detectadas** — sin chequear 0 filas (plato y categoría), sin comparar la cantidad, sin comparar el nombre, sin limpiar la carpeta (solo la ruta guardada), sin limpiar las fotos de la categoría, sin registrar el «cero objetos», sin `guard`, Storage limpiado antes del `DELETE`, categoría sin acotar a la organización.
 - **No probado / límites:** suite RLS y E2E completas (no se tocó el esquema ni otras pantallas); Storage real de Supabase hosted (solo el local); teléfono real y lector de pantalla; ventana entre la lectura y el `DELETE` de la categoría (aceptada); corte del servidor entre la base y Storage (aceptado); borrado con muchos cientos de platos.
 
+### Publicación y staging — 2026-10-21
+- A pedido del usuario se publicó la implementación existente, sin cambios funcionales ni de permisos: `git push origin main` avanzó `e2a14ad` → `7817aa1` (implementación `9ce17a1`, corrección `33d0c1c`, revisión `7817aa1`). Árbol inicial limpio.
+- No hay migración para este cambio. `supabase db push --dry-run` contra el staging enlazado devolvió `upToDate: true`, sin pendientes; no se aplicó ninguna migración ni se ejecutaron borrados o limpieza de Storage. Producción no se tocó.
+- App de `7817aa1`: build Next y TypeScript OK en Docker; despliegue con `fly deploy -c fly.staging.toml --local-only --depot=false`, imagen oficial y sesión existente. No se modificaron secretos.
+- Fly **v16**, release `complete`, máquina `78177dda131e38` en `gru`, `started`, control HTTP `passing`. Imagen `registry.fly.io/ucomenu-staging:deployment-01M5E7YNQVSYHSJADS4NGNCQK6`, digest `sha256:c98daa32b829e95e43b3c14216119bbc25bc9c523813cf6f2ea29170112e0845`.
+- HTTP sin sesión: `/`, `/login`, `/m/demo/centro`, `/privacidad`, `/terminos` y `/alergenos`: **200**; `/panel/demo/carta` y `/admin/organizaciones/demo`: **307** al login con `next`; `/sala/demo/estado`: **401 JSON** `no_session`.
+- No se repitieron suites unitarias/RLS/E2E ni se probó el flujo autenticado en staging. La evidencia funcional sigue siendo la de los commits revisados; la entrega verificó construcción y disponibilidad. Pendiente prueba manual de Dueño/Staff con datos de ensayo.
+- Recuperación de app: imagen anterior `registry.fly.io/ucomenu-staging:deployment-01M5E5N3W1C8WR1WV8A0JRQEJ8` (v15). Volver a esa imagen no recupera categorías, platos ni fotos que se borren después. No se ensayó rollback remoto.
+- Durante el cierre aparecieron cambios locales de otra tarea (borrado de mesas y migración `20261103100000`), preservados y excluidos de esta publicación. La captura del contexto y compilación Docker terminaron antes de las escrituras de mesas (archivos modificados desde las 00:29, hora Argentina); la imagen ya estaba construida. El dry-run sin pendientes corresponde al árbol publicado, anterior a esa migración local nueva.
+
 ## Revisión y aprobación
 - **Codex, ronda 1 (`9ce17a1`, nivel C, esfuerzo high): APROBAR CON CAMBIOS.** Un hallazgo *importante*, real: `deleteCategory` limpiaba las carpetas de los platos leídos antes del `DELETE`; si otra sesión movía un plato a otra categoría en ese intervalo, el plato sobrevivía sin su foto (con `image_path` apuntándola) y se informaba éxito. Corregido: tras el borrado se comprueba qué platos ya no existen (`productsGone`) y solo a esos se les limpia la carpeta; si no se puede comprobar, no se borra ningún archivo y se avisa. Regresión nueva en `carta.rls.test.ts` (mueve el plato justo después de la lectura): **falla sin la corrección** y pasa con ella; `carta.rls.test.ts` **28/28**.
 - **Codex, ronda 2 (verificación, commit `33d0c1c`): APROBAR, sin hallazgos.** Confirmó la corrección y la regresión por inspección (no ejecutó suites ni mutaciones; esa evidencia es la de arriba, incluida la comprobación de que la prueba falla sin la corrección).
-- Pendiente: la **aprobación humana** (no está dada) antes de subir a `origin` o desplegar, y la decisión sobre si el Staff puede borrar una categoría entera.
+- **Aprobación humana:** el usuario pidió publicar en `origin` y desplegar la última tarea en staging el 2026-10-21; se publicó la implementación existente con Dueño y Staff, sin cambiar la política de permisos. El pedido de despliegue no ejecuta ni autoriza un borrado concreto de datos como parte de la verificación.

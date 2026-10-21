@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [C] Borrado de categorías y platos con limpieza de fotos en Storage: implementado y probado en local (RLS, E2E y mutaciones); revisado por Codex (aprobado en 2 rondas); falta la aprobación del usuario (bloqueado por: eso) → [ficha](cambios/borrado-de-categorias-y-platos.md) · ADR 0029
+- (vacío)
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -57,6 +57,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ## Hecho
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+- [C] Borrado de categorías y platos con limpieza de fotos, confirmación en dos pasos e historial conservado; revisado por Codex, publicación autorizada por el usuario, subido a `origin` y desplegado en staging (2026-10-21), con la RLS vigente de Dueño y Staff → [ficha](cambios/borrado-de-categorias-y-platos.md) · ADR 0029
 - [C] SuperAdmin: borrado definitivo de organizaciones tras baja auditada de 30 días, con identificador escrito, motivo y auditoría; revisado por Codex, aprobado por el usuario, integrado en `main`, subido a `origin` y desplegado con su migración en staging (2026-10-20) → [ficha](cambios/borrado-de-organizaciones.md) · ADR 0028
 - [C] Retención y purga de `payments` y `payment_voids`: sobreviven al borrado de la organización y se conservan 10 años; revisión independiente aprobada, integración autorizada por el usuario, subida a `origin` y desplegada en staging (2026-10-20; plazo por confirmar con el contador antes de producción) → agile/cambios/retencion-de-pagos.md · ADR 0027
 - [C] Retención y purga de `price_history`: se purga con la organización, tras 30 días de baja auditada, por una función que nadie de la API ejecuta; aprobada por Codex, subida a `origin` y migración aplicada en staging (2026-10-20) → agile/cambios/purga-de-price-history.md · ADR 0026

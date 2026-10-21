@@ -1,6 +1,6 @@
 # 0029 — Categorías y platos se borran con el cliente de la persona, con confirmación comprobada en el servidor y las fotos limpiadas después de confirmar
 
-- Estado: propuesta (implementada localmente; pendiente de la revisión independiente y la aprobación del usuario)
+- Estado: aceptada para la implementación actual (revisión independiente aprobada; publicación y despliegue autorizados por el usuario el 2026-10-21, sin cambiar la RLS vigente)
 - Fecha: 2026-10-21
 
 ## Contexto
@@ -15,7 +15,7 @@ Hasta ahora categorías y platos solo se desactivaban ([ADR 0008](0008-fotos-de-
 ## Alternativas consideradas
 - **Función de base que borre y devuelva las rutas de las fotos** — ahorra la ventana entre la lectura y el borrado, pero agrega una migración y una superficie para un acto que ya cubre la RLS; la ventana solo permite borrar un plato recién creado y sin foto.
 - **Limpiar Storage antes** — un borrado que falle dejaría platos sin foto.
-- **Solo el Dueño borra categorías con platos** — más prudente, pero cambia permisos de negocio: queda a decisión del usuario.
+- **Solo el Dueño borra categorías con platos** — cambia permisos de negocio: sería una decisión y un cambio aparte; la implementación publicada conserva la RLS vigente.
 - **Papelera con borrado diferido** — desproporcionado; «Desactivar» ya es la baja reversible.
 
 ## Consecuencias
