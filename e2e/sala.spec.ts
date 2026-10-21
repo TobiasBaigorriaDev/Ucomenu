@@ -214,7 +214,9 @@ test.describe("vista por sucursal", () => {
   const mesa1 = (mesas: { branch_id: string; label: string; qr_token: string }[], branch: string) => mesas.find((m) => m.branch_id === branch && m.label === "Mesa 1")!;
   const elegir = async (page: Page, nombre: string) => {
     await chip(page, nombre).click();
+    // La elección se ve al instante (optimista) y los botones quedan inactivos mientras se guarda: se espera a que termine.
     await expect(chip(page, nombre)).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(page, nombre)).toBeEnabled();
   };
 
   test("el Dueño y el Personal eligen sus sucursales por separado; la sala, el aviso y el título siguen a cada uno y la elección persiste", async ({ browser }) => {
@@ -318,8 +320,72 @@ test.describe("vista por sucursal", () => {
     const filtro = sala.getByTestId("analitica-sucursales");
     await expect(filtro.getByRole("link", { name: "Norte" })).toHaveAttribute("aria-current", "page");
     await filtro.getByRole("link", { name: "Todas las sucursales" }).click();
-    await expect(sala).toHaveURL(/sucursal=todas/);
+    await expect(sala).toHaveURL(/sucursal=_todas/);
     await expect(filtro.getByRole("link", { name: "Todas las sucursales" })).toHaveAttribute("aria-current", "page");
+    await ctx.close();
+  });
+
+  test("dos toques seguidos con el sondeo lento no pisan la primera elección (se suman)", async ({ browser }) => {
+    const { t } = await nuevoLocal("sala-vista-rapido", { sucursales: 2 });
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.owner, t);
+    // El sondeo tarda: entre guardar la primera elección y que el servidor la devuelva, la pantalla todavía trae la vista vieja.
+    await page.route("**/sala/*/estado", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 2_500));
+      await route.continue();
+    });
+
+    await chip(page, "Centro").click();
+    await expect(chip(page, "Centro")).toBeEnabled(); // el guardado terminó
+    await chip(page, "Norte").click(); // Centro + Norte = todas las del local
+
+    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "true");
+    await page.unroute("**/sala/*/estado");
+    await page.reload();
+    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "true"); // lo guardado también es «Todas», no solo Norte
+    await ctx.close();
+  });
+
+  test("«Todas las sucursales» de la analítica no se confunde con una sucursal que se llame «todas»", async ({ browser }) => {
+    const { t, branchIds } = await nuevoLocal("sala-vista-slug", { sucursales: 2 });
+    expect((await service().from("branches").update({ slug: "todas" }).eq("id", branchIds[1]).select("slug")).data).toEqual([{ slug: "todas" }]);
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.owner, t);
+    await page.goto(`/panel/${t.slug}/analitica`);
+    const filtro = page.getByTestId("analitica-sucursales");
+    await expect(filtro.getByRole("link", { name: "Norte" })).toHaveAttribute("href", /sucursal=todas$/); // la sucursal sí se llama «todas»
+
+    // Se espera la navegación (el estado de antes de navegar también tiene «Todas» activa).
+    await filtro.getByRole("link", { name: "Norte" }).click();
+    await expect(page).toHaveURL(/sucursal=todas$/);
+    await expect(filtro.getByRole("link", { name: "Norte" })).toHaveAttribute("aria-current", "page"); // elegible por su propio nombre
+
+    await filtro.getByRole("link", { name: "Todas las sucursales" }).click();
+    await expect(page).toHaveURL(/sucursal=_todas$/); // el valor reservado, que no puede ser un slug
+    await expect(filtro.getByRole("link", { name: "Todas las sucursales" })).toHaveAttribute("aria-current", "page");
+    await expect(filtro.getByRole("link", { name: "Norte" })).not.toHaveAttribute("aria-current", "page");
+    await ctx.close();
+  });
+
+  test("al cambiar de sucursales desde otra pestaña, el cartel del panel vuelve a montar su región viva (lo que aparece ya estaba pendiente y no se anuncia)", async ({ browser }) => {
+    const { t, mesas, branchIds } = await nuevoLocal("sala-vista-cartel", { sucursales: 2 });
+    await llamar(mesa1(mesas, branchIds[0]).qr_token); // Centro
+    await llamar(mesa1(mesas, branchIds[1]).qr_token, "bill"); // Norte
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const sala = await abrirSala(ctx, t.owner, t);
+    await elegir(sala, "Norte");
+    const panel = await ctx.newPage();
+    await panel.goto(`/panel/${t.slug}`);
+    const aviso = panel.getByTestId("llamados-aviso");
+    await expect(aviso.getByTestId("llamados-aviso-lista")).toContainText("Norte", { timeout: 12_000 });
+    await expect(aviso.getByTestId("llamados-aviso-lista")).not.toContainText("Centro");
+    // Se marca el nodo de la región viva: si se vuelve a montar con la nueva vista, la marca desaparece.
+    await aviso.evaluate((el) => ((el as HTMLElement & { __marca?: boolean }).__marca = true));
+
+    await sala.bringToFront();
+    await elegir(sala, "Todas"); // ahora Centro (que ya estaba pendiente) también aparece en el cartel
+    await expect(panel.getByTestId("llamados-aviso").getByTestId("llamados-aviso-lista")).toContainText("Centro", { timeout: 12_000 });
+    expect(await panel.getByTestId("llamados-aviso").evaluate((el) => (el as HTMLElement & { __marca?: boolean }).__marca === true)).toBe(false);
     await ctx.close();
   });
 

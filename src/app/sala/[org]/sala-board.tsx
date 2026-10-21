@@ -64,6 +64,13 @@ export function SalaBoard({
   const [busy, setBusy] = useState<string | null>(null);
   const [globalNote, setGlobalNote] = useState("");
   const [savingView, setSavingView] = useState(false);
+  // Lo que la persona acaba de elegir y la base todavía no devolvió en un sondeo posterior al guardado: se muestra y se usa como base
+  // del próximo toque (si no, un segundo toque rápido calcularía sobre la vista vieja y pisaría la primera elección).
+  const [pendingView, setPendingView] = useState<string[] | null>(null);
+  const savingViewRef = useRef(false);
+  // Hora del servidor en que la persona cambió de sucursales desde esta pantalla: lo anterior ya estaba pendiente (base); un llamado
+  // posterior es nuevo aunque llegue en la primera respuesta con la vista nueva.
+  const viewChangedAt = useRef<number | null>(null);
   const [viewNote, setViewNote] = useState("");
 
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
@@ -115,10 +122,15 @@ export function SalaBoard({
 
   // --- Un llamado nuevo: resalta, anuncia y, con las alertas activas, suena. Nunca al cargar los que ya había.
   const applyState = useCallback((next: SalaState) => {
+    // Una respuesta que salió después de guardar (las anteriores se descartan) trae la vista real; mientras se guarda, todavía no.
+    if (!savingViewRef.current) setPendingView(null);
     const viewChanged = next.view.join(",") !== lastView.current;
     lastView.current = next.view.join(",");
-    // Con otra vista, todo lo que aparece ya estaba pendiente: se toma como base, sin sonido ni anuncio.
-    const incoming = viewChanged ? [] : newCalls(seen.current, next.calls);
+    // Con otra vista, lo que aparece ya estaba pendiente: se toma como base, sin sonido ni anuncio. Solo lo creado DESPUÉS del cambio
+    // (si lo cambió esta pantalla) es nuevo; si cambió desde otro dispositivo, todo lo de esta respuesta es base.
+    const cutoff = viewChanged ? (viewChangedAt.current ?? Date.parse(next.serverNow)) : null;
+    if (viewChanged || !savingViewRef.current) viewChangedAt.current = null;
+    const incoming = newCalls(seen.current, next.calls).filter((call) => cutoff === null || Date.parse(call.createdAt) > cutoff);
     for (const call of next.calls) seen.current.add(call.id);
 
     offset.current = Date.parse(next.serverNow) - Date.now();
@@ -261,11 +273,15 @@ export function SalaBoard({
   }
 
   async function chooseView(ids: string[]) {
+    savingViewRef.current = true;
+    viewChangedAt.current = Date.now() + offset.current;
     setSavingView(true);
     setViewNote("");
+    setPendingView(ids);
     try {
       const result = await setBranchViewAction(slug, ids);
       if (result !== "ok") {
+        setPendingView(null);
         setViewNote("No se pudo guardar tu elección de sucursal. Probá de nuevo.");
         return;
       }
@@ -273,8 +289,10 @@ export function SalaBoard({
       attendEpoch.current += 1;
       pollNow.current?.();
     } catch {
+      setPendingView(null);
       setViewNote("No se pudo guardar tu elección de sucursal. Probá de nuevo.");
     } finally {
+      savingViewRef.current = false;
       setSavingView(false);
     }
   }
@@ -357,7 +375,7 @@ export function SalaBoard({
         </p>
       ) : null}
 
-      <SelectorDeSucursal branches={state.branches} view={state.view} saving={savingView} onChange={chooseView} />
+      <SelectorDeSucursal branches={state.branches} view={pendingView ?? state.view} saving={savingView} onChange={chooseView} />
       {viewNote ? (
         <p role="alert" className="mb-4 text-base font-medium text-danger">
           {viewNote}

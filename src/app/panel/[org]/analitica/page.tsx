@@ -19,6 +19,9 @@ import { createSessionClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Analítica" };
 
+/** Valor reservado de `?sucursal=` para «Todas las sucursales» (no es un slug válido: sin guion bajo). */
+const ALL_BRANCHES = "_todas";
+
 /**
  * Analítica básica del local (ficha analitica-basica, ADR 0022): platos más vistos y llamados por hora de los últimos 14
  * días. Solo el Dueño y solo con el plan que incluye `analytics`; la base vuelve a comprobarlo y, si no corresponde, no
@@ -33,7 +36,8 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
   const db = await createSessionClient();
   const branches = (await db.from("branches").select("id, slug, name").eq("organization_id", membership.org.id).eq("is_active", true).order("name")).data ?? [];
   const requested = (await searchParams).sucursal;
-  // Sin `?sucursal=`, abre en la sucursal que la persona eligió en la sala si es exactamente una; `?sucursal=todas` fuerza «Todas».
+  // Sin `?sucursal=`, abre en la sucursal que la persona eligió en la sala si es exactamente una. `?sucursal=_todas` fuerza «Todas»:
+  // el guion bajo no puede formar parte de un slug, así que nunca choca con el de una sucursal (que podría llamarse «todas»).
   let branch = typeof requested === "string" ? branches.find((item) => item.slug === requested) ?? null : null;
   if (requested === undefined && branches.length > 1) {
     const view = await readBranchView(db, membership.org.id);
@@ -91,7 +95,7 @@ async function Content({
             return (
               <Link
                 key={item.slug ?? "todas"}
-                href={`${base}?sucursal=${item.slug ?? "todas"}`}
+                href={`${base}?sucursal=${item.slug ?? ALL_BRANCHES}`}
                 aria-current={active ? "page" : undefined}
                 className={`inline-flex min-h-11 items-center rounded-full px-4 text-base font-medium ${
                   active ? "bg-brand text-white" : "border border-ink/50 text-ink hover:bg-ink/5"

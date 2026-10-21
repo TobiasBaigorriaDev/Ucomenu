@@ -18,6 +18,8 @@ export function LlamadosBanner({ slug }: { slug: string }) {
   const [multiBranch, setMultiBranch] = useState(false);
   // Qué sucursales mira esta persona (vacío = todas) y cuáles hay: el cartel dice «Mostrando: …» cuando eligió algunas.
   const [watching, setWatching] = useState<string[]>([]);
+  // Cambia con la vista: la región viva se vuelve a montar y lo que aparece junto con el cambio (pendientes que ya estaban) no se anuncia.
+  const [viewKey, setViewKey] = useState("");
   const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set());
   const stopped = useRef(false);
   // Los que ya había al cargar no suenan (como en la sala): solo los llamados que aparecen después.
@@ -76,6 +78,7 @@ export function LlamadosBanner({ slug }: { slug: string }) {
           lastView.current = viewKey;
           seen.current = new Set(next.calls.map((call) => call.id).concat(known ? [...known] : []));
           if (known && !viewChanged && newCalls(known, next.calls).length > 0) beepIfOn();
+          setViewKey(viewKey);
           setWatching(next.view.length > 0 ? next.branches.filter((branch: SalaBranch) => next.view.includes(branch.id)).map((branch) => branch.name) : []);
           setCalls(next.calls);
           setPendingCalls(next.calls.length); // la navegación marca «Sala en vivo» mientras haya pendientes, estén o no ocultos en el cartel
@@ -108,7 +111,7 @@ export function LlamadosBanner({ slug }: { slug: string }) {
   const shown = sortOldestFirst(calls.filter((call) => !hidden.has(call.id)));
   // El nodo `status` existe siempre: así el lector de pantalla anuncia lo que aparece después.
   return (
-    <div role="status" aria-live="polite" data-testid="llamados-aviso" className="sticky top-0 z-40 print:hidden">
+    <div key={viewKey} role="status" aria-live="polite" data-testid="llamados-aviso" className="sticky top-0 z-40 print:hidden">
       {shown.length > 0 ? (
         <section className="border-b border-blush bg-blush text-ink shadow-sm" aria-label="Llamados pendientes">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-8 lg:px-10">
