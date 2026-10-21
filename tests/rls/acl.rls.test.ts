@@ -35,6 +35,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   product_image_org: [false, false, true], // pura; la usan las políticas de storage.objects de product-images (ADR 0008)
   organization_logo_org: [false, false, true], // pura; solo las políticas de logos del Dueño
   record_price_change: [true, false, false], // trigger de products: escribe price_history (la API no tiene INSERT)
+  record_branch_price_change: [true, false, false], // trigger de product_availability: escribe price_history con la sucursal (ADR 0035)
   price_history_append_only: [false, false, false], // trigger de price_history: rechaza UPDATE, DELETE y TRUNCATE
   purge_organization_price_history: [true, false, false], // purga del historial al borrar una organización (ADR 0026): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
   purge_expired_payments: [true, false, false], // purga de pagos y anulaciones de organizaciones ya borradas, tras 10 años (ADR 0027): apaga los triggers de solo-agregado; sin EXECUTE para ningún rol de la API
@@ -50,7 +51,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
 };
 
 // Funciones de la API que NO son SECURITY DEFINER a propósito: corren con los permisos y la RLS de quien llama, así que no amplían nada.
-const INVOKER_FUNCTIONS = new Set(["reorder_siblings", "replace_organization_logo", "replace_product_image"]);
+const INVOKER_FUNCTIONS = new Set(["create_product_in_branches", "reorder_siblings", "replace_organization_logo", "replace_product_image"]);
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito (salvo INVOKER_FUNCTIONS); ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
@@ -81,6 +82,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   personnel_remove_member: [false, false], // personal: quita la membresía y reserva el borrado de la cuenta si corresponde; solo service_role
   my_branch_view: [false, true], // vista por sucursal (ficha vista-por-sucursal, ADR 0034): la vista efectiva de quien llama; solo lo propio
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
+  create_product_in_branches: [false, true], // alta del plato con sucursales donde se oculta (ADR 0035): SECURITY INVOKER, manda la RLS de quien llama
   reorder_siblings: [false, true], // orden de la carta (ficha orden-e-imagenes-atomicos): SECURITY INVOKER, manda la RLS de quien llama
   replace_organization_logo: [false, true], // logo del local: SECURITY INVOKER, devuelve el logo saliente; manda la RLS del Dueño
   replace_product_image: [false, true], // foto del plato: SECURITY INVOKER, devuelve la foto saliente; manda la RLS de quien llama

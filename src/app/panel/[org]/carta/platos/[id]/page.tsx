@@ -89,7 +89,13 @@ export default async function EditProductPage({ params, searchParams }: PageProp
 
       <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} />
 
-      <AvailabilityForms orgSlug={membership.org.slug} productId={product.id} branches={availability} canWrite={canWrite} />
+      <AvailabilityForms
+        orgSlug={membership.org.slug}
+        productId={product.id}
+        branches={availability}
+        basePriceCents={product.price_cents}
+        canWrite={canWrite}
+      />
 
       <section aria-labelledby="borrar" className="panel-cell mt-6">
         <h2 id="borrar" className="font-display text-2xl">

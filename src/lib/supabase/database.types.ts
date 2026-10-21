@@ -299,14 +299,14 @@ isOneToOne: true
                   ]
                 },"price_history": {
                   Row: {
-                    "changed_at": string,"changed_by": string | null,"id": string,"new_price_cents": number,"old_price_cents": number,"organization_id": string,"product_id": string
+                    "branch_id": string | null,"changed_at": string,"changed_by": string | null,"id": string,"new_price_cents": number,"old_price_cents": number,"organization_id": string,"product_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "changed_at"?: string,"changed_by"?: string | null,"id"?: string,"new_price_cents": number,"old_price_cents": number,"organization_id": string,"product_id": string
+                    "branch_id"?: string | null,"changed_at"?: string,"changed_by"?: string | null,"id"?: string,"new_price_cents": number,"old_price_cents": number,"organization_id": string,"product_id": string
                   }
                   Update: {
-                    "changed_at"?: string,"changed_by"?: string | null,"id"?: string,"new_price_cents"?: number,"old_price_cents"?: number,"organization_id"?: string,"product_id"?: string
+                    "branch_id"?: string | null,"changed_at"?: string,"changed_by"?: string | null,"id"?: string,"new_price_cents"?: number,"old_price_cents"?: number,"organization_id"?: string,"product_id"?: string
                   }
                   Relationships: [
                     {
@@ -319,14 +319,14 @@ isOneToOne: false
                   ]
                 },"product_availability": {
                   Row: {
-                    "branch_id": string,"is_available": boolean,"organization_id": string,"product_id": string
+                    "branch_id": string,"is_available": boolean,"is_visible": boolean,"organization_id": string,"price_cents": number | null,"product_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "branch_id": string,"is_available"?: boolean,"organization_id": string,"product_id": string
+                    "branch_id": string,"is_available"?: boolean,"is_visible"?: boolean,"organization_id": string,"price_cents"?: number | null,"product_id": string
                   }
                   Update: {
-                    "branch_id"?: string,"is_available"?: boolean,"organization_id"?: string,"product_id"?: string
+                    "branch_id"?: string,"is_available"?: boolean,"is_visible"?: boolean,"organization_id"?: string,"price_cents"?: number | null,"product_id"?: string
                   }
                   Relationships: [
                     {
@@ -540,6 +540,9 @@ isOneToOne: false
                            },
 "admin_void_payment":
 { Args: { "p_actor": string,"p_org": string,"p_payment": string,"p_reason": string }; Returns: string
+                           },
+"create_product_in_branches":
+{ Args: { "p_category": string,"p_description": string,"p_dietary_tags": (string)[],"p_hidden_branches": (string)[],"p_is_active": boolean,"p_name": string,"p_org": string,"p_price_cents": number,"p_sort_order": number }; Returns: string
                            },
 "create_waiter_call":
 { Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json

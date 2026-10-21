@@ -8,6 +8,7 @@ import {
   authorLabel,
   describeChange,
   formatWhen,
+  loadBranchNames,
   loadPriceHistory,
   loadProductInfo,
   parseCursor,
@@ -27,6 +28,8 @@ export type HistoryRow = {
   /** Id del plato solo si existe (para enlazar); un plato eliminado no se enlaza. */
   productLinkId: string | null;
   productInactive: boolean;
+  /** `null` = precio general (base); con texto, el cambio fue del precio propio de esa sucursal. */
+  branchName: string | null;
   direction: "up" | "down";
   transition: string;
   difference: string;
@@ -55,6 +58,12 @@ export async function loadHistoryScreen(input: {
     page.changes.map((c) => c.productId),
   );
   if (!products) return { state: "error" };
+  const branches = await loadBranchNames(
+    db,
+    input.orgId,
+    page.changes.flatMap((c) => (c.branchId ? [c.branchId] : [])),
+  );
+  if (!branches) return { state: "error" };
 
   let lookup: AuthorLookup = { status: "none" };
   if (input.viewer.role === "owner") {
@@ -77,6 +86,7 @@ export async function loadHistoryScreen(input: {
       productName: product?.name ?? null,
       productLinkId: product ? change.productId : null,
       productInactive: product ? !product.isActive : false,
+      branchName: change.branchId ? (branches.get(change.branchId) ?? "Otra sucursal") : null,
       direction: description.direction,
       transition: description.transition,
       difference: description.difference,

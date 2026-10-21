@@ -63,6 +63,9 @@ export function PriceHistoryList({
     );
   }
 
+  // Solo cuando alguna fila es de una sucursal se aclara cuál es el precio general (los locales sin ajustes no cambian).
+  const hasBranchRows = rows.some((row) => row.branchName !== null);
+
   return (
     <div className="mt-8">
       {authorsNotice ? (
@@ -89,7 +92,12 @@ export function PriceHistoryList({
                       {row.productInactive ? <span className="ml-2 text-sm font-normal text-muted">(inactivo)</span> : null}
                     </p>
                   ) : null}
-                  <div className={`${showProduct ? "mt-1" : ""} flex flex-wrap items-center gap-x-3 gap-y-1`}>
+                  {hasBranchRows ? (
+                    <p className="text-sm font-medium text-muted [overflow-wrap:anywhere]" data-testid="historial-alcance">
+                      {row.branchName ? `Sucursal ${row.branchName}` : "Precio general"}
+                    </p>
+                  ) : null}
+                  <div className={`${showProduct || hasBranchRows ? "mt-1" : ""} flex flex-wrap items-center gap-x-3 gap-y-1`}>
                     <span className="text-2xl font-semibold tabular-nums [overflow-wrap:anywhere]" data-testid="historial-cambio">
                       {row.transition}
                     </span>

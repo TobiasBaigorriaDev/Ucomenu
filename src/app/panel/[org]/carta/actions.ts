@@ -83,6 +83,7 @@ export async function saveProductAction(_previous: FormState, formData: FormData
     price: text(formData, "price"),
     category: text(formData, "category"),
     dietary: JSON.stringify(formData.getAll("dietary")),
+    shown: JSON.stringify(formData.getAll("shown_branch")),
   };
   const categoryId = asUuid(values.category);
   if (!categoryId) return { error: cartaErrorMessage("category_invalid", null), values };
@@ -95,7 +96,13 @@ export async function saveProductAction(_previous: FormState, formData: FormData
     return outcome(slug, orgId, await updateProduct(db, orgId, id, input), "Cambios guardados.", values);
   }
 
-  const result = await createProduct(db, orgId, { ...input, active: formData.get("active") === "on" });
+  // Sucursales donde NO se muestra: las activas del local que no se marcaron. Se calcula con lo que hay en la base (no con la lista
+  // que mandó el navegador); con una sola sucursal activa no hay nada que decidir.
+  const activeBranches = (await db.from("branches").select("id").eq("organization_id", orgId).eq("is_active", true)).data ?? [];
+  const shown = new Set(formData.getAll("shown_branch").filter((id): id is string => typeof id === "string"));
+  const hiddenBranches = activeBranches.length > 1 ? activeBranches.map((b) => b.id).filter((id) => !shown.has(id)) : [];
+
+  const result = await createProduct(db, orgId, { ...input, active: formData.get("active") === "on", hiddenBranches });
   if (!result.ok) return outcome(slug, orgId, result, "", { ...values, active: formData.get("active") === "on" ? "on" : "" });
   refresh(slug, orgId);
   redirect(`/panel/${slug}/carta/platos/${result.data.id}?nuevo=1`);

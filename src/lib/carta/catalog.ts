@@ -44,7 +44,7 @@ export function isDbError(error: { code?: string }): boolean {
   return typeof error.code === "string" && error.code !== "";
 }
 
-const PRICE_ERROR: Record<PriceProblem, CartaError> = {
+export const PRICE_ERROR: Record<PriceProblem, CartaError> = {
   blank: "price_blank",
   invalid: "price_invalid",
   too_many_decimals: "price_decimals",
@@ -272,10 +272,15 @@ async function nextProductOrder(db: Db, orgId: string, categoryId: string): Prom
   return error ? null : nextSortOrder(data);
 }
 
+/**
+ * Crea un plato. `hiddenBranches` son las sucursales donde NO se muestra: con alguna, el plato y sus ocultamientos se crean en UNA
+ * transacción (`create_product_in_branches`, que corre con la RLS de la persona): un fallo (cupo, cuenta en solo lectura,
+ * sucursal ajena) no deja un plato visible en todas. Sin ninguna, es el alta de siempre.
+ */
 export async function createProduct(
   db: Db,
   orgId: string,
-  input: ProductInput & { active: boolean },
+  input: ProductInput & { active: boolean; hiddenBranches?: string[] },
 ): Promise<Result<{ id: string }>> {
   const parsed = parseProduct(input);
   if (!parsed.ok) return parsed;
@@ -286,6 +291,22 @@ export async function createProduct(
   if (!(await categoryBelongs(db, orgId, input.categoryId))) return fail("category_invalid");
   const sortOrder = await nextProductOrder(db, orgId, input.categoryId);
   if (sortOrder === null) return fail("unexpected");
+
+  if (input.hiddenBranches && input.hiddenBranches.length > 0) {
+    const { data, error } = await db.rpc("create_product_in_branches", {
+      p_org: orgId,
+      p_category: input.categoryId,
+      p_name: parsed.data.name,
+      p_description: parsed.data.description as string,
+      p_price_cents: parsed.data.price_cents,
+      p_sort_order: sortOrder,
+      p_is_active: input.active,
+      p_dietary_tags: parsed.data.dietary_tags ?? [],
+      p_hidden_branches: input.hiddenBranches,
+    });
+    if (error) return fail(await writeFailure(db, orgId, error));
+    return typeof data === "string" ? ok({ id: data }) : fail("unexpected");
+  }
 
   const { data, error } = await db
     .from("products")

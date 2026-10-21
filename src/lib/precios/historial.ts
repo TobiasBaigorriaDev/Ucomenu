@@ -25,6 +25,8 @@ export type PriceChange = {
   changedAt: string;
   oldCents: number;
   newCents: number;
+  /** `null` = cambio del precio base; con valor, del precio propio de esa sucursal (ADR 0035). */
+  branchId: string | null;
 };
 
 export type PriceHistoryPage = { changes: PriceChange[]; next: string | null };
@@ -65,7 +67,7 @@ export function parseCursor(raw: unknown): Cursor | null {
   return { changedAt: parts[0], id };
 }
 
-const COLUMNS = "id, product_id, changed_by, changed_at, old_price_cents, new_price_cents";
+const COLUMNS = "id, product_id, branch_id, changed_by, changed_at, old_price_cents, new_price_cents";
 
 /**
  * Una página del historial de una organización, del más nuevo al más viejo (opcionalmente de un solo plato).
@@ -101,10 +103,23 @@ export async function loadPriceHistory(
       changedAt: row.changed_at,
       oldCents: row.old_price_cents,
       newCents: row.new_price_cents,
+      branchId: row.branch_id,
     }),
   );
   const next = data.length > PAGE_SIZE && changes.length > 0 ? encodeCursor(changes[changes.length - 1]) : null;
   return { changes, next };
+}
+
+/**
+ * Nombres de las sucursales de ESTE local. `null` si la base falló. Una sucursal que ya no existe (o inactiva) no figura: el
+ * historial la rotula con un texto neutro (no hay clave foránea: el historial sobrevive a la sucursal).
+ */
+export async function loadBranchNames(db: Db, orgId: string, branchIds: string[]): Promise<Map<string, string> | null> {
+  const ids = [...new Set(branchIds)];
+  if (ids.length === 0) return new Map();
+  const { data, error } = await db.from("branches").select("id, name").eq("organization_id", orgId).in("id", ids);
+  if (error || !data) return null;
+  return new Map(data.map((b) => [b.id, b.name]));
 }
 
 export type ProductInfo = { name: string; isActive: boolean };

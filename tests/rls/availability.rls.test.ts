@@ -1,8 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { loadProductAvailability, loadSoldOutProducts, setProductAvailability } from "@/lib/carta/availability";
+import { loadBranchSettings, loadProductAvailability, setProductAvailability } from "@/lib/carta/availability";
 import { addMembership, anonClient, createCategory, createOrg, createUser, deleteOrg, deleteUser, DIA_MS, serviceClient, setSubscription, type TestUser } from "./helpers";
 
 const service = serviceClient();
+/** Los platos agotados de una sucursal, como los ve la carta pública (cliente anónimo). */
+const soldOut = async (db: Parameters<typeof loadBranchSettings>[0], org: string, branch: string) =>
+  new Set([...(await loadBranchSettings(db, org, branch))].filter(([, setting]) => !setting.isAvailable).map(([id]) => id));
 let owner: TestUser, staff: TestUser, stranger: TestUser;
 const orgs: string[] = [];
 type Scenario = Awaited<ReturnType<typeof scenario>>;
@@ -21,7 +24,7 @@ async function scenario(label: string) {
   if (p.error) throw p.error;
   return { org, category, product: p.data.id, branch: branches.data.find((b) => b.slug === "centro")!.id, other: branches.data.find((b) => b.slug === "norte")!.id };
 }
-const row = (e: Scenario, available = false) => ({ organization_id: e.org, branch_id: e.branch, product_id: e.product, is_available: available });
+const row = (e: Scenario, available = false) => ({ organization_id: e.org, branch_id: e.branch, product_id: e.product, is_available: available, is_visible: true, price_cents: null });
 const read = (e: Scenario) => service.from("product_availability").select("*").eq("organization_id", e.org);
 
 beforeAll(async () => {
@@ -37,10 +40,10 @@ describe("disponibilidad por sucursal: aislamiento y persistencia", () => {
     const e = await scenario("roles");
     expect((await loadProductAvailability(staff.db, e.org, e.product)).every((b) => b.is_available)).toBe(true);
     expect(await setProductAvailability(owner.db, e.org, e.product, e.branch, false)).toMatchObject({ ok: true });
-    expect(await loadSoldOutProducts(anonClient(), e.org, e.branch)).toEqual(new Set([e.product]));
-    expect(await loadSoldOutProducts(anonClient(), e.org, e.other)).toEqual(new Set());
+    expect(await soldOut(anonClient(), e.org, e.branch)).toEqual(new Set([e.product]));
+    expect(await soldOut(anonClient(), e.org, e.other)).toEqual(new Set());
     expect(await setProductAvailability(staff.db, e.org, e.product, e.branch, true)).toMatchObject({ ok: true });
-    expect(await loadSoldOutProducts(anonClient(), e.org, e.branch)).toEqual(new Set());
+    expect(await soldOut(anonClient(), e.org, e.branch)).toEqual(new Set());
     expect((await service.from("products").select("is_active, price_cents").eq("id", e.product).single()).data).toEqual({ is_active: true, price_cents: 2000 });
     expect((await read(e)).data).toHaveLength(1);
   });

@@ -20,12 +20,14 @@ type Props = {
   /** Sin `productId` es un alta; con él, una edición. */
   productId?: string;
   categories: { id: string; name: string }[];
+  /** Solo en el alta y con varias sucursales activas: en cuáles se muestra el plato nuevo (todas por defecto). */
+  branches?: { id: string; name: string }[];
   initial: ProductFormValues;
   canWrite: boolean;
 };
 
 /** Alta y edición de un plato. En el alta, el plato se puede crear oculto (si el plan ya llegó a su tope). */
-export function ProductForm({ orgSlug, productId, categories, initial, canWrite }: Props) {
+export function ProductForm({ orgSlug, productId, categories, branches, initial, canWrite }: Props) {
   return (
     <ActionForm action={saveProductAction} className="mt-4 max-w-md">
       {(state) => {
@@ -112,6 +114,27 @@ export function ProductForm({ orgSlug, productId, categories, initial, canWrite 
                   Mostrar en la carta
                 </label>
               </div>
+            )}
+
+            {productId || !branches ? null : (
+              <fieldset aria-describedby="sucursales-help" data-testid="alta-sucursales">
+                <legend className={labelClass}>Sucursales donde se muestra</legend>
+                <p id="sucursales-help" className="mt-1 text-sm text-muted">
+                  El plato es de toda la carta; acá elegís en cuáles sucursales aparece. Después podés cambiarlo, y ponerle un precio propio a cada una.
+                </p>
+                {branches.map((branch) => (
+                  <label key={branch.id} className="flex min-h-11 items-center gap-3">
+                    <input
+                      type="checkbox"
+                      name="shown_branch"
+                      value={branch.id}
+                      className="size-5 accent-cobalt"
+                      defaultChecked={v?.shown ? (JSON.parse(v.shown) as string[]).includes(branch.id) : true}
+                    />
+                    {branch.name}
+                  </label>
+                ))}
+              </fieldset>
             )}
 
             <fieldset aria-describedby="dietary-help">

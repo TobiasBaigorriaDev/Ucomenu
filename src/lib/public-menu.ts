@@ -7,7 +7,7 @@ import { offeredLanguages } from "@/lib/idiomas/localizar";
 import { parseTranslations, type Translations } from "@/lib/idiomas/traducciones";
 import { readAllPages } from "@/lib/paginar";
 import { isValidSlug } from "@/lib/slug";
-import { loadSoldOutProducts } from "@/lib/carta/availability";
+import { applyBranchSettings, loadBranchSettings } from "@/lib/carta/availability";
 import { createPublicClient } from "@/lib/supabase/public-client";
 
 export type PublicMenu = {
@@ -169,12 +169,14 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   const branch = org?.branches[0];
   if (!org || !branch) return unavailableOrNull(supabase, orgSlug, branchSlug);
 
-  const [{ categories, products, optionGroups, options }, soldOut] = await Promise.all([
+  const [{ categories, products, optionGroups, options }, settings] = await Promise.all([
     readRows(org.id),
-    loadSoldOutProducts(supabase, org.id, branch.id),
+    // Ajustes de ESTA sucursal (oculto, agotado, precio propio), en vivo: el catálogo cacheado es de toda la organización.
+    loadBranchSettings(supabase, org.id, branch.id),
   ]);
 
-  const sections = groupMenu(categories, attachOptions(products.map((product) => ({ ...product, is_available: !soldOut.has(product.id) })), optionGroups, options));
+  // Un plato oculto no llega a la carta (listado, búsqueda ni detalle); una categoría sin platos visibles no se muestra (groupMenu).
+  const sections = groupMenu(categories, attachOptions(applyBranchSettings(products, settings), optionGroups, options));
   return {
     kind: "menu",
     menu: {

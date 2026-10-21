@@ -114,7 +114,7 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 ## Reglas de negocio clave
 ### Organización, sucursales y permisos
 - Un **tenant es una organización** con una o más **sucursales**. Cada sucursal tiene sus mesas, QR y coordenadas GPS. El personal pertenece al local (la membresía es por organización), pero **cada persona elige qué sucursales mira** —en la sala, el cartel de avisos, el sonido y el aviso del celular—; es una preferencia, no un permiso (ADR 0034).
-- La **carta es de la organización** y se comparte entre sucursales; la disponibilidad se ajusta por sucursal.
+- La **carta es de la organización** y se comparte entre sucursales (categorías, orden, nombres, fotos, etiquetas y variantes son únicos). Cada sucursal puede ajustar **solo tres cosas por plato**, todas opcionales: **precio propio** (sin precio propio hereda el general; `$ 0` es un precio válido), **agotado** y **oculto** ([ADR 0035](decisiones/0035-carta-central-con-ajustes-por-sucursal.md); [ficha](../agile/cambios/carta-por-sucursal.md)). Un plato oculto no aparece en esa sucursal (listado, búsqueda ni detalle) y una categoría sin platos visibles tampoco; un plato o categoría inactivo no se publica en ninguna. Los ajustes no cambian los topes del plan (un plato activo cuenta una vez, aunque esté oculto en todas) ni los permisos: los escriben el Dueño y el Staff con la cuenta editable.
 - Ningún usuario de una organización puede leer ni modificar datos de otra. Es el invariante central del producto.
 
 ### Roles y permisos

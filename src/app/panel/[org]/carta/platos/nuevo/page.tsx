@@ -19,6 +19,10 @@ export default async function NewProductPage({ params, searchParams }: PageProps
   const canWrite = ent?.canWrite === true;
   const notice = writeBlockNotice(ent);
 
+  // Con varias sucursales activas el alta pregunta en cuáles se muestra; con una sola no cambia nada.
+  const branches =
+    (await db.from("branches").select("id, name").eq("organization_id", membership.org.id).eq("is_active", true).order("name")).data ?? [];
+
   const categories = carta.map(({ id, name }) => ({ id, name }));
   const requested = asUuid(Array.isArray(categoria) ? categoria[0] : categoria);
   const initialCategory = categories.find((c) => c.id === requested)?.id ?? categories[0]?.id ?? "";
@@ -39,6 +43,7 @@ export default async function NewProductPage({ params, searchParams }: PageProps
         <ProductForm
           orgSlug={membership.org.slug}
           categories={categories}
+          branches={branches.length > 1 ? branches : undefined}
           initial={{ name: "", description: "", price: "", categoryId: initialCategory }}
           canWrite={canWrite}
         />

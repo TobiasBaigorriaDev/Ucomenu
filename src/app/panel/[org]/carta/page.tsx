@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { toneFor } from "@/components/menu/tones";
+import { loadSettingsSummary, type SettingsSummary } from "@/lib/carta/availability";
 import { loadCarta } from "@/lib/carta/catalog";
 import { imageUrl } from "@/lib/carta/images";
 import { writeBlockNotice } from "@/lib/carta/messages";
@@ -32,13 +33,30 @@ function deletionNotice(query: { borrado?: string | string[]; platos?: string | 
   return message;
 }
 
+/** «Oculto en 1 sucursal», «Precio propio en 2», «Agotado en 1»: lo que hace distinto a un plato en alguna sucursal. */
+function settingsLabels(summary: SettingsSummary | undefined): string[] {
+  if (!summary) return [];
+  const branches = (n: number) => `${n} ${n === 1 ? "sucursal" : "sucursales"}`;
+  return [
+    ...(summary.hidden > 0 ? [`Oculto en ${branches(summary.hidden)}`] : []),
+    ...(summary.priced > 0 ? [`Precio propio en ${branches(summary.priced)}`] : []),
+    ...(summary.soldOut > 0 ? [`Agotado en ${branches(summary.soldOut)}`] : []),
+  ];
+}
+
 export default async function CartaPage({ params, searchParams }: PageProps<"/panel/[org]/carta">) {
   const { org } = await params;
   const deleted = deletionNotice(await searchParams);
   const { membership } = await requireMembership(org, `/panel/${org}/carta`);
   const db = await createSessionClient();
 
-  const [carta, ent] = await Promise.all([loadCarta(db, membership.org.id), getEntitlements(membership.org.id)]);
+  const [carta, ent, activeBranches] = await Promise.all([
+    loadCarta(db, membership.org.id),
+    getEntitlements(membership.org.id),
+    db.from("branches").select("id", { count: "exact", head: true }).eq("organization_id", membership.org.id).eq("is_active", true),
+  ]);
+  // Los ajustes por sucursal solo existen (y solo se resumen) con varias sucursales activas: con una sola, la carta no cambia.
+  const settings = (activeBranches.count ?? 0) > 1 ? await loadSettingsSummary(db, membership.org.id) : new Map<string, SettingsSummary>();
   // Si no se pudo leer el estado de la cuenta, falla cerrado: se muestra pero no se edita.
   const canWrite = ent?.canWrite === true;
   const notice = writeBlockNotice(ent);
@@ -172,6 +190,11 @@ export default async function CartaPage({ params, searchParams }: PageProps<"/pa
                           <span className="shrink-0 tabular-nums">{formatArs(product.price_cents)}</span>
                         </div>
                         {product.is_active ? null : <span className={`${badgeClass} mt-1`}>Inactivo</span>}
+                        {settingsLabels(settings.get(product.id)).map((label) => (
+                          <span key={label} className={`${badgeClass} mt-1 mr-1`} data-testid="ajuste-sucursal">
+                            {label}
+                          </span>
+                        ))}
                       </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-start gap-2 lg:mt-0 lg:justify-end">
