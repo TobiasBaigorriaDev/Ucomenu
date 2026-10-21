@@ -23,7 +23,7 @@ function Buttons({ lang }: { lang: Lang }) {
   const t = TEXTOS[lang].call;
   return (
     <div className="grid grid-cols-2 gap-2">
-      <button type="submit" name="kind" value="waiter" disabled={pending} className={`${cellBase} bg-[var(--carta-green)] text-white`}>
+      <button type="submit" name="kind" value="waiter" disabled={pending} className={`${cellBase} bg-[var(--carta-green)] text-[var(--on-accent)]`}>
         <Icon>
           <path d="M6 17V11a6 6 0 0 1 12 0v6" />
           <path d="M4 17h16" />

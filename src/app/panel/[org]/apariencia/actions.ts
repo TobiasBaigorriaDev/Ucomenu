@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth/session";
 import { cartaErrorMessage } from "@/lib/carta/messages";
 import type { FormState } from "@/lib/form-state";
-import { removeLogo, setLogo, setPalette, type Result } from "@/lib/identidad/identity";
+import { removeLogo, setLayout, setLogo, setPalette, setTheme, type Result } from "@/lib/identidad/identity";
 import { createSessionClient } from "@/lib/supabase/server";
 
 async function prepare(form: FormData) {
@@ -18,6 +18,9 @@ function outcome(slug: string, result: Result, message: string): FormState {
   if (!result.ok && result.error === "uncertain") refresh(slug); // pudo haberse guardado: la carta pública no debe quedar vieja
   if (!result.ok) {
     if (result.error === "palette_invalid") return { error: "Elegí una de las paletas disponibles." };
+    if (result.error === "theme_invalid") return { error: "Elegí uno de los temas disponibles." };
+    if (result.error === "theme_dates_invalid") return { error: "Revisá las fechas: «Hasta» no puede ser anterior a «Desde»." };
+    if (result.error === "layout_invalid") return { error: "Elegí uno de los estilos disponibles." };
     const logoErrors = {
       image_missing: "Elegí un archivo para el logo.",
       image_big: "El logo supera los 2 MB. Elegí un archivo más liviano.",
@@ -42,6 +45,16 @@ function refresh(slug: string) {
 export async function paletteAction(_state: FormState, form: FormData): Promise<FormState> {
   const { slug, id, db } = await prepare(form);
   return outcome(slug, await setPalette(db, id, form.get("palette")), "Colores guardados.");
+}
+
+export async function layoutAction(_state: FormState, form: FormData): Promise<FormState> {
+  const { slug, id, db } = await prepare(form);
+  return outcome(slug, await setLayout(db, id, form.get("layout")), "Estilo guardado.");
+}
+
+export async function themeAction(_state: FormState, form: FormData): Promise<FormState> {
+  const { slug, id, db } = await prepare(form);
+  return outcome(slug, await setTheme(db, id, form.get("theme"), form.get("from"), form.get("until")), "Fecha especial guardada.");
 }
 
 export async function uploadLogoAction(_state: FormState, form: FormData): Promise<FormState> {

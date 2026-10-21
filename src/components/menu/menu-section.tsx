@@ -1,8 +1,10 @@
+import type { Layout } from "@/lib/identidad/layouts";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
 import { categoryAnchor } from "./anchors";
 import { DishCard, type CardSpan } from "./dish-card";
+import { DishRow } from "./dish-row";
 import { toneFor } from "./tones";
 
 /**
@@ -20,10 +22,37 @@ export function cardSpans(products: Pick<MenuProduct, "image_path">[]): CardSpan
   });
 }
 
-export function MenuSection({ section, index, onSelect, lang }: { section: Section; index: number; onSelect?: (product: MenuProduct) => void; lang: Lang }) {
+/**
+ * Sección de una categoría según el estilo de carta del local. `bento` (el predeterminado) lleva la banda de color pegajosa y la
+ * grilla de cards; `clasica` y `minimal` llevan un título simple (la barra de categorías es fija y siempre visible, así que el
+ * título no necesita quedar pegado) y una lista con puntos guía o una columna de cards con foto grande.
+ */
+export function MenuSection({ section, index, onSelect, lang, layout = "bento" }: { section: Section; index: number; onSelect?: (product: MenuProduct) => void; lang: Lang; layout?: Layout }) {
   const { category, products } = section;
   const headingId = `${categoryAnchor(category.id)}-title`;
   const spans = cardSpans(products);
+
+  if (layout !== "bento") {
+    return (
+      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className={`scroll-mt-20 ${layout === "minimal" ? "mt-16" : "mt-12"}`}>
+        <div className="flex items-baseline justify-between gap-4 border-b-[1.5px] border-ink pb-2">
+          <h2 id={headingId} className="min-w-0 font-display text-[2rem] leading-none text-[var(--carta-green)] [overflow-wrap:anywhere] sm:text-4xl">
+            {category.name}
+          </h2>
+          <p className="shrink-0 text-sm font-medium text-muted">{TEXTOS[lang].count.dishes(products.length)}</p>
+        </div>
+        {layout === "clasica" ? (
+          <ul>
+            {products.map((product) => <DishRow key={product.id} product={product} onSelect={onSelect} lang={lang} />)}
+          </ul>
+        ) : (
+          <ul className="mt-6 grid gap-8">
+            {products.map((product) => <DishCard key={product.id} product={product} span="single" onSelect={onSelect} lang={lang} />)}
+          </ul>
+        )}
+      </section>
+    );
+  }
 
   return (
     <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="mt-14 scroll-mt-16 sm:mt-20">

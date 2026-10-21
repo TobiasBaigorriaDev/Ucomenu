@@ -223,14 +223,14 @@ isOneToOne: false
                   ]
                 },"organizations": {
                   Row: {
-                    "created_at": string,"id": string,"is_active": boolean,"logo_path": string | null,"menu_palette": string,"name": string,"slug": string
+                    "created_at": string,"id": string,"is_active": boolean,"logo_path": string | null,"menu_layout": string,"menu_palette": string,"menu_theme": string,"menu_theme_from": string | null,"menu_theme_until": string | null,"name": string,"slug": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_palette"?: string,"name": string,"slug": string
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_layout"?: string,"menu_palette"?: string,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name": string,"slug": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_palette"?: string,"name"?: string,"slug"?: string
+                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_layout"?: string,"menu_palette"?: string,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name"?: string,"slug"?: string
                   }
                   Relationships: [
                     

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
 import { DIETARY_TAGS, filterMenu, type DietaryTag } from "@/lib/carta/dietary";
+import type { Layout } from "@/lib/identidad/layouts";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
@@ -11,7 +12,7 @@ import { CategoryMosaic } from "./category-mosaic";
 import { DishDetail } from "./dish-detail";
 import { MenuSection } from "./menu-section";
 
-export function MenuBrowser({ sections, branchId, lang }: { sections: Section[]; branchId: string; lang: Lang }) {
+export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { sections: Section[]; branchId: string; lang: Lang; layout?: Layout }) {
   const t = TEXTOS[lang];
   const [query, setQuery] = useState("");
   const [tags, setTags] = useState<DietaryTag[]>([]);
@@ -61,7 +62,7 @@ export function MenuBrowser({ sections, branchId, lang }: { sections: Section[];
           <div className="flex flex-wrap gap-2">
             {DIETARY_TAGS.map((tag) => <button key={tag} type="button" aria-pressed={tags.includes(tag)}
               onClick={() => setTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag])}
-              className="min-h-11 rounded-full border border-[var(--carta-green)] px-4 text-sm font-medium text-[var(--carta-green)] hover:bg-[var(--carta-sand)] aria-pressed:bg-[var(--carta-green)] aria-pressed:text-white">
+              className="min-h-11 rounded-full border border-[var(--carta-green)] px-4 text-sm font-medium text-[var(--carta-green)] hover:bg-[var(--carta-sand)] aria-pressed:bg-[var(--carta-green)] aria-pressed:text-[var(--on-accent)]">
               {t.dietary[tag]}
             </button>)}
           </div>
@@ -80,10 +81,11 @@ export function MenuBrowser({ sections, branchId, lang }: { sections: Section[];
         </div>
       </div>
       {visible.length ? <>
-        <CategoryMosaic sections={visible} lang={lang} />
+        {/* Sin mosaico (clásica y minimal), la barra fija de categorías es siempre visible y hace de índice. */}
+        {layout === "bento" ? <CategoryMosaic sections={visible} lang={lang} /> : null}
         <CategoryBar sections={visible} lang={lang} />
-        <main className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
-          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={select} lang={lang} />)}
+        <main className={`mx-auto px-4 pb-12 sm:px-6 ${layout === "bento" ? "max-w-5xl" : layout === "clasica" ? "max-w-3xl" : "max-w-2xl"}`}>
+          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={select} lang={lang} layout={layout} />)}
         </main>
       </> : <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
         <h2 className="font-display text-2xl">{t.search.emptyTitle}</h2>

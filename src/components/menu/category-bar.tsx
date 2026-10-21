@@ -92,7 +92,7 @@ export function CategoryBar({ sections, lang }: { sections: MenuSection[]; lang:
                 lockUntil.current = performance.now() + CLICK_LOCK_MS;
                 setActiveId(category.id);
               }}
-              className="flex min-h-11 max-w-[70vw] items-center rounded-full bg-[var(--carta-blush)] px-4 text-[0.75rem] font-semibold tracking-[0.08em] text-ink uppercase hover:bg-[var(--carta-sand)] aria-[current=true]:bg-[var(--carta-green)] aria-[current=true]:text-white"
+              className="flex min-h-11 max-w-[70vw] items-center rounded-full bg-[var(--carta-blush)] px-4 text-[0.75rem] font-semibold tracking-[0.08em] text-ink uppercase hover:bg-[var(--carta-sand)] aria-[current=true]:bg-[var(--carta-green)] aria-[current=true]:text-[var(--on-accent)]"
             >
               <span className="truncate">{category.name}</span>
             </a>

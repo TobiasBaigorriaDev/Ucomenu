@@ -2,6 +2,8 @@ import "./carta.css";
 import Image from "next/image";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
+import { THEMES, type Theme } from "@/lib/identidad/temas";
+import { TemaIcono } from "./tema-icono";
 
 /**
  * Cabecera editorial: logo y nombre del local lado a lado, en display grande y alineados a la izquierda; debajo, un
@@ -13,6 +15,7 @@ export function MenuHeader({
   tableLabel,
   logo,
   lang = "es",
+  theme = null,
 }: {
   organizationName: string;
   /** La pantalla de «carta no disponible» no muestra sucursal. */
@@ -21,11 +24,19 @@ export function MenuHeader({
   tableLabel?: string | null;
   logo?: string | null;
   lang?: Lang;
+  /** Tema de fecha especial vigente: suma un saludo corto arriba del nombre. */
+  theme?: Theme | null;
 }) {
   const t = TEXTOS[lang];
   return (
     <header>
       <div className="mx-auto max-w-3xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 sm:pb-12">
+        {theme ? (
+          <p data-testid="tema-saludo" className="mb-5 inline-flex max-w-full items-center gap-2 rounded-full bg-[var(--carta-blush)] px-4 py-1.5 text-sm font-semibold text-ink">
+            <TemaIcono name={THEMES[theme].motifs[0]} className="size-4 shrink-0 text-[var(--carta-terra)]" />
+            <span className="[overflow-wrap:anywhere]">{THEMES[theme].greeting[lang]}</span>
+          </p>
+        ) : null}
         <div className="flex items-center gap-4 sm:gap-6">
           {logo ? (
             <Image
@@ -65,7 +76,7 @@ export function MenuHeader({
             {tableLabel ? (
               <p
                 data-testid="mesa"
-                className="inline-block rounded-full bg-[var(--carta-green)] px-4 py-1.5 text-base font-semibold text-white [overflow-wrap:anywhere]"
+                className="inline-block rounded-full bg-[var(--carta-green)] px-4 py-1.5 text-base font-semibold text-[var(--on-accent)] [overflow-wrap:anywhere]"
               >
                 {tableLabel}
               </p>

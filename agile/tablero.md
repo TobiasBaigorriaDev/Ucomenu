@@ -58,6 +58,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Subdominio o dominio propio por organización
 
 ## Hecho
+- [M] Edición de plato por tareas: datos y foto juntos en PC, pestañas y borradores conservados — hecho (commiteado 2026-10-21; sin despliegue de la app) → agile/cambios/editor-plato-ux.md
+- [M] Selector de Sala: cambio directo de sucursal y selección múltiple explícita — hecho (commiteado 2026-10-21; sin despliegue de la app) → agile/cambios/selector-sucursal-directo.md
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 - [C] Carta central con precio, disponibilidad y visibilidad por sucursal (nivel 2a): precio propio ($ 0 válido), agotado y oculto por sucursal; revisado por Codex (3 rondas); aprobado, subido y desplegado en staging con su migración (2026-10-21; el rollback del historial se acepta con su limitación) → [ficha](cambios/carta-por-sucursal.md) · ADR 0035
 - [C] Vista por sucursal de cada persona (sala, cartel, sonido, push y analítica): preferencia, no permiso; revisado por Codex (3 rondas); aprobado, subido y desplegado en staging (2026-10-21) → [ficha](cambios/vista-por-sucursal.md) · ADR 0034
@@ -90,6 +92,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Corrección del slug de sucursal por SuperAdmin con históricos reservados y redirección a la dirección vigente → [ficha](cambios/correccion-slug-sucursal.md)
 - [M · C técnico] Buscador y filtros dietarios con aviso de alérgenos junto a los filtros; integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/buscador-y-filtros-dietarios.md)
 - [M · C técnico] Disponibilidad por sucursal (agotado visible, lectura en vivo); integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/disponibilidad-por-sucursal.md)
+- [M] Temas de fechas especiales de la carta (San Valentín, Navidad, Halloween…), con ventana de fechas; aprobado por el usuario 2026-10-21; migración en staging, app sin desplegar → agile/cambios/temas-de-fechas.md
+- [M] Personalización de la carta: paletas oscuras y vivas, vista previa real y estilo de carta; aprobado por el usuario 2026-10-21; migraciones en staging, app sin desplegar → agile/cambios/personalizacion-carta.md
 - [C] Identidad del local: logo y cuatro paletas; revisión recibida sin bloqueantes, límites registrados y ajustes menores atendidos (2026-10-16) → agile/cambios/identidad-del-local.md
 - [S] Categorías y platos de la carta pública paginados; cerrado sin revisión independiente por su nivel (2026-10-16) → agile/cambios/paginacion-carta-publica.md
 - [M] Variantes y adicionales: grupos de opciones por plato (variante 1/1, adicionales 0/N) en el panel y bajo cada plato de la carta pública; lectura anónima solo de lo activo; revisado por Codex en dos rondas (2026-10-17; falta aplicar la migración y confirmar las decisiones de la ficha) → agile/cambios/variantes-y-adicionales.md

@@ -10,25 +10,28 @@ import { formatArs } from "@/lib/money";
 import { DietaryLabels } from "./dietary-labels";
 import { DishOptions } from "./dish-options";
 
-/** Cómo ocupa la grilla: destacada (2 columnas), cola impar (2 en el celular, 1 en escritorio) o normal (1). */
-export type CardSpan = "featured" | "tail" | "normal";
+/** Cómo ocupa la grilla: destacada (2 columnas), cola impar (2 en el celular, 1 en escritorio), normal (1) o única (estilo minimal: una columna, foto grande). */
+export type CardSpan = "featured" | "tail" | "normal" | "single";
 
 const SPAN_CLASS: Record<CardSpan, string> = {
   // En escritorio ocupa dos filas y las dos cards siguientes se apilan a su lado (siempre hay al menos dos: ver `cardSpans`).
   featured: "col-span-2 md:row-span-2",
   tail: "col-span-2 md:col-span-1",
   normal: "",
+  single: "",
 };
 const PHOTO_RATIO: Record<CardSpan, string> = {
   featured: "aspect-[16/10] md:aspect-auto md:min-h-64 md:flex-1",
   tail: "aspect-[16/10] md:aspect-[4/3]",
   normal: "aspect-[4/3]",
+  single: "aspect-[3/2]",
 };
 /** El ancho que ocupa la foto en pantalla, para que `/_next/image` pida solo lo necesario (ver next.config.ts). */
 const PHOTO_SIZES: Record<CardSpan, string> = {
   featured: "(min-width: 768px) 66vw, 100vw",
   tail: "(min-width: 768px) 33vw, 100vw",
   normal: "(min-width: 768px) 33vw, 50vw",
+  single: "(min-width: 672px) 42rem, 100vw",
 };
 
 /**
@@ -56,8 +59,8 @@ function CardPhoto({ src, name, span, lang }: { src: string; name: string; span:
       <Image
         src={src}
         alt={TEXTOS[lang].dish.photoAlt(name)}
-        width={span === "featured" ? 640 : 384}
-        height={span === "featured" ? 400 : 288}
+        width={span === "single" ? 768 : span === "featured" ? 640 : 384}
+        height={span === "single" ? 512 : span === "featured" ? 400 : 288}
         sizes={PHOTO_SIZES[span]}
         loading="lazy"
         onError={() => setFailed(true)}
@@ -74,7 +77,8 @@ function CardPhoto({ src, name, span, lang }: { src: string; name: string; span:
 export function DishCard({ product, span, onSelect, lang }: { product: MenuProduct; span: CardSpan; onSelect?: (product: MenuProduct) => void; lang: Lang }) {
   const t = TEXTOS[lang].dish;
   const photo = imageUrl(product.image_path);
-  const featured = span === "featured";
+  // Las cards grandes (destacada y única) llevan el nombre más grande y la descripción completa.
+  const featured = span === "featured" || span === "single";
   const soldOut = product.is_available === false;
   const name = (
     <h3 aria-label={product.name} className={`font-display leading-[1.05] hyphens-auto [overflow-wrap:anywhere] ${featured ? "text-3xl sm:text-4xl" : "text-[1.3125rem]"}`}>

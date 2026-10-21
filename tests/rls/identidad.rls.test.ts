@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadIdentity, removeLogo, setLogo, setPalette } from "@/lib/identidad/identity";
+import { loadIdentity, removeLogo, setLayout, setLogo, setPalette, setTheme } from "@/lib/identidad/identity";
 import { LOGO_BUCKET } from "@/lib/identidad/logos";
+import { LAYOUT_KEYS } from "@/lib/identidad/layouts";
+import { PALETTE_KEYS } from "@/lib/identidad/palettes";
+import { THEME_KEYS } from "@/lib/identidad/temas";
 import { addMembership, anonClient, createOrg, createUser, deleteOrg, deleteUser, DIA_MS, serviceClient, setSubscription, type Db, type TestUser } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==", "base64");
@@ -46,11 +49,41 @@ afterAll(async () => {
 
 describe("identidad por organización", () => {
   it("conserva el predeterminado y permite al Dueño guardar colores sin afectar otro local", async () => {
-    expect(await loadIdentity(owner.db, org)).toEqual({ menu_palette: "oliva", logo_path: null });
+    expect(await loadIdentity(owner.db, org)).toEqual({ menu_palette: "oliva", menu_layout: "bento", menu_theme: "ninguno", menu_theme_from: null, menu_theme_until: null, logo_path: null });
+    // Cada paleta que ofrece la aplicación la acepta la base (el `check` de la migración y `PALETTES` van de la mano).
+    for (const key of PALETTE_KEYS) {
+      expect(await setPalette(owner.db, org, key)).toEqual({ ok: true });
+      expect((await loadIdentity(owner.db, org)).menu_palette).toBe(key);
+    }
     expect(await setPalette(owner.db, org, "vino")).toEqual({ ok: true });
     expect((await loadIdentity(owner.db, org)).menu_palette).toBe("vino");
     expect((await loadIdentity(service, other)).menu_palette).toBe("oliva");
     expect(await setPalette(owner.db, org, "__proto__")).toEqual({ ok: false, error: "palette_invalid" });
+    for (const key of LAYOUT_KEYS) {
+      expect(await setLayout(owner.db, org, key)).toEqual({ ok: true });
+      expect((await loadIdentity(owner.db, org)).menu_layout).toBe(key);
+    }
+    expect(await setLayout(owner.db, org, "bento")).toEqual({ ok: true });
+    expect((await loadIdentity(service, other)).menu_layout).toBe("bento");
+    expect(await setLayout(owner.db, org, "__proto__")).toEqual({ ok: false, error: "layout_invalid" });
+
+    // Temas de fecha especial: cada uno se guarda con su ventana; «ninguno» borra las fechas; la base rechaza lo inválido.
+    for (const key of THEME_KEYS) {
+      expect(await setTheme(owner.db, org, key, "2026-12-20", "2026-12-26")).toEqual({ ok: true });
+      expect(await loadIdentity(owner.db, org)).toMatchObject({ menu_theme: key, menu_theme_from: "2026-12-20", menu_theme_until: "2026-12-26" });
+    }
+    expect(await setTheme(owner.db, org, "navidad", "", "2026-12-26")).toEqual({ ok: true }); // solo «hasta»
+    expect(await loadIdentity(owner.db, org)).toMatchObject({ menu_theme_from: null, menu_theme_until: "2026-12-26" });
+    expect(await setTheme(owner.db, org, "ninguno", "2026-12-20", "2026-12-26")).toEqual({ ok: true });
+    expect(await loadIdentity(owner.db, org)).toMatchObject({ menu_theme: "ninguno", menu_theme_from: null, menu_theme_until: null });
+    expect((await loadIdentity(service, other)).menu_theme).toBe("ninguno");
+    expect(await setTheme(owner.db, org, "__proto__", null, null)).toEqual({ ok: false, error: "theme_invalid" });
+    expect(await setTheme(owner.db, org, "navidad", "2026-12-26", "2026-12-20")).toEqual({ ok: false, error: "theme_dates_invalid" });
+    expect(await setTheme(owner.db, org, "navidad", "2026-02-30", null)).toEqual({ ok: false, error: "theme_dates_invalid" });
+    const sinApp = (patch: { menu_theme?: string; menu_theme_from?: string; menu_theme_until?: string }) => owner.db.from("organizations").update(patch).eq("id", org);
+    expect((await sinApp({ menu_theme: "libre" })).error?.code).toBe("23514");
+    expect((await sinApp({ menu_theme_from: "2026-12-26", menu_theme_until: "2026-12-20" })).error?.code).toBe("23514");
+    expect((await owner.db.from("organizations").update({ menu_layout: "libre" }).eq("id", org)).error?.code).toBe("23514");
     expect((await owner.db.from("organizations").update({ menu_palette: "libre" }).eq("id", org)).error?.code).toBe("23514");
   });
 
@@ -61,9 +94,15 @@ describe("identidad por organización", () => {
       expect(result.error).toBeNull();
       expect(result.data).toEqual([]);
       expect((await setPalette(db, id, "azul")).ok).toBe(false);
+      expect((await setLayout(db, id, "minimal")).ok).toBe(false);
+      expect((await setTheme(db, id, "navidad", null, null)).ok).toBe(false);
       expect((await removeLogo(db, id)).ok).toBe(false);
     }
     expect((await anonClient().from("organizations").update({ menu_palette: "azul" }).eq("id", org)).error?.code).toBe("42501");
+    expect((await anonClient().from("organizations").update({ menu_layout: "minimal" }).eq("id", org)).error?.code).toBe("42501");
+    expect((await anonClient().from("organizations").update({ menu_theme: "navidad" }).eq("id", org)).error?.code).toBe("42501");
+    expect((await loadIdentity(service, org)).menu_theme).toBe("ninguno");
+    expect((await loadIdentity(service, org)).menu_layout).toBe("bento");
     expect((await loadIdentity(service, org)).menu_palette).toBe("vino");
   });
 

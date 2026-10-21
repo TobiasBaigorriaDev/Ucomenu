@@ -34,7 +34,7 @@ La carta de cada local lleva su propia identidad (logo y paleta) y convive con e
 - La carta muestra categorías y platos activos con nombre, descripción, precio base y foto opcional; variantes y adicionales son informativos; el detalle abre en una ficha superpuesta que conserva el contexto.
 - Buscador por nombre y descripción, combinable con filtros dietarios (Sin TACC, Vegano, Vegetariano). Las etiquetas las declara el local y no son una certificación; el aviso de alérgenos aparece donde importa —al filtrar por una etiqueta— y se repite en el detalle del plato y en el pie; el inicio de la carta no lleva avisos largos (decisión del usuario, 2026-10-17).
 - Un plato agotado en la sucursal se muestra como «Agotado», nunca desaparece.
-- Cada local elige una de cuatro paletas cerradas (Oliva, Azul, Vino, Cacao) con contraste AA verificado y un logo opcional. La carta aplica la paleta con variables CSS dentro de `.carta`; los tokens globales también sirven al panel y no se tocan sin avisar.
+- Cada local elige una de doce paletas cerradas, ocho claras (Oliva, Azul, Vino, Cacao, Cítrico, Mar, Trattoria, Monocromo) y cuatro oscuras (Carbón, Medianoche, Bosque, Borgoña), con contraste AA verificado, un logo opcional y, si quiere, un tema de fecha especial (decoración suave y un saludo, con ventana de fechas; nunca cambia los colores ni tapa platos). La carta aplica la paleta con variables CSS dentro de `.carta`; los tokens globales también sirven al panel y no se tocan sin avisar.
 - Una carta puede tener muchas categorías y platos, con y sin foto: ningún componente puede depender de que haya imagen.
 - Presupuesto de rendimiento comprobado por E2E (`e2e/rendimiento-carta.spec.ts`).
 - Sin dependencias nuevas sin aprobación del usuario.
@@ -56,10 +56,10 @@ La carta de cada local lleva su propia identidad (logo y paleta) y convive con e
 1. El local primero: la interfaz sirve a la identidad de cada local y nunca compite con ella.
 2. Encontrar antes que admirar: escaneo rápido con una mano y poca luz; la expresión editorial no estorba a la búsqueda ni a los filtros.
 3. Honestidad de datos: lo que el local no declaró no se afirma (etiquetas, alérgenos, disponibilidad).
-4. Funciona con lo que hay: con foto o sin ella, con 5 platos o 300, con cualquiera de las cuatro paletas.
+4. Funciona con lo que hay: con foto o sin ella, con 5 platos o 300, con cualquiera de las paletas, claras u oscuras.
 5. Cambios de interfaz sin cambios de reglas: la presentación nunca altera permisos, datos ni precios.
 
 ## Accessibility & Inclusion
 
-- Contraste AA en las cuatro paletas (`src/lib/identidad/palettes.test.ts`), objetivos táctiles de al menos 44 px, foco visible, `prefers-reduced-motion` respetado y 390 px sin desborde horizontal.
+- Contraste AA en todas las paletas (`src/lib/identidad/palettes.test.ts`), objetivos táctiles de al menos 44 px, foco visible, `prefers-reduced-motion` respetado y 390 px sin desborde horizontal.
 - Texto en español rioplatense; nombres largos de platos y de locales deben partir sin romper el diseño.

@@ -1,0 +1,63 @@
+"use client";
+
+import { CategoryMosaic } from "@/components/menu/category-mosaic";
+import { cartaFontClass } from "@/components/menu/carta-fonts";
+import { MenuHeader } from "@/components/menu/menu-header";
+import { MenuSection } from "@/components/menu/menu-section";
+import type { Layout } from "@/lib/identidad/layouts";
+import { paletteStyle } from "@/lib/identidad/palettes";
+import { themeStyle, type Theme } from "@/lib/identidad/temas";
+import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
+
+const dish = (id: string, name: string, description: string, pesos: number, extra: Partial<MenuProduct> = {}): MenuProduct => ({
+  id: `muestra-${id}`, category_id: "muestra-principales", name, description, price_cents: pesos * 100, sort_order: 0, ...extra,
+});
+
+// Datos de muestra (no son del local): bastan para ver el fondo, las celdas de categoría, las cards y el cartel de «agotado».
+const SECTIONS: Section[] = [
+  { category: { id: "muestra-entradas", name: "Entradas", sort_order: 0 }, products: [dish("a", "Provoleta", "", 6200)] },
+  { category: { id: "muestra-principales", name: "Principales", sort_order: 1 }, products: [
+    dish("b", "Milanesa napolitana", "Con papas rústicas y salsa casera.", 11800),
+    dish("c", "Risotto de hongos", "Cremoso, con parmesano y aceite de oliva.", 12400, { dietary_tags: ["vegetarian"] }),
+    dish("d", "Ravioles de ricota", "Salsa fileto o crema.", 10900, { is_available: false }),
+  ] },
+  { category: { id: "muestra-postres", name: "Postres", sort_order: 2 }, products: [dish("e", "Flan casero", "", 4800)] },
+  { category: { id: "muestra-bebidas", name: "Bebidas", sort_order: 3 }, products: [dish("f", "Limonada", "", 3200)] },
+];
+
+/**
+ * Vista previa de la carta con los componentes reales (cabecera, mosaico de categorías, banda de sección y cards) y datos de
+ * muestra, dentro de `.carta` con la paleta elegida. Es decorativa: `inert` + `aria-hidden` la sacan del foco y del lector de pantalla.
+ */
+export function CartaPreview({ name, logo, palette, layout, theme = null, testId }: { name: string; logo: string | null; palette: string; layout: Layout; theme?: Theme | null; testId: string }) {
+  return (
+    <div className="relative mt-5 overflow-hidden rounded-xl border border-ink/15">
+      <div
+        aria-hidden="true"
+        inert
+        data-testid={testId}
+        data-tema={theme ?? undefined}
+        className={`${cartaFontClass} carta max-h-[34rem] overflow-hidden pb-8 select-none`}
+        style={{ ...paletteStyle(palette), ...themeStyle(theme), minHeight: 0 }}
+      >
+        <MenuHeader organizationName={name} branchName="Sucursal Centro" logo={logo} theme={theme} />
+        {layout === "bento" ? (
+          <CategoryMosaic sections={SECTIONS} lang="es" />
+        ) : (
+          // La barra real es fija; acá se dibuja la misma tira de categorías en el flujo.
+          <ul className="mx-auto flex max-w-3xl gap-2 overflow-hidden border-y border-ink/10 px-4 py-2.5 sm:px-6">
+            {SECTIONS.map(({ category }, i) => (
+              <li key={category.id} className={`flex min-h-11 shrink-0 items-center rounded-full px-4 text-[0.75rem] font-semibold tracking-[0.08em] uppercase ${i === 1 ? "bg-[var(--carta-green)] text-[var(--on-accent)]" : "bg-[var(--carta-blush)] text-ink"}`}>
+                {category.name}
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className={`mx-auto px-4 pb-4 sm:px-6 ${layout === "minimal" ? "max-w-2xl" : "max-w-3xl"}`}>
+          <MenuSection section={SECTIONS[1]} index={1} lang="es" layout={layout} />
+        </div>
+      </div>
+      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent" />
+    </div>
+  );
+}

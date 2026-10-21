@@ -1,6 +1,8 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { attachOptions, groupMenu, type MenuSection } from "@/lib/menu";
+import { isLayout, type Layout } from "@/lib/identidad/layouts";
+import { activeTheme, type Theme } from "@/lib/identidad/temas";
 import { isPalette, type Palette } from "@/lib/identidad/palettes";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { offeredLanguages } from "@/lib/idiomas/localizar";
@@ -11,7 +13,7 @@ import { applyBranchSettings, loadBranchSettings } from "@/lib/carta/availabilit
 import { createPublicClient } from "@/lib/supabase/public-client";
 
 export type PublicMenu = {
-  organization: { id: string; name: string; slug: string; menu_palette: Palette; logo_path?: string | null };
+  organization: { id: string; name: string; slug: string; menu_palette: Palette; menu_layout: Layout; /** Tema de fecha especial vigente hoy (en Buenos Aires), o `null`. */ theme: Theme | null; logo_path?: string | null };
   branch: { id: string; name: string; slug: string };
   /** Textos originales (en español) con sus traducciones; la página los resuelve al idioma elegido con `localizeSections`. */
   sections: MenuSection[];
@@ -160,7 +162,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .select("id, name, slug, menu_palette, logo_path, branches!inner(id, name, slug)")
+    .select("id, name, slug, menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, branches!inner(id, name, slug)")
     .eq("slug", orgSlug)
     .or(`slug.eq.${branchSlug},slug_aliases.cs.{${branchSlug}}`, { referencedTable: "branches" })
     .maybeSingle();
@@ -183,6 +185,8 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
       organization: {
         id: org.id, name: org.name, slug: org.slug,
         menu_palette: isPalette(org.menu_palette) ? org.menu_palette : "oliva",
+        menu_layout: isLayout(org.menu_layout) ? org.menu_layout : "bento",
+        theme: activeTheme({ theme: org.menu_theme, from: org.menu_theme_from, until: org.menu_theme_until }, new Date()),
         logo_path: org.logo_path,
       },
       branch: { id: branch.id, name: branch.name, slug: branch.slug },

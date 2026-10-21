@@ -59,7 +59,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
     items.push({ href: "/admin/nueva", label: "Nueva organización", icon: "nueva" });
   }
 
-  const style: CSSProperties = org ? paletteStyle(org.menu_palette) : platformStyle();
+  const style: CSSProperties = org ? paletteStyle(org.menu_palette, "panel") : platformStyle();
   const logo = logoUrl(org?.logo_path);
 
   return (

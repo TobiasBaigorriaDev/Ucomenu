@@ -15,10 +15,12 @@ test.afterAll(async () => {
   }
 });
 async function editor(page: Page, t: Tenant) {
+  // Sin desplazamiento suave (`html { scroll-behavior: smooth }`): la página es larga y Playwright mide el botón mientras aún se desplaza.
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await login(page, t.owner.email, t.owner.password);
   await page.goto(`/panel/${t.slug}/apariencia`);
 }
-const identity = async (t: Tenant) => (await service().from("organizations").select("menu_palette, logo_path").eq("id", t.orgId).single()).data!;
+const identity = async (t: Tenant) => (await service().from("organizations").select("menu_palette, menu_layout, menu_theme, logo_path").eq("id", t.orgId).single()).data!;
 
 test("el Dueño publica colores y logo; persisten en carta y QR sin mezclar locales ni alterar el panel", async ({ page, context }) => {
   const t = await tenant("marca");
@@ -43,6 +45,76 @@ test("el Dueño publica colores y logo; persisten en carta y QR sin mezclar loca
   await page.reload();
   await expect(page.getByRole("radio", { name: "Vino", exact: true })).toBeChecked();
   expect((await identity(other)).menu_palette).toBe("oliva");
+
+  // Una paleta oscura: la carta pública se oscurece, el texto sobre el acento pasa a oscuro y el panel del Dueño sigue claro.
+  await page.getByRole("radio", { name: "Carbón", exact: true }).check();
+  await expect(page.getByTestId("apariencia-preview")).toHaveCSS("background-color", "rgb(22, 20, 18)");
+  await page.getByRole("button", { name: "Guardar colores" }).click();
+  await expect(page.getByRole("status")).toContainText("Colores guardados.");
+  await expect(page.locator(".panel").first()).toHaveCSS("background-color", "rgb(245, 241, 234)");
+  await publicPage.reload();
+  await expect(publicPage.locator(".carta")).toHaveCSS("background-color", "rgb(22, 20, 18)");
+  await expect(publicPage.locator(".carta")).toHaveCSS("--on-accent", "#161412");
+  await page.getByRole("radio", { name: "Vino", exact: true }).check();
+  await page.getByRole("button", { name: "Guardar colores" }).click();
+  await expect(page.getByRole("status")).toContainText("Colores guardados.");
+
+  // Estilo de carta: la clásica no tiene mosaico, lista los platos con su precio y la barra de categorías es siempre visible.
+  await expect(publicPage.locator(".carta")).toHaveAttribute("data-layout", "bento");
+  await page.getByRole("radio", { name: "Clásica" }).check();
+  await expect(page.getByTestId("apariencia-preview-estilo").locator("nav")).toHaveCount(0); // sin mosaico
+  await page.getByRole("button", { name: "Guardar estilo" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Estilo guardado." })).toBeVisible();
+  expect((await identity(t)).menu_layout).toBe("clasica");
+  expect((await identity(other)).menu_layout).toBe("bento");
+  await publicPage.reload();
+  await expect(publicPage.locator(".carta")).toHaveAttribute("data-layout", "clasica");
+  await expect(publicPage.getByRole("navigation", { name: "Categorías de la carta" })).toHaveCount(0);
+  await expect(publicPage.getByRole("navigation", { name: "Cambiar de categoría" })).toBeVisible();
+  await expect(publicPage.getByRole("button", { name: "Ver detalle de Plato del día" })).toBeVisible();
+  await page.getByRole("radio", { name: "Minimal" }).check();
+  await page.getByRole("button", { name: "Guardar estilo" }).click();
+  await expect.poll(async () => (await identity(t)).menu_layout).toBe("minimal");
+  await expect(page.getByRole("button", { name: "Guardar estilo" })).toBeEnabled(); // terminó: el aviso ya está en pantalla y no mueve el resto // el aviso de la vez anterior sigue en pantalla
+  await publicPage.reload();
+  await expect(publicPage.locator(".carta")).toHaveAttribute("data-layout", "minimal");
+  await page.getByRole("radio", { name: "Bento" }).check();
+  await page.getByRole("button", { name: "Guardar estilo" }).click();
+  await expect.poll(async () => (await identity(t)).menu_layout).toBe("bento");
+  await expect(page.getByRole("button", { name: "Guardar estilo" })).toBeEnabled(); // terminó: el aviso ya está en pantalla y no mueve el resto
+
+  // Fecha especial: dentro de la ventana la carta lleva el tema (saludo y patrón); vencida o apagada, vuelve a la normal.
+  const today = new Date();
+  const day = (offset: number) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(today.getTime() + offset * 86_400_000));
+  await expect(publicPage.locator(".carta")).not.toHaveAttribute("data-tema", /.+/);
+  await page.getByRole("radio", { name: "Navidad" }).check();
+  await expect(page.getByTestId("apariencia-preview-tema")).toHaveAttribute("data-tema", "navidad");
+  await page.locator("#tema-desde").fill(day(-1));
+  await page.locator("#tema-hasta").fill(day(1));
+  await page.getByRole("button", { name: "Guardar fecha especial" }).click();
+  await expect.poll(async () => (await identity(t)).menu_theme).toBe("navidad");
+  await expect(page.getByTestId("tema-estado")).toContainText("Navidad: activo hoy");
+  await publicPage.reload();
+  await expect(publicPage.locator(".carta")).toHaveAttribute("data-tema", "navidad");
+  await expect(publicPage.getByTestId("tema-saludo")).toHaveText("Feliz Navidad");
+  await expect(publicPage.locator(".carta")).toHaveCSS("--tema-opacidad", "0.07");
+  // Una ventana ya vencida deja la carta normal, sin tocar nada más.
+  await page.locator("#tema-desde").fill("2020-01-01");
+  await page.locator("#tema-hasta").fill("2020-01-02");
+  await page.getByRole("button", { name: "Guardar fecha especial" }).click();
+  await expect(page.getByTestId("tema-estado")).toContainText("venció el 2 de enero de 2020");
+  await publicPage.reload();
+  await expect(publicPage.locator(".carta")).not.toHaveAttribute("data-tema", /.+/);
+  await expect(publicPage.getByTestId("tema-saludo")).toHaveCount(0);
+  // «Hasta» anterior a «Desde»: se avisa y la base no cambia.
+  await page.locator("#tema-desde").fill(day(1));
+  await page.locator("#tema-hasta").fill(day(-1));
+  await expect(page.locator("#tema-ayuda")).toContainText("no puede ser anterior");
+  await page.getByRole("radio", { name: "Ninguno" }).check();
+  await page.getByRole("button", { name: "Guardar fecha especial" }).click();
+  await expect.poll(async () => (await identity(t)).menu_theme).toBe("ninguno");
+  expect((await identity(other)).menu_theme).toBe("ninguno");
+  await expect(page.getByTestId("tema-estado")).toContainText("Sin tema");
 
   // Logo sintético de prueba, rectangular y transparente, para verificar object-fit y el optimizador.
   const png = await page.evaluate(() => {

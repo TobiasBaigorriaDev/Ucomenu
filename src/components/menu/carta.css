@@ -1,8 +1,8 @@
 /*
  * Estilos propios de la carta pública. Todo cuelga de `.carta` para no tocar el panel, la sala ni el login
- * (que comparten `globals.css`). La paleta de la carta se define acá, sobrescribiendo las variables de
- * `globals.css` solo dentro de `.carta`: cuando cada local pueda elegir sus colores, alcanza con
- * sobrescribir estas mismas variables por organización.
+ * (que comparten `globals.css`). La paleta de la carta se define acá (Oliva, la predeterminada), sobrescribiendo las
+ * variables de `globals.css` solo dentro de `.carta`; la que eligió cada local las vuelve a sobrescribir en línea
+ * (`paletteStyle()` en `lib/identidad/palettes.ts`).
  *
  * Dirección: Bento + Editorial + Card-based (ver PRODUCT.md y el contrato en `.impeccable/surfaces`). Los colores salen de
  * la paleta del local; la tipografía es Gloock (display, un solo peso) + Schibsted Grotesk (texto), cargadas solo para la
@@ -20,6 +20,8 @@
   --carta-blush: #f3d2c6;
   --carta-terra: #a43f22;
   --carta-sand: #e8dcc2;
+  /* Texto sobre el acento y la terracota: blanco en las paletas claras, la tinta del fondo en las oscuras. */
+  --on-accent: #ffffff;
   min-height: 100vh;
   background: var(--porcelain);
   color: var(--ink);
@@ -32,9 +34,46 @@
   font-weight: 400;
 }
 
+/* Estilos sin mosaico: la barra de categorías es fija y siempre visible, así que se le reserva su alto (4rem) arriba de la página. */
+.carta:is([data-layout="clasica"], [data-layout="minimal"]) {
+  padding-top: 4rem;
+}
+
+/* Puntos guía de la carta clásica (la clase global es del panel y tiene un color fijo). */
+.carta .leader {
+  border-bottom-color: color-mix(in srgb, var(--ink) 40%, transparent);
+}
+
+/*
+ * Tema de fecha especial (San Valentín, Navidad…): un patrón muy suave detrás de todo el contenido. La forma sale de una máscara
+ * SVG inline (`--tema-patron`, ver `lib/identidad/temas.ts`) y el color es la terracota de la paleta del local, con una
+ * opacidad fija (`--tema-opacidad`) cuyo contraste con el texto se prueba en `temas.test.ts`. Las cards y bandas tienen fondo
+ * propio, así que el patrón solo se ve en el fondo de la página; no recibe clics y no se anima.
+ */
+.carta[data-tema] {
+  position: relative;
+  isolation: isolate;
+}
+
+.carta[data-tema]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--carta-terra);
+  opacity: var(--tema-opacidad, 0.07);
+  -webkit-mask-image: var(--tema-patron);
+  mask-image: var(--tema-patron);
+  -webkit-mask-size: 96px 96px;
+  mask-size: 96px 96px;
+  -webkit-mask-repeat: repeat;
+  mask-repeat: repeat;
+}
+
 .carta ::selection {
   background: var(--carta-green);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .carta-dialog::backdrop {

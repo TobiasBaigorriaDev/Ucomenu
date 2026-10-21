@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 /*
- * Tokens de diseño de la carta. Se definen como variables para que la identidad visual
- * por organización (logo y colores, ítem posterior) pueda sobrescribirlos sin tocar los componentes.
+ * Tokens de diseño. Se definen como variables para que la paleta que elige cada local
+ * (`lib/identidad/palettes.ts`) pueda sobrescribirlos en la carta y en su panel sin tocar los componentes.
  */
 :root {
   --porcelain: #f1f4f0;

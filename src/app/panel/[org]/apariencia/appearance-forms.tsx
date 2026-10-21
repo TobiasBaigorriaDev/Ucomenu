@@ -3,42 +3,135 @@
 import Image from "next/image";
 import { useActionState, useEffect, useState } from "react";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
-import { dangerButtonClass, labelClass } from "@/components/panel/styles";
+import { dangerButtonClass, inputClass, labelClass } from "@/components/panel/styles";
 import type { FormState } from "@/lib/form-state";
 import { MAX_LOGO_BYTES } from "@/lib/identidad/logos";
-import { isPalette, PALETTES, paletteStyle } from "@/lib/identidad/palettes";
-import "@/components/menu/carta.css";
-import { cartaFontClass } from "@/components/menu/carta-fonts";
-import { paletteAction, removeLogoAction, uploadLogoAction } from "./actions";
+import { isLayout, LAYOUT_KEYS, LAYOUTS, type Layout } from "@/lib/identidad/layouts";
+import { isPalette, PALETTE_KEYS, PALETTES } from "@/lib/identidad/palettes";
+import { isTheme, NO_THEME, THEME_KEYS, THEMES, type Theme, type ThemeStatus } from "@/lib/identidad/temas";
+import { layoutAction, paletteAction, removeLogoAction, themeAction, uploadLogoAction } from "./actions";
+import { CartaPreview } from "./carta-preview";
 
 type Props = { orgSlug: string; canWrite: boolean; name: string };
 
-export function PaletteForm({ orgSlug, canWrite, name, palette }: Props & { palette: string }) {
+const GROUPS = [
+  { scheme: "light", title: "Claras" },
+  { scheme: "dark", title: "Oscuras" },
+] as const;
+
+export function PaletteForm({ orgSlug, canWrite, name, palette, logo, layout }: Props & { palette: string; logo: string | null; layout: Layout }) {
   const [selected, setSelected] = useState(isPalette(palette) ? palette : "oliva");
   return (
     <ActionForm action={paletteAction} className="mt-5">
-      <fieldset disabled={!canWrite}>
+      <fieldset disabled={!canWrite} className="min-w-0">
         <legend className="sr-only">Paleta de colores</legend>
         <input type="hidden" name="org" value={orgSlug} />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {Object.entries(PALETTES).map(([key, p]) => (
-            <label key={key} className="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
-              <input type="radio" name="palette" value={key} checked={selected === key} onChange={() => setSelected(key as typeof selected)} className="size-4 shrink-0 accent-cobalt" />
+        {GROUPS.map(group => (
+          <div key={group.scheme} className="mt-4 first:mt-0">
+            <p className="mb-2 text-sm font-medium text-muted">{group.title}</p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {PALETTE_KEYS.filter(key => PALETTES[key].scheme === group.scheme).map(key => {
+                const p = PALETTES[key];
+                return (
+                  <label key={key} className="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
+                    <input type="radio" name="palette" value={key} checked={selected === key} onChange={() => setSelected(key)} className="size-4 shrink-0 accent-cobalt" />
+                    <span className="min-w-0">
+                      <span className="block font-medium">{p.name}</span>
+                      <span aria-hidden="true" className="mt-1 flex gap-1">
+                        {[p.background, p.accent, p.terra, p.blush].map(color => <span key={color} className="size-3 rounded-full border border-ink/30" style={{ background: color }} />)}
+                      </span>
+                    </span>
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+        <p className="mt-5 text-sm text-muted">Así se verá tu carta con la paleta elegida (con platos de ejemplo).</p>
+        <CartaPreview name={name} logo={logo} palette={selected} layout={layout} testId="apariencia-preview" />
+        <div className="mt-4"><SubmitButton pendingLabel="Guardando…">Guardar colores</SubmitButton></div>
+      </fieldset>
+    </ActionForm>
+  );
+}
+
+export function LayoutForm({ orgSlug, canWrite, name, palette, logo, layout }: Props & { palette: string; logo: string | null; layout: string }) {
+  const [selected, setSelected] = useState<Layout>(isLayout(layout) ? layout : "bento");
+  return (
+    <ActionForm action={layoutAction} className="mt-5">
+      <fieldset disabled={!canWrite} className="min-w-0">
+        <legend className="sr-only">Estilo de la carta</legend>
+        <input type="hidden" name="org" value={orgSlug} />
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {LAYOUT_KEYS.map(key => (
+            <label key={key} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
+              <input type="radio" name="layout" value={key} checked={selected === key} onChange={() => setSelected(key)} className="mt-1 size-4 shrink-0 accent-cobalt" />
               <span className="min-w-0">
-                <span className="block font-medium">{p.name}</span>
-                <span aria-hidden="true" className="mt-1 flex gap-1">
-                  {[p.accent, p.blush, p.sand].map(color => <span key={color} className="size-3 rounded-full border border-black/10" style={{ background: color }} />)}
-                </span>
+                <span className="block font-medium">{LAYOUTS[key].name}</span>
+                <span className="mt-1 block text-sm text-muted">{LAYOUTS[key].description}</span>
               </span>
             </label>
           ))}
         </div>
-        <div className={`${cartaFontClass} carta mt-5 rounded-xl px-5 py-6`} style={{ ...paletteStyle(selected), minHeight: 0 }} data-testid="apariencia-preview">
-          <p className="font-display text-3xl break-words text-[var(--carta-green)]">{name}</p>
-          <p className="mt-2 text-base text-muted">Así se verá la paleta en tu carta.</p>
-          <span className="mt-4 inline-block rounded-full bg-[var(--carta-green)] px-4 py-2 text-base font-medium text-white">Carta del local</span>
+        <p className="mt-5 text-sm text-muted">Así se verá tu carta con el estilo elegido (con platos de ejemplo).</p>
+        <CartaPreview name={name} logo={logo} palette={isPalette(palette) ? palette : "oliva"} layout={selected} testId="apariencia-preview-estilo" />
+        <div className="mt-4"><SubmitButton pendingLabel="Guardando…">Guardar estilo</SubmitButton></div>
+      </fieldset>
+    </ActionForm>
+  );
+}
+
+const longDay = new Intl.DateTimeFormat("es-AR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const dayText = (day: string) => longDay.format(new Date(`${day}T00:00:00Z`));
+
+/** El estado del tema en palabras, tal como lo ve hoy el comensal. */
+function statusText(status: ThemeStatus): string {
+  switch (status.kind) {
+    case "none": return "Sin tema: la carta se ve normal.";
+    case "active": return `${THEMES[status.theme].name}: activo hoy${status.until ? `, hasta el ${dayText(status.until)}` : ", hasta que lo apagues"}.`;
+    case "scheduled": return `${THEMES[status.theme].name}: programado desde el ${dayText(status.from)}. Hoy la carta se ve normal.`;
+    case "expired": return `${THEMES[status.theme].name}: venció el ${dayText(status.until)}. Hoy la carta se ve normal.`;
+  }
+}
+
+export function ThemeForm({ orgSlug, canWrite, name, palette, logo, layout, theme, from, until, status }: Props & { palette: string; logo: string | null; layout: string; theme: string; from: string | null; until: string | null; status: ThemeStatus }) {
+  const [selected, setSelected] = useState<Theme | typeof NO_THEME>(isTheme(theme) ? theme : NO_THEME);
+  const [start, setStart] = useState(from ?? "");
+  const [end, setEnd] = useState(until ?? "");
+  const wrongOrder = Boolean(start && end && end < start);
+  return (
+    <ActionForm action={themeAction} className="mt-5">
+      <fieldset disabled={!canWrite} className="min-w-0">
+        <legend className="sr-only">Fecha especial</legend>
+        <input type="hidden" name="org" value={orgSlug} />
+        <p data-testid="tema-estado" className="font-medium">{statusText(status)}</p>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {[NO_THEME, ...THEME_KEYS].map(key => (
+            <label key={key} className="flex min-h-16 cursor-pointer items-start gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
+              <input type="radio" name="theme" value={key} checked={selected === key} onChange={() => setSelected(key as Theme | typeof NO_THEME)} className="mt-1 size-4 shrink-0 accent-cobalt" />
+              <span className="min-w-0">
+                <span className="block font-medium">{key === NO_THEME ? "Ninguno" : THEMES[key as Theme].name}</span>
+                <span className="mt-0.5 block text-sm text-muted">{key === NO_THEME ? "La carta normal" : THEMES[key as Theme].when}</span>
+              </span>
+            </label>
+          ))}
         </div>
-        <div className="mt-4"><SubmitButton pendingLabel="Guardando…">Guardar colores</SubmitButton></div>
+        <div className="mt-5 grid max-w-md gap-3 sm:grid-cols-2">
+          <div>
+            <label htmlFor="tema-desde" className={labelClass}>Desde (opcional)</label>
+            <input id="tema-desde" name="from" type="date" value={selected === NO_THEME ? "" : start} onChange={event => setStart(event.target.value)} disabled={selected === NO_THEME} className={`${inputClass} mt-1`} />
+          </div>
+          <div>
+            <label htmlFor="tema-hasta" className={labelClass}>Hasta (opcional)</label>
+            <input id="tema-hasta" name="until" type="date" value={selected === NO_THEME ? "" : end} onChange={event => setEnd(event.target.value)} disabled={selected === NO_THEME} aria-invalid={wrongOrder} aria-describedby="tema-ayuda" className={`${inputClass} mt-1`} />
+          </div>
+        </div>
+        <p id="tema-ayuda" className={`mt-2 text-sm ${wrongOrder ? "font-medium text-danger" : "text-muted"}`}>
+          {wrongOrder ? "«Hasta» no puede ser anterior a «Desde»." : "Dentro de esas fechas (inclusive, hora de Argentina) se ve el tema y después la carta vuelve sola a la normal. Sin fechas, queda activo hasta que lo apagues."}
+        </p>
+        <p className="mt-5 text-sm text-muted">Así se verá tu carta con la fecha elegida (con platos de ejemplo).</p>
+        <CartaPreview name={name} logo={logo} palette={isPalette(palette) ? palette : "oliva"} layout={isLayout(layout) ? layout : "bento"} theme={isTheme(selected) ? selected : null} testId="apariencia-preview-tema" />
+        <div className="mt-4"><SubmitButton pendingLabel="Guardando…">Guardar fecha especial</SubmitButton></div>
       </fieldset>
     </ActionForm>
   );

@@ -47,3 +47,5 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0033 | [Los reordenamientos y los reemplazos de imagen son una sola llamada a la base (funciones `SECURITY INVOKER`); las listas se leen por páginas](0033-orden-e-imagenes-atomicos.md) | aceptada | 2026-10-21 |
 | 0034 | [Cada persona elige qué sucursales mira: la vista por sucursal es una preferencia, no un permiso](0034-vista-por-sucursal.md) | aceptada | 2026-10-21 |
 | 0035 | [Carta central con precio, disponibilidad y visibilidad configurables por sucursal (nivel 2a), sobre `product_availability`](0035-carta-central-con-ajustes-por-sucursal.md) | aceptada | 2026-10-21 |
+| 0036 | [Personalización de la carta: doce paletas cerradas (claras y oscuras) y tres estilos](0036-personalizacion-de-la-carta.md) | aceptada | 2026-10-21 |
+| 0037 | [Temas de fechas especiales en la carta (decoración opcional con ventana de fechas)](0037-temas-de-fechas-especiales.md) | aceptada | 2026-10-21 |

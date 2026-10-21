@@ -5,9 +5,9 @@
  */
 const TONES = [
   "bg-[var(--carta-blush)] text-ink",
-  "bg-[var(--carta-green)] text-white",
+  "bg-[var(--carta-green)] text-[var(--on-accent)]",
   "bg-[var(--carta-sand)] text-ink ring-1 ring-inset ring-ink/15",
-  "bg-[var(--carta-terra)] text-white",
+  "bg-[var(--carta-terra)] text-[var(--on-accent)]",
 ] as const;
 
 export const toneFor = (index: number): string => TONES[index % TONES.length];

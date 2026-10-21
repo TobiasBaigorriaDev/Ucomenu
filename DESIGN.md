@@ -306,7 +306,9 @@ La lista de organizaciones usa `.panel-pick`: la fila entera es el enlace (el no
 Mora, solo lectura, suspensión y peligro (`--grace-*` amarillo, `--readonly-*` naranja, `--suspended-*` rojo, `--danger` #9b1c14) no cambian con la paleta ni entre áreas: significan lo mismo en todos los locales y en SuperAdmin. Botón destructivo y mensajes de error usan `--danger`.
 
 ### Named Rules
-**The Roles Only Rule.** Todo color sale de un rol de la paleta del local. Un componente nuevo elige un rol, no un hex; así las cuatro paletas (y las futuras) funcionan sin tocarlo.
+**The Quiet Occasion Rule.** Un tema de fecha especial (`data-tema` en `.carta`) solo suma un patrón de fondo a opacidad fija 0,07 con la terracota de la paleta, un saludo y los adornos del pie: nunca colores nuevos, animaciones ni elementos sobre platos o precios. Los motivos viven en `lib/identidad/temas.ts` y `temas.test.ts` prueba el contraste con el patrón puesto.
+
+**The Roles Only Rule.** Todo color sale de un rol de la paleta del local. Un componente nuevo elige un rol, no un hex; así todas las paletas (claras y oscuras) funcionan sin tocarlo. El texto sobre el acento y la terracota usa `--on-accent` (blanco en las claras, la tinta del fondo en las oscuras): nunca `text-white` dentro de la carta.
 
 **The Tone Pairing Rule.** Tinta sobre rosa y arena, blanco sobre verde y terracota. Es el único emparejamiento de texto y celda probado AA (`tones.ts`).
 
@@ -423,7 +425,14 @@ Píldora de 0,875rem 500, padding 2px 10px: rosa con tinta para el rol, `bg-bran
 ### Sala en vivo
 Los llamados pendientes son tarjetas en una cuadrícula (1 columna en celular, 2 desde `sm`, 3 desde `2xl`), pensadas para una tablet o pantalla fija que se lee a distancia: banda superior con el tipo de aviso (verde del local para «Llama al mozo», rosa con tinta para «Pide la cuenta»), nombre de mesa en display de 2,75 rem, tiempo de espera en 1,25 rem y el botón «Atendido» de 44 px o más. El estado se dice con borde y con texto, nunca solo con color: un llamado nuevo lleva borde de 4 px del verde del local y el prefijo «Nuevo»; uno urgente, borde de 4 px del rojo de suspensión y «Espera hace rato». Los avisos de conexión y de sesión son celdas con los colores funcionales de gravedad. La barra de alertas y el estado vacío son celdas del panel.
 
+### Edición de un plato
+
+Modo Operate: el trabajo se divide en tres pestañas («Datos y foto», «Variantes», «Sucursales») con el tratamiento de los chips del panel, 44 px y estado seleccionado verde. Las pestañas tienen navegación por flechas e Inicio/Fin y conservan montados los formularios para mantener borradores y fotos elegidas. El historial queda en el encabezado; borrar conserva su confirmación, separado al pie.
+
+El editor aprovecha hasta 80 rem. Desde 80 rem de viewport, datos y foto comparten una fila con proporción 3:2; por debajo se apilan en ese orden. En edición, precio y categoría comparten fila desde `sm` y las etiquetas dietarias fluyen en línea. Cada grupo de variantes tiene una cabecera arena con nombre en Gloock de 24 px y su regla; los grupos se separan con espacio y filete. Las sucursales tienen estado y acciones a la izquierda, precio propio a la derecha en escritorio amplio, sin fusionar sus guardados. Alta conserva su disposición anterior. Sin scroll interno ni cambios de tipografía o paleta.
+
 ### Botones y campos del panel
+
 Definidos en `styles.ts`, sin `"use client"` para poder importarse desde servidor. Todos de 44 px de alto mínimo, 1rem 500. **Primario**: píldora `--cobalt` (el acento del local) con blanco, padding 8×20 px, hover verde profundo. **Secundario**: píldora transparente con borde `ink/40` y tinta, hover `ink/5`. **Peligro**: píldora con borde y texto `--danger`, hover `danger/5`. Deshabilitados al 60 %. **Campo**: radio 8 px, borde `ink/60`, fondo blanco, padding 8×12 px, 1rem, marcador al 70 % de gris cálido; etiqueta de 0,875rem 500 encima.
 
 ### Movimiento y foco

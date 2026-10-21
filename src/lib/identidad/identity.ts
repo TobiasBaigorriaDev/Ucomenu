@@ -3,11 +3,13 @@ import { detectImage } from "@/lib/carta/images";
 import { guard, parseSwap, writeFailure, type CartaError, type Swap } from "@/lib/carta/catalog";
 import type { Database } from "@/lib/supabase/database.types";
 import { isOwnLogoPath, LOGO_BUCKET, MAX_LOGO_BYTES } from "./logos";
+import { isLayout } from "./layouts";
 import { isPalette } from "./palettes";
+import { isDay, isTheme, NO_THEME } from "./temas";
 
 type Db = SupabaseClient<Database>;
-type Identity = Pick<Database["public"]["Tables"]["organizations"]["Row"], "menu_palette" | "logo_path">;
-export type IdentityError = CartaError | "palette_invalid";
+type Identity = Pick<Database["public"]["Tables"]["organizations"]["Row"], "menu_palette" | "menu_layout" | "menu_theme" | "menu_theme_from" | "menu_theme_until" | "logo_path">;
+export type IdentityError = CartaError | "palette_invalid" | "layout_invalid" | "theme_invalid" | "theme_dates_invalid";
 /** `filesComplete: false` = el logo saliente quedó sin borrar de Storage (registrado en el log); el vigente no se toca. Solo lo informan setLogo y removeLogo. */
 export type Result = { ok: true; filesComplete?: boolean } | { ok: false; error: IdentityError };
 const ok = { ok: true } as const;
@@ -15,7 +17,7 @@ const done = (filesComplete: boolean): Result => ({ ok: true, filesComplete });
 const fail = (error: IdentityError): Result => ({ ok: false, error });
 
 export async function loadIdentity(db: Db, orgId: string): Promise<Identity> {
-  const result = await db.from("organizations").select("menu_palette, logo_path").eq("id", orgId).single();
+  const result = await db.from("organizations").select("menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path").eq("id", orgId).single();
   if (result.error) throw new Error(`No se pudo leer la apariencia: ${result.error.message}`);
   return result.data;
 }
@@ -31,6 +33,28 @@ export async function setPalette(db: Db, orgId: string, value: unknown): Promise
   if (!isPalette(value)) return fail("palette_invalid");
   const blocked = await guard(db, orgId);
   return blocked ? fail(blocked) : save(db, orgId, { menu_palette: value });
+}
+
+export async function setLayout(db: Db, orgId: string, value: unknown): Promise<Result> {
+  if (!isLayout(value)) return fail("layout_invalid");
+  const blocked = await guard(db, orgId);
+  return blocked ? fail(blocked) : save(db, orgId, { menu_layout: value });
+}
+
+/**
+ * Guarda el tema de fecha especial y su ventana. `theme` es `ninguno` o un tema conocido; `from` / `until` son fechas del
+ * calendario (`AAAA-MM-DD`) o vacías, con `until >= from`. Sin tema se borran las fechas: no quedan restos de un tema anterior.
+ */
+export async function setTheme(db: Db, orgId: string, theme: unknown, from: unknown, until: unknown): Promise<Result> {
+  if (theme !== NO_THEME && !isTheme(theme)) return fail("theme_invalid");
+  const day = (value: unknown): string | null | undefined => (value === null || value === undefined || value === "" ? null : isDay(value) ? value : undefined);
+  const start = day(from);
+  const end = day(until);
+  if (start === undefined || end === undefined || (start && end && end < start)) return fail("theme_dates_invalid");
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+  const none = theme === NO_THEME;
+  return save(db, orgId, { menu_theme: theme as string, menu_theme_from: none ? null : start, menu_theme_until: none ? null : end });
 }
 
 /** La escritura usa la sesión de la persona; RLS exige Dueño de esta organización. Devuelve `false` si el archivo quedó sin borrar. */
