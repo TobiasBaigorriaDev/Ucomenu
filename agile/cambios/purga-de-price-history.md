@@ -1,5 +1,5 @@
 # Cambio: Retención y purga de `price_history`
-Estado: **implementado y verificado en local; sin revisión independiente todavía** (nivel C). Política elegida por el usuario el 2026-10-20.
+Estado: **implementado, verificado en local y aprobado por Codex (1 ronda); falta la aprobación del usuario para integrar** (nivel C). Política elegida por el usuario el 2026-10-20.
 Nivel: C (eliminación irreversible de un registro de auditoría de precios, con ids de personas)
 
 ## Objetivo
@@ -37,6 +37,9 @@ Base local, `pnpm db:reset` con la migración nueva, 2026-10-20 (commit probado:
 ## (C) Fallas y recuperación
 - Cualquier fallo o rollback deja el historial y el trigger como estaban. Una vez confirmada la transacción, **no se recupera** (solo del respaldo de `docs/operacion.md`).
 - Rollback de la migración: `drop function private.purge_organization_price_history(uuid);` (no toca datos).
+
+## Revisión y aprobación
+- Codex (solo lectura, `pnpm revision:codex --commit HEAD`, commit `6f14a10`), 1 ronda: **APROBAR**, sin hallazgos. Aclaró que no ejecutó migraciones, suites ni mutaciones (la evidencia de arriba es la mía, no reproducida por él). El veredicto no reemplaza la aprobación humana.
 
 ## (C) Aprobación humana
 Política aceptada por el usuario el 2026-10-20 (ADR 0026). Falta la aprobación de integrar, tras la revisión independiente.

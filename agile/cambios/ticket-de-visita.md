@@ -56,6 +56,12 @@ Pendientes (no ejecutado):
 - Probar en un teléfono real: pantalla apagada más de 3 horas y volver a la pestaña (los navegadores móviles congelan o descartan pestañas; en un descarte la recarga emite un ticket nuevo), y la tarjeta de la sala en el salón.
 - Definir `WAITER_CALL_CLIENT_SECRET` en producción.
 
+### Investigación en teléfono real — 2026-10-20
+- El usuario observó que Android ocultó los botones después de 3 horas e iPhone los mantuvo visibles. Confirmó que **no intentó llamar** desde el iPhone: no se verificó que aceptara un ticket vencido.
+- Revisión sobre `48604ae` (sin cambios funcionales): la barra comprueba `Date.now()` desde el montaje, con temporizador y eventos `visibilitychange`, `pageshow` y `focus`; la acción valida el ticket con el reloj del servidor antes de llegar a la base. Cada carga de la página emite otro ticket. Una recarga automática al recuperar la pestaña **podría** explicar la diferencia; no se confirmó que ocurriera en ese teléfono. Es el límite de renovación ya aceptado, no una regla distinta por sistema operativo.
+- Verificación: `pnpm test src/lib/llamados/visit-ticket.test.ts src/lib/llamados/place-call.test.ts` ejecutó **7/7** de `visit-ticket` (no existe un archivo separado `place-call.test.ts`); `pnpm test src/lib/llamados/llamados.test.ts` **18/18**, incluida la cobertura de `placeCall`. Estas unitarias no prueban la barra ni la acción completa. Las E2E existentes cubren vencimiento, retorno y rechazo del servidor, pero la configuración solo ejecuta Chromium.
+- No se ejecutaron E2E, RLS ni pruebas en Safari/iPhone durante esta investigación. Para cerrar el diagnóstico: comprobar el resultado de tocar el botón después del plazo **sin recargar** y distinguir si el navegador conservó o volvió a cargar la página. No se cambió la renovación del ticket.
+
 ## Aprendizajes / cambios de decisión
 - **El ticket no resuelve «lo abre desde el historial»**: recargar lo renueva. Quedó dicho antes de elegir y es la razón de D1; solo B2 o GPS lo cierran de verdad.
 - **Falla cerrada con el secreto efímero:** a diferencia del límite por cliente, un ticket que no se puede verificar bloquea al comensal; por eso el secreto pasa a ser requisito de producción.

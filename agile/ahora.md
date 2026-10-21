@@ -4,7 +4,7 @@ Actualizado: 2026-10-20 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-Implementado y probado en local, **sin revisión independiente ni integración**: [retención y purga de `price_history`](cambios/purga-de-price-history.md) (C, [ADR 0026](../docs/decisiones/0026-purga-del-historial-de-precios.md)). Política elegida por el usuario: el historial se purga con la organización, solo tras 30 días de baja auditada; la única vía es `private.purge_organization_price_history`, que apaga el trigger de solo-agregado dentro de la transacción y que ningún rol de la API ejecuta. Migración `20261031100000_purga_de_price_history.sql`, sin cambios de tipos. No se desplegó nada; staging y producción no se tocaron.
+Implementado y probado en local, **aprobada por Codex (1 ronda, sin hallazgos); sin aprobación del usuario para integrar**: [retención y purga de `price_history`](cambios/purga-de-price-history.md) (C, [ADR 0026](../docs/decisiones/0026-purga-del-historial-de-precios.md)). Política elegida por el usuario: el historial se purga con la organización, solo tras 30 días de baja auditada; la única vía es `private.purge_organization_price_history`, que apaga el trigger de solo-agregado dentro de la transacción y que ningún rol de la API ejecuta. Migración `20261031100000_purga_de_price_history.sql`, sin cambios de tipos. No se desplegó nada; staging y producción no se tocaron.
 
 Integrado antes: [add-ons y baja de organizaciones](cambios/addons-y-baja-de-organizaciones.md) (en `main`, migración y app en staging; falta la prueba manual del usuario con SuperAdmin en `/admin/organizaciones/{slug}`) y [anular pagos](cambios/anular-pagos.md) (también falta su prueba manual).
 
@@ -19,7 +19,7 @@ Investigación abierta: [vencimiento en iPhone](cambios/ticket-de-visita.md#inve
 
 ## Próximo paso
 
-1. Revisión independiente de la purga (nivel C, una ronda: `ciclo-revision-codex` o sesión limpia), corregir si hay hallazgos y pedir al usuario la aprobación de integrar.
+1. Pedir al usuario la aprobación de integrar la purga (commit `6f14a10`, ya revisado por Codex).
 2. El usuario prueba en staging add-ons, baja/reactivación y anular pagos.
 3. Decidir con el usuario la retención de `payments`/`payment_voids` para desbloquear el borrado de organizaciones.
 4. Completar el diagnóstico del iPhone y elegir del [tablero](tablero.md) un ítem desbloqueado.
