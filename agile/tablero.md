@@ -38,7 +38,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
-- [C] Catálogo: retirar el add-on `webar` y el límite `models_3d`, sumar la feature `video_feed` a Premium y el límite `videos_published` (10) en `plans`; resolver los contratos `webar` existentes y la pantalla de add-ons de SuperAdmin → [ficha](cambios/catalogo-video-feed.md) (implementado en local; falta la revisión independiente y la aprobación)
+- [C] Catálogo: retirar el add-on `webar` y el límite `models_3d`, sumar la feature `video_feed` a Premium y el límite `videos_published` (10) en `plans`; resolver los contratos `webar` existentes y la pantalla de add-ons de SuperAdmin → [ficha](cambios/catalogo-video-feed.md) (hecho: aprobado por el usuario y por Codex; migración aplicada en staging el 2026-10-21)
 - [C] Carga y publicación de videos desde el panel (Dueño y Staff): subida directa y reproducción por **Mux Video**, validación de duración, peso y formato, borrador y publicado, cupo, borrado con limpieza del asset en Mux; la prueba en iPhone y Android reales se hace al integrar la carga y el feed en staging con el plan Free de Mux (bloqueado por: catálogo)
 - [M] Feed vertical en la carta: scroll de a un video, carga y reproducción bajo demanda, enlace opcional al plato, comportamiento en solo lectura y suspendida (bloqueado por: carga y publicación)
 - [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (bloqueado por: feed)
@@ -92,8 +92,8 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Corrección del slug de sucursal por SuperAdmin con históricos reservados y redirección a la dirección vigente → [ficha](cambios/correccion-slug-sucursal.md)
 - [M · C técnico] Buscador y filtros dietarios con aviso de alérgenos junto a los filtros; integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/buscador-y-filtros-dietarios.md)
 - [M · C técnico] Disponibilidad por sucursal (agotado visible, lectura en vivo); integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/disponibilidad-por-sucursal.md)
-- [M] Temas de fechas especiales de la carta (San Valentín, Navidad, Halloween…), con ventana de fechas; aprobado y commiteado 2026-10-21; migración sin empujar a staging, app sin desplegar → agile/cambios/temas-de-fechas.md
-- [M] Personalización de la carta: paletas oscuras y vivas, vista previa real y estilo de carta; aprobado y commiteado 2026-10-21; migraciones sin empujar a staging, app sin desplegar → agile/cambios/personalizacion-carta.md
+- [M] Temas de fechas especiales de la carta (San Valentín, Navidad, Halloween…), con ventana de fechas; aprobado y commiteado 2026-10-21; migración en staging, app sin desplegar → agile/cambios/temas-de-fechas.md
+- [M] Personalización de la carta: paletas oscuras y vivas, vista previa real y estilo de carta; aprobado y commiteado 2026-10-21; migraciones en staging, app sin desplegar → agile/cambios/personalizacion-carta.md
 - [C] Identidad del local: logo y cuatro paletas; revisión recibida sin bloqueantes, límites registrados y ajustes menores atendidos (2026-10-16) → agile/cambios/identidad-del-local.md
 - [S] Categorías y platos de la carta pública paginados; cerrado sin revisión independiente por su nivel (2026-10-16) → agile/cambios/paginacion-carta-publica.md
 - [M] Variantes y adicionales: grupos de opciones por plato (variante 1/1, adicionales 0/N) en el panel y bajo cada plato de la carta pública; lectura anónima solo de lo activo; revisado por Codex en dos rondas (2026-10-17; falta aplicar la migración y confirmar las decisiones de la ficha) → agile/cambios/variantes-y-adicionales.md
