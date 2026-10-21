@@ -290,8 +290,7 @@ test.describe("vista por sucursal", () => {
     await page.waitForTimeout(1_500);
     expect(await pitidos(page)).toBe(1);
 
-    // Con dos sucursales, elegir la otra estando en una suma las dos (= «Todas»): para mirar solo Centro se parte de «Todas».
-    await elegir(page, "Todas");
+    // Elegir otra sucursal cambia directamente a ella, sin pasar por «Todas».
     await elegir(page, "Centro");
     await expect(page.locator('[data-testid="llamado"]')).toHaveCount(1);
     await llamar(mesa1(mesas, branchIds[0]).qr_token, "bill"); // nuevo, en lo que mira
@@ -325,7 +324,7 @@ test.describe("vista por sucursal", () => {
     await ctx.close();
   });
 
-  test("dos toques seguidos con el sondeo lento no pisan la primera elección (se suman)", async ({ browser }) => {
+  test("cambiar de sucursal con el sondeo lento conserva solo la última elección", async ({ browser }) => {
     const { t } = await nuevoLocal("sala-vista-rapido", { sucursales: 2 });
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await abrirSala(ctx, t.owner, t);
@@ -337,12 +336,67 @@ test.describe("vista por sucursal", () => {
 
     await chip(page, "Centro").click();
     await expect(chip(page, "Centro")).toBeEnabled(); // el guardado terminó
-    await chip(page, "Norte").click(); // Centro + Norte = todas las del local
+    await chip(page, "Norte").click();
 
-    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(page, "Norte")).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(page, "Centro")).toHaveAttribute("aria-pressed", "false");
+    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "false");
+    await expect(chip(page, "Norte")).toBeEnabled();
     await page.unroute("**/sala/*/estado");
     await page.reload();
-    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "true"); // lo guardado también es «Todas», no solo Norte
+    await expect(chip(page, "Norte")).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "false");
+    // Tocar la sucursal activa tampoco vuelve a «Todas».
+    await elegir(page, "Norte");
+    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "false");
+    await expectNoHorizontalOverflow(page);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expectNoHorizontalOverflow(page);
+    await ctx.close();
+  });
+
+  test("elegir varias es explícito, persiste y permite volver al cambio directo", async ({ browser }) => {
+    const { t } = await nuevoLocal("sala-vista-multiple", { sucursales: 2 });
+    const plan = await service().from("subscriptions").update({ plan_code: "premium" }).eq("organization_id", t.orgId);
+    expect(plan.error).toBeNull();
+    const { error } = await service().from("branches").insert({ organization_id: t.orgId, slug: "sur", name: "Sur" });
+    expect(error).toBeNull();
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.owner, t);
+    const varias = page.getByRole("checkbox", { name: "Elegir varias" });
+    await expect(varias).not.toBeChecked();
+    await elegir(page, "Norte");
+    await elegir(page, "Sur");
+    await expect(chip(page, "Norte")).toHaveAttribute("aria-pressed", "false");
+    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "false");
+
+    await varias.check();
+    await elegir(page, "Norte");
+    await expect(chip(page, "Sur")).toHaveAttribute("aria-pressed", "true");
+    await page.reload();
+    await expect(varias).toBeChecked();
+    await expect(chip(page, "Norte")).toHaveAttribute("aria-pressed", "true");
+    await expect(chip(page, "Sur")).toHaveAttribute("aria-pressed", "true");
+    // Quitar una deja solo la otra; sumar todas se normaliza a «Todas».
+    await chip(page, "Norte").click();
+    await expect(chip(page, "Norte")).toHaveAttribute("aria-pressed", "false");
+    await expect(chip(page, "Norte")).toBeEnabled();
+    await elegir(page, "Norte");
+    await chip(page, "Centro").click();
+    await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "true");
+    await expect(varias).toBeEnabled();
+
+    await elegir(page, "Sur");
+    await elegir(page, "Norte");
+    await varias.uncheck();
+    await elegir(page, "Centro");
+    await expect(chip(page, "Sur")).toHaveAttribute("aria-pressed", "false");
+    await expect(chip(page, "Norte")).toHaveAttribute("aria-pressed", "false");
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: "test-results/selector-sucursal-mobile.png", fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: "test-results/selector-sucursal-desktop.png", fullPage: true });
     await ctx.close();
   });
 

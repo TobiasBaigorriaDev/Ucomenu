@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { SalaBranch } from "@/lib/sala/types";
 
 /**
@@ -19,10 +20,15 @@ export function SelectorDeSucursal({
   saving: boolean;
   onChange: (next: string[]) => void;
 }) {
+  const [multiple, setMultiple] = useState(view.length > 1);
   if (branches.length < 2) return null;
   const all = view.length === 0;
 
   const toggle = (id: string) => {
+    if (!multiple) {
+      onChange([id]);
+      return;
+    }
     const current = all ? [] : view;
     const next = current.includes(id) ? current.filter((item) => item !== id) : [...current, id];
     // Ninguna o todas elegidas es «Todas»: nunca queda una vista que no muestre nada.
@@ -56,6 +62,16 @@ export function SelectorDeSucursal({
           </button>
         ))}
       </div>
+      <label className="mt-2 flex min-h-11 w-fit items-center gap-2 text-sm text-ink">
+        <input
+          type="checkbox"
+          checked={multiple}
+          disabled={saving}
+          onChange={(event) => setMultiple(event.target.checked)}
+          className="h-4 w-4 accent-brand"
+        />
+        Elegir varias
+      </label>
       <p className="mt-2 max-w-prose text-sm text-muted">
         Solo ves y recibís avisos (en pantalla, con sonido y en el celular) de las sucursales elegidas. Se recuerda en todos tus
         dispositivos.
