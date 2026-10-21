@@ -31,3 +31,4 @@ Un trigger `AFTER UPDATE OF price_cents` sobre `products`, con `WHEN` por cambio
 - Si el registro falla, el precio no cambia (misma transacción).
 - Los precios de variantes y adicionales (`options`) llevarán su propio trigger cuando existan.
 - **Actualización 2026-10-14:** la pantalla de consulta ya existe (ficha `agile/cambios/pantalla-historial-de-precios.md`) y cumple lo anterior: platos y personas con unión por separado y tolerando el faltante («Plato eliminado»; persona dada de baja sin identificar). Además, el filtro por `organization_id` en la consulta de platos es obligatorio: la carta pública hace legibles los platos activos de cualquier local.
+- **Actualización 2026-10-20:** la retención y la purga quedaron decididas en el [ADR 0026](0026-purga-del-historial-de-precios.md) (se purga con la organización, tras 30 días de baja, por una función que ningún rol de la API ejecuta). `ON DELETE RESTRICT` y el trigger de solo-agregado siguen igual.

@@ -34,6 +34,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   organization_logo_org: [false, false, true], // pura; solo las políticas de logos del Dueño
   record_price_change: [true, false, false], // trigger de products: escribe price_history (la API no tiene INSERT)
   price_history_append_only: [false, false, false], // trigger de price_history: rechaza UPDATE, DELETE y TRUNCATE
+  purge_organization_price_history: [true, false, false], // purga del historial al borrar una organización (ADR 0026): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
   audit_log_append_only: [false, false, false], // trigger de audit_log: rechaza UPDATE, DELETE y TRUNCATE (SuperAdmin)
   is_push_endpoint: [false, false, false], // pura; la usa la restricción CHECK de push_subscriptions (aviso de llamados, ADR 0020)
   is_platform_admin: [true, false, true], // usada por la política de lectura de audit_log y de payments (SuperAdmin)
