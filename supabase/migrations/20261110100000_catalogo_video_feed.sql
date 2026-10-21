@@ -27,11 +27,16 @@
 -- plans: feature y límite del feed
 -- ---------------------------------------------------------------------------
 
-alter table public.plans drop constraint plans_features_check;
+-- El CLI (`supabase db push` / `migration up`) ejecuta cada sentencia por separado: sin este `begin` explícito no hay
+-- transacción (y `lock table` falla). Las primeras sentencias son idempotentes porque un primer intento de `db push` en staging
+-- aplicó esta parte de `plans` antes de fallar en el `lock table` (2026-10-21), y la migración debe poder completarla.
+begin;
+
+alter table public.plans drop constraint if exists plans_features_check;
 alter table public.plans add constraint plans_features_check
   check (features <@ array['menu', 'waiter_call', 'loyalty', 'analytics', 'video_feed']);
 
-alter table public.plans add column max_videos_published integer
+alter table public.plans add column if not exists max_videos_published integer
   check (max_videos_published is null or max_videos_published >= 0);
 comment on column public.plans.max_videos_published is
   'Tope de videos publicados en el feed (ADR 0031). 0 = sin cupo; null = sin límite. Lo modifica solo el servidor.';
@@ -76,7 +81,7 @@ delete from public.subscription_addons where addon_code = 'webar';
 delete from public.addons where code = 'webar';
 -- [retiro-webar:fin]
 
-alter table public.addons drop constraint addons_code_check;
+alter table public.addons drop constraint if exists addons_code_check;
 alter table public.addons add constraint addons_code_check
   check (code ~ '^[a-z][a-z0-9_]{0,31}$');
 comment on table public.addons is
@@ -218,3 +223,5 @@ end;
 $$;
 comment on function public.org_entitlements(uuid) is
   'Estado, escritura permitida, features, límites y uso (sucursales activas y platos activos) de la organización. Solo para sus miembros.';
+
+commit;
