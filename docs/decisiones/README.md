@@ -41,3 +41,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0027 | [Los pagos sobreviven al borrado de la organización y se conservan 10 años; solo después se pueden purgar](0027-retencion-de-pagos.md) | aceptada | 2026-10-20 |
 | 0028 | [El borrado definitivo de una organización es una sola función de base, tras 30 días de baja, con el slug escrito; los archivos se limpian después de confirmar](0028-borrado-definitivo-de-organizaciones.md) | aceptada | 2026-10-20 |
 | 0029 | [Categorías y platos se borran con el cliente de la persona, con confirmación comprobada en el servidor y las fotos limpiadas después de confirmar](0029-borrado-de-categorias-y-platos.md) | aceptada | 2026-10-21 |
+| 0030 | [Las mesas se borran con el cliente de la persona y sus llamados se van con ellas (cascada); un permiso `DELETE` nuevo sobre `tables`](0030-borrado-de-mesas.md) | propuesta (implementada localmente) | 2026-10-21 |

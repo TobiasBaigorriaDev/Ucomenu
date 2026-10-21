@@ -5,7 +5,7 @@ import { useFormStatus } from "react-dom";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { dangerButtonClass, inputClass, labelClass, secondaryButtonClass } from "@/components/panel/styles";
 import { LABEL_MAX } from "@/lib/mesas/labels";
-import { createTableAction, regenerateQrAction, renameTableAction, tableRowAction } from "./actions";
+import { createTableAction, deleteTableAction, regenerateQrAction, renameTableAction, tableRowAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 
@@ -174,6 +174,44 @@ export function RegenerateQrForm({
           <div className="mt-3">
             <SubmitButton className={dangerButtonClass} pendingLabel="Regenerando…">
               Sí, regenerar
+            </SubmitButton>
+          </div>
+        </fieldset>
+      </ActionForm>
+    </details>
+  );
+}
+
+/** Borrar es irreversible: el botón solo abre la explicación y recién el segundo botón borra (el servidor vuelve a comprobar todo). */
+export function DeleteTableForm({
+  orgSlug,
+  id,
+  label,
+  canWrite,
+}: {
+  orgSlug: string;
+  id: string;
+  label: string;
+  canWrite: boolean;
+}) {
+  return (
+    <details data-testid="borrar-mesa">
+      <summary className={`${dangerButtonClass} ${summaryExtras}`} aria-label={`Borrar la mesa ${label}`}>
+        Borrar mesa
+      </summary>
+      <ActionForm action={deleteTableAction} className="mt-3 max-w-prose">
+        <fieldset disabled={!canWrite} className="grid gap-3">
+          <input type="hidden" name="org" value={orgSlug} />
+          <input type="hidden" name="id" value={id} />
+          <p className="text-base leading-relaxed">
+            Vas a borrar <strong className="break-words">{label}</strong> para siempre, con sus llamados al mozo.{" "}
+            <strong>No se puede deshacer.</strong> Su QR impreso deja de funcionar: retiralo de la mesa. Si necesitás la mesa
+            otra vez, se crea una nueva con un QR nuevo para imprimir.
+          </p>
+          <p className="text-base text-muted">Si solo querés pausarla, usá «Desactivar».</p>
+          <div>
+            <SubmitButton pendingLabel="Borrando…" className={dangerButtonClass}>
+              Sí, borrar la mesa definitivamente
             </SubmitButton>
           </div>
         </fieldset>

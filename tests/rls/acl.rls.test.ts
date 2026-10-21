@@ -165,6 +165,22 @@ describe("RLS y permisos de tablas", () => {
     expect(permisos("authenticated")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
   });
 
+  it("tables: anon sin permisos; authenticated puede borrar (borrado de mesas) pero no truncar; waiter_calls sigue sin permisos de escritura", () => {
+    const permisos = (rol: string, tabla: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'public.${tabla}', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    expect(permisos("anon", "tables")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    // INSERT y UPDATE son por columna (no figuran a nivel de tabla); DELETE es nuevo.
+    expect(permisos("authenticated", "tables")).toEqual(["t", "f", "f", "t", "f", "f", "f"]);
+    // Los llamados se borran por la cascada de la mesa (corre con el dueño de la tabla), no por un permiso de la API.
+    expect(permisos("anon", "waiter_calls")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    expect(permisos("authenticated", "waiter_calls").slice(1)).toEqual(["f", "f", "f", "f", "f", "f"]);
+  });
+
   it("planes y suscripciones: anon sin permisos y authenticated solo con SELECT", () => {
     const permisos = (rol: string, tabla: string) =>
       sql(

@@ -5,7 +5,7 @@ import { suggestNextLabel } from "@/lib/mesas/labels";
 import { mesasBlockNotice } from "@/lib/mesas/messages";
 import { loadMesas } from "@/lib/mesas/tables";
 import { createSessionClient } from "@/lib/supabase/server";
-import { CreateTableForm, RegenerateQrForm, RenameTableForm, TableToggle } from "./table-forms";
+import { CreateTableForm, DeleteTableForm, RegenerateQrForm, RenameTableForm, TableToggle } from "./table-forms";
 
 export const metadata: Metadata = { title: "Mesas" };
 
@@ -13,8 +13,10 @@ const badgeClass = "inline-flex items-center rounded-full border border-ink/25 b
 const linkButtonClass =
   "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/40 px-4 py-2 text-base font-medium text-ink";
 
-export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesas">) {
+export default async function MesasPage({ params, searchParams }: PageProps<"/panel/[org]/mesas">) {
   const { org } = await params;
+  // La acción de borrar redirige acá con el aviso (la fila borrada ya no está para mostrarlo).
+  const { borrada } = await searchParams;
   const { membership } = await requireMembership(org, `/panel/${org}/mesas`);
   const db = await createSessionClient();
 
@@ -33,6 +35,11 @@ export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesa
       {ent ? null : (
         <p className="mt-2 text-base text-muted">No pudimos comprobar el estado de la cuenta, así que la edición está desactivada.</p>
       )}
+      {borrada === "1" ? (
+        <p role="status" className="mt-3 max-w-prose text-base font-medium" data-testid="aviso-borrada">
+          Mesa borrada. Sus llamados también se borraron y su QR impreso ya no funciona.
+        </p>
+      ) : null}
       {notice ? (
         <p className="mt-3 max-w-prose text-base font-medium" data-testid="mesas-bloqueadas">
           {notice}
@@ -101,6 +108,7 @@ export default async function MesasPage({ params }: PageProps<"/panel/[org]/mesa
                       />
                       <RenameTableForm orgSlug={membership.org.slug} id={table.id} label={table.label} canWrite={canWrite} />
                       <RegenerateQrForm orgSlug={membership.org.slug} id={table.id} label={table.label} canWrite={canWrite} />
+                      <DeleteTableForm orgSlug={membership.org.slug} id={table.id} label={table.label} canWrite={canWrite} />
                       <Link
                         href={`/t/${table.qr_token}`}
                         className={linkButtonClass}

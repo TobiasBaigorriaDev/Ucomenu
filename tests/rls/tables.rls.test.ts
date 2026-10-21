@@ -168,8 +168,13 @@ describe("aislamiento", () => {
     expect(ve.data ?? []).toHaveLength(0);
     const inserta = await ajeno.db.from("tables").insert({ organization_id: local.id, branch_id: local.branch, label: "Intruso" });
     expect(inserta.error?.code).toBe("42501");
-    // Nadie borra por la API (no hay permiso de DELETE).
-    expect((await owner.db.from("tables").delete().eq("organization_id", local.id)).error?.code).toBe("42501");
+    // anon no borra por la API (sin permiso); una persona de otra organización afecta 0 filas (RLS) y el borrado de mesas
+    // de los miembros se prueba en mesas.rls.test.ts (ficha borrado-de-mesas).
+    expect((await anon.from("tables").delete().eq("organization_id", local.id)).error?.code).toBe("42501");
+    const ajenoBorra = await ajeno.db.from("tables").delete().eq("organization_id", local.id).select("id");
+    expect(ajenoBorra.error).toBeNull();
+    expect(ajenoBorra.data).toHaveLength(0);
+    expect((await service.from("tables").select("id").eq("organization_id", local.id)).data).toHaveLength(1);
   });
 
   it("una sucursal de otra organización no sirve: la clave compuesta lo rechaza y no se filtra el uso", async () => {

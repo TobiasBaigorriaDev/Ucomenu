@@ -151,6 +151,20 @@ export async function setTableActive(db: Db, orgId: string, id: string, active: 
   return ok(undefined);
 }
 
+/**
+ * Borra una mesa para siempre: su QR deja de resolver y sus llamados se van con ella (cascada, ficha borrado-de-mesas).
+ * Un `DELETE` bloqueado por RLS afecta 0 filas sin error, por eso se piden las filas de vuelta.
+ */
+export async function deleteTable(db: Db, orgId: string, id: string): Promise<Result> {
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+
+  const { data, error } = await db.from("tables").delete().eq("id", id).eq("organization_id", orgId).select("id");
+  if (error) return fail(await writeFailure(db, orgId, error));
+  if (data.length === 0) return fail(await explainZeroRows(db, orgId, id));
+  return ok(undefined);
+}
+
 /** Regenera el QR: el token anterior deja de resolver. Comprueba que el token realmente cambió. */
 export async function regenerateTableQr(db: Db, orgId: string, id: string): Promise<Result<{ token: string }>> {
   const blocked = await guard(db, orgId);

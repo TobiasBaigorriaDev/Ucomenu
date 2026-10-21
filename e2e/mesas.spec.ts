@@ -385,7 +385,7 @@ test.describe("cuenta que no puede escribir", () => {
         await mesa(page, "Mesa 1").locator("summary", { hasText: "Regenerar QR" }).click();
         await mesa(page, "Mesa 1").locator("fieldset").nth(1).evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
         await mesa(page, "Mesa 1").getByRole("button", { name: "Sí, regenerar" }).click();
-        await expect(mesa(page, "Mesa 1").locator("form").last().getByRole("alert")).toContainText(texto);
+        await expect(mesa(page, "Mesa 1").locator("form").filter({ has: page.getByRole("button", { name: "Sí, regenerar" }) }).getByRole("alert")).toContainText(texto);
 
         // Nada cambió, y el QR impreso sigue sirviendo.
         const despues = (await service().from("tables").select("label, is_active, qr_token").eq("organization_id", t.orgId)).data;
@@ -455,4 +455,70 @@ test.describe("acceso y aislamiento", () => {
     expect(despuesB).toEqual(antesB);
     expect((await service().from("tables").select("id").in("label", ["Intrusa", "Cruzada"])).data ?? []).toHaveLength(0);
   });
+});
+
+test.describe("borrado de mesas", () => {
+  const llamadosDe = async (tableId: string) => ((await service().from("waiter_calls").select("id").eq("table_id", tableId)).data ?? []).length;
+  const existe = async (tableId: string) => ((await service().from("tables").select("id").eq("id", tableId)).data ?? []).length === 1;
+
+  test("borra una mesa en dos pasos: se va de la lista, su QR da 404, se van sus llamados y las demás mesas siguen", async ({ page }) => {
+    const t = await nuevoLocal("mesas-borrar");
+    const { branch, mesas } = await sembrarMesas(t, ["Mesa 1", "Mesa 2"]);
+    for (const label of ["Mesa 1", "Mesa 2"]) {
+      const r = await service().from("waiter_calls").insert({ organization_id: t.orgId, branch_id: branch, table_id: mesas[label].id, kind: "waiter" });
+      expect(r.error).toBeNull();
+    }
+    await ingresar(page, t.owner, t);
+    await expectNoHorizontalOverflow(page);
+
+    // Primer paso: solo explica, nada se borra.
+    await mesa(page, "Mesa 1").locator("summary", { hasText: "Borrar mesa" }).click();
+    await expect(mesa(page, "Mesa 1").getByText("No se puede deshacer.")).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+    expect(await existe(mesas["Mesa 1"].id)).toBe(true);
+
+    // Segundo paso.
+    await mesa(page, "Mesa 1").getByRole("button", { name: "Sí, borrar la mesa definitivamente" }).click();
+    await expect(page).toHaveURL(new RegExp(`/panel/${t.slug}/mesas\\?borrada=1`));
+    await expect(page.getByTestId("aviso-borrada")).toContainText("Mesa borrada");
+    expect(await etiquetas(page)).toEqual(["Mesa 2"]);
+
+    expect(await existe(mesas["Mesa 1"].id)).toBe(false);
+    expect(await llamadosDe(mesas["Mesa 1"].id)).toBe(0);
+    expect(await existe(mesas["Mesa 2"].id)).toBe(true);
+    expect(await llamadosDe(mesas["Mesa 2"].id)).toBe(1);
+    expect((await page.goto(`/t/${mesas["Mesa 1"].qr_token}`))?.status()).toBe(404);
+    expect((await page.goto(`/t/${mesas["Mesa 2"].qr_token}`))?.status()).toBe(200);
+  });
+
+  test("el Staff también borra", async ({ page }) => {
+    const t = await nuevoLocal("mesas-borrar-staff");
+    const { mesas } = await sembrarMesas(t, ["Mesa 1"]);
+    await ingresar(page, t.staff, t);
+    await mesa(page, "Mesa 1").locator("summary", { hasText: "Borrar mesa" }).click();
+    await mesa(page, "Mesa 1").getByRole("button", { name: "Sí, borrar la mesa definitivamente" }).click();
+    await expect(page.getByTestId("aviso-borrada")).toBeVisible();
+    expect(await existe(mesas["Mesa 1"].id)).toBe(false);
+  });
+
+  for (const rol of ["owner", "staff"] as const) {
+    test(`en solo lectura (${rol}) el borrado está deshabilitado y una acción forzada no borra ni dice que borró`, async ({ page }) => {
+      const t = await nuevoLocal(`mesas-borrar-ro-${rol}`, "read_only");
+      const { mesas } = await sembrarMesas(t, ["Mesa 1"]);
+      await ingresar(page, t[rol], t);
+
+      await mesa(page, "Mesa 1").locator("summary", { hasText: "Borrar mesa" }).click();
+      const confirmar = mesa(page, "Mesa 1").getByRole("button", { name: "Sí, borrar la mesa definitivamente" });
+      await expect(confirmar).toBeDisabled();
+
+      await mesa(page, "Mesa 1").locator("fieldset").filter({ has: page.getByRole("button", { name: "Sí, borrar la mesa definitivamente" }) })
+        .evaluate((el: HTMLFieldSetElement) => (el.disabled = false));
+      await confirmar.click();
+      await expect(mesa(page, "Mesa 1").getByRole("alert")).toContainText("solo lectura");
+      await expect(mesa(page, "Mesa 1").getByRole("status")).toHaveCount(0);
+
+      expect(await existe(mesas["Mesa 1"].id)).toBe(true);
+      expect((await page.goto(`/t/${mesas["Mesa 1"].qr_token}`))?.status()).toBe(200);
+    });
+  }
 });

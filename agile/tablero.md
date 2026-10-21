@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- (vacío)
+- [C] Borrado de mesas junto con sus llamados: implementado y probado en local (RLS completo, E2E y mutaciones), con una migración mínima (`DELETE` sobre `tables`); falta la revisión independiente y la aprobación del usuario (bloqueado por: eso) → [ficha](cambios/borrado-de-mesas.md) · ADR 0030
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
@@ -34,7 +34,6 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 ### Fase 1 — MVP · Plataforma SaaS
 - [S] Decidir qué hacer con las cuentas de Auth que quedan sin ningún local tras un borrado (hoy se conservan) — surgido de «borrar organizaciones»
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
-- [C] Borrado de mesas: hoy solo se desactivan; se resuelve junto con el historial de llamados (surgido de «Mesas y QR»)
 - [S] Dominio: decidir el nombre definitivo y comprarlo (pospuesto 2026-10-16: el usuario no está seguro de `ucomenu.com`). Bloquea publicar producción e imprimir QR definitivos; staging usa la dirección provisoria de Fly → docs/produccion.md, paso 5
 
 ### Fase 2 — Add-on WebAR

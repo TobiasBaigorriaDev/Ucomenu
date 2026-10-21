@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addMembership,
+  anonClient,
   createOrg,
   createUser,
   DIA_MS,
@@ -11,7 +12,7 @@ import {
   type Db,
   type TestUser,
 } from "./helpers";
-import { createTable, loadMesas, regenerateTableQr, renameTable, setTableActive } from "@/lib/mesas/tables";
+import { createTable, deleteTable, loadMesas, regenerateTableQr, renameTable, setTableActive } from "@/lib/mesas/tables";
 import { isToken } from "@/lib/mesas/url";
 
 /**
@@ -250,5 +251,147 @@ describe("cuenta que no puede escribir", () => {
     await setSubscription(service, local.id, { finEnMs: -3 * DIA_MS });
     expect((await renameTable(staff.db, local.id, id, "En gracia")).ok).toBe(true);
     expect((await regenerateTableQr(owner.db, local.id, id)).ok).toBe(true);
+  });
+});
+
+describe("borrado de mesas", () => {
+  const existe = async (id: string) => ((await service.from("tables").select("id").eq("id", id)).data ?? []).length === 1;
+  const llamadosDe = async (tableId: string) => ((await service.from("waiter_calls").select("id").eq("table_id", tableId)).data ?? []).length;
+
+  async function conMesas(slug: string, plan: "basic" | "pro" = "pro") {
+    const local = await nuevoLocal(slug, plan);
+    const mesa = async (label: string, branchId = local.branch) => {
+      const r = await createTable(owner.db, local.id, { branchId, label });
+      if (!r.ok) throw new Error("mesa");
+      return r.data.id;
+    };
+    const llamar = async (tableId: string, branchId: string, kind: "waiter" | "bill", status: "pending" | "attended" = "pending") => {
+      const r = await service.from("waiter_calls").insert({ organization_id: local.id, branch_id: branchId, table_id: tableId, kind, status });
+      expect(r.error).toBeNull();
+    };
+    return { local, mesa, llamar };
+  }
+
+  async function resuelve(token: string): Promise<unknown> {
+    return (await anonClient().rpc("resolve_table_qr", { p_token: token })).data;
+  }
+
+  it("Dueño y Staff borran una mesa: se van su QR y sus llamados (pendientes y atendidos); las demás mesas y sus llamados no se tocan", async () => {
+    const { local, mesa, llamar } = await conMesas("tt-mesas-borrar");
+    const a = await mesa("Mesa 1");
+    const b = await mesa("Mesa 2");
+    const c = await mesa("Mesa 3", local.branch2);
+    await llamar(a, local.branch, "waiter");
+    await llamar(a, local.branch, "bill", "attended");
+    await llamar(b, local.branch, "waiter");
+    await llamar(c, local.branch2, "waiter");
+    const tokenA = (await service.from("tables").select("qr_token").eq("id", a).single()).data!.qr_token;
+    const tokenB = (await service.from("tables").select("qr_token").eq("id", b).single()).data!.qr_token;
+    expect(await resuelve(tokenA)).not.toBeNull();
+
+    expect(await deleteTable(staff.db, local.id, a)).toEqual({ ok: true, data: undefined });
+    expect(await existe(a)).toBe(false);
+    expect(await llamadosDe(a)).toBe(0);
+    expect(await resuelve(tokenA)).toBeNull();
+    // Las otras mesas siguen con sus llamados y su QR.
+    expect(await existe(b)).toBe(true);
+    expect(await llamadosDe(b)).toBe(1);
+    expect(await llamadosDe(c)).toBe(1);
+    expect(await resuelve(tokenB)).not.toBeNull();
+
+    expect(await deleteTable(owner.db, local.id, b)).toEqual({ ok: true, data: undefined });
+    expect(await existe(b)).toBe(false);
+    // Borrarla otra vez (otra persona a la vez) no es un éxito.
+    expect(await deleteTable(owner.db, local.id, b)).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("el nombre se puede reutilizar: la mesa nueva tiene otro token y no hereda llamados", async () => {
+    const { local, mesa, llamar } = await conMesas("tt-mesas-borrar-reuso");
+    const vieja = await mesa("Mesa 1");
+    const tokenViejo = (await service.from("tables").select("qr_token").eq("id", vieja).single()).data!.qr_token;
+    await llamar(vieja, local.branch, "waiter");
+    expect((await deleteTable(owner.db, local.id, vieja)).ok).toBe(true);
+
+    const nueva = await mesa("Mesa 1");
+    const tokenNuevo = (await service.from("tables").select("qr_token").eq("id", nueva).single()).data!.qr_token;
+    expect(tokenNuevo).not.toBe(tokenViejo);
+    expect(await llamadosDe(nueva)).toBe(0);
+    expect(await resuelve(tokenViejo)).toBeNull();
+    expect(await resuelve(tokenNuevo)).not.toBeNull();
+  });
+
+  it("borrar una mesa activa libera cupo en el tope de la sucursal", async () => {
+    const { local } = await conMesas("tt-mesas-borrar-cupo", "basic");
+    const filasNuevas = Array.from({ length: 20 }, (_, i) => ({ organization_id: local.id, branch_id: local.branch, label: `M${i + 1}` }));
+    expect((await service.from("tables").insert(filasNuevas)).error).toBeNull();
+    expect(await createTable(owner.db, local.id, { branchId: local.branch, label: "Una más" })).toEqual({ ok: false, error: "limit" });
+    const una = (await service.from("tables").select("id").eq("branch_id", local.branch).eq("label", "M1").single()).data!.id;
+    expect((await deleteTable(staff.db, local.id, una)).ok).toBe(true);
+    expect((await createTable(owner.db, local.id, { branchId: local.branch, label: "Una más" })).ok).toBe(true);
+  });
+
+  it("una mesa de otra organización, una persona ajena y anon no borran nada", async () => {
+    const a = await conMesas("tt-mesas-borrar-aislada-a");
+    const b = await conMesas("tt-mesas-borrar-aislada-b");
+    const mesaB = await b.mesa("Mesa B");
+    await b.llamar(mesaB, b.local.branch, "waiter");
+
+    // Dueño (de las dos, por el helper) pidiendo en A una mesa de B: no existe para A.
+    expect(await deleteTable(owner.db, a.local.id, mesaB)).toEqual({ ok: false, error: "not_found" });
+    // Una persona sin membresía pidiendo en B: nada (sin ver la mesa, ni siquiera sabe si existe).
+    expect((await deleteTable(stranger.db, b.local.id, mesaB)).ok).toBe(false);
+    // anon por la API: sin permiso.
+    expect((await anonClient().from("tables").delete().eq("id", mesaB)).error?.code).toBe("42501");
+    // Un DELETE directo de una persona ajena afecta 0 filas, sin error.
+    const directo = await stranger.db.from("tables").delete().eq("id", mesaB).select("id");
+    expect(directo.error).toBeNull();
+    expect(directo.data).toHaveLength(0);
+
+    expect(await existe(mesaB)).toBe(true);
+    expect(await llamadosDe(mesaB)).toBe(1);
+  });
+
+  it.each([
+    ["solo lectura", 10, "blocked_read_only"],
+    ["suspendida", 20, "blocked_suspended"],
+  ] as const)("con la cuenta %s no se borra nada (Dueño y Staff), tampoco con el estado desactualizado", async (_nombre, dias, bloqueo) => {
+    const { local, mesa, llamar } = await conMesas(`tt-mesas-borrar-mora-${bloqueo.slice(8, 12)}`);
+    const m = await mesa("Mesa 1");
+    await llamar(m, local.branch, "waiter");
+    await setSubscription(service, local.id, { finEnMs: -dias * DIA_MS });
+
+    for (const db of [owner.db, staff.db]) {
+      expect(await deleteTable(db, local.id, m)).toEqual({ ok: false, error: bloqueo });
+    }
+
+    // La primera lectura del estado dice que se puede escribir (comprobación desactualizada): la base descarta el DELETE.
+    const rezagado = (db: Db): Db => {
+      let primera = true;
+      return new Proxy(db, {
+        get(target, prop, receiver) {
+          if (prop === "rpc") {
+            return async (fn: string, args: { p_org: string }) => {
+              const real = await target.rpc("org_entitlements", args);
+              if (fn === "org_entitlements" && primera) {
+                primera = false;
+                return { ...real, data: { ...(real.data as object), can_write: true, state: "active" } };
+              }
+              return real;
+            };
+          }
+          return Reflect.get(target, prop, receiver);
+        },
+      });
+    };
+    expect(await deleteTable(rezagado(owner.db), local.id, m)).toEqual({ ok: false, error: bloqueo });
+    expect(await existe(m)).toBe(true);
+    expect(await llamadosDe(m)).toBe(1);
+  });
+
+  it("en gracia se borra con normalidad", async () => {
+    const { local, mesa } = await conMesas("tt-mesas-borrar-gracia");
+    const m = await mesa("Mesa 1");
+    await setSubscription(service, local.id, { finEnMs: -3 * DIA_MS });
+    expect((await deleteTable(staff.db, local.id, m)).ok).toBe(true);
   });
 });

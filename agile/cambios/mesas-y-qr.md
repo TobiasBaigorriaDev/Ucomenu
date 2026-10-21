@@ -47,7 +47,7 @@ Que el Dueño y el Staff den de alta las mesas de cada sucursal, impriman la hoj
 
 ## Alcance / fuera de alcance
 - Incluye: migración (`tables`, claves, índices, RLS, permisos por columna, *trigger* de token, *trigger* del tope, función `resolve_table_qr`); seed; módulo `src/lib/mesas` (validación, escrituras con RLS y confirmación de filas, resolución, URL base, matriz y SVG del QR); páginas `/panel/{slug}/mesas` y `/imprimir`; ruta pública `/t/{token}` (reutilizando la carta con el componente extraído); estilos de impresión; ADR 0009; pruebas (unitarias, base, módulo, E2E) y mutaciones; ajustes de `acl.rls.test.ts`, `.env.example`, `database.types.ts`, docs, tablero y handoff.
-- No incluye: borrado de mesas; alta masiva («Mesa 1 a 20»); orden manual; «silenciada hasta» y el llamado al mozo; diseño del QR con logo o colores; PDF o descarga del QR como imagen; control de lectura por ubicación; gestión de sucursales (alta, baja y edición de sucursales llegan con «Disponibilidad por sucursal»); cuota de intentos de lectura de tokens.
+- No incluye: borrado de mesas (hecho después: [borrado de mesas](borrado-de-mesas.md)); alta masiva («Mesa 1 a 20»); orden manual; «silenciada hasta» y el llamado al mozo; diseño del QR con logo o colores; PDF o descarga del QR como imagen; control de lectura por ubicación; gestión de sucursales (alta, baja y edición de sucursales llegan con «Disponibilidad por sucursal»); cuota de intentos de lectura de tokens.
 
 ## Dependencias y riesgos
 - **Dependencia nueva `qrcode-generator` 2.0.4**: aprobada; versión exacta fijada en `package.json` y `pnpm-lock.yaml`. No requiere red en ejecución ni secretos.

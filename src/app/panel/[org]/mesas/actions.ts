@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import type { FormState } from "@/lib/form-state";
 import { asUuid } from "@/lib/carta/validation";
 import {
   createTable,
+  deleteTable,
   mesasErrorMessage,
   regenerateTableQr,
   renameTable,
@@ -80,4 +82,15 @@ export async function regenerateQrAction(_previous: FormState, formData: FormDat
   const id = asUuid(formData.get("id"));
   if (!id) return NOT_FOUND;
   return outcome(slug, orgId, await regenerateTableQr(db, orgId, id), "QR regenerado. El anterior ya no funciona: imprimí el nuevo.");
+}
+
+/** Borra la mesa (y sus llamados). Al terminar vuelve a la lista con el aviso: la fila ya no está para mostrarlo. */
+export async function deleteTableAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  if (!id) return NOT_FOUND;
+  const result = await deleteTable(db, orgId, id);
+  if (!result.ok) return outcome(slug, orgId, result, "");
+  revalidatePath(`/panel/${slug}`, "layout");
+  redirect(`/panel/${slug}/mesas?borrada=1`);
 }
