@@ -8,7 +8,7 @@
 - **Base de datos:** PostgreSQL gestionado por Supabase, con Row Level Security (RLS) como mecanismo de aislamiento. → ADR 0004
 - **Tiempo real:** el panel de sala se actualiza por sondeo corto al servidor (ADR 0011); Supabase Realtime queda como evolución posible.
 - **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo. **Implementado** (ADR 0007): email y contraseña, sin registro público, sesión por cookies `httpOnly` con `@supabase/ssr` 0.12.7 y sin cliente de Supabase en el navegador.
-- **Archivos:** Supabase Storage (fotos de platos, logos, modelos 3D).
+- **Archivos:** Supabase Storage (fotos de platos, logos). Los videos del feed (fase 2) van a Supabase Storage o a un servicio de streaming, según el spike del ADR 0031.
   - Interfaz de la carta pública: sistema propio dentro de `.carta` (variables de la paleta del local, Gloock + Schibsted Grotesk cargadas solo para la carta desde `src/components/menu/carta-fonts.ts`); el panel, la sala y el login conservan los tokens globales. Definición en `DESIGN.md`; contexto de producto para diseño en `PRODUCT.md`.
   - Identidad del local: `organizations.menu_palette` y `logo_path`; bucket público `organization-logos` con rutas inmutables `{org}/{uuid}.{jpg|png|webp}`. Solo el Dueño con cuenta editable escribe columnas y archivos mediante su sesión y RLS. La carta lee la identidad en vivo junto con la organización, antes de la caché de filas; el optimizador admite ese bucket y `product-images` del host configurado. Configuración en `/panel/{slug}/apariencia`; detalle y evidencia en `agile/cambios/identidad-del-local.md`.
 - **Hosting / despliegue:** un contenedor de Docker en **Fly.io (São Paulo)** (ADR 0015; Vercel Hobby no admite uso comercial) + Supabase Cloud (datos). Desplegar requiere aprobación explícita.
@@ -28,8 +28,8 @@ Convención (confirmada): identificadores de código y base en inglés; interfaz
 | **Llamado al mozo** | Creación validada del llamado, cooldown, estados, difusión en tiempo real | Mesas, Planes, Realtime |
 | **Panel de sala** | Vista en vivo para el personal, alertas, marcar atendido | Llamado al mozo, Auth |
 | **Panel del dueño** | Administración de carta, mesas, sucursales, personal, apariencia | Todos los anteriores |
-| **SuperAdmin** | Alta de organizaciones, gestión manual de planes, auditoría, carga de modelos 3D | Planes, Tenancy |
-| **WebAR** *(fase 2)* | Catálogo de modelos 3D por plato, visor y lanzamiento de AR | Carta, Planes, Storage |
+| **SuperAdmin** | Alta de organizaciones, gestión manual de planes y add-ons, auditoría | Planes, Tenancy |
+| **Feed de videos** *(fase 2, ADR 0031)* | Carga y publicación de videos cortos, feed vertical en la carta, likes y comentarios desde la mesa con moderación | Carta, Mesas, Planes, Storage o servicio de video |
 | **Fidelización** *(fase 3)* | Programa de sellos, socios, tarjetas, registro inmutable de movimientos | Tenancy, Planes |
 | **Wallet** *(fase 3)* | Emisión y actualización de pases Apple/Google, ubicaciones para cercanía | Fidelización |
 
@@ -59,7 +59,7 @@ Esquema inicial resumido. Toda tabla de negocio lleva `organization_id`.
 **Planes** (precios y límites parametrizables: ningún valor comercial vive en el código)
 - `plans` (código `basic` | `pro` | `premium`, precio mensual y anual en USD en centavos, límites: sucursales, mesas por sucursal, platos activos — nulo = sin límite —, y lista de features incluidas)
 - `subscriptions` (organización, plan, ciclo `monthly` | `yearly`, `trial_ends_at`, `current_period_end`, `suspended_at` —suspensión manual del SuperAdmin, aparte de la mora—, notas)
-- `subscription_addons` (organización, add-on `webar`, packs extra de platos 3D, vigencia)
+- `subscription_addons` (organización, add-on, packs extra, vigencia). El único add-on del catálogo es el heredado `webar`, descartado (ADR 0031): se retira o se adapta en el incremento del feed de videos; la tabla y las funciones de ADR 0025 quedan para futuros add-ons
 - `payments` (organización, suscripción, plan y ciclo del momento, importe, moneda, medio, referencia, fecha del pago, vencimiento anterior y período cubierto, registrado por) — registro manual del SuperAdmin. **Implementado** (ADR 0013, ampliación): solo se agrega (trigger + privilegios revocados, también a `service_role`), solo lo leen los SuperAdmin (el Dueño aún no), y **sobrevive al borrado de la organización** (sin clave foránea; se conserva 10 años y solo después se purga con `private.purge_expired_payments`, ADR 0027). `payment_voids` (pago anulado, organización, suscripción, motivo, quién, vencimiento antes y después): asiento compensatorio, también solo-agregado, de lectura exclusiva de SuperAdmin y con la misma retención; el pago no se modifica (ADR 0024)
 - `audit_log` (actor, acción, entidad, antes/después, motivo) — obligatorio para cambios de plan, add-ons y pagos. El Dueño lee su historial y sus pagos solo por `owner_account_history` y `owner_payments` (ADR 0021): proyección con lista blanca, sin actor, motivo ni ids de terceros; las tablas siguen cerradas a la API para él. **Implementado** (ADR 0013) con `actor_id`, `actor_email` (instantánea), `action`, `organization_id`, `before`, `after` y las acciones `organization.created`, `subscription.plan_changed`, `subscription.suspended`, `subscription.reactivated`, `payment.registered`, `payment.voided` y `owner.added` (el motivo va dentro de `after`); solo se agrega y solo la leen los SuperAdmin (la lectura por el Dueño queda pendiente)
 - **El estado de mora no se guarda: se deriva** con una función de `now()` y `current_period_end` (o `trial_ends_at`): `active` → `grace` (días 1–7) → `read_only` (8–15) → `suspended` (16+). Así no hace falta un proceso programado ni puede quedar desactualizado.
@@ -78,8 +78,11 @@ Esquema inicial resumido. Toda tabla de negocio lleva `organization_id`.
 - `tables` (organización, sucursal, etiqueta, `qr_token` opaco, activa, `muted_until` «silenciada hasta»: Dueño y Staff la escriben, máximo 24 horas por *trigger*). El `qr_token` (32 hex) lo genera siempre la base y regenerarlo es tocar la columna (*trigger*); `anon` no lee la tabla: la entrada pública usa `resolve_table_qr(token)` (ADR 0009)
 - `waiter_calls` (organización, sucursal, mesa, tipo `waiter` | `bill`, estado `pending` | `attended` | `expired`, creado, atendido, atendido por, `client_key`, `visit_started_at` informativo). Solo escribe `create_waiter_call`; los miembros la leen (ADR 0010). `client_key` es un HMAC de la IP del comensal armado por el servidor, nunca la IP. Columnas de apoyo: `tables.muted_until` y `branches.waiter_call_cooldown_seconds`
 
-**Fase 2 — WebAR**
-- `product_models` (plato, ruta `.glb`, ruta `.usdz`, póster, peso, estado `draft` | `published`). El cupo (15 + 10 por pack extra) cuenta los modelos `published` de la organización.
+**Fase 2 — Feed de videos cortos** (ADR 0031; nombres *supuestos*, se fijan al implementar)
+- `menu_videos` (organización, plato opcional, referencia al archivo o al video del servicio, póster, duración ≤ 30 s, peso ≤ 50 MB, orden, estado `draft` | `published`). El cupo `videos_published` de `plans` (10 en Premium) cuenta los `published`.
+- `video_likes` (organización, video, identificador de cliente HMAC armado por el servidor, como `client_key` de ADR 0010): uno por cliente y video; el feed muestra un conteo.
+- `video_comments` (organización, video, mesa, alias opcional, texto ≤ 280, estado `pending` | `approved` | `rejected`, moderado por, cuándo). `anon` solo lee los `approved` de videos publicados.
+- Ninguna de las tres tiene permisos de escritura para `anon`: like y comentario entran por funciones de base únicas con el token de la mesa y el ticket de visita.
 
 **Fase 3 — Fidelización y Wallet**
 - `loyalty_programs` (organización, sellos requeridos, premio, activo)
@@ -98,8 +101,8 @@ Precios: enteros en centavos + moneda (`ARS`); nunca punto flotante.
 - **SuperAdmin:** opera desde el servidor con la clave de servicio; esa clave **nunca** llega al navegador. **Implementado** (ADR 0013): el rol sale de `platform_admins` (comprobado en cada pedido con la sesión de la persona y RLS, nunca del JWT); el alta de una organización con su Dueño y su plan es la función `admin_create_organization`, ejecutable solo por `service_role`, que vuelve a comprobar al actor y escribe organización, suscripción, membresía y `audit_log` en una sola transacción. `/admin` responde 404 a quien no es SuperAdmin. Las demás acciones (`admin_change_plan`, `admin_set_suspension`, `admin_register_payment`, `admin_void_payment`, `admin_set_addon`, `admin_end_addon`, `admin_set_organization_active`) siguen el mismo patrón: solo `service_role`, recomprueban al actor, toman un lock de la suscripción y escriben `audit_log` (y `payments`) en la misma transacción. La suspensión manual (`subscriptions.suspended_at`) manda en `private.org_state` sobre las fechas; la prueba de 14 días tiene su propio estado derivado (`private.trial_status`: `none` | `in_trial` | `expired` | `converted`).
 - **Implementado** (ADR 0006): `plans`, `addons`, `subscriptions` y `subscription_addons` en la base; estado de mora derivado (`private.billing_state`, bordes inclusivos: gracia hasta +168 h, solo lectura hasta +360 h); escrituras de catálogo bloqueadas en `read_only` y `suspended` (`private.org_can_write` en las políticas); carta pública oculta en `suspended` (`private.org_is_published`) y mensaje «Carta temporalmente no disponible» en la ruta; límites por trigger con *advisory lock* (error `53400`); alta con prueba de 14 días por trigger. API: `org_entitlements(org)` y `public_menu_status(org, sucursal)`. `payments`, `audit_log` y `platform_admins`: ver ADR 0013.
 - **Implementado** (ADR 0007): la gestión del personal (alta, baja, rol, contraseña) la hace el servidor con `service_role`, **después** de comprobar con el cliente de la persona (RLS) que es `owner` de esa organización; nunca toma cuentas de otra organización. El *trigger* `private.guard_last_owner` impide dejar a una organización sin `owner` por cualquier camino. Cada página y cada acción de `/panel` y `/sala` vuelve a exigir sesión (`getUser()`) y membresía; `proxy.ts` solo renueva la sesión.
-- **Feature flags:** una única función `has_feature(organization_id, feature)` deriva las capacidades del plan, los add-ons vigentes **y el estado de mora**: en `read_only` y `suspended` las features interactivas (`waiter_call`, `webar`, `loyalty`) devuelven falso, y en `suspended` también la carta pública. La usan las políticas RLS, las funciones de base y el servidor. Claves: `menu`, `waiter_call`, `analytics`, `loyalty` (por plan) y `webar` (por add-on vigente en Pro o Premium). La interfaz oculta lo no contratado, pero **la verificación que cuenta es la del servidor**.
-- **Límites de plan** (sucursales, mesas, platos activos, platos 3D): se hacen cumplir en la base, al crear o activar, contra los valores de `plans`; superar el tope no borra nada, solo impide crear más.
+- **Feature flags:** una única función `has_feature(organization_id, feature)` deriva las capacidades del plan, los add-ons vigentes **y el estado de mora**: en `read_only` y `suspended` las features interactivas (`waiter_call`, `webar`, `loyalty`) devuelven falso, y en `suspended` también la carta pública. La usan las políticas RLS, las funciones de base y el servidor. Claves: `menu`, `waiter_call`, `analytics`, `loyalty` (por plan) y `webar` (por add-on vigente en Pro o Premium). **Pendiente (ADR 0031):** `webar` se retira y entra `video_feed` por plan (Premium); ver el feed sigue a la carta publicada, y like, comentario y carga se apagan en `read_only` como las demás interactivas. La interfaz oculta lo no contratado, pero **la verificación que cuenta es la del servidor**.
+- **Límites de plan** (sucursales, mesas, platos activos y, en la fase 2, videos publicados; el `models_3d` heredado de WebAR se retira): se hacen cumplir en la base, al crear o activar, contra los valores de `plans`; superar el tope no borra nada, solo impide crear más.
 - Las pruebas de aislamiento entre dos organizaciones son requisito para dar por hecho cualquier cambio de esquema (nivel C).
 
 ## Contratos e integraciones
@@ -123,21 +126,25 @@ Comensal (sin sesión, sin websocket)
 - El comensal recibe confirmación en la respuesta del POST; conocer el estado posterior («ya te atendieron») se resuelve con una consulta liviana.
 - Restricciones del navegador a tener en cuenta: el sonido requiere un gesto previo del usuario («activar alertas») y las pestañas en segundo plano se ralentizan; el panel debe pedir mantener la pantalla activa y se recomienda un dispositivo dedicado.
 
-### Archivos 3D para WebAR (fase 2)
+### Videos cortos (fase 2, ADR 0031)
+La realidad aumentada (`<model-viewer>`, `.glb`/`.usdz`, ADR 0002) se descartó el 2026-10-21.
 ```
-Producción (UcoMenu) → .glb optimizado a escala real + .usdz
-  → carga desde /admin → validación (formato, peso, texturas) → Storage con nombre inmutable
-  → product_models = published
-  → Menú: si has_feature(org,'webar') y el plato tiene modelo publicado → botón «Ver en mi mesa»
-       → <model-viewer> cargado bajo demanda
-            ├─ Android: Scene Viewer / WebXR con el .glb
-            ├─ iOS: AR Quick Look con el .usdz
-            └─ sin soporte AR: visor 3D en pantalla
+Dueño o Staff en /panel (cuenta en gracia o al día, plan Premium)
+  → subida del video (≤ 30 s, ≤ 50 MB, vertical 9:16) → validación de duración, peso y formato
+  → Storage o servicio de streaming (lo decide el spike) → menu_videos = draft
+  → publicar (tope videos_published en la base) → menu_videos = published
+
+Carta pública (/m/… o /t/…)
+  → entrada al feed bajo demanda (no se descarga con la carta)
+       → scroll vertical, un video a la vez, reproducción del que está a la vista
+       → desde /t/{token} con ticket de visita: like y comentario
+            → funciones de base únicas (token + ticket + has_feature + límite por cliente)
+            → comentario = pending → el Dueño o el Staff aprueba → approved, visible en el feed
 ```
-- Formatos: **`.glb`** (glTF binario) como fuente y para Android; **`.usdz`** para iOS. `<model-viewer>` puede generar el USDZ al vuelo, pero se guarda uno explícito porque la conversión automática tiene limitaciones (p. ej. animaciones); la generación automática queda como respaldo.
-- El visor y los modelos **no se descargan con la carta**: se cargan recién al abrir el detalle de un plato que tiene modelo, para no penalizar el rendimiento del menú.
-- *Supuesto de presupuesto:* modelo de hasta ~5 MB con texturas comprimidas; se ajusta con el spike en dispositivos reales.
-- Las URL de Storage son públicas; el *feature flag* controla que el botón se ofrezca, no protege el archivo. Se acepta porque el modelo no es información sensible.
+- **Hosting pendiente del spike**: Supabase Storage con MP4 H.264 directo (sin servicio nuevo, pero no convierte formatos como el HEVC/.mov del iPhone y consume rápido la transferencia de Supabase Free) o un servicio de streaming de pago (conversión, póster y calidad adaptativa; requiere aprobación). En la base queda solo la ruta o el identificador del video.
+- El feed y sus videos **no se descargan con la carta**: se cargan al entrar al feed y se reproduce solo el que está a la vista, para no penalizar el LCP de la carta.
+- Las URL de los videos publicados son públicas, como las fotos de los platos: el *feature flag* controla que el feed se ofrezca, no protege el archivo. La carta nunca lista borradores; si deben ser inaccesibles por URL, lo resuelve el spike (bucket privado o URL firmada).
+- Borrar un video limpia su archivo después de confirmar el borrado en la base, como las fotos (ADR 0029).
 
 ### Wallet y recordatorio por cercanía (fase 3)
 ```
@@ -165,7 +172,8 @@ Sello (el personal escanea el QR del pase en /sala)
 - **Abuso del llamado** con la foto de un QR desde fuera del local, o con una pestaña que quedó abierta. Mitigación: cooldown, un pendiente por tipo, límite por IP, silenciar mesa y regenerar QR; **ticket de visita de 3 horas** validado por la *server action* (implementado) y antigüedad del escaneo en la tarjeta de la sala. No se valida ubicación del comensal (decisión: ni GPS ni IP del Wi-Fi); recargar la URL renueva el ticket.
 - **Entrega en tiempo real no garantizada.** Mitigación: recarga al reconectar y sondeo de respaldo.
 - **Panel de sala en un celular en segundo plano** puede no sonar. Limitación del navegador; con el aviso por Web Push (ADR 0020) llega igual en Android y escritorio (en Windows, mientras Chrome/Edge sigan en ejecución); en iPhone y iPad (iOS 16.4 o superior) llega si la sala está instalada en la pantalla de inicio (manifiesto `public/sala.webmanifest`; ficha `aviso-push-iphone`).
-- **Peso de los modelos 3D** sobre datos móviles. Mitigación: carga bajo demanda, presupuesto de peso, póster previo.
+- **Peso y costo del video** (fase 2): datos móviles del comensal y transferencia y almacenamiento de UcoMenu. Mitigación: 30 s y 50 MB por video, cupo de 10 publicados, carga bajo demanda, póster previo y el spike de hosting con costo por local.
+- **Abuso de comentarios y likes** (fase 2): solo desde la mesa con ticket de visita, límite por cliente, y comentarios sin publicar hasta que el local los aprueba.
 - **Cercanía de Wallet no garantizada ni medible**, máximo 10 ubicaciones por pase. Limitación de plataforma: hay que comunicarla al vender Premium.
 - **Vencimiento anual del certificado de Apple:** si vence, los pases dejan de actualizarse. Requiere recordatorio operativo.
 - **Staff puede cambiar precios** (decisión de producto). Mitigación: `price_history` por trigger (implementado, ADR 0012); el Dueño y el Staff consultan los cambios en `/panel/{slug}/historial-de-precios` y `/panel/{slug}/carta/platos/{id}/historial` (implementado). La pantalla lee con la sesión de la persona (RLS), trae platos y personas aparte (sin claves foráneas) y filtra los platos por organización (la carta pública hace legibles los activos de cualquier local); solo para el Dueño, `resolveAuthors` (módulo de personal) consulta el email de Auth de quienes siguen siendo miembros de ese local.

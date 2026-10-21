@@ -1,7 +1,9 @@
 # 0002 — WebAR sin app: `<model-viewer>` con GLB + USDZ
 
-- Estado: propuesta
+- Estado: descartada — reemplazada por [0031](0031-feed-de-videos-cortos.md) (2026-10-21)
 - Fecha: 2026-10-13
+
+> **Descartada (2026-10-21):** el usuario abandonó la realidad aumentada; la fase 2 pasa a ser un feed de videos cortos incluido en Premium ([ADR 0031](0031-feed-de-videos-cortos.md)). Lo que sigue se conserva como registro histórico.
 
 > El modelo de negocio (add-on por suscripción, modelos producidos por UcoMenu) está **aceptado**. La elección técnica queda como propuesta hasta validarla con un spike en un iPhone y un Android reales al iniciar la fase 2.
 

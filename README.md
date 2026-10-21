@@ -1,6 +1,6 @@
 # UcoMenu — Agile SDD 1.1.1
 
-SaaS multi-tenant de **menú digital interactivo** para restaurantes, bares y cafeterías: carta por QR de mesa, llamado al mozo en tiempo real y, en niveles superiores, platos en realidad aumentada y fidelización con Apple/Google Wallet. Detalle en `docs/producto.md` y `docs/arquitectura.md`.
+SaaS multi-tenant de **menú digital interactivo** para restaurantes, bares y cafeterías: carta por QR de mesa, llamado al mozo en tiempo real y, en el nivel superior, un feed de videos cortos del local y fidelización con Apple/Google Wallet. Detalle en `docs/producto.md` y `docs/arquitectura.md`.
 
 Proyecto creado con la plantilla **Agile SDD 1.1.1**: desarrollo guiado por especificaciones vivas, en iteraciones pequeñas y verificables, con Codex CLI y Claude Code elegidos manualmente.
 

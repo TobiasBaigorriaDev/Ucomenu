@@ -14,6 +14,8 @@ El [borrado de categorías y platos](cambios/borrado-de-categorias-y-platos.md) 
 
 Integrado antes: [borrado de organizaciones](cambios/borrado-de-organizaciones.md), retenciones de `price_history` y pagos; [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md) y [anular pagos](cambios/anular-pagos.md) en staging, falta la prueba manual del usuario con SuperAdmin.
 
+**Decisión (2026-10-21, solo docs):** WebAR descartado; la fase 2 es un feed de videos en Premium ([ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Arranca por el spike de hosting.
+
 Investigación abierta: [vencimiento en iPhone](cambios/ticket-de-visita.md#investigación-en-teléfono-real--2026-10-20).
 
 ## Bloqueos y riesgos

@@ -5,7 +5,7 @@
 ## Problema
 Los restaurantes, bares y cafeterías dependen de cartas impresas o PDF que no se actualizan, no muestran bien el producto y no generan ningún vínculo con el cliente. En el salón, el comensal pierde tiempo esperando que el mozo lo vea para pedir algo o la cuenta. Y una vez que se va, el local no tiene forma barata de hacerlo volver.
 
-UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscripción (SaaS), que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, en niveles superiores, platos en realidad aumentada y una tarjeta de fidelidad en la billetera del teléfono.
+UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscripción (SaaS), que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, en el nivel superior, un feed de videos cortos del local y una tarjeta de fidelidad en la billetera del teléfono.
 
 - **Nombre comercial:** UcoMenu. **Dominio:** `ucomenu.com` (elegido pero **todavía no comprado**: falta comprobar disponibilidad y precio; se define antes de imprimir los QR definitivos).
 - **Mercado inicial:** Argentina (es-AR). Precios de catálogo en USD; el cobro manual se hace en el equivalente en ARS.
@@ -16,7 +16,7 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 | **Comensal** | Ver la carta al instante desde el celular, encontrar lo que puede comer, llamar al mozo o pedir la cuenta sin levantar la mano | Anónimo, sin registro ni app. Solo se identifica si se suma al programa de fidelidad |
 | **Staff / Mozo** | Atender llamados desde el panel de sala; sumar sellos escaneando pases; mantener platos, precios, stock y mesas | Usuario con login, limitado a su organización. Acceso operativo completo (ver *Roles y permisos*) |
 | **Dueño del restaurante** | Todo lo del Staff más sucursales, personal, apariencia, y ver su plan y su facturación | Administrador de su organización (tenant). No ve datos de otras organizaciones |
-| **SuperAdmin SaaS** | Dar de alta organizaciones, asignar y suspender planes y add-ons, cargar los modelos 3D, dar soporte | Equipo de UcoMenu. Toda acción sobre planes queda auditada |
+| **SuperAdmin SaaS** | Dar de alta organizaciones, asignar y suspender planes y add-ons, dar soporte | Equipo de UcoMenu. Toda acción sobre planes queda auditada |
 
 ## Propuesta de valor
 - **Para el local:** carta siempre actualizada y que vende mejor, salón más ágil, y herramientas de recompra que hoy solo tienen las cadenas grandes; todo sin instalar nada ni comprar hardware.
@@ -44,10 +44,12 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 - **Panel de sala** para el personal: lista en vivo con número de mesa, tipo de llamado y tiempo transcurrido, con alerta sonora y visual; el Staff marca «atendido».
 - Anti-spam: cooldown por mesa y un único llamado pendiente por tipo.
 
-### 3. Platos en realidad aumentada (WebAR) — add-on, fase 2
-- Botón «Ver en mi mesa» en los platos que tienen modelo 3D; abre la experiencia AR nativa del teléfono (iOS y Android) **sin instalar apps**.
-- Habilitado por *feature flag* según la suscripción de la organización.
-- Los modelos los **produce UcoMenu como servicio** y los sube el SuperAdmin; el add-on incluye un cupo de platos con modelo 3D activo.
+### 3. Feed de videos cortos — plan Premium, fase 2
+Reemplaza a la realidad aumentada (WebAR), descartada el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)).
+- Un **feed de videos cortos con scroll vertical** (estilo Reels) dentro de la carta pública: el local publica videos del restaurante, del ambiente y de la preparación o presentación de sus platos.
+- El comensal los mira deslizando; desde el **QR de una mesa** puede darles **like** y **comentarlos**. Los comentarios se publican solo cuando el local los aprueba.
+- Incluido en el plan **Premium** y habilitado por *feature flag* según la suscripción de la organización.
+- *Pendiente de implementación:* en la base sigue el identificador heredado `webar` (add-on del catálogo `addons`, su feature y el límite `models_3d`); se retira o se migra a la feature de plan `video_feed` en el incremento de implementación.
 
 ### 4. Fidelización con Wallet y recordatorio por cercanía — fase 3
 - Alta en mesa y tarjeta de fidelidad guardada en **Apple Wallet** o **Google Wallet**.
@@ -62,7 +64,7 @@ Carta, mesas y QR (generar, imprimir, regenerar), sucursales, personal, aparienc
 Alta de organizaciones, asignación manual de plan y add-ons, registro de pagos, suspensión/reactivación, auditoría.
 
 ## Modelo de suscripción
-Tres niveles más WebAR como add-on, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y suspende planes y registra los pagos; el pago se acuerda por fuera (transferencia o link de pago). El cobro automático es posterior. **Precios y límites son parametrizables en la base de datos**, no están escritos en el código.
+Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y suspende planes y registra los pagos; el pago se acuerda por fuera (transferencia o link de pago). El cobro automático es posterior. **Precios y límites son parametrizables en la base de datos**, no están escritos en el código.
 
 | | Básico | Pro | Premium |
 | --- | :---: | :---: | :---: |
@@ -75,13 +77,13 @@ Tres niveles más WebAR como add-on, con **cobro manual** en el MVP: el SuperAdm
 | Llamado al mozo / pedir la cuenta + panel de sala | — | ✔ | ✔ |
 | Analítica básica (posterior al MVP) | — | ✔ | ✔ |
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
-| **Add-on WebAR** | no disponible | contratable | contratable |
+| Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
 
-- **Add-on WebAR:** +USD 25/mes sobre Pro o Premium. Incluye un cupo de hasta **15 platos con modelo 3D activo**. Se pueden habilitar **packs extra de +10 platos 3D** (**+USD 10/mes por cada pack**; parametrizable en la base).
+- **Feed de videos cortos:** incluido en Premium, con un cupo de **10 videos publicados** (parametrizable en la base). Reemplaza al add-on WebAR (+USD 25/mes, cupo de 15 platos 3D y packs de +10), que se descartó el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); hoy no hay ningún add-on a la venta.
 - **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito. Toda organización nueva arranca con esta prueba a partir de su fecha de alta, sin intervención de nadie. *(Confirmado 2026-10-14.)*
 - **Límites:** son techos para *crear* y para *activar* (no se puede superar el tope). Los platos se cuentan solo si están activos (`is_active`): con el tope alcanzado se bloquea tanto crear un plato activo como pasar uno inactivo a activo; pasar un plato de activo a inactivo siempre se permite, para que el local pueda acomodarse a su cupo. Misma regla para sucursales y mesas. *(Confirmado 2026-10-14.)*
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.
-- En el MVP se venden **Básico y Pro**. Premium y el add-on WebAR se habilitan cuando se entreguen las fases 3 y 2.
+- En el MVP se venden **Básico y Pro**. Premium se habilita cuando se entregue lo que incluye (feed de videos en la fase 2, fidelización en la fase 3); venderlo antes solo con el feed sería una decisión comercial aparte.
 - **Analítica básica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). **Implementada** (ficha `analitica-basica`, ADR 0022): `/panel/{slug}/analitica`, solo Dueño, con los platos más vistos (aperturas del detalle, contadores por día) y los llamados por hora de los últimos 14 días.
 
 ### Mora y suspensión (degradación progresiva)
@@ -90,7 +92,7 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 | Días de mora | Modo | Qué pasa |
 | --- | --- | --- |
 | 1 a 7 | **Gracia** | Todo funciona al 100%. Aviso al dueño en el panel |
-| 8 a 15 | **Solo lectura** | La carta pública sigue visible (no se rompen los QR de las mesas). Se apagan los módulos interactivos: se oculta el botón de llamar al mozo, se desactiva «Ver en 3D/AR» y se pausa la suma de sellos |
+| 8 a 15 | **Solo lectura** | La carta pública sigue visible (no se rompen los QR de las mesas). Se apagan los módulos interactivos: se oculta el botón de llamar al mozo, se apagan los likes, los comentarios y la carga de videos del feed (los videos publicados se siguen viendo) y se pausa la suma de sellos |
 | 16 en adelante | **Suspendida** | La carta pública muestra «Carta temporalmente no disponible». Todos los datos se conservan intactos hasta la reactivación |
 
 - El estado se **deriva de las fechas** (vencimiento y fecha actual); registrar un pago extiende el período y restablece todo.
@@ -107,7 +109,7 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 
 ## MVP
 - **Incluye:** menú digital completo (módulo 1), llamado al mozo con panel de sala (módulo 2), panel (módulo 5), SuperAdmin con gestión manual de planes, límites y mora (módulo 6), multi-sucursal, planes Básico y Pro con *feature flags*, prueba gratuita de 14 días.
-- **No incluye (fuera de alcance):** WebAR (fase 2), fidelización y Wallet (fase 3), cobro automático de la suscripción, pedidos y pago desde la mesa, reservas, delivery, integración con sistemas de punto de venta, app nativa, traducción automática de la carta (la carta en varios idiomas existe, pero las traducciones las escribe el local).
+- **No incluye (fuera de alcance):** feed de videos cortos (fase 2), fidelización y Wallet (fase 3), cobro automático de la suscripción, pedidos y pago desde la mesa, reservas, delivery, integración con sistemas de punto de venta, app nativa, traducción automática de la carta (la carta en varios idiomas existe, pero las traducciones las escribe el local).
 
 ## Reglas de negocio clave
 ### Organización, sucursales y permisos
@@ -161,11 +163,17 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 - Qué puede usar una organización lo determinan su plan, sus add-ons y su estado de mora, y se verifica **siempre en el servidor**, nunca solo ocultando botones.
 - Cada cambio de plan, add-on, pago o estado queda registrado con quién, cuándo y motivo.
 
-### WebAR (fase 2)
-- El botón aparece solo si la organización tiene el add-on activo, la suscripción no está en solo lectura **y** el plato tiene un modelo publicado.
-- No se pueden tener más platos con modelo 3D activo que el cupo del add-on (15, más 10 por cada pack extra).
-- Si el teléfono no soporta AR, se ofrece el visor 3D en pantalla en lugar de un error.
-- El modelo debe respetar la escala real del plato.
+### Feed de videos cortos (fase 2)
+Decidido por el usuario el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); reemplaza a las reglas de WebAR.
+- El feed aparece solo si el plan de la organización es **Premium** y la carta está publicada (cuenta no suspendida). Likes, comentarios y carga exigen además la cuenta en gracia o al día. Todo se verifica en el servidor, no solo ocultando botones.
+- **Videos:** hasta **30 segundos** y **50 MB** por archivo subido, en vertical 9:16. No puede haber más de **10 videos publicados** por organización (parametrizable en `plans`); con el tope alcanzado se puede guardar un borrador, pero no publicarlo.
+- **Like y comentario solo desde el QR de una mesa**, con el ticket de visita vigente (3 horas, como el llamado); desde el link directo el feed se ve, pero no se interactúa. Un like por dispositivo y video, sin guardar datos del comensal.
+- **Comentarios con aprobación previa:** alias opcional, sin datos personales; quedan pendientes y no se ven en la carta hasta que el local los aprueba.
+- *Supuesto (nuevo):* suben, publican y borran videos el **Dueño y el Staff** (como la carta), y los dos moderan los comentarios.
+- *Supuesto (nuevo):* un video puede enlazarse a un plato de forma opcional («Ver plato»).
+- *Supuesto (nuevo):* en **solo lectura** los videos publicados se siguen viendo, pero se apagan los likes, los comentarios y la carga; en **suspendida** no se ve nada. Bajar de Premium no borra videos ni comentarios: el feed deja de mostrarse.
+- *Supuesto (nuevo):* comentarios de hasta 280 caracteres y alias de hasta 30, con un límite de envíos por conexión como el del llamado. La retención de los comentarios rechazados se decide al implementarlos.
+- El almacenamiento y la reproducción del video (Supabase Storage o un servicio de streaming) los decide un spike con teléfonos reales.
 
 ### Fidelización y cercanía (fase 3)
 - **Alta rápida en mesa:** nombre + **teléfono móvil (WhatsApp)** como identificador principal + email (opcional) + casilla de **consentimiento** explícito para el tratamiento de datos y para recibir recordatorios (Ley 25.326), con baja simple.

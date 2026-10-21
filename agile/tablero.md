@@ -36,11 +36,15 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
 - [S] Dominio: decidir el nombre definitivo y comprarlo (pospuesto 2026-10-16: el usuario no está seguro de `ucomenu.com`). Bloquea publicar producción e imprimir QR definitivos; staging usa la dirección provisoria de Fly → docs/produccion.md, paso 5
 
-### Fase 2 — Add-on WebAR
-- [S] Spike descartable: `<model-viewer>` con un plato real en un iPhone y un Android — valida ADR 0002 y el presupuesto de peso
-- [M] Catálogo de modelos 3D: carga desde SuperAdmin, validación de formato y peso, publicación (bloqueado por: spike WebAR, planes y entitlements)
-- [M] «Ver en mi mesa»: botón por *feature flag*, visor bajo demanda, AR en iOS/Android y alternativa sin AR
-- [S] Cupo de platos del add-on: 15 platos 3D y packs extra de +10 por USD 10/mes (definición comercial cerrada)
+### Fase 2 — Feed de videos cortos (plan Premium)
+> Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
+- [S] Spike descartable: almacenamiento y reproducción (Supabase Storage con MP4 directo o un servicio de streaming) en un iPhone y un Android reales, con videos de 30 s y 50 MB, y costo estimado por local — valida el ADR 0031 (un servicio de pago requiere aprobación)
+- [C] Catálogo: retirar el add-on `webar` y el límite `models_3d`, sumar la feature `video_feed` a Premium y el límite `videos_published` (10) en `plans`; resolver los contratos `webar` existentes y la pantalla de add-ons de SuperAdmin
+- [C] Carga y publicación de videos desde el panel (Dueño y Staff): validación de duración, peso y formato, borrador y publicado, cupo, borrado con limpieza de archivos (bloqueado por: spike, catálogo)
+- [M] Feed vertical en la carta: scroll de a un video, carga y reproducción bajo demanda, enlace opcional al plato, comportamiento en solo lectura y suspendida (bloqueado por: carga y publicación)
+- [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (bloqueado por: feed)
+- [C] Comentarios con aprobación previa: envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, publicación y retención de los rechazados (bloqueado por: feed)
+- [S] Textos legales: contenido publicado por comensales (comentarios) en `/terminos` y `/privacidad`, antes de habilitar comentarios en producción
 
 ### Fase 3 — Fidelización, Wallet y cercanía (plan Premium)
 - [S] Spike descartable: emitir un pase de prueba en Apple Wallet y Google Wallet con ubicaciones — valida ADR 0003 (bloqueado por: cuentas Apple Developer y emisor de Google Wallet; requiere aprobación y pago)

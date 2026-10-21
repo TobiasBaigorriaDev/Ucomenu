@@ -13,7 +13,7 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | N.º | Título | Estado | Fecha |
 | --- | --- | --- | --- |
 | 0001 | [Stack principal: Next.js + Supabase](0001-stack-principal.md) | aceptada | 2026-10-13 |
-| 0002 | [WebAR sin app: `<model-viewer>` con GLB + USDZ](0002-webar-sin-app.md) | propuesta | 2026-10-13 |
+| 0002 | [WebAR sin app: `<model-viewer>` con GLB + USDZ](0002-webar-sin-app.md) | descartada — reemplazada por 0031 | 2026-10-13 |
 | 0003 | [Fidelización con pases de Wallet y cercanía nativa](0003-fidelizacion-wallet-geofencing.md) | propuesta | 2026-10-13 |
 | 0004 | [Multi-tenancy: organización con sucursales, aislada por RLS](0004-multi-tenant-rls-y-sucursales.md) | aceptada | 2026-10-13 |
 | 0005 | [Autorización por membresía en la base, con permisos por columna](0005-autorizacion-por-membresia.md) | aceptada | 2026-10-14 |
@@ -42,3 +42,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0028 | [El borrado definitivo de una organización es una sola función de base, tras 30 días de baja, con el slug escrito; los archivos se limpian después de confirmar](0028-borrado-definitivo-de-organizaciones.md) | aceptada | 2026-10-20 |
 | 0029 | [Categorías y platos se borran con el cliente de la persona, con confirmación comprobada en el servidor y las fotos limpiadas después de confirmar](0029-borrado-de-categorias-y-platos.md) | aceptada | 2026-10-21 |
 | 0030 | [Las mesas se borran con el cliente de la persona y sus llamados se van con ellas (cascada); un permiso `DELETE` nuevo sobre `tables`](0030-borrado-de-mesas.md) | propuesta (implementada localmente) | 2026-10-21 |
+| 0031 | [Feed de videos cortos en la carta (plan Premium) en lugar de WebAR; likes y comentarios solo desde la mesa, con aprobación previa](0031-feed-de-videos-cortos.md) | propuesta (negocio aceptado; hosting pendiente de spike) | 2026-10-21 |

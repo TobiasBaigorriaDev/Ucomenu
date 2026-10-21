@@ -16,7 +16,7 @@ web
 
 ## Product Purpose
 
-UcoMenu es una plataforma web mobile-first y multi-tenant, vendida por suscripción, que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, más adelante, platos en realidad aumentada y tarjeta de fidelidad. Éxito para la carta pública: el comensal entiende en segundos de qué local y sucursal es, encuentra su plato sin fricción y el local siente que la carta es suya.
+UcoMenu es una plataforma web mobile-first y multi-tenant, vendida por suscripción, que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, más adelante, un feed de videos cortos del local (con likes y comentarios desde la mesa) y tarjeta de fidelidad. Éxito para la carta pública: el comensal entiende en segundos de qué local y sucursal es, encuentra su plato sin fricción y el local siente que la carta es suya.
 
 ## Positioning
 
