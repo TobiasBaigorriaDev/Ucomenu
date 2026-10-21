@@ -46,6 +46,11 @@ where code = 'premium';
 -- Retiro del add-on webar: contratos, catálogo y chequeo de código
 -- ---------------------------------------------------------------------------
 
+-- [retiro-webar:inicio] (una prueba de RLS reejecuta este bloque; no cambiar las marcas)
+-- Serializa con admin_set_addon / admin_end_addon: sin el bloqueo, un contrato reactivado entre la auditoría y el borrado
+-- se perdería sin su `addon.ended`. Espera a que confirmen las escrituras en curso y frena las nuevas hasta el final.
+lock table public.subscription_addons in share row exclusive mode;
+
 -- Los contratos vigentes quedan registrados como finalizados por el sistema antes de borrarse.
 insert into public.audit_log (actor_id, actor_email, action, organization_id, before, after)
 select
@@ -68,6 +73,7 @@ where a.addon_code = 'webar'
 
 delete from public.subscription_addons where addon_code = 'webar';
 delete from public.addons where code = 'webar';
+-- [retiro-webar:fin]
 
 alter table public.addons drop constraint addons_code_check;
 alter table public.addons add constraint addons_code_check
