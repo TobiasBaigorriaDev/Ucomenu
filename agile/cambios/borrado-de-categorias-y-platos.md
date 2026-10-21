@@ -36,7 +36,7 @@ Hoy categorías y platos solo se desactivan ([gestión de carta](gestion-de-cart
 1. Solo un miembro con la cuenta al día borra, y solo dentro de su organización (RLS + `organization_id` en cada consulta).
 2. No se borra nada que la persona no haya visto: el conteo de platos de la categoría tiene que coincidir y, si hay platos, el nombre escrito también (verificado en el servidor, no en el navegador).
 3. Los archivos de Storage se tocan **solo después** de que la fila se borró (un borrado fallido nunca deja un plato sin foto).
-4. Solo se borran archivos de la carpeta `{org}/{plato}/` de platos que se acaban de borrar.
+4. Solo se borran archivos de la carpeta `{org}/{plato}/` de platos que se comprobó que **ya no existen** tras el borrado (no de los que se leyeron antes).
 5. Un `DELETE` o un `remove` descartado por RLS (0 filas / 0 objetos) nunca se informa como éxito completo.
 
 ## (C) Fallos y recuperación
@@ -51,16 +51,17 @@ Hoy categorías y platos solo se desactivan ([gestión de carta](gestion-de-cart
 
 ## Riesgos
 - **Permiso amplio:** el Staff puede borrar una categoría entera. Se compensa con la confirmación escrita; queda a decisión del usuario si debe ser solo del Dueño.
-- **Ventana de milisegundos:** un plato creado en esa categoría entre la lectura y el `DELETE` se borra sin haberse visto (no puede tener foto aún). Aceptado.
+- **Ventana de milisegundos:** un plato creado en esa categoría entre la lectura y el `DELETE` se borra sin haberse visto (no puede tener foto aún). Un plato **movido a** esa categoría en ese instante también, y su foto quedaría suelta (inofensiva, sin enlace). Aceptado. En sentido contrario (un plato **sacado** de la categoría en ese instante) sobrevive con su foto: tras el borrado se comprueba cuáles platos dejaron de existir y solo a esos se les limpia la carpeta (hallazgo de Codex, ronda 1).
 - Las estadísticas de vistas de los platos borrados se pierden (contadores sin identificación, ADR 0022).
 
 ## Evidencia
 Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probado se anota en «Revisión»); sin cambios de esquema, así que no se reseteó la base:
 - `pnpm typecheck` OK · `pnpm lint` OK · `pnpm build` OK · `pnpm test` **680/680**.
-- `pnpm test:rls tests/rls/carta.rls.test.ts` **27/27** (10 nuevas: plato con foto, archivo suelto, opciones y historial; cupo liberado; categoría con platos —cantidad, nombre y otra categoría intacta—; vacía; otra organización y persona ajena; solo lectura y suspendida con el estado desactualizado; gracia; Storage con cero objetos, error y sin poder listar; Storage intacto si el `DELETE` no se concreta).
+- `pnpm test:rls tests/rls/carta.rls.test.ts` **27/27** antes de la revisión, **28/28** después (10 nuevas, más la de la revisión: plato con foto, archivo suelto, opciones y historial; cupo liberado; categoría con platos —cantidad, nombre y otra categoría intacta—; vacía; otra organización y persona ajena; solo lectura y suspendida con el estado desactualizado; gracia; Storage con cero objetos, error y sin poder listar; Storage intacto si el `DELETE` no se concreta).
 - E2E (`--workers=1`, contra el build): `carta.spec.ts` + `historial-precios`, `opciones`, `disponibilidad`, `idiomas` y `rendimiento-carta` **59/59** (6 nuevas de borrado: plato en dos pasos con su foto y la carta pública, categoría con nombre equivocado y correcto, vacía, categoría que cambió, Staff, solo lectura de Dueño y Staff con acción forzada; sin desborde a 390 px). Un primer intento falló por mis propios cambios (una etiqueta nueva chocaba con `getByLabel("Nombre de la categoría")` de pruebas existentes; el `summary` no es `button` para Playwright): corregido en la etiqueta y en los localizadores.
 - **Mutaciones** (de a una sobre `catalog.ts`, restauradas): 10 probadas, **10 detectadas** — sin chequear 0 filas (plato y categoría), sin comparar la cantidad, sin comparar el nombre, sin limpiar la carpeta (solo la ruta guardada), sin limpiar las fotos de la categoría, sin registrar el «cero objetos», sin `guard`, Storage limpiado antes del `DELETE`, categoría sin acotar a la organización.
 - **No probado / límites:** suite RLS y E2E completas (no se tocó el esquema ni otras pantallas); Storage real de Supabase hosted (solo el local); teléfono real y lector de pantalla; ventana entre la lectura y el `DELETE` de la categoría (aceptada); corte del servidor entre la base y Storage (aceptado); borrado con muchos cientos de platos.
 
 ## Revisión y aprobación
-_(pendiente: revisión independiente de Codex y aprobación humana antes de integrar/desplegar)_
+- **Codex, ronda 1 (`9ce17a1`, nivel C, esfuerzo high): APROBAR CON CAMBIOS.** Un hallazgo *importante*, real: `deleteCategory` limpiaba las carpetas de los platos leídos antes del `DELETE`; si otra sesión movía un plato a otra categoría en ese intervalo, el plato sobrevivía sin su foto (con `image_path` apuntándola) y se informaba éxito. Corregido: tras el borrado se comprueba qué platos ya no existen (`productsGone`) y solo a esos se les limpia la carpeta; si no se puede comprobar, no se borra ningún archivo y se avisa. Regresión nueva en `carta.rls.test.ts` (mueve el plato justo después de la lectura): **falla sin la corrección** y pasa con ella; `carta.rls.test.ts` **28/28**.
+- Pendiente: ronda de verificación de Codex sobre la corrección y la **aprobación humana** (no está dada) antes de subir a `origin` o desplegar.

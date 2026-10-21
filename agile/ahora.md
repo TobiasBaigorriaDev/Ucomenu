@@ -1,19 +1,19 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-20 · agente saliente: Codex · historial anterior en `agile/historial.md`.
+Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agile/historial.md`.
 
 ## Punto de retomada
 
-**Borrado definitivo de organizaciones (C) integrado y desplegado en staging**, con aprobación explícita del usuario tras revisión independiente. Rama `main`; implementación `a401a98`, código publicado y desplegado `0cda1bb`. El commit posterior solo registra el cierre documental. [Ficha](cambios/borrado-de-organizaciones.md) y [ADR 0028](../docs/decisiones/0028-borrado-definitivo-de-organizaciones.md).
+**Borrado de categorías y platos (C) implementado y probado en local**, sin aprobación humana todavía. Rama `main`; implementación `9ce17a1`. [Ficha](cambios/borrado-de-categorias-y-platos.md) y [ADR 0029](../docs/decisiones/0029-borrado-de-categorias-y-platos.md) (propuesta). No hay migración ni permisos nuevos: la RLS ya permitía el `DELETE` a Dueño y Staff con la cuenta al día.
 
-- `admin_delete_organization` concentra las validaciones, el borrado y la auditoría en una transacción; los pagos y las cuentas de Auth se conservan.
-- El servidor borra los archivos de Storage **después** de confirmar la transacción; si falla, la lista de `/admin` lo avisa.
-- Pantalla: sección «Borrar definitivamente» en `/admin/organizaciones/{slug}`.
-- Evidencia local, revisión y comprobaciones del despliegue en la ficha; el tablero enlaza el cambio en «Hecho».
+- El plato se borra desde su pantalla y la categoría desde su cabecera, en dos pasos. Una categoría con platos pide el nombre exacto y que la cantidad vista coincida (lo comprueba el servidor).
+- Las fotos de Storage se limpian **después** de confirmar el borrado de la fila; si falla, la pantalla avisa y el log lleva los ids.
+- El historial de precios se conserva («Plato eliminado»); variantes, adicionales, disponibilidad, traducciones y vistas contadas se van con el plato.
+- La revisión independiente de Codex se lanzó sobre `9ce17a1`: su veredicto y lo que se corrija quedan en la sección «Revisión y aprobación» de la ficha.
 
-La migración ya está aplicada y no quedan pendientes en staging. No se ejecutó ningún borrado ni purga durante el despliegue; tampoco se tocaron secretos ni producción. Sigue pendiente comprobar la pantalla con una sesión de SuperAdmin en hosted; la prueba funcional del borrado y de Storage sigue siendo la local.
+Sin desplegar: ni `origin` ni staging tienen este cambio.
 
-Integrado antes: retenciones de `price_history` y pagos; [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md) y [anular pagos](cambios/anular-pagos.md) en staging, falta la prueba manual del usuario con SuperAdmin.
+Integrado antes: [borrado de organizaciones](cambios/borrado-de-organizaciones.md) en staging (Fly v15); retenciones de `price_history` y pagos; [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md) y [anular pagos](cambios/anular-pagos.md) en staging, falta la prueba manual del usuario con SuperAdmin.
 
 Investigación abierta: [vencimiento en iPhone](cambios/ticket-de-visita.md#investigación-en-teléfono-real--2026-10-20).
 
@@ -21,11 +21,11 @@ Investigación abierta: [vencimiento en iPhone](cambios/ticket-de-visita.md#inve
 
 - **Producción:** bloqueada (dominio, Supabase de producción, revisión legal; ficha `salida-a-produccion`).
 - **Plazo de 10 años de los pagos:** por confirmar con el contador antes de producción.
-- Borrado: irreversible; solo el respaldo (`pnpm respaldo`) lo cubre. Archivos de Storage sueltos posibles si el servidor se corta justo después del borrado (riesgo aceptado, ADR 0028).
+- Borrado de carta: irreversible; solo el respaldo (`pnpm respaldo`) lo cubre. Pregunta abierta para el usuario: ¿el Staff debe poder borrar una categoría entera, o solo el Dueño? Hoy pueden ambos (con el nombre escrito).
 - E2E: usar `--workers=1`. RLS completo ~12 min; RLS y E2E no se corren a la vez. Un worker caído con `0xC0000409` se repite una vez.
 
 ## Próximo paso
 
-1. El usuario comprueba la sección «Borrar definitivamente» con SuperAdmin en staging, sin borrar una organización que quiera conservar.
-2. El usuario prueba en staging add-ons, baja/reactivación y anular pagos.
-3. Decidir qué pasa con las cuentas que quedan sin local; completar el diagnóstico del iPhone.
+1. Triage del informe de Codex (`output/revisiones/`), corregir lo real y una ronda de verificación.
+2. El usuario aprueba (y decide lo del Staff); recién entonces subir a `origin` y, si quiere, desplegar a staging.
+3. Prueba manual del usuario del borrado en staging, con SuperAdmin y de organizaciones.

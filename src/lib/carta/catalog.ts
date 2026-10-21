@@ -561,5 +561,23 @@ export async function deleteCategory(
   if (error) return fail(await writeFailure(db, orgId, error));
   if (data.length === 0) return fail(await explainZeroRows(db, orgId, "categories", id));
 
-  return ok({ products: products.length, filesComplete: await removeProductFolders(db, orgId, products) });
+  // Entre la lectura y el borrado otra persona pudo mover un plato a otra categoría: ese sobrevive y NO se le tocan los archivos.
+  const gone = await productsGone(db, orgId, products);
+  if (!gone) {
+    console.error(`Fotos sin borrar de la categoría ${id} (organización ${orgId}): no se pudo comprobar qué platos se borraron.`);
+    return ok({ products: products.length, filesComplete: false });
+  }
+  return ok({ products: products.length, filesComplete: await removeProductFolders(db, orgId, gone) });
+}
+
+/** De los platos dados, los que ya no existen en la organización. `null` si no se pudo comprobar (ante la duda no se borra nada). */
+async function productsGone<T extends { id: string }>(db: Db, orgId: string, products: T[]): Promise<T[] | null> {
+  const alive = new Set<string>();
+  for (let i = 0; i < products.length; i += FILES_PAGE) {
+    const ids = products.slice(i, i + FILES_PAGE).map((product) => product.id);
+    const { data, error } = await db.from("products").select("id").eq("organization_id", orgId).in("id", ids);
+    if (error) return null;
+    for (const row of data) alive.add(row.id);
+  }
+  return products.filter((product) => !alive.has(product.id));
 }

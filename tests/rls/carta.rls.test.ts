@@ -809,6 +809,63 @@ describe("borrado de platos y categorías", () => {
     }
   });
 
+  it("un plato movido a otra categoría justo antes del borrado sobrevive con su foto: la limpieza solo alcanza a los platos que se borraron", async () => {
+    const { org, crear, categoria } = await conFotos("tt-borrar-movido");
+    const a = await categoria("A");
+    const b = await categoria("B");
+    const p = await crear("Se muda", a);
+    const q = await crear("Se queda", a);
+
+    // Otra sesión mueve P a B justo después de que se leyeron los platos de A (la lectura termina en `.range`) y antes del DELETE.
+    let movido = false;
+    type Encadenable = Record<string, unknown>;
+    const intercepta = (builder: Encadenable): Encadenable =>
+      new Proxy(builder, {
+        get(target, name, receiver) {
+          const valor = Reflect.get(target, name, receiver);
+          if (typeof valor !== "function") return valor;
+          return (...args: unknown[]) => {
+            if (name === "range" && !movido) {
+              const leido = Promise.resolve((valor as (...a: unknown[]) => unknown).apply(target, args));
+              return leido.then(async (resultado) => {
+                movido = true;
+                const mover = await service.from("products").update({ category_id: b }).eq("id", p.id);
+                expect(mover.error).toBeNull();
+                return resultado;
+              });
+            }
+            const siguiente = (valor as (...a: unknown[]) => unknown).apply(target, args);
+            return name === "then" || typeof siguiente !== "object" || siguiente === null ? siguiente : intercepta(siguiente as Encadenable);
+          };
+        },
+      });
+    const db: Db = new Proxy(owner.db, {
+      get(target, prop, receiver) {
+        if (prop === "from") {
+          return (table: string) => {
+            const builder = target.from(table as "products");
+            return table === "products" ? (intercepta(builder as unknown as Encadenable) as unknown as typeof builder) : builder;
+          };
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+    });
+
+    // La persona vio 2 platos; P ya no está cuando se borra, pero el recuento se hizo antes.
+    expect(await deleteCategory(db, org, a, { expectedProducts: 2, confirmName: "A" })).toEqual({
+      ok: true,
+      data: { products: 2, filesComplete: true },
+    });
+    expect(movido).toBe(true);
+    expect(await existe("categories", a)).toBe(false);
+    expect(await existe("products", q.id)).toBe(false);
+    expect(await existeObjeto(q.foto)).toBe(false);
+    // P sigue vivo, en B, y su foto también.
+    expect(await existe("products", p.id)).toBe(true);
+    expect((await service.from("products").select("category_id, image_path").eq("id", p.id).single()).data).toEqual({ category_id: b, image_path: p.foto });
+    expect(await existeObjeto(p.foto)).toBe(true);
+  });
+
   it("si el borrado de la fila no se concreta, Storage no se toca (los archivos solo se limpian después de confirmar)", async () => {
     const { org, crear, categoria } = await conFotos("tt-borrar-orden");
     const cat = await categoria("Carta");
