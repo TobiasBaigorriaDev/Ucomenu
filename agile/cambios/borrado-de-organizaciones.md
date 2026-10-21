@@ -1,5 +1,5 @@
 # Cambio: SuperAdmin borra definitivamente una organización
-Estado: **implementado y probado en local; pendiente de revisión independiente (Codex) y de la aprobación humana** (2026-10-20). Sin integrar a `main`, sin migración en staging ni producción.
+Estado: **implementado y probado en local; revisión de Codex aprobada (sin hallazgos); pendiente de la aprobación humana** (2026-10-20). Commit local `a401a98` (sin subir a `origin`), sin migración en staging ni producción.
 Nivel: C (eliminación irreversible de datos de un cliente; autorización: acción solo de SuperAdmin; exposición: la organización y su personal dejan de existir; dinero: los pagos se conservan)
 
 ## Objetivo
@@ -63,3 +63,7 @@ Base local (`pnpm db:reset` con la migración nueva y `pnpm db:types`), 2026-10-
 - E2E (`--workers=1`, contra el build): `e2e/superadmin-borrado.spec.ts` 2/2 (plazo, identificador equivocado, casilla, borrado, aviso, movimiento, 404 de ficha/carta/panel, 390 px) y las specs de SuperAdmin vecinas (`superadmin-addons-baja`, `superadmin-planes-pagos`) 21/21. **No se corrió la suite E2E completa**: el cambio solo toca `/admin`.
 - **Mutaciones** (de a una, con `create or replace` en la base local, restauradas después): 9 probadas, **9 detectadas** tras agregar una prueba. Sin recomprobar al SuperAdmin, sin comparar el slug, sin la purga ni el plazo (14 fallas), sin validar el motivo, auditoría con otra acción, auditoría sin el nombre, `EXECUTE` para `authenticated`, y sin el lock de la suscripción. Esta última **no se detectaba al principio** (21/21 pasaban): se agregó la prueba del pago que se registra a la vez (el borrado espera su lock y cuenta el pago en `payments_kept`) y ahora falla sin el lock. El `FOR UPDATE` de la organización no tiene prueba propia: la purga de `price_history` ya toma el lock equivalente (`NO KEY UPDATE`) y es lo que serializa con la reactivación.
 - **No probado / límites:** staging y producción (nada aplicado ni desplegado); Storage real de Supabase hosted (solo el local); lector de pantalla y teléfono real; corte del servidor entre la transacción y la limpieza de Storage (riesgo aceptado); la casilla de confirmación no se verifica en el servidor (guarda de pantalla; la autoridad es la base); suite E2E completa.
+
+## Revisión y aprobación
+- **Codex, ronda 1 (commit `a401a98`, esfuerzo high):** **APROBAR**, sin hallazgos. Revisión estática en solo lectura: revisó autorización, retención, atomicidad, concurrencia, idempotencia, recuperación, rollback y limpieza de Storage, y las pruebas frente a las defensas. No ejecutó suites ni mutaciones (la evidencia es la de arriba) ni validó staging o producción.
+- **Aprobación humana: pendiente.** Hace falta antes de integrar a `main`, subir a `origin`, aplicar la migración en staging y desplegar (cada paso, con pedido explícito). El plazo de 10 años de los pagos sigue por confirmar con el contador antes de producción.
