@@ -4,7 +4,7 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Segunda tanda de cuatro correcciones (C) implementada y probada en local; falta la revisión de Codex y la aprobación humana.** Rama `main`. [Ficha](cambios/orden-e-imagenes-atomicos.md) · [ADR 0033](../docs/decisiones/0033-orden-e-imagenes-atomicos.md) (propuesta).
+**Segunda tanda de cuatro correcciones (C) implementada, probada en local y aprobada por Codex (3 rondas: paginación por clave, rollback explícito y tolerancia de altas documentada); falta la aprobación humana.** Rama `main`, commits `bd52a08` … `1f26da7`. [Ficha](cambios/orden-e-imagenes-atomicos.md) · [ADR 0033](../docs/decisiones/0033-orden-e-imagenes-atomicos.md) (propuesta).
 
 1. Las lecturas «de todo» (carta, mesas, configuración del llamado, sala, guía) van por páginas con orden estable: ya no se cortan en 1000 filas.
 2. Reordenar es una sola llamada (`reorder_siblings`): todo o nada, y si otro movimiento se coló se relee y se reintenta.
@@ -18,11 +18,11 @@ Primera tanda ([cuentas globales](cambios/proteger-cuentas-globales.md), ADR 003
 ## Bloqueos y riesgos
 
 - **Producción:** bloqueada (dominio, Supabase de producción, revisión legal).
+- Siguen con `readAllPages` (offset, pueden saltar una fila ante una baja concurrente): carta pública, idiomas, sucursales, opciones de un plato y disponibilidad.
 - Un archivo puede quedar sin borrar si Storage falla (queda en el registro con su ruta); `LogoForm` ya revocaba sus URL.
 - Flaky conocido: en RLS completo, `owner-lectura` choca a veces con otro archivo que toca `audit_log`, y un worker puede caer con `0xC0000409`. Se repiten una vez.
 - E2E con `--workers=1`; RLS y E2E no a la vez.
 
 ## Próximo paso
 
-1. `pnpm revision:codex --commit HEAD --ficha agile/cambios/orden-e-imagenes-atomicos.md --nivel C`; corregir lo confirmado.
-2. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
+1. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
