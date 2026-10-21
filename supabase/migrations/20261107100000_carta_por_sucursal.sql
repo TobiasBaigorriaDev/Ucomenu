@@ -27,6 +27,9 @@
 --   alter table public.product_availability drop column price_cents, drop column is_visible;
 --   -- price_history.branch_id: si hay filas con branch_id, CONSERVAR la columna (es historial de auditoría); si no:
 --   --   alter table public.price_history drop column branch_id;
+-- LIMITACIÓN DEL ROLLBACK: el código anterior lee `price_history` sin conocer `branch_id`, así que las filas de una sucursal se
+-- mostrarían mezcladas con las del precio general (sin decir de qué sucursal son). Los datos no se pierden; para leerlos bien hay
+-- que volver al código nuevo o consultar la columna `branch_id` directamente.
 
 alter table public.product_availability
   add column is_visible boolean not null default true,

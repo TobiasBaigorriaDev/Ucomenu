@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
-import { applyBranchSettings, loadBranchSettings, type BranchProductSetting } from "./availability";
+import { applyBranchSettings, loadBranchesToHide, loadBranchSettings, type BranchProductSetting } from "./availability";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -51,6 +51,23 @@ describe("lectura pública de los ajustes de una sucursal", () => {
   it("un fallo de lectura nunca se interpreta como «sin ajustes»: se publicarían platos ocultos y precios equivocados", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => Response.json({ message: "no" }, { status: 400 })));
     await expect(loadBranchSettings(cliente(), "org", "branch")).rejects.toThrow("No se pudieron leer los ajustes");
+  });
+});
+
+describe("loadBranchesToHide (alta de un plato)", () => {
+  const ramas = (ids: string[]) => vi.stubGlobal("fetch", vi.fn(async () => Response.json(ids.map((id) => ({ id })))));
+
+  it("oculta en las activas que no se marcaron; con una sola sucursal no hay nada que decidir", async () => {
+    ramas(["a", "b", "c"]);
+    expect(await loadBranchesToHide(cliente(), "org", new Set(["a"]))).toEqual(["b", "c"]);
+    expect(await loadBranchesToHide(cliente(), "org", new Set(["a", "b", "c"]))).toEqual([]);
+    ramas(["a"]);
+    expect(await loadBranchesToHide(cliente(), "org", new Set())).toEqual([]);
+  });
+
+  it("si no se pueden leer las sucursales devuelve null: el alta no debe publicar el plato en todas", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ message: "no" }, { status: 500 })));
+    expect(await loadBranchesToHide(cliente(), "org", new Set(["a"]))).toBeNull();
   });
 });
 

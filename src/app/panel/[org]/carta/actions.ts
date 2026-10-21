@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { loadBranchesToHide } from "@/lib/carta/availability";
 import {
   cartaErrorMessage,
   createCategory,
@@ -98,9 +99,10 @@ export async function saveProductAction(_previous: FormState, formData: FormData
 
   // Sucursales donde NO se muestra: las activas del local que no se marcaron. Se calcula con lo que hay en la base (no con la lista
   // que mandó el navegador); con una sola sucursal activa no hay nada que decidir.
-  const activeBranches = (await db.from("branches").select("id").eq("organization_id", orgId).eq("is_active", true)).data ?? [];
   const shown = new Set(formData.getAll("shown_branch").filter((id): id is string => typeof id === "string"));
-  const hiddenBranches = activeBranches.length > 1 ? activeBranches.map((b) => b.id).filter((id) => !shown.has(id)) : [];
+  const hiddenBranches = await loadBranchesToHide(db, orgId, shown);
+  // Si no se pudieron leer las sucursales no se crea nada: se publicaría el plato en todas, contra lo que la persona eligió.
+  if (!hiddenBranches) return { error: cartaErrorMessage("unexpected", null), values: { ...values, active: formData.get("active") === "on" ? "on" : "" } };
 
   const result = await createProduct(db, orgId, { ...input, active: formData.get("active") === "on", hiddenBranches });
   if (!result.ok) return outcome(slug, orgId, result, "", { ...values, active: formData.get("active") === "on" ? "on" : "" });

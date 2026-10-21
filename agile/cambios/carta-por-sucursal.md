@@ -1,5 +1,5 @@
 # Cambio: Carta central con precio, disponibilidad y visibilidad por sucursal (nivel 2a)
-Estado: **en curso**
+Estado: **implementado y probado en local; revisión de Codex en curso (ronda 1 corregida); falta la aprobación humana** (nada subido, staging sin la migración)
 Nivel: C (precios y publicación de la carta; nuevas escrituras y una RPC con `EXECUTE` para `authenticated`; el historial de precios es un registro de auditoría de solo-agregado). No cambia permisos, planes ni cupos. [ADR 0035](../../docs/decisiones/0035-carta-central-con-ajustes-por-sucursal.md).
 
 ## Objetivo
@@ -41,10 +41,24 @@ La organización conserva **un solo catálogo** (categorías y orden, identidad,
 | Alta del plato con cupo agotado o sucursal inválida | Sin plato ni ajustes (transacción única). |
 | Dos personas cambian lo mismo a la vez | Gana el último estado deseado; el historial registra cada cambio efectivo. |
 | Se desactiva una sucursal | Sus ajustes se conservan para cuando se reactive. |
-| Migración mal aplicada | Rollback en la cabecera de la migración (retirar la RPC, el trigger y las columnas nuevas). |
+| Migración mal aplicada | Rollback en la cabecera de la migración (retirar la RPC, el trigger y las columnas nuevas). Limitación: tras volver al código anterior, las filas del historial con `branch_id` se verían mezcladas con las del precio general (los datos no se pierden). |
+| El alta no puede leer las sucursales | No se crea el plato (mensaje de error): nunca se publica en todas contra lo que se eligió. |
+| Se desactiva una sucursal y queda una sola activa con ajustes | La pantalla del plato mantiene los controles mientras haya ajustes, para poder deshacerlos; sin ajustes vuelve a la de siempre. |
 
 ## Alcance / fuera de alcance
 Ver decisión 9. Incluye migración, carta pública, panel (editar y crear plato, listado), historial de precios, pruebas, ADR 0035 y las aclaraciones de `producto.md` y `arquitectura.md`.
 
 ## Evidencia
-(Se completa al cerrar las pruebas.)
+Commit probado: `2c9c465` (ronda 1) y el commit de correcciones que le sigue. Todo en local; sin push, staging ni despliegue.
+- Unitarias `pnpm test`: 758 pasan (incluye `applyBranchSettings`, lectura paginada de ajustes, `loadBranchesToHide`).
+- RLS completo `pnpm test:rls`: 942 pasan sobre `2c9c465`; tras las correcciones se repitieron `carta-por-sucursal`, `availability` y `acl` (50 pasan). Nuevo `tests/rls/carta-por-sucursal.rls.test.ts`: valores por defecto, aislamiento entre sucursales, `$ 0` ≠ ausencia, claves inmutables y otra organización, permisos, mora (solo lectura y suspendida), cupo sin cambios, alta atómica con cupo agotado, historial efectivo por sucursal. La matriz de `acl.rls.test.ts` incluye la RPC (INVOKER) y el trigger.
+- E2E: `pnpm test:e2e` completo sobre `2c9c465`: 357 pasan, 1 omitida y 1 falla ajena (`superadmin-planes-pagos.spec.ts:180`, 0 ms) que pasa sola (14/14). Tras las correcciones: `carta-por-sucursal` (5), `disponibilidad` y `carta` pasan (a 390 px sin desborde).
+- Mutaciones (fallan sin la defensa): quitar el filtro de ocultos; `||` en vez de `??` (rompe `$ 0`); anular el trigger del historial.
+- `pnpm typecheck`, `pnpm lint` y `pnpm build` limpios.
+- No probado: teléfono real, lector de pantalla, concurrencia real entre dos personas, y nada contra staging o producción.
+
+## Revisión independiente (Codex)
+Ronda 1 sobre `2c9c465`: RECHAZAR con 3 hallazgos «importantes», los tres confirmados:
+1. El alta ignoraba un error al leer las sucursales y publicaba el plato en todas → ahora `loadBranchesToHide` devuelve `null` y no se crea nada.
+2. Con una sola sucursal activa quedaban inaccesibles los ajustes existentes → los controles se muestran mientras haya ajustes y el listado los marca; con prueba E2E.
+3. El rollback deja el historial por sucursal mal rotulado para el código anterior → limitación documentada en la migración y en esta ficha (no se cambió el diseño: solo afecta a un retroceso).

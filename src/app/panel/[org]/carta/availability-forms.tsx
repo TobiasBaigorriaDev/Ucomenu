@@ -15,7 +15,9 @@ import { availabilityAction, branchPriceAction, visibilityAction } from "./avail
 export function AvailabilityForms({ orgSlug, productId, branches, basePriceCents, canWrite }: {
   orgSlug: string; productId: string; branches: BranchAvailability[]; basePriceCents: number; canWrite: boolean;
 }) {
-  const multi = branches.length > 1;
+  // Con una sola sucursal activa se conserva la pantalla de siempre, salvo que ya tenga ajustes (de cuando había más): sin los
+  // controles no se podrían deshacer y la carta los sigue aplicando.
+  const multi = branches.length > 1 || branches.some((b) => !b.is_visible || b.price_cents !== null);
 
   const hidden = (branch: BranchAvailability) => (
     <>

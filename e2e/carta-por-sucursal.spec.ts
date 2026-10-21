@@ -185,6 +185,29 @@ test("el alta de un plato elige en qué sucursales se muestra; con una sola sucu
   await expect(page.getByLabel("Precio propio en pesos")).toHaveCount(0);
 });
 
+test("al quedar una sola sucursal activa, los ajustes que ya tenía un plato siguen a la vista y se pueden deshacer", async ({ page }) => {
+  const e = await setup("unica");
+  const db = service();
+  await db.from("product_availability").insert({ organization_id: e.t.orgId, branch_id: e.centro, product_id: e.milanesa, is_visible: false, price_cents: 1200000 });
+  await db.from("branches").update({ is_active: false }).eq("id", e.norte);
+  await login(page, e.t.owner.email, e.t.owner.password);
+
+  await page.goto(`/panel/${e.t.slug}/carta`);
+  await expect(page.getByText("Oculto en 1 sucursal")).toBeVisible();
+  await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
+  const centro = fila(page, e.centro);
+  await expect(centro.getByTestId("estado-sucursal")).toContainText("Oculto");
+  await centro.getByRole("button", { name: "Mostrar en esta sucursal" }).click();
+  await expect(centro.getByTestId("estado-sucursal")).toContainText("Se muestra");
+  await centro.getByRole("button", { name: "Usar precio general" }).click();
+  await expect(page.getByLabel("Precio propio en pesos")).toHaveCount(0); // sin ajustes, vuelve la pantalla de una sola sucursal
+  await page.goto(e.menuCentro);
+  await expect(page.getByText(/9\.500/)).toBeVisible();
+  // Sin ajustes, la pantalla vuelve a ser la de siempre.
+  await page.goto(`/panel/${e.t.slug}/carta/platos/${e.milanesa}`);
+  await expect(page.getByRole("button", { name: "Ocultar en esta sucursal" })).toHaveCount(0);
+});
+
 test("una cuenta en solo lectura ve los ajustes pero no puede cambiarlos", async ({ page }) => {
   const e = await setup("lectura");
   await service().from("subscriptions").update({ current_period_end: new Date(Date.now() - 10 * 24 * 3600 * 1000).toISOString(), trial_ends_at: null }).eq("organization_id", e.t.orgId);

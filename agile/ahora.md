@@ -4,22 +4,21 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Vista por sucursal (nivel C) implementada, probada en local y revisada por Codex (3 rondas, 7 hallazgos corregidos); falta la aprobación humana y una decisión tuya sobre un criterio de aviso (ver la ficha).** Commits `ea42df4` … último de la serie. [Ficha](cambios/vista-por-sucursal.md) · [ADR 0034](../docs/decisiones/0034-vista-por-sucursal.md) (propuesta). Migración nueva `20261106100000_vista_por_sucursal.sql` (tabla `member_branch_views`, `set_my_branch_view`, `my_branch_view` y `push_targets_for_call`). Staging **no** la tiene.
+**Carta central con precio, disponibilidad y visibilidad por sucursal (nivel 2a, nivel C) implementada y probada en local; Codex la rechazó en la ronda 1 con 3 hallazgos y están corregidos; falta verificar la ronda 2 y la aprobación humana.** Commit `2c9c465` y el de correcciones que le sigue. [Ficha](cambios/carta-por-sucursal.md) · [ADR 0035](../docs/decisiones/0035-carta-central-con-ajustes-por-sucursal.md) (propuesta). Migración nueva `20261107100000_carta_por_sucursal.sql` (columnas `price_cents` e `is_visible` en `product_availability`, `price_history.branch_id`, trigger del historial y RPC `create_product_in_branches`). Staging **no** la tiene.
 
-Cada persona (Dueño o Staff) elige qué sucursales mira: la sala, el cartel del panel, el sonido y el push siguen su elección; vacío = todas, y ante la duda se avisa. Es una preferencia, no un permiso (la membresía sigue por organización). La sala muestra cuántos llamados quedan en las otras sucursales; la analítica abre en la elegida. Fuera de alcance: asignar sucursales al Staff con restricción real.
+Un catálogo por organización; cada sucursal puede tener precio propio de un plato (`$ 0` vale; sin precio hereda el general), marcarlo agotado u ocultarlo. La carta pública lee esos ajustes en vivo. Los topes del plan y los permisos no cambian. Con una sola sucursal la pantalla es la de siempre, salvo que ya haya ajustes. Fuera de alcance: cartas independientes, categorías o variantes por sucursal.
 
-Esperan aprobación humana, además: tanda 4 de UX ([ficha](cambios/detalle-retorno-y-confirmaciones.md), `06cd1bf`), tanda 3 ([ficha](cambios/formularios-cuenta-y-mensajes.md), `1ea4ca6`), [listas, orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos.md) (ADR 0033, migración `20261105100000`), [cuentas globales](cambios/proteger-cuentas-globales.md) (ADR 0032, migración `20261104100000`) y el [borrado de mesas](cambios/borrado-de-mesas.md). Las tres últimas con migración están aprobadas por Codex. Fase 2 = feed de videos con **Mux Video** ([ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)).
+Esperan aprobación humana, además: la [vista por sucursal](cambios/vista-por-sucursal.md) (ADR 0034, con una decisión tuya sobre el criterio de aviso), las tandas 3 y 4 de UX, [orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos.md) (ADR 0033), [cuentas globales](cambios/proteger-cuentas-globales.md) (ADR 0032) y el [borrado de mesas](cambios/borrado-de-mesas.md).
 
 ## Bloqueos y riesgos
 
 - **Producción:** bloqueada (dominio, Supabase de producción, revisión legal).
-- Siguen con paginación por offset: carta pública, idiomas, sucursales, opciones de un plato y disponibilidad (ver la ficha de la tanda 2).
-- No hay `global-error.tsx`: un error del layout raíz usa la pantalla por defecto de Next.
-- Flaky conocido: en RLS completo, `owner-lectura` choca a veces con otro archivo que toca `audit_log`, y un worker puede caer con `0xC0000409`. Se repiten una vez.
+- El rollback de la migración deja el historial por sucursal mezclado para el código anterior (documentado en la ficha).
+- Sin cambios tuyos commiteados: `docs/decisiones/0031…`, hunks de Mux en `docs/` y `agile/tablero.md`, y `tools/escenarios-locales.mjs`.
 - E2E con `--workers=1`; RLS y E2E no a la vez.
 
 ## Próximo paso
 
-1. **Decidir** el criterio de la ventana de aviso al cambiar de vista (ficha, «Revisión y aprobación», ronda 3): hoy gana «ante la duda, avisar».
-2. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
-3. Probar en teléfonos reales el push con dos personas eligiendo sucursales distintas.
+1. Verificar la ronda 2 de Codex (`--verificar --hallazgos output/revisiones/2026-10-21T19-29-27-commit-HEAD.md`).
+2. El usuario aprueba; recién entonces subir, aplicar migraciones pendientes en staging y desplegar.
+3. Probar en un teléfono real el alta con sucursales y los precios propios.

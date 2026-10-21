@@ -86,6 +86,18 @@ export function applyBranchSettings<P extends { id: string; price_cents: number 
   });
 }
 
+/**
+ * Sucursales donde NO se muestra un plato nuevo: las activas del local que la persona no marcó. Con una sola sucursal activa no hay
+ * nada que decidir (`[]`). `null` si no se pudieron leer las sucursales: el alta no debe seguir (publicaría el plato en todas).
+ */
+export async function loadBranchesToHide(db: Db, orgId: string, shown: ReadonlySet<string>): Promise<string[] | null> {
+  const result = await readAllPages((from, to) =>
+    db.from("branches").select("id").eq("organization_id", orgId).eq("is_active", true).order("id").range(from, to),
+  );
+  if (result.error || !result.data) return null;
+  return result.data.length > 1 ? result.data.map((b) => b.id).filter((id) => !shown.has(id)) : [];
+}
+
 // ---------------------------------------------------------------------------
 // Resumen para el listado del panel
 // ---------------------------------------------------------------------------

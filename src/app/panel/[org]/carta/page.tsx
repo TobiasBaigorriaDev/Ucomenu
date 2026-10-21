@@ -55,8 +55,8 @@ export default async function CartaPage({ params, searchParams }: PageProps<"/pa
     getEntitlements(membership.org.id),
     db.from("branches").select("id", { count: "exact", head: true }).eq("organization_id", membership.org.id).eq("is_active", true),
   ]);
-  // Los ajustes por sucursal solo existen (y solo se resumen) con varias sucursales activas: con una sola, la carta no cambia.
-  const settings = (activeBranches.count ?? 0) > 1 ? await loadSettingsSummary(db, membership.org.id) : new Map<string, SettingsSummary>();
+  // Sin sucursales activas no hay ajustes que resumir; con una o más, los platos con ajustes se marcan (la carta sin ajustes no cambia).
+  const settings = (activeBranches.count ?? 0) > 0 ? await loadSettingsSummary(db, membership.org.id) : new Map<string, SettingsSummary>();
   // Si no se pudo leer el estado de la cuenta, falla cerrado: se muestra pero no se edita.
   const canWrite = ent?.canWrite === true;
   const notice = writeBlockNotice(ent);
