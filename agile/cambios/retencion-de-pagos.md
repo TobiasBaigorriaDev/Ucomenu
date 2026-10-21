@@ -28,6 +28,9 @@ Base local (`pnpm db:reset` con la migración nueva), 2026-10-20; el commit prob
 - **Mutaciones (9, de a una, todas detectadas):** sin `enable trigger` (3 pruebas), plazo de 10 años a 0 (1), purgar también organizaciones vivas (4), sin comprobar al SuperAdmin (1), sin auditoría (1), sin validar el motivo (1), sin borrar las anulaciones (4), `EXECUTE` para `service_role` (1), volver a poner la clave foránea (5).
 - `pnpm test` 666/666 · `pnpm lint` y `pnpm typecheck` OK. `pnpm test:rls` completo **813/813** (36 archivos; sin restos `tt-*`/`e2e-*` ni pagos huérfanos). Sin E2E ni build (solo cambia una etiqueta de la auditoría de `/admin`).
 
+## Revisión y aprobación
+- Codex, ronda 1 (commit `2c0e5e0`): **APROBAR CON CAMBIOS**. Un hallazgo, **real y corregido**: `database.types.ts` seguía declarando las 4 claves foráneas quitadas (AGENTS.md exige `pnpm db:types` al cambiar el esquema). Regenerado: el diff solo borra esas relaciones; typecheck y lint OK. Sin regresión funcional (ninguna consulta las usaba).
+
 ## (C) Invariantes
 - Un pago solo se borra si tiene más de 10 años y su organización ya no existe; una anulación solo se borra junto con su pago.
 - Los triggers de solo-agregado no quedan apagados al terminar, salga bien o mal la transacción.

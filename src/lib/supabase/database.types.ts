@@ -222,22 +222,10 @@ isOneToOne: false
                   }
                   Relationships: [
                     {
-      foreignKeyName: "payment_voids_organization_id_fkey"
-      columns: ["organization_id"]
-isOneToOne: false
-      referencedRelation: "organizations"
-      referencedColumns: ["id"]
-    },{
       foreignKeyName: "payment_voids_payment_id_fkey"
       columns: ["payment_id"]
 isOneToOne: true
       referencedRelation: "payments"
-      referencedColumns: ["id"]
-    },{
-      foreignKeyName: "payment_voids_subscription_id_fkey"
-      columns: ["subscription_id"]
-isOneToOne: false
-      referencedRelation: "subscriptions"
       referencedColumns: ["id"]
     }
                   ]
@@ -253,19 +241,7 @@ isOneToOne: false
                     "amount_cents"?: number,"billing_cycle"?: string,"covers_until"?: string,"created_at"?: string,"currency"?: string,"id"?: string,"method"?: string,"organization_id"?: string,"paid_on"?: string,"plan_code"?: string,"previous_period_end"?: string,"reference"?: string | null,"registered_by"?: string,"subscription_id"?: string
                   }
                   Relationships: [
-                    {
-      foreignKeyName: "payments_organization_id_fkey"
-      columns: ["organization_id"]
-isOneToOne: false
-      referencedRelation: "organizations"
-      referencedColumns: ["id"]
-    },{
-      foreignKeyName: "payments_subscription_id_fkey"
-      columns: ["subscription_id"]
-isOneToOne: false
-      referencedRelation: "subscriptions"
-      referencedColumns: ["id"]
-    }
+                    
                   ]
                 },"plans": {
                   Row: {
