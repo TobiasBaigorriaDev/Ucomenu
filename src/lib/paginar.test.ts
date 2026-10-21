@@ -91,4 +91,3 @@ describe("readAllByKey", () => {
     expect(siguiente?.map((row) => row.id)).toContain("id-00000-nuevo");
   });
 });
-});
