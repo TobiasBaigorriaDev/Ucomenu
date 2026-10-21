@@ -12,7 +12,7 @@ Cuatro correcciones surgidas de una revisión externa, confirmadas contra el có
 ## 2. Carreras entre membresías y operaciones globales de Auth
 **Confirmado.** Entre el `SELECT` de «¿tiene otra membresía?» y `updateUserById` / `deleteUser` (HTTP, fuera de la transacción) `admin_add_owner` podía sumar la cuenta a otro local: se tomaba una cuenta ya compartida, o se borraba la cuenta y la membresía nueva desaparecía en cascada con una auditoría «added» falsa.
 
-**Decisión.** Reserva por cuenta bajo advisory lock (ADR 0032): la comprobación definitiva y la reserva son una transacción; el trigger de `INSERT` en `memberships` y `admin_add_owner` (también el ascenso) se niegan con `account_busy` mientras dure. Se libera al terminar la llamada a Auth, también si falla; vence sola a los 2 minutos.
+**Decisión.** Reserva por cuenta bajo advisory lock (ADR 0032): la comprobación definitiva y la reserva son una transacción; el trigger de `INSERT` / `UPDATE OF user_id` en `memberships` y `admin_add_owner` (también el ascenso) se niegan con `account_busy` mientras dure. Se libera al terminar la llamada a Auth, también si falla; vence sola a los 2 minutos.
 
 ## 3. Auth temporalmente caído → falso 401 en la sala
 **Confirmado.** `getCurrentUser` devolvía `null` ante **cualquier** error de `getUser()` y la ruta `/sala/{slug}/estado` respondía 401 (la pantalla pide ingresar de nuevo y deja de reintentar). El `proxy` hacía lo mismo con `getClaims()`.
@@ -64,3 +64,7 @@ Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probad
 - E2E (`--workers=1`, contra el build): `acceso`, `sala`, `panel-llamados-aviso`, `dueno-existente` y `llamados` **76/76**.
 - **Mutaciones** (SQL directo, restauradas): sin el chequeo de SuperAdmin en restablecer (3 pruebas fallan), en la baja (2), sin la llamada en `admin_add_owner` (1: el ascenso; el `INSERT` lo cubre el trigger), sin el trigger (3), baja que ignora otras membresías (2), restablecer sin el lock (2, con espera de 24 s). Módulo: `isTransientAuthError` forzado a `false` hace fallar 11 de 18 pruebas de la cadena.
 - **No probado / límites:** staging (la migración no está allí); la llamada a Auth colgada más de 2 minutos; el respaldo contra el Supabase local o remoto con datos reales (por pedido: solo datos sintéticos); un teléfono real con Auth caído.
+
+## Revisión y aprobación
+- **Codex, ronda 1 (commit `f648e81`, nivel C, esfuerzo high): APROBAR CON CAMBIOS.** Revisión estática. Un hallazgo *importante*, **confirmado**: el trigger de la reserva cubría solo `INSERT`; `service_role` puede reasignar `memberships.user_id` con `UPDATE` y sumar una membresía a una cuenta reservada (contraseña tomada o membresía borrada en cascada). Corrección: el trigger pasó a `BEFORE INSERT OR UPDATE OF user_id` (un `UPDATE` que no cambia `user_id`, p. ej. solo el rol, no se frena). Regresión nueva en `cuentas-globales.rls.test.ts` que **falla con el trigger solo de `INSERT`** (comprobado) y pasa con el actual; RLS de `cuentas-globales`, `acl`, `personnel`, `dueno-existente` y `tenancy` **128/128** tras la corrección.
+- Pendiente: ronda de verificación de Codex y la **aprobación humana** (no está dada) antes de subir a `origin`, aplicar la migración en staging o desplegar.

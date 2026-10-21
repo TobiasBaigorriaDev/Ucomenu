@@ -436,6 +436,27 @@ describe("la reserva", () => {
     expect(directo.error?.message).toBe("account_busy");
     sql(`delete from private.account_leases where user_id = '${a.staff.id}'`);
   });
+
+  it("tampoco reasignando el user_id de una membresía existente (UPDATE) a una cuenta reservada; sin reserva sí se puede", async () => {
+    const a = await crearLocal();
+    const b = await crearLocal();
+    const otro = await createUser(service, `cgl-reasigna${contador}`);
+    users.push(otro);
+    await addMembership(service, otro, b.id, "staff"); // membresía de B que se intentaría reasignar a la cuenta de A
+    const idAjena = membresiaId(b.id, otro);
+    await service.rpc("personnel_begin_reset", { p_actor: a.owner.id, p_org: a.id, p_membership: membresiaId(a.id, a.staff) });
+
+    const reasignada = await service.from("memberships").update({ user_id: a.staff.id }).eq("id", idAjena);
+
+    expect(reasignada.error?.code).toBe("55006");
+    expect(rol(b.id, otro)).toBe("staff");
+    expect(rol(b.id, a.staff)).toBeNull();
+    // Cambiar solo el rol de una membresía de la cuenta reservada no suma una membresía: sigue permitido.
+    expect((await service.from("memberships").update({ role: "owner" }).eq("id", membresiaId(a.id, a.staff))).error).toBeNull();
+    sql(`delete from private.account_leases where user_id = '${a.staff.id}'`);
+    // Sin reserva, la reasignación es posible (la defensa no cambia otras reglas).
+    expect((await service.from("memberships").update({ user_id: a.staff.id }).eq("id", idAjena)).error).toBeNull();
+  });
 });
 
 describe("quién puede llamar a las funciones", () => {

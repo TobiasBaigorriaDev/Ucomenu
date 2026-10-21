@@ -59,7 +59,8 @@ end;
 $$;
 revoke all on function private.assert_account_free(uuid) from public, anon, authenticated;
 
--- Ninguna membresía nueva (de ningún camino, service_role incluido) entra a una cuenta reservada.
+-- Ninguna membresía nueva (de ningún camino, service_role incluido) entra a una cuenta reservada: ni por INSERT ni
+-- reasignando `user_id` de una existente con UPDATE (cambiar solo el rol o la organización no suma una membresía a la cuenta).
 create function private.memberships_account_lease()
 returns trigger
 language plpgsql
@@ -67,6 +68,9 @@ security definer
 set search_path = ''
 as $$
 begin
+  if tg_op = 'UPDATE' and new.user_id is not distinct from old.user_id then
+    return new;
+  end if;
   perform private.assert_account_free(new.user_id);
   return new;
 end;
@@ -74,7 +78,7 @@ $$;
 revoke all on function private.memberships_account_lease() from public, anon, authenticated;
 
 create trigger memberships_account_lease
-  before insert on public.memberships
+  before insert or update of user_id on public.memberships
   for each row execute function private.memberships_account_lease();
 
 -- ---------------------------------------------------------------------------
