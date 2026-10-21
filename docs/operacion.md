@@ -18,16 +18,16 @@ Guía para operar UcoMenu al empezar (estrategia del ADR 0015). La evidencia de 
 
 ## 2. Respaldos propios
 
-**Por qué.** El plan Free de Supabase no hace respaldos automáticos y su documentación recomienda exportar con `db dump` y guardar copias fuera. En Pro hay respaldos diarios de 7 días, pero **ningún plan incluye en ellos los archivos de Storage** (las fotos de `product-images`). Un respaldo propio sirve en los dos planes y también protege de un error humano o de un proyecto pausado/eliminado.
+**Por qué.** El plan Free de Supabase no hace respaldos automáticos y su documentación recomienda exportar con `db dump` y guardar copias fuera. En Pro hay respaldos diarios de 7 días, pero **ningún plan incluye en ellos los archivos de Storage** (las fotos de `product-images` y los logos de `organization-logos`). Un respaldo propio sirve en los dos planes y también protege de un error humano o de un proyecto pausado/eliminado.
 
 **Cómo: `pnpm respaldo`** (`tools/respaldar.mjs`; probado contra el Supabase local).
 ```powershell
 pnpm respaldo --remoto --env C:\secretos\produccion.env --destino D:\respaldos\ucomenu
 ```
-Crea `D:\respaldos\ucomenu\<fecha>\` con `esquema.sql`, `datos.sql`, `storage\…` y `manifiesto.json`, y al terminar **vuelve a leer todo y verifica** tamaños y SHA-256.
+Crea `D:\respaldos\ucomenu\<fecha>\` con `esquema.sql`, `datos.sql`, `storage\<bucket>\…` (una carpeta por bucket: `product-images` y `organization-logos`) y `manifiesto.json` (versión 2: lista los buckets y, de cada archivo de Storage, su bucket y objeto), y al terminar **vuelve a leer todo y verifica** tamaños y SHA-256.
 - El archivo de entorno (fuera del repositorio) tiene `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` y `RESPALDO_DB_URL` (cadena de conexión a la base: la **directa** solo funciona con IPv6, así que sin IPv6 usar la del **Session pooler** del panel de Supabase; la cadena nunca va como argumento).
 - Se niega a escribir dentro del repositorio y a mezclar local con remoto. Solo lee.
-- **Qué incluye:** estructura, datos de `public` y las cuentas (`auth.users` y `auth.identities`, para que los Dueños conserven su acceso), y las fotos.
+- **Qué incluye:** estructura, datos de `public` y las cuentas (`auth.users` y `auth.identities`, para que los Dueños conserven su acceso), y los archivos de ambos buckets de Storage. Si uno de los dos buckets no se puede listar, el respaldo falla en vez de quedar incompleto; un bucket vacío es válido y figura igual en el manifiesto.
 - **Qué deja afuera a propósito:** sesiones y tokens de Auth, y **`waiter_calls`**: tiene el identificador derivado de la IP, que la política de privacidad promete borrar a los 14 días; copiarlo a un respaldo de meses rompería esa promesa y son avisos efímeros.
 - **El respaldo es un dato personal** (correos y hashes de contraseña): cifrarlo, restringir el acceso y no subirlo a ninguna nube sin cifrar antes. Elegir la herramienta de cifrado es una instalación posiblemente nueva y se aprueba aparte.
 
@@ -36,8 +36,8 @@ Crea `D:\respaldos\ucomenu\<fecha>\` con `esquema.sql`, `datos.sql`, `storage\�
 **Restauración: ensayarla.** Un respaldo que nunca se restauró no es un respaldo.
 1. Verificar el manifiesto con `verificarRespaldo` de `tools/respaldar.mjs`. Crear un proyecto nuevo y aislado para el ensayo, comprobar plan Free y cupo. Aplicar las migraciones con `supabase db push`, sin seed; usar un directorio de trabajo aparte para conservar el enlace del staging compartido.
 2. Confirmar la identidad del destino y que no tenga organizaciones ni cuentas propias. Cargar `datos.sql` con `psql -v ON_ERROR_STOP=1 -1 -f -`, en una transacción, usando `session_replication_role = replica` y vaciando antes las tablas de `public` y `auth.users`/`auth.identities` del **destino nuevo**. No vaciar el origen ni el staging compartido. No usar `TRUNCATE ... RESTART IDENTITY`: las secuencias administradas de Auth, como `refresh_tokens_id_seq`, no pertenecen a `postgres`; ese intento revierte la transacción. Las secuencias propias se recuperan según `datos.sql`.
-3. Subir las fotos de `storage\` al bucket `product-images` con la misma ruta (la base guarda solo la ruta).
-4. Comprobar: recuento de filas por tabla, ingresar con una cuenta de prueba, abrir una carta con fotos.
+3. Subir los archivos de cada carpeta `storage\<bucket>\` al bucket del mismo nombre (`product-images`, `organization-logos`) con la misma ruta de objeto (la base guarda solo la ruta). `objetosPorBucket(manifiesto)` de `tools/respaldar.mjs` lista qué objeto va a qué bucket; los dos pueden tener rutas iguales y no se mezclan. Los buckets los crean las migraciones.
+4. Comprobar: recuento de filas por tabla, ingresar con una cuenta de prueba, abrir una carta con fotos y un local con logo (comparar la cantidad de objetos de cada bucket con el manifiesto).
 5. Configurar Auth, claves y variables propias del destino; no reutilizar las del origen. La app usa `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` (una clave `anon` heredada también es compatible). Comparar hashes de contraseña sin imprimirlos; un enlace de acceso generado por Admin, sin enviar correo, permite probar una cuenta restaurada sin cambiar su contraseña. Las tareas de `pg_cron`, secretos y configuración del proveedor se revisan aparte: no los recupera el respaldo de datos.
 6. Registrar el resultado y pausar el proyecto de ensayo al terminar; conservar el respaldo fuera de Git con acceso restringido. Un fallo no se considera restauración aprobada.
 - **Ensayos ejecutados:** misma base local y staging vaciado (2026-10-16); proyecto nuevo (2026-10-17). Resultados y referencias del respaldo en la [ficha](../agile/cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17).
@@ -52,7 +52,7 @@ Revisión **semanal** (cinco minutos, un responsable) del panel de uso de Supaba
 select pg_size_pretty(pg_database_size(current_database()));
 -- Fotos en Storage (límite Free: 1 GB)
 select count(*) as archivos, pg_size_pretty(coalesce(sum((metadata->>'size')::bigint), 0)) as peso
-from storage.objects where bucket_id = 'product-images';
+from storage.objects where bucket_id in ('product-images', 'organization-logos');
 -- La purga de 14 días funciona: tiene que dar 0 (o muy pocos si justo corre)
 select count(*) from public.waiter_calls where created_at < now() - interval '14 days';
 -- Última ejecución programada de la purga (requiere pg_cron)

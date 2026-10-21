@@ -17,7 +17,9 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   enforce_branch_limit: [true, false, false], // trigger
   keep_branch_slug_history: [false, false, false], // trigger invocador; no amplía permisos de sucursales
   enforce_product_limit: [true, false, false], // trigger
+  assert_account_free: [true, false, false], // reserva de cuentas globales (ficha proteger-cuentas-globales): toma el lock y rechaza si hay reserva; solo la llaman funciones definer
   guard_last_owner: [true, false, false], // trigger de memberships (ADR 0007)
+  memberships_account_lease: [true, false, false], // trigger de INSERT en memberships (ficha proteger-cuentas-globales): ninguna membresía entra a una cuenta reservada
   has_feature: [true, false, false],
   is_org_member: [true, false, true], // usada por políticas
   is_org_owner: [true, false, true], // usada por políticas
@@ -71,6 +73,9 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   push_targets_for_call: [false, false], // aviso de llamados (ADR 0020): a quién avisar de un llamado nuevo; solo service_role
 
   record_dish_view: [true, true], // analítica básica (ADR 0022): la carta pública suma una vista; solo contadores y valida adentro
+  personnel_begin_reset: [false, false], // personal (ficha proteger-cuentas-globales): comprueba y reserva la cuenta antes de cambiarle la contraseña; solo service_role
+  personnel_end_operation: [false, false], // personal: libera la reserva de la cuenta; solo service_role
+  personnel_remove_member: [false, false], // personal: quita la membresía y reserva el borrado de la cuenta si corresponde; solo service_role
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
   register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
@@ -240,6 +245,19 @@ describe("RLS y permisos de tablas", () => {
       expect(permisos("anon", tabla), `${tabla}: anon`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
       expect(permisos("authenticated", tabla), `${tabla}: authenticated`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
       expect(permisos("service_role", tabla), `${tabla}: service_role`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
+    }
+  });
+
+  it("private.account_leases: nadie la toca por la API (ni anon, ni authenticated, ni service_role); solo las funciones definer", () => {
+    const permisos = (rol: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'private.account_leases', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    for (const rol of ["anon", "authenticated", "service_role"]) {
+      expect(permisos(rol), `account_leases: ${rol}`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
     }
   });
 

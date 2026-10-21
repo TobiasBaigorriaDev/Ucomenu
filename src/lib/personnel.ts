@@ -13,7 +13,11 @@ import type { Database } from "@/lib/supabase/database.types";
  *
  * Reglas que este módulo hace cumplir (además del trigger `guard_last_owner` de la base):
  *  - el objetivo debe pertenecer a la MISMA organización que se está operando (no se confía en ids sueltos);
- *  - nunca se toma la cuenta de alguien que pertenece a otra organización (contraseña, borrado de Auth);
+ *  - nunca se toma la cuenta de alguien que pertenece a otra organización ni la de un SuperAdmin (contraseña, borrado
+ *    de Auth), aunque su membresía acá sea de Staff;
+ *  - lo anterior no se decide con un SELECT seguido de la llamada a Auth (la cuenta es global y otra membresía puede
+ *    llegar en el medio): `personnel_begin_reset` / `personnel_remove_member` comprueban Y reservan la cuenta en una
+ *    transacción, y quien suma membresías (`admin_add_owner`, trigger) espera/se niega mientras dure la reserva;
  *  - un email ya registrado no se modifica y no se revela quién lo usa;
  *  - cortar un acceso (baja, restablecer) no depende del estado de pago; dar acceso nuevo sí.
  */
@@ -30,7 +34,8 @@ export type PersonnelError =
   | "email_unavailable" // alta sobre un email ya registrado (mensaje genérico)
   | "read_only" // cuenta en solo lectura o suspendida: no se da acceso nuevo
   | "last_owner" // la base protegió al último Dueño
-  | "shared_account" // la persona pertenece a otra organización
+  | "shared_account" // la persona pertenece a otra organización o es de la plataforma (no se distingue)
+  | "busy" // otra operación global sobre esa cuenta está en curso
   | "owner_target" // restablecer la contraseña de un Dueño
   | "self" // sobre uno mismo
   | "not_found"
@@ -51,7 +56,8 @@ export const PERSONNEL_ERROR_MESSAGE: Record<PersonnelError, string> = {
   email_unavailable: "No se pudo crear la cuenta con ese email.",
   read_only: "La cuenta está en solo lectura o suspendida: no se pueden sumar personas ni dar permisos de Dueño. Sí podés quitar personal y cambiar contraseñas.",
   last_owner: "Tiene que quedar al menos un Dueño en el local.",
-  shared_account: "Esta persona también trabaja en otro local: su contraseña y su cuenta no se pueden cambiar desde acá. Podés quitarla de este local.",
+  shared_account: "Esta cuenta se usa también fuera de este local: su contraseña y su cuenta no se pueden cambiar desde acá. Podés quitarla de este local.",
+  busy: "Hay otra operación en curso sobre esta cuenta. Probá de nuevo en unos segundos.",
   owner_target: "La contraseña de un Dueño la cambia cada uno desde Mi cuenta.",
   self: "No podés hacer esto con tu propia cuenta. Pedile a otro Dueño o usá Mi cuenta.",
   not_found: "No encontramos a esa persona en este local.",
@@ -110,7 +116,7 @@ export type Member = {
   email: string;
   role: Role;
   isSelf: boolean;
-  /** Pertenece también a otra organización: no se le puede cambiar la contraseña desde acá. */
+  /** Pertenece también a otra organización o a la plataforma: no se le puede cambiar la contraseña ni borrar la cuenta desde acá. */
   sharedAccount: boolean;
 };
 
@@ -123,6 +129,10 @@ export async function listMembers(ctx: PersonnelContext, orgId: string): Promise
     .eq("organization_id", orgId)
     .order("created_at");
   if (error) return fail("unexpected");
+
+  const platform = await ctx.admin.from("platform_admins").select("user_id").in("user_id", data.map((m) => m.user_id));
+  if (platform.error) return fail("unexpected");
+  const platformIds = new Set(platform.data.map((a) => a.user_id));
 
   const members = await Promise.all(
     data.map(async (m): Promise<Member | null> => {
@@ -137,7 +147,7 @@ export async function listMembers(ctx: PersonnelContext, orgId: string): Promise
         email: user.data.user?.email ?? "(sin email)",
         role: m.role,
         isSelf: m.user_id === ctx.actorId,
-        sharedAccount: elsewhere === null || elsewhere > 0,
+        sharedAccount: platformIds.has(m.user_id) || elsewhere === null || elsewhere > 0,
       };
     }),
   );
@@ -246,26 +256,42 @@ export async function setMemberRole(
   return error ? fail("unexpected") : ok(undefined);
 }
 
+const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Libera la reserva de la cuenta. Si falla, vence sola (2 minutos): solo se deja constancia. */
+async function endOperation(ctx: PersonnelContext, userId: string, token: string) {
+  const { error } = await ctx.admin.rpc("personnel_end_operation", { p_user: userId, p_token: token });
+  if (error) console.error("[personnel] no se pudo liberar la reserva de una cuenta (vence sola)", { userId });
+}
+
 export async function removeMember(ctx: PersonnelContext, orgId: string, membershipId: string): Promise<Result> {
   if (!(await isOwnerOf(ctx, orgId))) return fail("forbidden");
 
-  const target = await findTarget(ctx, orgId, membershipId);
-  if (!target) return fail("not_found");
-  if (target.user_id === ctx.actorId) return fail("self");
+  // Una sola transacción en la base: quita la membresía y, si la cuenta quedó sin ninguna y no es de un SuperAdmin,
+  // la reserva para borrarla. Mientras dure la reserva nadie le suma otra membresía (si la sumaron antes, no se borra).
+  const { data, error } = await ctx.admin.rpc("personnel_remove_member", {
+    p_actor: ctx.actorId,
+    p_org: orgId,
+    p_membership: membershipId,
+  });
+  if (isLastOwnerError(error)) return fail("last_owner");
+  if (error) return fail(error.code === "42501" ? "forbidden" : "unexpected");
+  if (!isRecord(data)) return fail("unexpected");
+  if (data.status === "not_found") return fail("not_found");
+  if (data.status === "self") return fail("self");
+  if (data.status !== "removed") return fail("unexpected");
 
-  const removed = await ctx.admin.from("memberships").delete().eq("id", target.id).eq("organization_id", orgId);
-  if (isLastOwnerError(removed.error)) return fail("last_owner");
-  if (removed.error) return fail("unexpected");
+  if (data.reason === "busy") console.error("[personnel] baja con la cuenta reservada por otra operación: la cuenta queda sin local", { orgId });
+  if (data.delete_account !== true) return ok(undefined);
+  if (typeof data.user_id !== "string" || typeof data.token !== "string") return fail("unexpected");
 
-  // Sin otro local, la cuenta ya no sirve: se borra (libera el email y corta los refresh tokens).
-  // Con otro local, la cuenta se conserva: solo se le quitó este.
-  const remaining = await ctx.admin
-    .from("memberships")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", target.user_id);
-  if (!remaining.error && (remaining.count ?? 0) === 0) {
-    const deleted = await ctx.admin.auth.admin.deleteUser(target.user_id);
-    if (deleted.error) console.error("[personnel] no se pudo borrar la cuenta de una baja", { userId: target.user_id, orgId });
+  // Sin otro local, la cuenta ya no sirve: se borra (libera el email y corta los refresh tokens). La reserva evita que
+  // una membresía nueva quede borrada en cascada. Con otro local o siendo SuperAdmin la cuenta se conserva.
+  try {
+    const deleted = await ctx.admin.auth.admin.deleteUser(data.user_id);
+    if (deleted.error) console.error("[personnel] no se pudo borrar la cuenta de una baja", { userId: data.user_id, orgId });
+  } finally {
+    await endOperation(ctx, data.user_id, data.token);
   }
 
   return ok(undefined);
@@ -282,17 +308,40 @@ export async function resetMemberPassword(
   const weak = validatePassword(newPassword);
   if (weak) return fail(weak);
 
-  const target = await findTarget(ctx, orgId, membershipId);
-  if (!target) return fail("not_found");
-  if (target.user_id === ctx.actorId) return fail("self");
-  if (target.role === "owner") return fail("owner_target");
+  // Comprobación definitiva Y reserva de la cuenta, en una transacción (ver la cabecera). Un SELECT aparte no alcanza:
+  // la cuenta es global y otro local puede sumarla entre la comprobación y la llamada a Auth.
+  const { data, error } = await ctx.admin.rpc("personnel_begin_reset", {
+    p_actor: ctx.actorId,
+    p_org: orgId,
+    p_membership: membershipId,
+  });
+  if (error) return fail(error.code === "42501" ? "forbidden" : "unexpected");
+  if (!isRecord(data)) return fail("unexpected");
 
-  // Tomar la cuenta de alguien que también trabaja en otro local sería saltar la frontera entre locales.
-  const elsewhere = await membershipsElsewhere(ctx, target.user_id, orgId);
-  if (elsewhere === null) return fail("unexpected");
-  if (elsewhere > 0) return fail("shared_account");
+  switch (data.status) {
+    case "ok":
+      break;
+    case "not_found":
+      return fail("not_found");
+    case "self":
+      return fail("self");
+    case "owner_target":
+      return fail("owner_target");
+    case "shared_account":
+    case "platform_admin": // no se distingue: no se revela quién es del equipo de la plataforma
+      return fail("shared_account");
+    case "busy":
+      return fail("busy");
+    default:
+      return fail("unexpected");
+  }
+  if (typeof data.user_id !== "string" || typeof data.token !== "string") return fail("unexpected");
 
-  const { error } = await ctx.admin.auth.admin.updateUserById(target.user_id, { password: newPassword });
-  if (error) return fail(error.code === "weak_password" ? "too_short" : "unexpected");
-  return ok(undefined);
+  try {
+    const { error: authError } = await ctx.admin.auth.admin.updateUserById(data.user_id, { password: newPassword });
+    if (authError) return fail(authError.code === "weak_password" ? "too_short" : "unexpected");
+    return ok(undefined);
+  } finally {
+    await endOperation(ctx, data.user_id, data.token);
+  }
 }

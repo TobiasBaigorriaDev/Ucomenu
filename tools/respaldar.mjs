@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Respaldo propio de UcoMenu (docs/operacion.md): base de datos + fotos de Storage, con un manifiesto verificable.
+ * Respaldo propio de UcoMenu (docs/operacion.md): base de datos + archivos de Storage, con un manifiesto verificable.
  * Existe porque el plan Free de Supabase no hace respaldos y porque NINGÚN plan incluye los archivos de Storage en ellos.
  *
  * Uso (desde la raíz):
@@ -10,8 +10,9 @@
  * Qué hace: crea `<destino>/<AAAA-MM-DDTHH-MM-SSZ>/` con
  *   esquema.sql   estructura (`supabase db dump`)
  *   datos.sql     datos de `public` (menos `waiter_calls`) y las cuentas (`auth.users` y `auth.identities`), sin sesiones ni tokens
- *   storage/…     cada archivo del bucket `product-images`, con la misma ruta
- *   manifiesto.json   fecha, entorno, tamaños y SHA-256 de cada archivo; sirve para comprobar el respaldo
+ *   storage/<bucket>/…   cada archivo de los buckets `product-images` y `organization-logos`, con la misma ruta de objeto
+ *   manifiesto.json   fecha, entorno, buckets, tamaños y SHA-256 de cada archivo (los de Storage indican su bucket y objeto);
+ *                     sirve para comprobar el respaldo
  * y al final lo vuelve a leer y lo verifica.
  *
  * Seguridad:
@@ -31,7 +32,9 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs, parseEnv } from "node:util";
 import { createClient } from "@supabase/supabase-js";
 
-export const BUCKET = "product-images";
+/** Buckets de Storage que se respaldan. Un bucket nuevo con archivos de clientes se agrega acá (y a la guía de restauración). */
+export const BUCKETS = ["product-images", "organization-logos"];
+const VERSION_MANIFIESTO = 2;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 /** Tablas de Auth que NO se respaldan: sesiones, tokens y registros que no sirven para recuperar cuentas. */
 export const AUTH_EXCLUIDAS = [
@@ -121,12 +124,35 @@ export function validarEntorno(entorno, { local }) {
 
 export function armarManifiesto({ entorno, fecha, archivos }) {
   return {
-    version: 1,
+    version: VERSION_MANIFIESTO,
     creado: fecha.toISOString(),
     entorno,
-    bucket: BUCKET,
+    buckets: [...BUCKETS],
     archivos: [...archivos].sort((a, b) => a.ruta.localeCompare(b.ruta)),
   };
+}
+
+/** Un archivo de Storage del manifiesto tiene que decir de qué bucket es y su ruta tiene que ser `storage/<bucket>/<objeto>`. */
+function problemaDeStorage(archivo, buckets) {
+  const { bucket, objeto } = archivo;
+  if (typeof bucket !== "string" || typeof objeto !== "string" || objeto === "") return `${archivo.ruta}: no indica su bucket y su objeto.`;
+  if (!Array.isArray(buckets) || !buckets.includes(bucket)) return `${archivo.ruta}: el bucket ${bucket} no figura en el manifiesto.`;
+  if (archivo.ruta !== `storage/${bucket}/${objeto}`) return `${archivo.ruta}: la ruta no coincide con el bucket ${bucket} y el objeto ${objeto}.`;
+  if (objeto.split("/").some((parte) => parte === ".." || parte === ".")) return `${archivo.ruta}: el objeto tiene una ruta no permitida.`;
+  return null;
+}
+
+/**
+ * Para restaurar: los objetos a subir a cada bucket, con el archivo del respaldo que los contiene.
+ * `{ "product-images": [{ objeto, ruta }], "organization-logos": [...] }`; un bucket sin archivos queda con lista vacía.
+ */
+export function objetosPorBucket(manifiesto) {
+  const resultado = Object.fromEntries((manifiesto.buckets ?? []).map((bucket) => [bucket, []]));
+  for (const archivo of manifiesto.archivos) {
+    if (typeof archivo.bucket !== "string" || typeof archivo.objeto !== "string") continue;
+    (resultado[archivo.bucket] ??= []).push({ objeto: archivo.objeto, ruta: archivo.ruta });
+  }
+  return resultado;
 }
 
 /** Vuelve a leer lo escrito y lo compara con el manifiesto. Devuelve la lista de problemas (vacía = respaldo sano). */
@@ -138,7 +164,21 @@ export function verificarRespaldo(carpeta) {
   } catch {
     return ["No se pudo leer manifiesto.json."];
   }
+  // Versión 1 (un solo bucket, `storage/<objeto>`) se sigue pudiendo verificar; desde la 2 cada archivo de Storage dice su bucket.
+  const porBucket = (manifiesto.version ?? 1) >= 2;
+  if (porBucket) {
+    for (const bucket of BUCKETS) {
+      if (!Array.isArray(manifiesto.buckets) || !manifiesto.buckets.includes(bucket)) problemas.push(`El manifiesto no incluye el bucket ${bucket}.`);
+    }
+  }
   for (const archivo of manifiesto.archivos) {
+    if (porBucket && archivo.ruta.startsWith("storage/")) {
+      const problema = problemaDeStorage(archivo, manifiesto.buckets);
+      if (problema) {
+        problemas.push(problema);
+        continue;
+      }
+    }
     const ruta = path.join(carpeta, archivo.ruta);
     if (!existsSync(ruta)) {
       problemas.push(`Falta ${archivo.ruta}.`);
@@ -179,33 +219,38 @@ function volcarBase({ carpeta, local, dbUrl }) {
   ]);
 }
 
-/** Todos los archivos del bucket (recorre carpetas), descargados con la clave de servicio. */
-async function copiarStorage({ carpeta, url, clave }) {
-  const cliente = createClient(url, clave, { auth: { persistSession: false, autoRefreshToken: false } });
-  const bucket = cliente.storage.from(BUCKET);
+/**
+ * Todos los archivos de cada bucket (recorre carpetas), descargados con la clave de servicio. Cada uno se guarda en
+ * `storage/<bucket>/<objeto>`: dos buckets pueden tener la misma ruta de objeto sin pisarse. `cliente` se inyecta en las pruebas.
+ */
+export async function copiarStorage({ carpeta, cliente }) {
   const archivos = [];
 
-  async function recorrer(prefijo) {
-    for (let desde = 0; ; desde += 100) {
-      const { data, error } = await bucket.list(prefijo, { limit: 100, offset: desde });
-      if (error) throw new Fallo(`No se pudo listar ${BUCKET}/${prefijo}: ${error.message}`);
-      for (const item of data) {
-        const ruta = prefijo ? `${prefijo}/${item.name}` : item.name;
-        if (item.id === null) await recorrer(ruta); // carpeta
-        else {
-          const descarga = await bucket.download(ruta);
-          if (descarga.error) throw new Fallo(`No se pudo descargar ${ruta}: ${descarga.error.message}`);
-          const contenido = Buffer.from(await descarga.data.arrayBuffer());
-          const relativa = `storage/${ruta}`;
-          mkdirSync(path.dirname(path.join(carpeta, relativa)), { recursive: true });
-          writeFileSync(path.join(carpeta, relativa), contenido);
-          archivos.push({ ruta: relativa, bytes: contenido.length, sha256: sha256(contenido) });
+  for (const nombre of BUCKETS) {
+    const bucket = cliente.storage.from(nombre);
+
+    async function recorrer(prefijo) {
+      for (let desde = 0; ; desde += 100) {
+        const { data, error } = await bucket.list(prefijo, { limit: 100, offset: desde });
+        if (error) throw new Fallo(`No se pudo listar ${nombre}/${prefijo}: ${error.message}`);
+        for (const item of data) {
+          const objeto = prefijo ? `${prefijo}/${item.name}` : item.name;
+          if (item.id === null) await recorrer(objeto); // carpeta
+          else {
+            const descarga = await bucket.download(objeto);
+            if (descarga.error) throw new Fallo(`No se pudo descargar ${nombre}/${objeto}: ${descarga.error.message}`);
+            const contenido = Buffer.from(await descarga.data.arrayBuffer());
+            const relativa = `storage/${nombre}/${objeto}`;
+            mkdirSync(path.dirname(path.join(carpeta, relativa)), { recursive: true });
+            writeFileSync(path.join(carpeta, relativa), contenido);
+            archivos.push({ ruta: relativa, bucket: nombre, objeto, bytes: contenido.length, sha256: sha256(contenido) });
+          }
         }
+        if (data.length < 100) break;
       }
-      if (data.length < 100) break;
     }
+    await recorrer("");
   }
-  await recorrer("");
   return archivos;
 }
 
@@ -225,8 +270,9 @@ export async function main(argv) {
     console.log(`Respaldo ${args.local ? "local" : "remoto"} en ${carpeta}`);
     volcarBase({ carpeta, local: args.local, dbUrl: entorno.RESPALDO_DB_URL });
     console.log("  base de datos: esquema y datos listos");
-    const fotos = await copiarStorage({ carpeta, url, clave });
-    console.log(`  storage: ${fotos.length} archivo(s)`);
+    const cliente = createClient(url, clave, { auth: { persistSession: false, autoRefreshToken: false } });
+    const fotos = await copiarStorage({ carpeta, cliente });
+    for (const bucket of BUCKETS) console.log(`  storage ${bucket}: ${fotos.filter((f) => f.bucket === bucket).length} archivo(s)`);
 
     const archivos = [...fotos];
     for (const nombre of ["esquema.sql", "datos.sql"]) {

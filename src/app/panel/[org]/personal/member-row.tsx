@@ -56,7 +56,7 @@ export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string
               {hidden}
               <p className="text-base leading-relaxed">
                 {email} pierde el acceso de inmediato.
-                {sharedAccount ? " Su cuenta sigue activa porque también trabaja en otro local." : " Su cuenta se elimina."}
+                {sharedAccount ? " Su cuenta sigue activa porque se usa también fuera de este local." : " Su cuenta se elimina."}
               </p>
               <div className="mt-3">
                 <SubmitButton className={dangerButtonClass} pendingLabel="Quitando…">
@@ -69,7 +69,7 @@ export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string
       )}
 
       {!isSelf && role === "staff" && sharedAccount ? (
-        <p className="mt-2 text-sm text-muted">También trabaja en otro local: su contraseña no se cambia desde acá.</p>
+        <p className="mt-2 text-sm text-muted">Su cuenta se usa también fuera de este local: su contraseña no se cambia desde acá.</p>
       ) : null}
     </li>
   );

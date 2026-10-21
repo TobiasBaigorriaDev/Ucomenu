@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isTransientAuthError } from "@/lib/auth/errors";
 import { sessionCookieOptions } from "@/lib/supabase/cookie-options";
 
 /**
@@ -32,13 +33,17 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const { data } = await supabase.auth.getClaims();
+  const { data, error } = await supabase.auth.getClaims();
 
   // Comodidad, no autorización: sin sesión, a /login conservando la ruta completa que se pidió.
   // La página vuelve a comprobar todo en el servidor (getUser + membresía).
   const { pathname } = request.nextUrl;
   // La consulta del panel de sala es una API (JSON): sin sesión responde 401 en vez de redirigir a una página HTML.
+  // Si Auth no pudo responder (red, 5xx) no se sabe si hay sesión: 503, para que la pantalla siga reintentando.
   if (!data?.claims && /^\/sala\/[^/]+\/estado$/.test(pathname)) {
+    if (isTransientAuthError(error)) {
+      return NextResponse.json({ error: "unavailable" }, { status: 503, headers: { "Cache-Control": "no-store" } });
+    }
     return NextResponse.json({ error: "no_session" }, { status: 401, headers: { "Cache-Control": "no-store" } });
   }
   if (!data?.claims && pathname !== "/login") {

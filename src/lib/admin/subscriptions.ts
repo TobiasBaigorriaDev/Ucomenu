@@ -45,6 +45,7 @@ const DB_ERRORS: Record<string, AdminError> = {
   organization_not_found: "org_not_found",
   account_changed: "account_changed",
   membership_changed: "account_changed",
+  account_busy: "account_busy",
   invalid_reason: "invalid_reason",
   invalid_plan: "invalid_plan",
   invalid_cycle: "invalid_cycle",

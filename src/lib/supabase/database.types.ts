@@ -544,6 +544,15 @@ isOneToOne: false
               "is_active": boolean,"name": string,"product_id": string,"total_views": number,"views": number
             }[]
                            },
+"personnel_begin_reset":
+{ Args: { "p_actor": string,"p_membership": string,"p_org": string }; Returns: Json
+                           },
+"personnel_end_operation":
+{ Args: { "p_token": string,"p_user": string }; Returns: undefined
+                           },
+"personnel_remove_member":
+{ Args: { "p_actor": string,"p_membership": string,"p_org": string }; Returns: Json
+                           },
 "public_menu_status":
 { Args: { "p_branch_slug": string,"p_org_slug": string }; Returns: string
                            },

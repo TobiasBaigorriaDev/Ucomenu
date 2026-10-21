@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { parseEntitlements, type Entitlements, type Role } from "@/lib/entitlements";
 import { isPlatformAdmin } from "@/lib/admin/organizations";
+import { isTransientAuthError } from "@/lib/auth/errors";
 import { landingPath } from "@/lib/auth/validation";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -22,11 +23,34 @@ export type OrgMembership = {
   org: { id: string; slug: string; name: string; menu_palette: string; logo_path: string | null };
 };
 
-export const getCurrentUser = cache(async (): Promise<User | null> => {
+/**
+ * Resultado de preguntarle a Auth por la persona de este pedido. `unavailable` = Auth no respondió bien (red, 5xx, lento):
+ * no prueba que la sesión sea inválida y quien lo recibe tiene que poder reintentar (las APIs de sondeo responden 503).
+ */
+export type UserLookup = { status: "user"; user: User } | { status: "anonymous" } | { status: "unavailable" };
+
+export const lookupCurrentUser = cache(async (): Promise<UserLookup> => {
   const supabase = await createSessionClient();
-  const { data, error } = await supabase.auth.getUser();
-  return error || !data.user ? null : data.user;
+  try {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      if (isTransientAuthError(error)) {
+        console.error(`Auth no respondió al leer la identidad: ${error.name} (${error.status ?? "sin estado"})`);
+        return { status: "unavailable" };
+      }
+      return { status: "anonymous" };
+    }
+    return data.user ? { status: "user", user: data.user } : { status: "anonymous" };
+  } catch {
+    return { status: "unavailable" };
+  }
 });
+
+/** La persona del pedido, o `null` si no hay sesión válida. Las páginas tratan «Auth caído» como sin sesión (van al login). */
+export const getCurrentUser = async (): Promise<User | null> => {
+  const lookup = await lookupCurrentUser();
+  return lookup.status === "user" ? lookup.user : null;
+};
 
 /** Membresías de la persona, ordenadas por nombre de organización. */
 export const getMemberships = cache(async (userId: string): Promise<OrgMembership[]> => {

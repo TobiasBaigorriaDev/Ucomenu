@@ -41,6 +41,7 @@ export type AdminError =
   | "account_not_found" // sumar un Dueño existente: no hay cuenta con ese email
   | "already_owner" // sumar un Dueño existente: ya lo es de esta organización
   | "account_changed" // sumar un Dueño existente: la cuenta cambió entre buscarla y confirmar
+  | "account_busy" // sumar un Dueño existente: un local está cambiando la contraseña o borrando esa cuenta en este instante
   | "uncertain" // se perdió la respuesta y no se pudo comprobar si el alta quedó hecha
   | "unexpected"
   // Cambio de plan, suspensión y pagos (ficha superadmin-planes-pagos)
@@ -108,6 +109,8 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   already_owner: "Esa cuenta ya es Dueño de esta organización: no hay nada que cambiar.",
   account_changed:
     "La cuenta cambió desde que la buscaste (puede haber sido reemplazada). No se sumó a nadie: volvé a buscarla y revisá dónde trabaja.",
+  account_busy:
+    "Esa cuenta tiene otra operación en curso (por ejemplo, el cambio de su contraseña o su baja desde otro local). No se sumó a nadie: esperá unos segundos y volvé a buscarla.",
   uncertain:
     "No pudimos confirmar si el alta quedó hecha. No la repitas: revisá primero la lista de organizaciones (si ya aparece, está creada).",
   unexpected: "No se pudo completar la operación. No se cambió nada; probá de nuevo en unos minutos.",
