@@ -3,7 +3,7 @@ import { listOrganizations, type AdminContext } from "@/lib/admin/organizations"
 import { changePlan, getOrganizationDetail, registerPayment, setSuspension } from "@/lib/admin/subscriptions";
 import { parsePeriodEnd } from "@/lib/admin/validation";
 import { parseEntitlements, trialStatus } from "@/lib/entitlements";
-import { purgeAuditLogWhere } from "./purge-price-history";
+import { purgeAuditLogWhere, purgePaymentsWhere } from "./purge-price-history";
 import {
   addMembership,
   anonClient,
@@ -637,12 +637,14 @@ describe("registrar un pago", () => {
     expect(fila.plan_code).toBe("pro");
   });
 
-  it("una organización con pagos no se borra en cascada por accidente (RESTRICT)", async () => {
+  it("los pagos sobreviven al borrado de la organización (sin clave foránea, ADR 0027)", async () => {
     const local = await crearLocal();
     await registerPayment(ctx(admin), pago(local));
     const borrar = await service.from("organizations").delete().eq("id", local.id);
-    expect(borrar.error?.code).toBe("23503");
-    expect(contar("organizations", `id = '${local.id}'`)).toBe(1);
+    expect(borrar.error).toBeNull();
+    expect(contar("organizations", `id = '${local.id}'`)).toBe(0);
+    expect(contar("payments", `organization_id = '${local.id}'`)).toBe(1);
+    purgePaymentsWhere(`organization_id = '${local.id}'`); // limpieza de la prueba (huérfano)
   });
 });
 

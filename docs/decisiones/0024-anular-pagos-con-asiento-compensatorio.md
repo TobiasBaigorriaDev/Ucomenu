@@ -25,3 +25,4 @@
 - Entre anular y cargar el correcto hay dos pasos: si el segundo no se hace, la cuenta queda con la vigencia de antes del pago.
 - `payment_voids` tiene `RESTRICT` como `payments`: el futuro borrado de organizaciones tendrá que definir también su retención.
 - Cada acción de SuperAdmin nueva sigue necesitando decidir qué parte ve el Dueño (por defecto, nada).
+- **Actualización 2026-10-20:** `payment_voids` ya no tiene `RESTRICT` hacia la organización ni la suscripción (sí hacia su pago): sobrevive al borrado igual que `payments` (ADR 0027).

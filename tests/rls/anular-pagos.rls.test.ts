@@ -4,7 +4,7 @@ import type { AdminContext } from "@/lib/admin/organizations";
 import { getOrganizationDetail, isVoidable, registerPayment, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
 import { parsePeriodEnd } from "@/lib/admin/validation";
 import { parseEntitlements } from "@/lib/entitlements";
-import { purgeAuditLogWhere } from "./purge-price-history";
+import { purgeAuditLogWhere, purgePaymentsWhere } from "./purge-price-history";
 import {
   addMembership,
   anonClient,
@@ -497,11 +497,14 @@ describe("la lista de pagos de la ficha", () => {
   }, 120_000);
 });
 
-describe("una organización con anulaciones tampoco se borra en cascada por accidente", () => {
-  it("RESTRICT desde payment_voids", async () => {
+describe("las anulaciones también sobreviven al borrado de la organización (ADR 0027)", () => {
+  it("sin clave foránea hacia la organización; la anulación sigue atada a su pago", async () => {
     const local = await crearLocal();
     expect((await anular(local, await cargar(local))).ok).toBe(true);
-    expect((await service.from("organizations").delete().eq("id", local.id)).error?.code).toBe("23503");
-    expect(contar("organizations", `id = '${local.id}'`)).toBe(1);
+    expect((await service.from("organizations").delete().eq("id", local.id)).error).toBeNull();
+    expect(contar("organizations", `id = '${local.id}'`)).toBe(0);
+    expect(contar("payments", `organization_id = '${local.id}'`)).toBe(1);
+    expect(contar("payment_voids", `organization_id = '${local.id}'`)).toBe(1);
+    purgePaymentsWhere(`organization_id = '${local.id}'`); // limpieza de la prueba (huérfanos)
   });
 });

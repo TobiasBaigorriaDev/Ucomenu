@@ -37,4 +37,4 @@ Ficha: `agile/cambios/superadmin-planes-pagos.md`. Mismo patrón que el alta; lo
 - **Un pago nunca acorta ni repite la vigencia**: «cubre hasta» debe ser posterior al fin efectivo y a ahora; `unique (subscription_id, covers_until)` es la defensa final contra el doble registro.
 - **La prueba de 14 días tiene estado derivado propio** (`private.trial_status`), separado del de mora; su vencimiento sigue la regla de mora de ADR 0006.
 - El motivo de cada cambio y la acción viajan en `audit_log.after`; la referencia de un pago **no** se copia allí (puede traer datos de terceros en una tabla que no se borra).
-
+- **Actualización 2026-10-20:** las claves foráneas `RESTRICT` de `payments` hacia la organización y la suscripción se quitaron: los pagos se conservan 10 años y sobreviven al borrado (ADR 0027).

@@ -15,6 +15,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "addon.activated": "Add-on activado",
   "addon.changed": "Add-on modificado",
   "addon.ended": "Add-on finalizado",
+  "payments.purged": "Pagos antiguos purgados",
 };
 
 const ADDON_NAME: Record<string, string> = { webar: "WebAR" };
@@ -51,6 +52,12 @@ function details(entry: AuditEntry): string[] {
     if (typeof after.amount_cents === "number" && str(after.currency)) out.push(formatMoney(after.amount_cents, String(after.currency)));
     const until = str(after.period_end);
     if (until) out.push(`vencimiento vuelto al ${formatDateWithYear(until)}`);
+  }
+  if (entry.action === "payments.purged") {
+    if (typeof after.payments === "number") out.push(`${after.payments} pagos`);
+    if (typeof after.voids === "number" && after.voids > 0) out.push(`${after.voids} anulaciones`);
+    const before = str(after.registered_before);
+    if (before) out.push(`registrados antes del ${formatDateWithYear(before)}`);
   }
   if (entry.action.startsWith("addon.")) {
     const addon = str(after.addon);
