@@ -1,5 +1,5 @@
 # Cambio: Carta central con precio, disponibilidad y visibilidad por sucursal (nivel 2a)
-Estado: **implementado y probado en local; revisión de Codex agotada (3 rondas; queda una decisión sobre el rollback del historial); falta la aprobación humana** (nada subido, staging sin la migración)
+Estado: **hecho** — aprobado por el usuario, subido a `origin` y desplegado en staging (2026-10-21) (Codex: 3 rondas; el rollback del historial se acepta con su limitación, decisión del usuario)
 Nivel: C (precios y publicación de la carta; nuevas escrituras y una RPC con `EXECUTE` para `authenticated`; el historial de precios es un registro de auditoría de solo-agregado). No cambia permisos, planes ni cupos. [ADR 0035](../../docs/decisiones/0035-carta-central-con-ajustes-por-sucursal.md).
 
 ## Objetivo

@@ -1,5 +1,5 @@
 # Cambio: Listas completas, reordenamientos atómicos, reemplazo de imágenes sin huérfanos y vistas previas liberadas
-Estado: **para verificar** — implementado, probado en local y aprobado por Codex (3 rondas); falta la aprobación humana
+Estado: **hecho** — aprobado por el usuario, subido a `origin` y desplegado en staging (2026-10-21) (Codex aprobó en 3 rondas)
 Nivel: C (nuevas funciones RPC con permiso `EXECUTE` a `authenticated`; eliminación irreversible de archivos de clientes en Storage; escrituras de orden sobre la carta pública)
 
 Cuatro correcciones surgidas de una auditoría, confirmadas contra el código antes de tocarlas. Decisión duradera: [ADR 0033](../../docs/decisiones/0033-orden-e-imagenes-atomicos.md). Documentación de Next releída: `updateTag` (solo en *server actions*, vence la caché de la etiqueta en el acto) y `revalidatePath`; no se cambió ninguna API de Next.

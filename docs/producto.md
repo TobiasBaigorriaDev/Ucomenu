@@ -173,7 +173,7 @@ Decidido por el usuario el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos
 - *Supuesto (nuevo):* un video puede enlazarse a un plato de forma opcional («Ver plato»).
 - *Supuesto (nuevo):* en **solo lectura** los videos publicados se siguen viendo, pero se apagan los likes, los comentarios y la carga; en **suspendida** no se ve nada. Bajar de Premium no borra videos ni comentarios: el feed deja de mostrarse.
 - *Supuesto (nuevo):* comentarios de hasta 280 caracteres y alias de hasta 30, con un límite de envíos por conexión como el del llamado. La retención de los comentarios rechazados se decide al implementarlos.
-- El almacenamiento y la reproducción del video (Supabase Storage o un servicio de streaming) los decide un spike con teléfonos reales.
+- **Almacenamiento y reproducción en Mux Video** ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)): subida directa desde el panel, conversión automática de formatos de iPhone (`.mov` HEVC) y Android, entrega adaptativa HLS (hasta 1080p) y póster automático, sin consumir almacenamiento ni transferencia de Supabase.
 
 ### Fidelización y cercanía (fase 3)
 - **Alta rápida en mesa:** nombre + **teléfono móvil (WhatsApp)** como identificador principal + email (opcional) + casilla de **consentimiento** explícito para el tratamiento de datos y para recibir recordatorios (Ley 25.326), con baja simple.

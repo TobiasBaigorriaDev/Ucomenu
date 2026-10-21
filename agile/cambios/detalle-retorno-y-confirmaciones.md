@@ -1,5 +1,5 @@
 # Cambio: Detalle, retorno y confirmaciones (tanda 4 de UX)
-Estado: **para verificar** — implementado y probado en local (emulación de teléfono, sin dispositivo real); falta la aprobación del usuario
+Estado: **hecho** — aprobado por el usuario, subido a `origin` y desplegado en staging (2026-10-21)
 Nivel: **M** (cuatro mejoras de interfaz, sin consecuencias de nivel C: no cambian autorización, datos, dinero ni borrados; la confirmación de Dueño sigue atada a `expectedUserId` y a las defensas de base). Sin revisión independiente: no hay duda real que la justifique.
 
 Cuatro mejoras acotadas, confirmadas contra el código antes de tocarlas. Sin migración ni cambios de base.

@@ -1,5 +1,5 @@
 # Cambio: Vista por sucursal de cada persona (sala, avisos, push y estadísticas)
-Estado: **para verificar** — implementado y probado en local; falta la revisión de Codex y la aprobación humana
+Estado: **hecho** — aprobado por el usuario, subido a `origin` y desplegado en staging (2026-10-21) (revisada por Codex en 3 rondas)
 Nivel: C (cambia `push_targets_for_call`, una función `SECURITY DEFINER` que decide a quién se le manda información de llamados; suma una tabla y dos RPC con `EXECUTE` para `authenticated`; un error puede dejar llamados sin avisar). No cambia la autorización: ver decisión 1.
 
 ## Objetivo

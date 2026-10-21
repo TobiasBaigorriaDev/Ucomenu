@@ -8,7 +8,7 @@
 - **Base de datos:** PostgreSQL gestionado por Supabase, con Row Level Security (RLS) como mecanismo de aislamiento. → ADR 0004
 - **Tiempo real:** el panel de sala se actualiza por sondeo corto al servidor (ADR 0011); Supabase Realtime queda como evolución posible.
 - **Autenticación:** Supabase Auth para dueño, staff y SuperAdmin. El comensal es anónimo. **Implementado** (ADR 0007): email y contraseña, sin registro público, sesión por cookies `httpOnly` con `@supabase/ssr` 0.12.7 y sin cliente de Supabase en el navegador.
-- **Archivos:** Supabase Storage (fotos de platos, logos). Los videos del feed (fase 2) van a Supabase Storage o a un servicio de streaming, según el spike del ADR 0031.
+- **Archivos:** Supabase Storage (fotos de platos, logos). Los videos del feed (fase 2) van a **Mux Video** (ADR 0031).
   - Interfaz de la carta pública: sistema propio dentro de `.carta` (variables de la paleta del local, Gloock + Schibsted Grotesk cargadas solo para la carta desde `src/components/menu/carta-fonts.ts`); el panel, la sala y el login conservan los tokens globales. Definición en `DESIGN.md`; contexto de producto para diseño en `PRODUCT.md`.
   - Identidad del local: `organizations.menu_palette` y `logo_path`; bucket público `organization-logos` con rutas inmutables `{org}/{uuid}.{jpg|png|webp}`. Solo el Dueño con cuenta editable escribe columnas y archivos mediante su sesión y RLS. La carta lee la identidad en vivo junto con la organización, antes de la caché de filas; el optimizador admite ese bucket y `product-images` del host configurado. Configuración en `/panel/{slug}/apariencia`; detalle y evidencia en `agile/cambios/identidad-del-local.md`.
 - **Hosting / despliegue:** un contenedor de Docker en **Fly.io (São Paulo)** (ADR 0015; Vercel Hobby no admite uso comercial) + Supabase Cloud (datos). Desplegar requiere aprobación explícita.
@@ -29,7 +29,7 @@ Convención (confirmada): identificadores de código y base en inglés; interfaz
 | **Panel de sala** | Vista en vivo para el personal, alertas, marcar atendido | Llamado al mozo, Auth |
 | **Panel del dueño** | Administración de carta, mesas, sucursales, personal, apariencia | Todos los anteriores |
 | **SuperAdmin** | Alta de organizaciones, gestión manual de planes y add-ons, auditoría | Planes, Tenancy |
-| **Feed de videos** *(fase 2, ADR 0031)* | Carga y publicación de videos cortos, feed vertical en la carta, likes y comentarios desde la mesa con moderación | Carta, Mesas, Planes, Storage o servicio de video |
+| **Feed de videos** *(fase 2, ADR 0031)* | Carga y publicación de videos cortos, feed vertical en la carta, likes y comentarios desde la mesa con moderación | Carta, Mesas, Planes, Mux Video |
 | **Fidelización** *(fase 3)* | Programa de sellos, socios, tarjetas, registro inmutable de movimientos | Tenancy, Planes |
 | **Wallet** *(fase 3)* | Emisión y actualización de pases Apple/Google, ubicaciones para cercanía | Fidelización |
 
@@ -79,7 +79,7 @@ Esquema inicial resumido. Toda tabla de negocio lleva `organization_id`.
 - `waiter_calls` (organización, sucursal, mesa, tipo `waiter` | `bill`, estado `pending` | `attended` | `expired`, creado, atendido, atendido por, `client_key`, `visit_started_at` informativo). Solo escribe `create_waiter_call`; los miembros la leen (ADR 0010). `client_key` es un HMAC de la IP del comensal armado por el servidor, nunca la IP. Columnas de apoyo: `tables.muted_until` y `branches.waiter_call_cooldown_seconds`
 
 **Fase 2 — Feed de videos cortos** (ADR 0031; nombres *supuestos*, se fijan al implementar)
-- `menu_videos` (organización, plato opcional, referencia al archivo o al video del servicio, póster, duración ≤ 30 s, peso ≤ 50 MB, orden, estado `draft` | `published`). El cupo `videos_published` de `plans` (10 en Premium) cuenta los `published`.
+- `menu_videos` (organización, plato opcional, `mux_asset_id`, `mux_playback_id`, duración ≤ 30 s, peso ≤ 50 MB, orden, estado `draft` | `published`). El cupo `videos_published` de `plans` (10 en Premium) cuenta los `published`.
 - `video_likes` (organización, video, identificador de cliente HMAC armado por el servidor, como `client_key` de ADR 0010): uno por cliente y video; el feed muestra un conteo.
 - `video_comments` (organización, video, mesa, alias opcional, texto ≤ 280, estado `pending` | `approved` | `rejected`, moderado por, cuándo). `anon` solo lee los `approved` de videos publicados.
 - Ninguna de las tres tiene permisos de escritura para `anon`: like y comentario entran por funciones de base únicas con el token de la mesa y el ticket de visita.
@@ -132,7 +132,7 @@ La realidad aumentada (`<model-viewer>`, `.glb`/`.usdz`, ADR 0002) se descartó 
 ```
 Dueño o Staff en /panel (cuenta en gracia o al día, plan Premium)
   → subida del video (≤ 30 s, ≤ 50 MB, vertical 9:16) → validación de duración, peso y formato
-  → Storage o servicio de streaming (lo decide el spike) → menu_videos = draft
+  → Direct Upload a Mux Video (HLS adaptativo y póster automáticos) → menu_videos = draft
   → publicar (tope videos_published en la base) → menu_videos = published
 
 Carta pública (/m/… o /t/…)
@@ -142,10 +142,10 @@ Carta pública (/m/… o /t/…)
             → funciones de base únicas (token + ticket + has_feature + límite por cliente)
             → comentario = pending → el Dueño o el Staff aprueba → approved, visible en el feed
 ```
-- **Hosting pendiente del spike**: Supabase Storage con MP4 H.264 directo (sin servicio nuevo, pero no convierte formatos como el HEVC/.mov del iPhone y consume rápido la transferencia de Supabase Free) o un servicio de streaming de pago (conversión, póster y calidad adaptativa; requiere aprobación). En la base queda solo la ruta o el identificador del video.
+- **Hosting en Mux Video** (ADR 0031): subida directa desde el panel mediante URL firmada de un solo uso (*Direct Upload*), conversión automática de `.mov` HEVC de iPhone y MP4 de Android a HLS adaptativo (`max_resolution_tier = 1080p`, calidad `basic`) y póster servido por Mux, sin consumir cuota de Supabase Storage. En la base quedan solo los identificadores de Mux (`asset_id`, `playback_id`) y metadatos; las credenciales (`MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET`) viven únicamente en el servidor.
 - El feed y sus videos **no se descargan con la carta**: se cargan al entrar al feed y se reproduce solo el que está a la vista, para no penalizar el LCP de la carta.
-- Las URL de los videos publicados son públicas, como las fotos de los platos: el *feature flag* controla que el feed se ofrezca, no protege el archivo. La carta nunca lista borradores; si deben ser inaccesibles por URL, lo resuelve el spike (bucket privado o URL firmada).
-- Borrar un video limpia su archivo después de confirmar el borrado en la base, como las fotos (ADR 0029).
+- Los `playback_id` de los videos publicados son públicos, como las fotos de los platos: el *feature flag* controla que el feed se ofrezca, no protege el stream. La carta nunca lista borradores.
+- Borrar un video elimina también su asset en Mux después de confirmar el borrado en la base, como las fotos (ADR 0029).
 
 ### Wallet y recordatorio por cercanía (fase 3)
 ```

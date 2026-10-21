@@ -1,6 +1,6 @@
 # 0030 — Las mesas se borran con el cliente de la persona y sus llamados se van con ellas (cascada); un permiso `DELETE` nuevo sobre `tables`
 
-- Estado: propuesta (implementada localmente; pendiente de la revisión independiente y la aprobación del usuario)
+- Estado: aceptada (aprobada por el usuario y desplegada en staging el 2026-10-21)
 - Fecha: 2026-10-21
 
 ## Contexto

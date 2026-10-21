@@ -1,6 +1,6 @@
 # 0034 — Cada persona elige qué sucursales mira: la vista por sucursal es una preferencia, no un permiso
 
-- Estado: propuesta (implementada localmente; pendiente de la revisión independiente y la aprobación del usuario)
+- Estado: aceptada (aprobada por el usuario y desplegada en staging el 2026-10-21)
 - Fecha: 2026-10-21
 
 ## Contexto

@@ -1,6 +1,6 @@
 # 0033 — Los reordenamientos y los reemplazos de imagen son una sola llamada a la base (funciones `SECURITY INVOKER`); las listas se leen por páginas
 
-- Estado: propuesta (implementada localmente; pendiente de la revisión independiente y la aprobación del usuario)
+- Estado: aceptada (aprobada por el usuario y desplegada en staging el 2026-10-21)
 - Fecha: 2026-10-21
 
 ## Contexto

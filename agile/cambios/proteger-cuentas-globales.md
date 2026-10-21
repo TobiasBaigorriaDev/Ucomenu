@@ -1,5 +1,5 @@
 # Cambio: Cuentas globales de Auth, falso 401 de la sala y respaldo de logos
-Estado: **para verificar** — implementado y probado en local; aprobado por Codex (2 rondas); falta la aprobación humana
+Estado: **hecho** — aprobado por el usuario, subido a `origin` y desplegado en staging (2026-10-21) (Codex aprobó en 2 rondas)
 Nivel: C (autorización: quién puede tomar o borrar una cuenta; exposición: un local no debe alcanzar la cuenta de otro ni la de plataforma; eliminación irreversible: borrado de cuentas de Auth y archivos de clientes sin respaldo)
 
 Cuatro correcciones surgidas de una revisión externa, confirmadas contra el código antes de tocarlas. Decisión duradera: [ADR 0032](../../docs/decisiones/0032-reserva-de-cuentas-globales.md).

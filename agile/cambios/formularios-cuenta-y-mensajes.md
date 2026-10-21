@@ -1,5 +1,5 @@
 # Cambio: Formularios, cuenta y mensajes (tanda 3 de UX)
-Estado: **para verificar** — implementado y probado en local; falta la aprobación del usuario
+Estado: **hecho** — aprobado por el usuario, subido a `origin` y desplegado en staging (2026-10-21)
 Nivel: **M** (varias piezas de interfaz, sin consecuencias de nivel C: no cambia autorización, datos, dinero ni borrados; las defensas del servidor se conservan). Sin revisión independiente: no hay duda real que la justifique.
 
 Cuatro correcciones de experiencia de uso, confirmadas contra el código antes de tocarlas. Documentación de Next releída (`error.js` y `not-found.js`: un `error.js` envuelve a la página y a los layouts anidados, pero **no** al layout de su propio segmento; un `not-found.js` actúa igual para `notFound()`).

@@ -4,21 +4,21 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Carta central con precio, disponibilidad y visibilidad por sucursal (nivel 2a, nivel C) implementada y probada en local; Codex revisó 3 rondas y corregí lo confirmado; queda una decisión tuya sobre el rollback del historial y la aprobación humana.** Commits `2c9c465` … último de la serie. [Ficha](cambios/carta-por-sucursal.md) · [ADR 0035](../docs/decisiones/0035-carta-central-con-ajustes-por-sucursal.md) (propuesta). Migración nueva `20261107100000_carta_por_sucursal.sql` (columnas `price_cents` e `is_visible` en `product_availability`, `price_history.branch_id`, trigger del historial y RPC `create_product_in_branches`). Staging **no** la tiene.
+**Todo lo pendiente está aprobado, subido a `origin/main` y desplegado en staging (2026-10-21).** Staging (`https://ucomenu-staging.fly.dev`, proyecto de Supabase `ucomenu-staging`) tiene las migraciones hasta `20261107100000` y la app de `main`; `supabase db push --dry-run` dice «up to date». Entró en bloque: borrado de mesas (ADR 0030), cuentas globales (0032), listas, orden e imágenes atómicos (0033), vista por sucursal (0034), carta central con precio, agotado y oculto por sucursal (0035) y las tandas 3 y 4 de UX. El tablero no tiene nada «Para verificar».
 
-Un catálogo por organización; cada sucursal puede tener precio propio de un plato (`$ 0` vale; sin precio hereda el general), marcarlo agotado u ocultarlo. La carta pública lee esos ajustes en vivo. Los topes del plan y los permisos no cambian. Con una sola sucursal la pantalla es la de siempre, salvo que ya haya ajustes. Fuera de alcance: cartas independientes, categorías o variantes por sucursal.
+**Siguiente trabajo pedido por el usuario: una corrección de UI.** Todavía no se definió cuál; preguntar qué pantalla y qué se ve mal. El diseño vive en `DESIGN.md` y `PRODUCT.md` (skill Impeccable); la carta pública usa el sistema propio dentro de `.carta`, el panel y la sala usan los tokens globales. Una corrección solo visual es nivel S: implementar, comprobar a 390 px sin desborde (`expectNoHorizontalOverflow`) y leer el diff.
 
-Esperan aprobación humana, además: la [vista por sucursal](cambios/vista-por-sucursal.md) (ADR 0034, con una decisión tuya sobre el criterio de aviso), las tandas 3 y 4 de UX, [orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos.md) (ADR 0033), [cuentas globales](cambios/proteger-cuentas-globales.md) (ADR 0032) y el [borrado de mesas](cambios/borrado-de-mesas.md).
+Local: `pnpm db:reset` + `pnpm db:demo` + `node tools/escenarios-locales.mjs` (Café Ejemplo con dos sucursales; local, sin versionar) y `pnpm dev`. Usuarios `dueno@cafe-ejemplo.test` y `mozo@cafe-ejemplo.test`, clave `ucomenu-dev-2026`.
 
 ## Bloqueos y riesgos
 
 - **Producción:** bloqueada (dominio, Supabase de producción, revisión legal).
-- El rollback de la migración deja el historial por sucursal mezclado para el código anterior; los datos se conservan. Decidir si se acepta o se rediseña en una tabla propia (ficha, «Revisión independiente»).
-- Sin cambios tuyos commiteados: `docs/decisiones/0031…`, hunks de Mux en `docs/` y `agile/tablero.md`, y `tools/escenarios-locales.mjs`.
-- E2E con `--workers=1`; RLS y E2E no a la vez.
+- Rollback de `20261107100000`: el código anterior mostraría el historial por sucursal mezclado con el general; los datos se conservan (decisión aceptada, ADR 0035).
+- Sin probar: push real y teléfono físico (solo dobles y emulación), lector de pantalla.
+- E2E con `--workers=1`; RLS y E2E no a la vez. `pnpm build` antes de `pnpm test:e2e`.
 
 ## Próximo paso
 
-1. **Decidir** la limitación del rollback del historial (ficha).
-2. El usuario aprueba; recién entonces subir, aplicar migraciones pendientes en staging y desplegar.
-3. Probar en un teléfono real el alta con sucursales y los precios propios.
+1. Preguntar al usuario qué pantalla corregir y con qué criterio.
+2. Corregir, probar en local con capturas a 390 px y a escritorio, y mostrar antes de commitear.
+3. Cualquier despliegue nuevo a staging pide su aprobación (procedimiento en `docs/produccion.md`, flyctl por Docker).

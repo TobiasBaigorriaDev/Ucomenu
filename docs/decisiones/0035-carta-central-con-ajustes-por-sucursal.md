@@ -1,6 +1,6 @@
 # 0035 — Catálogo central por organización con precio, disponibilidad y visibilidad por sucursal (nivel 2a)
 
-- Estado: propuesta (en implementación; pendiente de la revisión independiente y la aprobación del usuario)
+- Estado: aceptada (aprobada por el usuario y desplegada en staging el 2026-10-21)
 - Fecha: 2026-10-21
 
 ## Contexto
@@ -30,3 +30,4 @@ La carta es de la organización y se comparte entre sus sucursales (`docs/produc
 - El historial de una sucursal registra su precio propio, no los cambios del precio base que hereda (esos están en la fila general).
 - Una clave de plato oculto sigue siendo legible por la API (catálogo central público); no se promete confidencialidad por sucursal.
 - Migración nueva `20261107100000_carta_por_sucursal.sql`; rollback en su cabecera.
+- Rollback del historial: se conservan `price_history.branch_id` y sus filas (auditoría de solo-agregado). El código anterior las mostraría mezcladas con las del precio general; el usuario aceptó esa limitación (2026-10-21) frente a rediseñarlas en una tabla propia con sus triggers, clave foránea y purga, que puede hacerse luego si hiciera falta.

@@ -1,5 +1,5 @@
 # Cambio: Borrar mesas (junto con su historial de llamados)
-Estado: **para verificar** — implementado y probado en local; aprobado por Codex (`596704a`); falta la aprobación humana
+Estado: **hecho** — aprobado por el usuario, subido a `origin` y desplegado en staging (2026-10-21) (Codex aprobó `596704a`)
 Nivel: C (eliminación irreversible: la mesa, su QR impreso y los llamados que cuelgan de ella; y un permiso de `DELETE` nuevo sobre `tables`)
 
 ## Objetivo
