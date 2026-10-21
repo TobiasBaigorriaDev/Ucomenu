@@ -269,7 +269,14 @@ export async function addExistingOwnerAction(_previous: FormState, formData: For
     const here = result.data.currentRole === "staff" ? " Ya es Personal de esta organización: se la asciende a Dueño." : "";
     return {
       message: `Encontramos la cuenta ${values.email}. ${describeAffiliations(result.data.others)}${here}`,
-      values: { ...values, step: "confirm", userId: result.data.userId },
+      // `others` y `here` son para mostrar el hallazgo ordenado ANTES de la casilla; la confirmación sigue atada a `userId`.
+      values: {
+        ...values,
+        step: "confirm",
+        userId: result.data.userId,
+        others: JSON.stringify(result.data.others.map((a) => ({ name: a.name, role: ROLE_LABEL[a.role] }))),
+        here: result.data.currentRole === "staff" ? "staff" : "",
+      },
     };
   }
 

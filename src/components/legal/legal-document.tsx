@@ -1,13 +1,15 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { LEGAL_UPDATED_AT } from "@/lib/legal";
+import { LegalBack } from "./legal-back";
 import { LegalLinks } from "./legal-links";
 
 /** Marco común de los textos legales: título, fecha de actualización, cuerpo y enlaces a los otros dos. */
 export function LegalDocument({ title, intro, children }: { title: string; intro: string; children: ReactNode }) {
   return (
     <main className="mx-auto max-w-2xl px-4 py-10">
-      <p className="text-sm text-muted">
+      <LegalBack />
+      <p className="mt-2 text-sm text-muted">
         <Link href="/" className="font-display text-cobalt underline-offset-2 hover:underline">
           UcoMenu
         </Link>
@@ -16,7 +18,8 @@ export function LegalDocument({ title, intro, children }: { title: string; intro
       <p className="mt-2 text-sm text-muted">Actualizado el {LEGAL_UPDATED_AT}</p>
       <p className="mt-6 text-lg leading-relaxed">{intro}</p>
       <div className="mt-8 grid gap-8">{children}</div>
-      <LegalLinks className="mt-12 border-t border-ink/15 pt-6" />
+      <LegalLinks className="mt-12 border-t border-ink/15 pt-6" replace />
+      <LegalBack className="mt-4" />
     </main>
   );
 }

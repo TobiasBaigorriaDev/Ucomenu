@@ -94,6 +94,22 @@ export function elapsedLabel(ms: number): string {
   return `hace ${durationLabel(ms)}`;
 }
 
+/**
+ * Cómo se nombra la mesa de un llamado ante quien no ve la tarjeta (lector de pantalla, avisos): en un local con varias
+ * sucursales la etiqueta sola no alcanza («Mesa 1» puede existir en cada una), así que se agrega la sucursal.
+ */
+export function callName(call: Pick<SalaCall, "tableLabel" | "branchName">, multiBranch: boolean): string {
+  return multiBranch ? `${call.tableLabel}, sucursal ${call.branchName}` : call.tableLabel;
+}
+
+/** Anuncio de los llamados nuevos de un sondeo: uno se nombra completo; varios, por cantidad. Vacío si no hay ninguno. */
+export function newCallsAnnouncement(incoming: readonly SalaCall[], multiBranch: boolean): string {
+  if (incoming.length === 0) return "";
+  if (incoming.length > 1) return `${incoming.length} llamados nuevos.`;
+  const [call] = incoming;
+  return `Nuevo llamado: ${callName(call, multiBranch)}, ${KIND_LABEL[call.kind].toLowerCase()}.`;
+}
+
 /** Los llamados de `next` que la pantalla todavía no había visto. */
 export function newCalls(seen: ReadonlySet<string>, next: readonly SalaCall[]): SalaCall[] {
   return next.filter((call) => !seen.has(call.id));

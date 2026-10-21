@@ -1,7 +1,9 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
-import { dangerButtonClass, inputClass, labelClass } from "@/components/panel/styles";
+import { dangerButtonClass, inputClass, labelClass, secondaryButtonClass } from "@/components/panel/styles";
+import type { FormState } from "@/lib/form-state";
 import {
   addExistingOwnerAction,
   changePlanAction,
@@ -539,15 +541,43 @@ export function DeleteOrganizationForm({ slug, name }: { slug: string; name: str
   );
 }
 
+type Found = { others: { name: string; role: string }[]; alreadyStaffHere: boolean };
+
+/** Lo que la acción devolvió sobre la cuenta encontrada, leído con cuidado (llega como texto en `values`). */
+function readFound(values: FormState["values"]): Found {
+  let others: Found["others"] = [];
+  try {
+    const parsed: unknown = JSON.parse(values?.others ?? "[]");
+    if (Array.isArray(parsed)) {
+      others = parsed.flatMap((item) =>
+        typeof item === "object" && item !== null && typeof (item as { name?: unknown }).name === "string" && typeof (item as { role?: unknown }).role === "string"
+          ? [{ name: (item as { name: string }).name, role: (item as { role: string }).role }]
+          : [],
+      );
+    }
+  } catch {
+    others = [];
+  }
+  return { others, alreadyStaffHere: values?.here === "staff" };
+}
+
 /**
- * Sumar un Dueño que ya tiene cuenta. Dos envíos: el primero busca la cuenta y muestra dónde trabaja; el segundo, con la
- * casilla marcada, la suma. El email queda fijo entre los dos pasos para que la confirmación sea sobre la cuenta que se vio.
+ * Sumar un Dueño que ya tiene cuenta. Dos pasos con la misma acción: el primero busca la cuenta y muestra dónde trabaja; el
+ * segundo, con la casilla marcada, la suma. El hallazgo (cuenta y afiliaciones) se muestra ANTES de la casilla y del botón que
+ * confirma, y el email queda fijo mientras se confirma para que la confirmación sea sobre la cuenta que se vio (viaja atada a
+ * `userId`; el servidor la vuelve a comprobar). «Cancelar» vuelve al primer paso sin llamar al servidor: no se escribe nada y el
+ * email se puede cambiar sin recargar la página.
  */
 export function AddOwnerForm({ slug }: { slug: string }) {
+  const emailRef = useRef<HTMLInputElement>(null);
+  // Resultado del servidor que la persona descartó con «Cancelar»: mientras sea el mismo, el formulario vuelve a buscar.
+  const [dismissed, setDismissed] = useState<FormState | null>(null);
+
   return (
-    <ActionForm action={addExistingOwnerAction} className="mt-4 grid max-w-md gap-4">
+    <ActionForm action={addExistingOwnerAction} className="mt-4 grid max-w-md gap-4" inlineMessages>
       {(state) => {
-        const confirming = state.values?.step === "confirm";
+        const confirming = state.values?.step === "confirm" && dismissed !== state;
+        const found = confirming ? readFound(state.values) : null;
         return (
           <>
             <input type="hidden" name="slug" value={slug} />
@@ -557,6 +587,7 @@ export function AddOwnerForm({ slug }: { slug: string }) {
               </label>
               <input
                 id="dueno-email"
+                ref={emailRef}
                 name="email"
                 type="email"
                 required
@@ -567,8 +598,29 @@ export function AddOwnerForm({ slug }: { slug: string }) {
                 className={`${inputClass} mt-1`}
               />
             </div>
-            {confirming ? (
+            {found ? (
               <div className="grid gap-3">
+                {/* El hallazgo, antes de lo que confirma. Es la única región viva de este paso: se anuncia una vez. */}
+                <div role="status" data-testid="cuenta-encontrada" className="rounded-2xl border border-ink/20 bg-white p-4 text-base leading-relaxed">
+                  <p>
+                    Encontramos la cuenta <strong className="[overflow-wrap:anywhere]">{state.values?.email}</strong>.
+                  </p>
+                  {found.others.length === 0 ? (
+                    <p className="mt-1">Todavía no trabaja en ningún otro local.</p>
+                  ) : (
+                    <>
+                      <p className="mt-1">Hoy trabaja en:</p>
+                      <ul className="mt-1 list-disc pl-5">
+                        {found.others.map((other, index) => (
+                          <li key={`${other.name}-${index}`}>
+                            «{other.name}» ({other.role})
+                          </li>
+                        ))}
+                      </ul>
+                    </>
+                  )}
+                  {found.alreadyStaffHere ? <p className="mt-1">Ya es Personal de esta organización: se la asciende a Dueño.</p> : null}
+                </div>
                 <p className="max-w-prose text-base leading-relaxed" data-testid="aviso-dueno-existente">
                   Sumar un Dueño le da control total sobre este local. Confirmá solo si es la misma persona: si la cuenta era de Personal
                   de otro local, el Dueño de ese local pudo haber elegido su contraseña.
@@ -580,9 +632,32 @@ export function AddOwnerForm({ slug }: { slug: string }) {
                 </label>
               </div>
             ) : null}
-            <div>
+            <div className="flex flex-wrap gap-3">
               <SubmitButton pendingLabel={confirming ? "Sumando…" : "Buscando…"}>{confirming ? "Sumar como Dueño" : "Buscar cuenta"}</SubmitButton>
+              {confirming ? (
+                <button
+                  type="button"
+                  className={secondaryButtonClass}
+                  onClick={() => {
+                    setDismissed(state);
+                    emailRef.current?.focus();
+                  }}
+                >
+                  Cancelar y cambiar el email
+                </button>
+              ) : null}
             </div>
+            {state.error ? (
+              <p role="alert" className="text-base font-medium text-danger">
+                {state.error}
+              </p>
+            ) : null}
+            {/* El aviso de «Encontramos la cuenta…» ya se muestra arriba, junto a la casilla: aquí solo el éxito final. */}
+            {state.message && state.values?.step !== "confirm" ? (
+              <p role="status" className="text-base font-medium text-ink">
+                {state.message}
+              </p>
+            ) : null}
           </>
         );
       }}

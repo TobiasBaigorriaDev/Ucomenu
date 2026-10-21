@@ -4,14 +4,14 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Tercera tanda (UX, nivel M) implementada y probada en local; falta la aprobación del usuario.** Rama `main`. [Ficha](cambios/formularios-cuenta-y-mensajes.md). Sin migración ni cambios de base.
+**Cuarta tanda (UX, nivel M) implementada y probada en local con emulación de teléfono; falta la aprobación del usuario.** Rama `main`. [Ficha](cambios/detalle-retorno-y-confirmaciones.md). Sin migración ni cambios de base.
 
-1. El alta de personal queda inactiva (campos y botón) sin permiso de escritura, con el aviso arriba; el servidor sigue rechazándola.
-2. `/cuenta` de un SuperAdmin usa el marco de `/admin` y vuelve a `/admin` (con segundo enlace a su panel si también trabaja en un local); Dueño y Staff, igual que antes.
-3. El resultado de guardar traducciones se ve junto al botón fijo, una sola vez.
-4. Errores y «no encontrado» por zona: general en la raíz, propios en `panel`, `sala` y `admin` (dentro del marco cuando se puede) y el mensaje de la carta solo en `/m` y `/t`.
+1. Detalle del plato: «Volver a la carta» queda fijo arriba y el scroll no pasa a la página de atrás.
+2. Textos legales: «Volver» (o «Ir a la portada» con acceso directo), sin guardar nada ni agregar parámetros.
+3. Sumar un Dueño: el hallazgo (cuenta y locales) va antes de la casilla; «Cancelar y cambiar el email» no escribe ni recarga.
+4. Sala con varias sucursales: el anuncio y «Atendido» nombran la sucursal; una sola región viva.
 
-Tanda 2 ([listas, orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos.md), ADR 0033, migración `20261105100000`) y tanda 1 ([cuentas globales](cambios/proteger-cuentas-globales.md), ADR 0032, migración `20261104100000`): aprobadas por Codex, **sin aprobación humana**. Staging no tiene esas migraciones. También pendiente de aprobación: [borrado de mesas](cambios/borrado-de-mesas.md). Fase 2 = feed de videos con **Mux Video** ([ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)).
+Esperan aprobación humana, además de esta: la tanda 3 ([formularios, cuenta y mensajes](cambios/formularios-cuenta-y-mensajes.md), `1ea4ca6`), la 2 ([listas, orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos.md), ADR 0033, migración `20261105100000`), la 1 ([cuentas globales](cambios/proteger-cuentas-globales.md), ADR 0032, migración `20261104100000`) y el [borrado de mesas](cambios/borrado-de-mesas.md). Las tandas 1 y 2 están aprobadas por Codex; staging no tiene esas migraciones. Fase 2 = feed de videos con **Mux Video** ([ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)).
 
 ## Bloqueos y riesgos
 
@@ -23,5 +23,5 @@ Tanda 2 ([listas, orden e imágenes atómicos](cambios/orden-e-imagenes-atomicos
 
 ## Próximo paso
 
-1. El usuario aprueba las tres tandas; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
-2. Probar a mano en staging: alta de personal con una cuenta vencida, `/cuenta` con el SuperAdmin, y el guardado de traducciones en una carta larga.
+1. El usuario aprueba; recién entonces subir a `origin`, aplicar las migraciones pendientes en staging y desplegar.
+2. Probar en un teléfono real (iPhone y Android) el detalle del plato con la barra de direcciones móvil, el «Volver» de los textos legales y la sala con dos sucursales.

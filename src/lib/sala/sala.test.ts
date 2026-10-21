@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  callName,
   durationLabel,
   elapsedLabel,
   EXPIRY_MS,
@@ -8,6 +9,7 @@ import {
   isUrgent,
   MAX_BACKOFF_MS,
   newCalls,
+  newCallsAnnouncement,
   nextPollDelay,
   pageTitle,
   parseSalaState,
@@ -152,5 +154,24 @@ describe("antigüedad del escaneo (ticket de visita)", () => {
     expect(durationLabel(2 * 3600_000 + 40 * 60_000)).toBe("2 h 40 min");
     expect(durationLabel(3 * 3600_000)).toBe("3 h");
     expect(elapsedLabel(65 * 60_000)).toBe("hace 1 h 5 min");
+  });
+});
+
+describe("anuncios con varias sucursales", () => {
+  const norte = { ...call("n", "2026-01-01T00:00:00Z", "Mesa 1"), branchName: "Norte" };
+  const centro = { ...call("c", "2026-01-01T00:00:01Z", "Mesa 1", "bill"), branchName: "Centro" };
+
+  it("la mesa se nombra con su sucursal solo si el local tiene varias: «Mesa 1» puede existir en cada una", () => {
+    expect(callName(norte, true)).toBe("Mesa 1, sucursal Norte");
+    expect(callName(centro, true)).toBe("Mesa 1, sucursal Centro");
+    expect(callName(norte, false)).toBe("Mesa 1");
+  });
+
+  it("un llamado nuevo se anuncia completo; varios, por cantidad; ninguno, nada", () => {
+    expect(newCallsAnnouncement([norte], true)).toBe("Nuevo llamado: Mesa 1, sucursal Norte, llama al mozo.");
+    expect(newCallsAnnouncement([centro], true)).toBe("Nuevo llamado: Mesa 1, sucursal Centro, pide la cuenta.");
+    expect(newCallsAnnouncement([norte], false)).toBe("Nuevo llamado: Mesa 1, llama al mozo.");
+    expect(newCallsAnnouncement([norte, centro], true)).toBe("2 llamados nuevos.");
+    expect(newCallsAnnouncement([], true)).toBe("");
   });
 });

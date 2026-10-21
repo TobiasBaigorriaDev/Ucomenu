@@ -41,6 +41,11 @@
   background: rgb(42 38 34 / 55%);
 }
 
+/* Con un detalle abierto, la página de atrás no se desplaza (ni con la rueda sobre el fondo ni al llegar al final del detalle). */
+html:has(.carta-dialog[open]) {
+  overflow: hidden;
+}
+
 /* Nombre del local: crece con la pantalla sin pasar de 6rem. */
 .carta-title {
   font-size: clamp(3.25rem, 0.75rem + 14vw, 6rem);

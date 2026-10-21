@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { purgeAuditLogWhere } from "../tests/rls/purge-price-history";
 import { SEED_PASSWORD, createTenant, expectNoHorizontalOverflow, login, service, type Tenant } from "./support";
 
@@ -66,6 +66,53 @@ test.describe("sumar un Dueño existente", () => {
     await expect(encabezado).toContainText(b.owner.email);
     await expect(encabezado).toContainText(a.owner.email);
     await expectNoHorizontalOverflow(page);
+  });
+
+  test("el hallazgo se ve ANTES de la casilla y del botón que confirma; «Cancelar» vuelve a buscar sin escribir nada ni recargar", async ({ page }) => {
+    const { a, b } = await dosLocales("dex-cancelar");
+    const otra = await createTenant("dex-cancelar-c");
+    tenants.push(otra);
+    await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(b.slug));
+    const form = formulario(page);
+    const antes = (await service().from("audit_log").select("id").eq("organization_id", b.orgId)).data?.length ?? 0;
+
+    await form.getByLabel("Email de la cuenta").fill(a.owner.email);
+    await form.getByRole("button", { name: "Buscar cuenta" }).click();
+
+    // La cuenta y dónde trabaja están arriba de la casilla y del botón de confirmar (orden de lectura y visual).
+    const hallazgo = form.getByTestId("cuenta-encontrada");
+    await expect(hallazgo).toContainText(`Encontramos la cuenta ${a.owner.email}`);
+    await expect(hallazgo).toContainText(`«${a.name}» (Dueño)`);
+    const casilla = form.getByRole("checkbox");
+    const confirmar = form.getByRole("button", { name: "Sumar como Dueño" });
+    const y = async (l: Locator) => (await l.boundingBox())!.y;
+    expect(await y(hallazgo)).toBeLessThan(await y(casilla));
+    expect(await y(casilla)).toBeLessThan(await y(confirmar));
+    await expect(form.getByRole("status")).toHaveCount(1); // un solo anuncio
+
+    // Cancelar: no hay ninguna llamada al servidor ni recarga; el email se puede cambiar y la casilla desaparece.
+    const marca = await page.evaluate(() => ((window as unknown as { __marca?: number }).__marca = Date.now()));
+    await form.getByRole("button", { name: "Cancelar y cambiar el email" }).click();
+    await expect(casilla).toHaveCount(0);
+    await expect(hallazgo).toHaveCount(0);
+    await expect(form.getByRole("button", { name: "Buscar cuenta" })).toBeVisible();
+    const email = form.getByLabel("Email de la cuenta");
+    await expect(email).not.toHaveAttribute("readonly", "");
+    await expect(email).toBeFocused();
+    expect(await page.evaluate(() => (window as unknown as { __marca?: number }).__marca)).toBe(marca); // misma página, sin recargar
+    expect(await membresia(b.orgId, a.owner.id)).toBeNull();
+    expect((await service().from("audit_log").select("id").eq("organization_id", b.orgId)).data?.length ?? 0).toBe(antes);
+
+    // Cambiar el email y buscar otra cuenta: el hallazgo es de la nueva, y confirmar suma a ESA cuenta.
+    await email.fill(otra.owner.email);
+    await form.getByRole("button", { name: "Buscar cuenta" }).click();
+    await expect(form.getByTestId("cuenta-encontrada")).toContainText(`Encontramos la cuenta ${otra.owner.email}`);
+    await expect(form.getByTestId("cuenta-encontrada")).not.toContainText(a.owner.email);
+    await form.getByRole("checkbox").check();
+    await form.getByRole("button", { name: "Sumar como Dueño" }).click();
+    await expect(form.getByRole("status")).toContainText("ahora es Dueño de esta organización");
+    expect(await membresia(b.orgId, otra.owner.id)).toBe("owner");
+    expect(await membresia(b.orgId, a.owner.id)).toBeNull();
   });
 
   test("una cuenta que no existe se dice con claridad y no crea nada", async ({ page }) => {

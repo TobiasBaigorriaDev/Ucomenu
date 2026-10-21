@@ -6,9 +6,11 @@ import {
   durationLabel,
   elapsedLabel,
   isStaleVisit,
+  callName,
   isUrgent,
   KIND_LABEL,
   newCalls,
+  newCallsAnnouncement,
   nextPollDelay,
   pageTitle,
   parseSalaState,
@@ -120,11 +122,7 @@ export function SalaBoard({
     setTimeout(() => {
       setFresh((current) => new Set([...current].filter((id) => !ids.includes(id))));
     }, FRESH_MS);
-    setAnnouncement(
-      incoming.length === 1
-        ? `Nuevo llamado: ${incoming[0].tableLabel}, ${KIND_LABEL[incoming[0].kind].toLowerCase()}.`
-        : `${incoming.length} llamados nuevos.`,
-    );
+    setAnnouncement(newCallsAnnouncement(incoming, next.multiBranch));
     beepIfOn();
   }, []);
 
@@ -253,14 +251,15 @@ export function SalaBoard({
         return;
       }
       setState((current) => ({ ...current, calls: current.calls.filter((c) => c.id !== call.id) }));
+      const name = callName(call, state.multiBranch);
       setGlobalNote(
         result.status === "already_attended"
-          ? `${call.tableLabel}: ya lo atendió otra persona.`
+          ? `${name}: ya lo atendió otra persona.`
           : result.status === "expired"
-            ? `${call.tableLabel}: ese llamado ya venció.`
+            ? `${name}: ese llamado ya venció.`
             : result.status === "not_found"
-              ? `${call.tableLabel}: ese llamado ya no existe.`
-              : `${call.tableLabel}: marcado como atendido.`,
+              ? `${name}: ese llamado ya no existe.`
+              : `${name}: marcado como atendido.`,
       );
     } catch {
       setNotes((current) => ({ ...current, [call.id]: "No se pudo comunicar con el servidor. Probá de nuevo." }));
@@ -289,12 +288,13 @@ export function SalaBoard({
 
   return (
     <section aria-label="Llamados pendientes" className="mt-6">
-      {/* Anuncio para lectores de pantalla y aviso visible de un llamado nuevo. */}
+      {/* Un solo anuncio para lectores de pantalla (esta región viva). El aviso visible de abajo repite el texto SIN ser una región
+          viva y queda fuera del árbol de accesibilidad: dos regiones con el mismo texto lo anunciarían dos veces. */}
       <div aria-live="polite" data-testid="anuncio" className="sr-only">
         {announcement}
       </div>
       {fresh.size > 0 && announcement ? (
-        <p role="status" data-testid="aviso-nuevo" className="mb-4 rounded-2xl bg-tile px-4 py-3 text-lg font-semibold ring-2 ring-inset ring-cobalt">
+        <p aria-hidden="true" data-testid="aviso-nuevo" className="mb-4 rounded-2xl bg-tile px-4 py-3 text-lg font-semibold ring-2 ring-inset ring-cobalt">
           {announcement}
         </p>
       ) : null}
@@ -392,7 +392,7 @@ export function SalaBoard({
                       type="button"
                       onClick={() => attend(call)}
                       disabled={busy === call.id}
-                      aria-label={`Marcar como atendido: ${call.tableLabel}, ${KIND_LABEL[call.kind].toLowerCase()}`}
+                      aria-label={`Marcar como atendido: ${callName(call, state.multiBranch)}, ${KIND_LABEL[call.kind].toLowerCase()}`}
                       className={`${primaryClass} w-full sm:w-auto`}
                     >
                       {busy === call.id ? "Guardando…" : "Atendido"}

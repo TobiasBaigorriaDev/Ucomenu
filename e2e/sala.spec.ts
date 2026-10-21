@@ -163,6 +163,51 @@ test.describe("llamados en vivo", () => {
   });
 });
 
+test.describe("anuncios con varias sucursales", () => {
+  test("el llamado se anuncia con su sucursal, «Atendido» distingue mesas iguales y no hay dos regiones vivas con lo mismo", async ({ browser }) => {
+    // «Mesa 1» existe en Centro y en Norte: sin la sucursal, ni el anuncio ni el botón dirían cuál es.
+    const { t, mesas, branchIds } = await nuevoLocal("sala-anuncios", { sucursales: 2 });
+    const mesa1 = (branch: string) => mesas.find((m) => m.branch_id === branch && m.label === "Mesa 1")!;
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.owner, t);
+    await expect(page.getByTestId("sala-vacia")).toBeVisible();
+    const anuncio = page.getByTestId("anuncio");
+
+    await llamar(mesa1(branchIds[0]).qr_token);
+    await expect(anuncio).toHaveText("Nuevo llamado: Mesa 1, sucursal Centro, llama al mozo.", { timeout: 12_000 });
+    await llamar(mesa1(branchIds[1]).qr_token, "bill");
+    await expect(anuncio).toHaveText("Nuevo llamado: Mesa 1, sucursal Norte, pide la cuenta.", { timeout: 12_000 });
+
+    // Una sola región viva dice la novedad: el aviso visible es el mismo texto, pero fuera del árbol de accesibilidad.
+    await expect(page.getByTestId("aviso-nuevo")).toHaveAttribute("aria-hidden", "true");
+    await expect(page.locator('[aria-live], [role="status"], [role="alert"]').filter({ hasText: "Nuevo llamado" })).toHaveCount(1);
+
+    // El botón de cada tarjeta se distingue por su nombre accesible.
+    const centro = page.getByRole("button", { name: "Marcar como atendido: Mesa 1, sucursal Centro, llama al mozo" });
+    const norte = page.getByRole("button", { name: "Marcar como atendido: Mesa 1, sucursal Norte, pide la cuenta" });
+    await expect(centro).toBeVisible();
+    await expect(norte).toBeVisible();
+    await expect(norte).toHaveText("Atendido");
+
+    // Atender uno no toca el otro, y el resultado también dice la sucursal.
+    await norte.click();
+    await expect(page.getByTestId("nota-sala")).toHaveText("Mesa 1, sucursal Norte: marcado como atendido.");
+    await expect(page.locator('[data-testid="llamado"]')).toHaveCount(1);
+    await expect(centro).toBeVisible();
+    await ctx.close();
+  });
+
+  test("con una sola sucursal el anuncio no agrega la sucursal", async ({ browser }) => {
+    const { t, mesas } = await nuevoLocal("sala-anuncio-simple");
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await abrirSala(ctx, t.owner, t);
+    await llamar(mesas[1].qr_token);
+    await expect(page.getByTestId("anuncio")).toHaveText("Nuevo llamado: Mesa 2, llama al mozo.", { timeout: 12_000 });
+    await expect(page.getByRole("button", { name: "Marcar como atendido: Mesa 2, llama al mozo" })).toBeVisible();
+    await ctx.close();
+  });
+});
+
 test.describe("atender", () => {
   test("«Atendido» lo saca de la lista, lo registra con la hora y la persona, y otra pantalla lo ve desaparecer", async ({ browser }) => {
     const { t, mesas } = await nuevoLocal("sala-atiende");
