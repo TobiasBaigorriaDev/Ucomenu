@@ -1,5 +1,5 @@
 # Cambio: Borrar categorías y platos (con la limpieza de sus fotos en Storage)
-Estado: **para verificar** — implementado y probado en local; falta la revisión independiente y la aprobación humana
+Estado: **para verificar** — implementado, probado en local y aprobado por Codex (2 rondas, `33d0c1c`); falta la aprobación humana
 Nivel: C (eliminación irreversible de datos de un cliente: platos con precios, variantes, adicionales, disponibilidad y archivos de Storage)
 
 ## Objetivo
@@ -64,4 +64,5 @@ Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probad
 
 ## Revisión y aprobación
 - **Codex, ronda 1 (`9ce17a1`, nivel C, esfuerzo high): APROBAR CON CAMBIOS.** Un hallazgo *importante*, real: `deleteCategory` limpiaba las carpetas de los platos leídos antes del `DELETE`; si otra sesión movía un plato a otra categoría en ese intervalo, el plato sobrevivía sin su foto (con `image_path` apuntándola) y se informaba éxito. Corregido: tras el borrado se comprueba qué platos ya no existen (`productsGone`) y solo a esos se les limpia la carpeta; si no se puede comprobar, no se borra ningún archivo y se avisa. Regresión nueva en `carta.rls.test.ts` (mueve el plato justo después de la lectura): **falla sin la corrección** y pasa con ella; `carta.rls.test.ts` **28/28**.
-- Pendiente: ronda de verificación de Codex sobre la corrección y la **aprobación humana** (no está dada) antes de subir a `origin` o desplegar.
+- **Codex, ronda 2 (verificación, commit `33d0c1c`): APROBAR, sin hallazgos.** Confirmó la corrección y la regresión por inspección (no ejecutó suites ni mutaciones; esa evidencia es la de arriba, incluida la comprobación de que la prueba falla sin la corrección).
+- Pendiente: la **aprobación humana** (no está dada) antes de subir a `origin` o desplegar, y la decisión sobre si el Staff puede borrar una categoría entera.

@@ -4,12 +4,12 @@ Actualizado: 2026-10-21 · agente saliente: Claude · historial anterior en `agi
 
 ## Punto de retomada
 
-**Borrado de categorías y platos (C) implementado y probado en local**, sin aprobación humana todavía. Rama `main`; implementación `9ce17a1`. [Ficha](cambios/borrado-de-categorias-y-platos.md) y [ADR 0029](../docs/decisiones/0029-borrado-de-categorias-y-platos.md) (propuesta). No hay migración ni permisos nuevos: la RLS ya permitía el `DELETE` a Dueño y Staff con la cuenta al día.
+**Borrado de categorías y platos (C) implementado y probado en local**, sin aprobación humana todavía. Rama `main`; implementación `9ce17a1` y corrección `33d0c1c`. [Ficha](cambios/borrado-de-categorias-y-platos.md) y [ADR 0029](../docs/decisiones/0029-borrado-de-categorias-y-platos.md) (propuesta). No hay migración ni permisos nuevos: la RLS ya permitía el `DELETE` a Dueño y Staff con la cuenta al día.
 
 - El plato se borra desde su pantalla y la categoría desde su cabecera, en dos pasos. Una categoría con platos pide el nombre exacto y que la cantidad vista coincida (lo comprueba el servidor).
 - Las fotos de Storage se limpian **después** de confirmar el borrado de la fila; si falla, la pantalla avisa y el log lleva los ids.
 - El historial de precios se conserva («Plato eliminado»); variantes, adicionales, disponibilidad, traducciones y vistas contadas se van con el plato.
-- La revisión independiente de Codex se lanzó sobre `9ce17a1`: su veredicto y lo que se corrija quedan en la sección «Revisión y aprobación» de la ficha.
+- Revisión de Codex: ronda 1 con un hallazgo real (un plato movido de categoría durante el borrado perdía su foto), corregido con regresión; ronda 2 **APROBAR** sin hallazgos. Detalle en la ficha.
 
 Sin desplegar: ni `origin` ni staging tienen este cambio.
 
@@ -26,6 +26,5 @@ Investigación abierta: [vencimiento en iPhone](cambios/ticket-de-visita.md#inve
 
 ## Próximo paso
 
-1. Triage del informe de Codex (`output/revisiones/`), corregir lo real y una ronda de verificación.
-2. El usuario aprueba (y decide lo del Staff); recién entonces subir a `origin` y, si quiere, desplegar a staging.
-3. Prueba manual del usuario del borrado en staging, con SuperAdmin y de organizaciones.
+1. El usuario aprueba (y decide lo del Staff); recién entonces subir a `origin` y, si quiere, desplegar a staging.
+2. Prueba manual del usuario del borrado en staging, con SuperAdmin y de organizaciones.

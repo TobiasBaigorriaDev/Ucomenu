@@ -13,7 +13,7 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - (vacío)
 
 ## Para verificar
-- [C] Borrado de categorías y platos con limpieza de fotos en Storage: implementado y probado en local (RLS, E2E y mutaciones); falta la revisión independiente y la aprobación del usuario (bloqueado por: eso) → [ficha](cambios/borrado-de-categorias-y-platos.md) · ADR 0029
+- [C] Borrado de categorías y platos con limpieza de fotos en Storage: implementado y probado en local (RLS, E2E y mutaciones); revisado por Codex (aprobado en 2 rondas); falta la aprobación del usuario (bloqueado por: eso) → [ficha](cambios/borrado-de-categorias-y-platos.md) · ADR 0029
 
 ## Bloqueado
 - [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
