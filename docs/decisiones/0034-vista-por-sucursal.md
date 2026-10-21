@@ -12,7 +12,7 @@ Con dos sucursales que reciben llamados a la vez, todo el personal veía y recib
 3. **Todo lo que avisa sigue la vista:** la sala, el cartel del panel, el contador del menú y el sonido (mismo sondeo) y el **push**, que ahora descarta las suscripciones de quien eligió otras sucursales.
 4. **Ante la duda, se avisa y se muestra.** Sin vista, con la lista vacía, o con sucursales que se desactivaron o borraron, la vista efectiva vuelve a «Todas» y el push avisa. Un aviso de más es preferible a un llamado sin atender.
 5. **Red de seguridad:** la sala muestra cuántos llamados hay en las sucursales que no se miran (sin sonido ni región viva) con «Ver todas», y el cartel dice «Mostrando: …». `multiBranch` sigue siendo del local: la tarjeta nombra la sucursal aunque se filtre a una (igual que el texto del push).
-6. **Cambiar la vista no suena ni anuncia** lo que ya estaba pendiente.
+6. **Cambiar la vista no suena ni anuncia lo que la pantalla ya había recibido** (y la vista anterior ocultaba); un llamado creado después de la última actualización sí se anuncia, aunque estuviera oculto (con horas del servidor, sin depender del reloj del dispositivo).
 7. **La analítica** (solo Dueño) abre en la sucursal elegida si es exactamente una; `?sucursal=todas` fuerza «Todas».
 
 ## Alternativas consideradas

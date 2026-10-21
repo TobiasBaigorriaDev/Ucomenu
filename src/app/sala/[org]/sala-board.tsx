@@ -9,7 +9,7 @@ import {
   callName,
   isUrgent,
   KIND_LABEL,
-  newCalls,
+  announceableCalls,
   newCallsAnnouncement,
   nextPollDelay,
   pageTitle,
@@ -68,9 +68,8 @@ export function SalaBoard({
   // del próximo toque (si no, un segundo toque rápido calcularía sobre la vista vieja y pisaría la primera elección).
   const [pendingView, setPendingView] = useState<string[] | null>(null);
   const savingViewRef = useRef(false);
-  // Hora del servidor en que la persona cambió de sucursales desde esta pantalla: lo anterior ya estaba pendiente (base); un llamado
-  // posterior es nuevo aunque llegue en la primera respuesta con la vista nueva.
-  const viewChangedAt = useRef<number | null>(null);
+  // Hora del servidor de la última actualización recibida: con un cambio de vista, solo lo creado después es nuevo (ver announceableCalls).
+  const lastSnapshot = useRef(Date.parse(initial.serverNow));
   const [viewNote, setViewNote] = useState("");
 
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
@@ -126,11 +125,9 @@ export function SalaBoard({
     if (!savingViewRef.current) setPendingView(null);
     const viewChanged = next.view.join(",") !== lastView.current;
     lastView.current = next.view.join(",");
-    // Con otra vista, lo que aparece ya estaba pendiente: se toma como base, sin sonido ni anuncio. Solo lo creado DESPUÉS del cambio
-    // (si lo cambió esta pantalla) es nuevo; si cambió desde otro dispositivo, todo lo de esta respuesta es base.
-    const cutoff = viewChanged ? (viewChangedAt.current ?? Date.parse(next.serverNow)) : null;
-    if (viewChanged || !savingViewRef.current) viewChangedAt.current = null;
-    const incoming = newCalls(seen.current, next.calls).filter((call) => cutoff === null || Date.parse(call.createdAt) > cutoff);
+    // Con otra vista, lo que la pantalla ya había recibido (y la vista anterior ocultaba) es base, sin sonido ni anuncio.
+    const incoming = announceableCalls(seen.current, next.calls, viewChanged, lastSnapshot.current);
+    lastSnapshot.current = Date.parse(next.serverNow);
     for (const call of next.calls) seen.current.add(call.id);
 
     offset.current = Date.parse(next.serverNow) - Date.now();
@@ -274,7 +271,6 @@ export function SalaBoard({
 
   async function chooseView(ids: string[]) {
     savingViewRef.current = true;
-    viewChangedAt.current = Date.now() + offset.current;
     setSavingView(true);
     setViewNote("");
     setPendingView(ids);

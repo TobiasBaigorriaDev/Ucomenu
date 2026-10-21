@@ -129,6 +129,23 @@ export function newCalls(seen: ReadonlySet<string>, next: readonly SalaCall[]): 
   return next.filter((call) => !seen.has(call.id));
 }
 
+/**
+ * Los llamados que una respuesta nueva anuncia (sonido y aviso). Sin cambio de vista: los que la pantalla no había visto. Con cambio
+ * de vista (la persona eligió otras sucursales, desde esta pantalla u otro dispositivo): lo que aparece ahora y la pantalla ya había
+ * recibido —pero ocultado por la vista anterior— es base y NO se anuncia; un llamado creado DESPUÉS de la última actualización
+ * (`previousSnapshotMs`, hora del servidor) nunca se mostró en ningún lado y sí se anuncia. Todo con horas del servidor: no depende
+ * del reloj del dispositivo ni de cuándo se tocó el selector. Ante la duda se anuncia (un aviso de más, no un llamado perdido).
+ */
+export function announceableCalls(
+  seen: ReadonlySet<string>,
+  next: readonly SalaCall[],
+  viewChanged: boolean,
+  previousSnapshotMs: number,
+): SalaCall[] {
+  const unseen = newCalls(seen, next);
+  return viewChanged ? unseen.filter((call) => Date.parse(call.createdAt) > previousSnapshotMs) : unseen;
+}
+
 /** El más viejo primero; ante igual antigüedad, por mesa para que el orden sea estable. */
 export function sortOldestFirst(calls: readonly SalaCall[]): SalaCall[] {
   return [...calls].sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.tableLabel.localeCompare(b.tableLabel, "es-AR", { numeric: true }));

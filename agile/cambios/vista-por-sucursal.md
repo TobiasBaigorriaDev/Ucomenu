@@ -12,14 +12,14 @@ Con dos sucursales que reciben llamados a la vez, hoy todo el personal ve y reci
 4. **Push.** `push_targets_for_call` agrega la sucursal de la mesa y descarta las suscripciones de quien eligió otras sucursales (y solo esas). No devuelve datos nuevos y solo puede **reducir** destinatarios.
 5. **Sala y cartel.** `loadSala` filtra por la vista efectiva y devuelve además `branches`, `view` y `othersPending`. `multiBranch` sigue siendo del local (la tarjeta nombra la sucursal aunque se filtre a una, igual que el texto del push). El cartel del panel, el contador del menú y el sonido heredan el filtro porque salen del mismo sondeo.
 6. **Red de seguridad.** La sala muestra una línea fija **no viva** «Hay N llamados pendientes en otras sucursales» con «Ver todas», y el cartel dice «Mostrando: …».
-7. **Cambiar la vista no suena ni anuncia lo que ya estaba pendiente**: la primera respuesta con otra vista se toma como base, salvo lo creado después del cambio (si lo hizo esta pantalla), que sí es nuevo. El cartel del panel vuelve a montar su región viva al cambiar la vista. La elección se ve y se usa al instante (el segundo toque se suma al primero aunque el sondeo tarde).
+7. **Qué anuncia un cambio de vista** (`announceableCalls`, función pura): lo que la pantalla **ya había recibido** y la vista anterior ocultaba es base y no suena ni se anuncia; un llamado creado **después de la última actualización** nunca se mostró en ningún lado y sí se anuncia, aunque la vista anterior lo ocultara. Todo con horas del servidor (`createdAt` contra el `serverNow` de la actualización anterior): no depende del reloj del dispositivo, del momento del toque ni de respuestas intermedias. Ante la duda se anuncia. El cartel del panel vuelve a montar su región viva al cambiar la vista. La elección se ve y se usa al instante (el segundo toque se suma al primero aunque el sondeo tarde).
 8. **Analítica** (solo Dueño, sin cambios de permisos): sin `?sucursal=` abre en la vista guardada si es exactamente una sucursal; `?sucursal=_todas` fuerza «Todas» (valor reservado: el guion bajo no puede formar parte de un slug, y una sucursal puede llamarse «todas»).
 9. **No cambian:** RLS de `waiter_calls`/`tables`, `attendCall`, el service worker, mesas y configuración del llamado (tareas de administración).
 
 ## Aceptación
 - [ ] Cada persona elige una, varias o todas las sucursales; la elección persiste (recarga y otros dispositivos) y solo existe si el local tiene más de una sucursal activa.
 - [ ] La sala, el cartel, el contador y el sonido muestran solo lo elegido; «otras sucursales» se informa con un número y un enlace.
-- [ ] Cambiar la vista no hace sonar ni anuncia llamados que ya estaban.
+- [ ] Cambiar la vista no hace sonar ni anuncia llamados que la pantalla ya había recibido; uno creado desde la última actualización sí.
 - [ ] El push de un llamado llega a quien eligió esa sucursal o «Todas» y no a quien eligió otra; sin vista, o con una vista sin sucursales activas, avisa.
 - [ ] Nadie escribe la vista de otra persona ni con sucursales de otro local o inactivas; quitar a la persona del local borra su vista.
 - [ ] La analítica del Dueño abre en la sucursal guardada.
@@ -30,7 +30,7 @@ Con dos sucursales que reciben llamados a la vez, hoy todo el personal ve y reci
 3. Elegir sucursal no amplía ni reduce permisos.
 4. Solo la propia persona escribe su vista, y solo con sucursales activas de ese local.
 5. El push nunca avisa a quien no es miembro y, ante ambigüedad, avisa.
-6. Cambiar la vista no dispara sonido ni anuncio por llamados ya pendientes.
+6. Cambiar la vista no dispara sonido ni anuncio por llamados que la pantalla ya había recibido; un llamado nuevo, aunque la vista anterior lo ocultara, sí se anuncia.
 
 ## (C) Fallos y recuperación
 | Falla | Resultado |
@@ -46,7 +46,8 @@ Incluye: migración, `loadSala`/`parseSalaState`, selector y acción, cartel y c
 
 ## Revisión y aprobación
 - **Codex, ronda 1 (commit `ea42df4`, nivel C, esfuerzo high): APROBAR CON CAMBIOS, 3 hallazgos importantes, los tres confirmados.** (1) Un segundo toque, antes de que el sondeo devolviera la primera elección, calculaba sobre la vista vieja y la pisaba: la elección se muestra y se usa al instante (`pendingView`) y solo la reemplaza una respuesta posterior al guardado. (2) `?sucursal=todas` chocaba con una sucursal cuyo slug sea `todas`: el valor reservado pasó a `_todas`. (3) El cartel del panel seguía anunciando en su región viva los pendientes que aparecían al cambiar la vista: ahora la región se vuelve a montar con la vista nueva. De paso, al refinar la prueba de sonido apareció una carrera real (un llamado creado mientras se guarda el cambio se tomaba como ya pendiente): solo lo anterior al cambio es base. Se agregaron 3 pruebas E2E (con mutación) y se endureció la de la analítica, que verificaba antes de que terminara la navegación.
-- Pendiente: ronda de verificación, y la **aprobación humana** (no está dada) antes de subir a `origin`, aplicar la migración en staging o desplegar.
+- **Codex, ronda 2 (verificación, commit `a27f8bb`): APROBAR CON CAMBIOS, 2 hallazgos importantes sobre mi corte por reloj del dispositivo, ambos reproducidos.** (1) Con latencia, el corte (hora del cliente convertida con el desfase del servidor) podía quedar antes de un llamado previo al toque y anunciarlo; (2) una respuesta intermedia consumía el corte del segundo toque y el llamado nuevo de Centro quedaba como base, sin sonido. Los tres hallazgos de la ronda 1 se dieron por corregidos. Se reemplazó el corte por una regla de **horas del servidor sin estado compartido** (decisión 7), extraída a `announceableCalls` con pruebas unitarias de ambas secuencias. Con esa regla, un llamado creado entre la última actualización y el toque se anuncia aunque lo ocultara la vista anterior (nunca se había mostrado): es la decisión de «ante la duda, avisar».
+- Pendiente: ronda 3 de verificación, y la **aprobación humana** (no está dada) antes de subir a `origin`, aplicar la migración en staging o desplegar.
 
 ## Evidencia
 Local, 2026-10-21, sobre el árbol sin commitear de esta ficha (el commit probado se anota en «Revisión»), con `pnpm db:reset` y la migración nueva:

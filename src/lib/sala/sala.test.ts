@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  announceableCalls,
   callName,
   durationLabel,
   elapsedLabel,
@@ -183,5 +184,35 @@ describe("anuncios con varias sucursales", () => {
     expect(newCallsAnnouncement([norte], false)).toBe("Nuevo llamado: Mesa 1, llama al mozo.");
     expect(newCallsAnnouncement([norte, centro], true)).toBe("2 llamados nuevos.");
     expect(newCallsAnnouncement([], true)).toBe("");
+  });
+});
+
+describe("qué anuncia una respuesta cuando cambia la vista por sucursal", () => {
+  const at = (segundos: number) => new Date(Date.UTC(2026, 0, 1, 12, 0, segundos)).toISOString();
+  const norte = call("norte", at(5), "Mesa 1");
+  const centro = call("centro", at(12.5), "Mesa 1");
+  const ms = (segundos: number) => Date.parse(at(segundos));
+
+  it("sin cambio de vista, anuncia lo que la pantalla no había visto", () => {
+    expect(announceableCalls(new Set(["norte"]), [norte, centro], false, ms(10)).map((c) => c.id)).toEqual(["centro"]);
+    expect(announceableCalls(new Set(["norte", "centro"]), [norte, centro], false, ms(10))).toEqual([]);
+  });
+
+  it("con cambio de vista, lo que la pantalla ya había recibido (y la vista anterior ocultaba) es base: no se anuncia", () => {
+    // Mirando Norte, la pantalla ya había recibido el llamado de Centro de las 12:00:02 (última actualización a las 12:00:10).
+    const viejo = call("viejo", at(2), "Mesa 3");
+    expect(announceableCalls(new Set(["norte"]), [norte, viejo], true, ms(10))).toEqual([]);
+  });
+
+  it("con cambio de vista, un llamado creado DESPUÉS de la última actualización nunca se mostró y sí se anuncia, aunque lo oculte la vista anterior", () => {
+    expect(announceableCalls(new Set(["norte"]), [norte, centro], true, ms(10)).map((c) => c.id)).toEqual(["centro"]);
+  });
+
+  it("no depende del reloj del dispositivo ni del momento del toque: dos cambios seguidos se resuelven cada uno con la actualización anterior", () => {
+    // Respuesta intermedia (vista Norte, a las 12:00:11) y final (vista «Todas», a las 12:00:13) con un llamado de Centro a las 12:00:12,5.
+    const intermedia = announceableCalls(new Set(["norte"]), [norte], true, ms(10));
+    expect(intermedia).toEqual([]);
+    const final = announceableCalls(new Set(["norte"]), [norte, centro], true, ms(11));
+    expect(final.map((c) => c.id)).toEqual(["centro"]); // la respuesta intermedia no se «come» el llamado nuevo
   });
 });
