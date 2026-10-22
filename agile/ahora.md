@@ -4,16 +4,14 @@ Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-Se implementó la **parte A** de «Carga y publicación de videos» (nivel C, ADR 0031): [ficha](cambios/videos-del-panel-base.md). Migración `20261111100000`: tabla `menu_videos` (estados, permisos por columna, cupo `videos_published` al publicar con lock, tope de 50, borrado en dos pasos), `usage.videos_published` en `org_entitlements`, módulo `src/lib/videos/` con Mux detrás de una interfaz y pantalla `/panel/{slug}/videos` (Dueño y Staff). Codex la aprobó en dos rondas (commits `1e51ea7` y `48deee6`, solo en local). Evidencia, mutaciones (14/14) y el hallazgo corregido están en la ficha.
+Se implementó la **parte B** de «Carga y publicación de videos» (nivel C, ADR 0031): [ficha](cambios/videos-mux-parte-b.md). Mux real: cliente con `fetch` (sin dependencias), subida directa del navegador a la URL firmada, `POST /api/mux/webhook` con firma HMAC, huérfanos borrados en Mux, borrado de organización que limpia assets, miniatura y pantalla de subida con progreso. Migración `20261112100000` (`mux_error`). Codex la aprobó en tres rondas (hubo dos hallazgos reales de carreras, ya corregidos); commits hasta `cd5ec03`, **solo en local, sin `git push`**. La parte A está en staging (Fly v19).
 
-El usuario aprobó (2026-10-22). Migración aplicada en staging (la empujó él) y app desplegada en la **v19** (commit `c1a6a5a`; imagen anterior v18 en la ficha). Falta que pruebe con sesión: «Videos» en un local Premium y en uno Pro.
-
-Los commits están solo en local (sin `git push`). `tools/escenarios-locales.mjs` sigue local y sin versionar.
+Se probó contra el Mux real (entorno `ucomenu-staging`): subida, asset listo con los campos que lee el manejador, miniatura y borrado idempotente. Los E2E usan un Mux de mentira local (`e2e/mux-stub.ts`).
 
 ## Bloqueos y límites
 
-La **parte B** necesita del usuario la cuenta de Mux (plan Free), `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET` y el secreto del webhook, cargados como secretos de Fly y en `.env.local`. Decisiones abiertas para la parte B (en la ficha): peso de 50 MB sin dato de Mux, tolerancia de 30,5 s y playback público desde que el asset está listo. Borrar una organización con assets en Mux exige limpiarlos antes. RLS y E2E comparten base. Con los escenarios locales cargados fallan 15 pruebas RLS y varias E2E (`menu`, `mesas`, `acceso`) por datos extra, y `sala:327` por un error de su manejador de rutas. No hice `pnpm build` para no pisar el `.next` de los servidores del usuario (3000 y 3001); el E2E corrió contra `next dev` en 3200.
+Falta la **aprobación del usuario** y subir la B a staging: `! pnpm exec supabase db push` (aditiva), `fly secrets set -c fly.staging.toml MUX_TOKEN_ID=… MUX_TOKEN_SECRET=… MUX_WEBHOOK_SECRET=…` (los corre el usuario; reinicia la app) y el despliegue (`flyctl deploy` con build local, método en la ficha del catálogo). Nada probado todavía: la entrega real del webhook de Mux a staging y un video desde iPhone y Android (incluido `.mov` HEVC). El webhook de Mux (entorno `ucomenu-staging`) ya está creado hacia `https://ucomenu-staging.fly.dev/api/mux/webhook`. El peso de 50 MB solo se valida en el navegador. El plan Free de Mux guarda hasta 10 assets: borrar los de prueba. No hice `pnpm build` (pisaría el `.next` de los servidores del usuario). Con los escenarios locales cargados fallan 15 pruebas RLS y varias E2E por datos extra.
 
 ## Próximo paso
 
-Pedir al usuario las credenciales de Mux y empezar la parte B (nivel C: cliente real, subida directa, webhook, borrado del asset, validaciones y prueba en teléfonos). Después, el feed en la carta (M), con su lectura pública (`anon`) y la caché.
+Con la aprobación: empujar la migración, cargar los secretos, desplegar y hacer la prueba real con el usuario (subir un clip de 30 s desde el teléfono, ver «Procesando» → «Listo», publicar y borrar, y comprobar que en Mux quedan 0 assets). Después, el feed vertical en la carta (M), con lectura pública (`anon`), reproducción HLS —hace falta decidir el reproductor, que puede pedir una dependencia— y la caché.
