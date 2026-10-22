@@ -1,6 +1,6 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-21 · agente saliente: Claude Code. Historia anterior en Git y fichas.
+Actualizado: 2026-10-21 · agente saliente: Codex. Historia anterior en Git y fichas.
 
 ## Punto de retomada
 
@@ -14,4 +14,4 @@ Staging tiene aplicadas **todas** las migraciones locales hasta `20261110100000`
 
 ## Próximo paso
 
-Atender lo que el usuario encuentre al probar staging y decidir si se sube `main` a `origin`. Luego, el ítem desbloqueado del tablero: carga y publicación de videos con Mux (nivel C); necesita las credenciales del plan Free de Mux (ADR 0031), que debe aportar el usuario. La carga debe exigir `org_can_write` además de `has_feature('video_feed')` y contar el uso en `org_entitlements`.
+Atender lo que el usuario encuentre al probar staging; `main` ya est? publicado en `origin`. Luego, el ítem desbloqueado del tablero: carga y publicación de videos con Mux (nivel C); necesita las credenciales del plan Free de Mux (ADR 0031), que debe aportar el usuario. La carga debe exigir `org_can_write` además de `has_feature('video_feed')` y contar el uso en `org_entitlements`.
