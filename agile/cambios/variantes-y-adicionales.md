@@ -1,5 +1,5 @@
 # Cambio: Variantes y adicionales — grupos de opciones por plato, en el panel y en la carta pública
-Estado: verificado (pendiente de integrar por el agente principal)
+Estado: integrado a `main` y publicado en `origin`; migración aplicada en staging (estado conciliado el 2026-10-21 con el despliegue registrado en [catálogo del feed](catalogo-video-feed.md)). Las decisiones «A confirmar» siguen abiertas en el tablero; las notas de integración posteriores conservan su contexto histórico.
 Nivel: M (esquema nuevo, pero sin dinero cobrado ni lectura anónima más allá de lo activo; ver «Nivel» abajo)
 
 ## Objetivo

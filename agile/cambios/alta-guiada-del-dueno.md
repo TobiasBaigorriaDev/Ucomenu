@@ -1,5 +1,5 @@
 # Cambio: alta guiada del dueño (guía de primeros pasos en el Resumen)
-Estado: implementado y verificado en local (2026-10-16), commiteado en `feat/alta-guiada-dueno`, sin integrar
+Estado: implementado e integrado a `main`, publicado en `origin` y servido en staging (estado conciliado el 2026-10-21 con el despliegue registrado en [catálogo del feed](catalogo-video-feed.md)). Las propuestas de «Decisiones pendientes» siguen en el tablero, sin dar por aceptado ningún cambio de producto.
 Nivel: M (solo lectura de datos propios; no cambia permisos, planes, dinero ni borrados; sin esquema nuevo)
 
 ## Objetivo

@@ -1,5 +1,5 @@
 # Cambio: Catálogo del feed de videos — `video_feed` y `videos_published` en `plans`; se retira WebAR
-Estado: **implementado, aprobado por el usuario y por Codex (3 rondas, commit `b5ff895`); migración aplicada en staging el 2026-10-21 (tras un primer `db push` fallido y corregido).** Migración `20261110100000` aplicada solo en la base local.
+Estado: **hecho, aprobado por el usuario y por Codex (3 rondas, commit `b5ff895`); publicado en `origin/main`, migración `20261110100000` aplicada en local y staging y app desplegada en staging el 2026-10-21.** Ver evidencia de la corrección posterior y el despliegue al final de esta ficha. La comprobación manual con sesión sigue pendiente en el tablero.
 Nivel: C (dinero: qué plan obtiene la feature y qué cupo; eliminación irreversible: se borran contratos `webar`)
 
 ## Objetivo

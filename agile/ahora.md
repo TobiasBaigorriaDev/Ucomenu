@@ -1,17 +1,19 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-21 · agente saliente: Codex. Historia anterior en Git y fichas.
+Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Git y fichas.
 
 ## Punto de retomada
 
-El primer ítem de la fase 2, [catálogo del feed de videos](cambios/catalogo-video-feed.md) (nivel C; ADR 0031), está **commiteado** (`88603fa`, `ae67c75`, `b5ff895`), aprobado por el usuario y por Codex en tres rondas. Migración `20261110100000`: `video_feed` y `max_videos_published` (10) en Premium, WebAR fuera de la base. Evidencia, mutaciones y hallazgos corregidos, en la ficha.
+Se implementó la **parte A** de «Carga y publicación de videos» (nivel C, ADR 0031): [ficha](cambios/videos-del-panel-base.md). Migración `20261111100000`: tabla `menu_videos` (estados, permisos por columna, cupo `videos_published` al publicar con lock, tope de 50, borrado en dos pasos), `usage.videos_published` en `org_entitlements`, módulo `src/lib/videos/` con Mux detrás de una interfaz y pantalla `/panel/{slug}/videos` (Dueño y Staff). Codex la aprobó en dos rondas (commits `1e51ea7` y `48deee6`, solo en local). Evidencia, mutaciones (14/14) y el hallazgo corregido están en la ficha.
 
-Los cuatro cambios anteriores (selector de Sala, editor de platos, personalización de la carta ADR 0036 y temas de fechas ADR 0037) fueron aprobados por el usuario el 2026-10-21 y están commiteados (`35096b3`, `1a7d114`, `aa35f92`). `tools/escenarios-locales.mjs` sigue local y sin versionar.
+Falta la **aprobación del usuario** y, con ella, `supabase db push` (migración aditiva; la hará el usuario con `! pnpm exec supabase db push`, los permisos me lo bloquean) y el despliegue a staging con `flyctl` (método en la ficha del catálogo).
+
+Dejé sin commit, a propósito, los cambios documentales previos de Codex (`tablero.md`, esta nota y varias fichas) más mis ediciones de tablero y handoff: commitearlos juntos. `tools/escenarios-locales.mjs` sigue local y sin versionar.
 
 ## Bloqueos y límites
 
-Staging tiene aplicadas **todas** las migraciones locales hasta `20261110100000` y la app desplegada en la **v18** (commit `f63ee27`, 2026-10-21; imagen anterior v17 en la ficha del catálogo). Falta que el usuario pruebe con sesión (SuperAdmin con el catálogo vacío, `/apariencia`, editor de platos, Sala). Los commits de la entrega ya se publicaron en `origin/main` por pedido del usuario; la sincronización se verificó al cerrar. Producción sigue pendiente ([ficha](cambios/salida-a-produccion.md)). RLS y E2E comparten base: no correrlos a la vez. Con los escenarios locales cargados fallan 15 pruebas RLS y 3 E2E de `menu.spec` por datos extra, no por el código. No se hizo `pnpm build` para no pisar el `.next` de los servidores `next start` del usuario (3000 y 3001, con el build anterior): el E2E de SuperAdmin corrió contra `next dev` en 3200.
+La **parte B** necesita del usuario la cuenta de Mux (plan Free), `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET` y el secreto del webhook, cargados como secretos de Fly y en `.env.local`. Decisiones abiertas para la parte B (en la ficha): peso de 50 MB sin dato de Mux, tolerancia de 30,5 s y playback público desde que el asset está listo. Borrar una organización con assets en Mux exige limpiarlos antes. RLS y E2E comparten base. Con los escenarios locales cargados fallan 15 pruebas RLS y varias E2E (`menu`, `mesas`, `acceso`) por datos extra, y `sala:327` por un error de su manejador de rutas. No hice `pnpm build` para no pisar el `.next` de los servidores del usuario (3000 y 3001); el E2E corrió contra `next dev` en 3200.
 
 ## Próximo paso
 
-Atender lo que el usuario encuentre al probar staging; `main` ya está publicado en `origin`. Luego, el ítem desbloqueado del tablero: carga y publicación de videos con Mux (nivel C); necesita las credenciales del plan Free de Mux (ADR 0031), que debe aportar el usuario. La carga debe exigir `org_can_write` además de `has_feature('video_feed')` y contar el uso en `org_entitlements`.
+Pedir al usuario la aprobación y las credenciales de Mux; luego empujar la migración, desplegar y empezar la parte B. Después, el feed en la carta (M), con su lectura pública (`anon`) y la caché.

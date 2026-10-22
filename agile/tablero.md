@@ -6,47 +6,50 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
+Actualizado: 2026-10-21. «Hecho» indica alcance implementado e integrado; las comprobaciones manuales pendientes se listan aparte. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
+
 ## En curso
+
 - (vacío)
 
 ## Seleccionado
+
 - (vacío)
 
 ## Para verificar
-- (vacío)
+
+- [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
+- [S] Ticket de visita en teléfono real: volver a la carta tras más de 3 h con la pantalla apagada y comprobar nuevo escaneo y recuperación de pestañas descartadas — sin resultado registrado del ensayo iniciado el 2026-10-19 → [ficha](cambios/ticket-de-visita.md)
 
 ## Bloqueado
-- [M] Salida a producción: la preparación local está hecha (`docs/produccion.md` y `pnpm prod:check`); estrategia en ADR 0015 (hosting: contenedor en Fly.io) y propuesta de operación en `docs/operacion.md`; staging ya está ensayado (2026-10-16); falta todo lo de producción (bloqueado por: el dominio —pospuesto, ver su ítem en el Backlog—, el proyecto de Supabase de producción en otra organización, `fly.toml` con claves propias, programar la purga y los respaldos, revisión legal de los textos y aprobación del usuario) → agile/cambios/salida-a-produccion.md
+
+- [M] Salida a producción — preparación y staging hechos; faltan dominio, proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
+- [C] Carga y publicación de videos desde el panel con Mux — **parte A hecha** (tabla, cupo, borrado en dos pasos y pantalla; aprobada por Codex, falta la aprobación del usuario y subirla a staging → [ficha](cambios/videos-del-panel-base.md)); **parte B bloqueada** por cuenta y credenciales de Mux: subida directa, webhook, borrado del asset, validación de peso y formato y prueba real en iPhone y Android → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [S] Spike descartable de Apple Wallet y Google Wallet con ubicaciones — bloqueado por cuentas de Apple Developer y emisor de Google Wallet, aprobación y pago; valida ADR 0003 → [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md)
 
 ## Backlog
+
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
-### Fase 0 — Cimientos
+### Mejoras y decisiones pendientes del MVP
 
-### Fase 1 — MVP · Menú digital (plan Básico)
-
-### Mejoras y deuda técnica (surgidas de «Pantalla del historial de precios»)
-- [S] Probar en un teléfono real, sobre el staging (`https://ucomenu-staging.fly.dev`), el **ticket de visita**: dejar la carta abierta con la pantalla apagada más de 3 h (la prueba quedó en marcha la noche del 2026-10-19), volver a la pestaña y comprobar que pide escanear de nuevo; ver cómo se comportan las pestañas que el navegador descarta
-
-### Fase 1 — MVP · Llamado al mozo (plan Pro)
-- (llamado desde la mesa, panel de sala, ticket de visita y configuración del llamado están en «Hecho»; el aviso con la pestaña cerrada está en «Hecho»)
-
-### Fase 1 — MVP · Plataforma SaaS
-- [S] Decidir qué hacer con las cuentas de Auth que quedan sin ningún local tras un borrado (hoy se conservan) — surgido de «borrar organizaciones»
-- [S] ~~Aviso de mora al dueño en el panel~~ — resuelto dentro de «Acceso del personal» (hecho)
-- [S] Dominio: decidir el nombre definitivo y comprarlo (pospuesto 2026-10-16: el usuario no está seguro de `ucomenu.com`). Bloquea publicar producción e imprimir QR definitivos; staging usa la dirección provisoria de Fly → docs/produccion.md, paso 5
+- [S] Decidir el tratamiento de cuentas Auth sin ningún local tras un borrado — hoy se conservan → [ficha de origen](cambios/borrado-de-organizaciones.md)
+- [S] Dominio: elegir nombre definitivo y autorizar la compra — pospuesto por el usuario; bloquea producción y QR definitivos → [procedimiento](../docs/produccion.md)
+- [S] Resolver las decisiones todavía abiertas de variantes y adicionales — conservar el comportamiento vigente hasta decisión explícita → [decisiones pendientes](cambios/variantes-y-adicionales.md#a-confirmar-decisiones-conservadoras-tomadas-sin-poder-preguntar)
+- [S] Evaluar si la guía de primeros pasos debe poder descartarse y cómo resume varias sucursales — propuestas pendientes, sin cambio aceptado → [ficha](cambios/alta-guiada-del-dueno.md#decisiones-pendientes-para-quien-integra)
 
 ### Fase 2 — Feed de videos cortos (plan Premium)
+
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
-- [C] Catálogo: retirar el add-on `webar` y el límite `models_3d`, sumar la feature `video_feed` a Premium y el límite `videos_published` (10) en `plans`; resolver los contratos `webar` existentes y la pantalla de add-ons de SuperAdmin → [ficha](cambios/catalogo-video-feed.md) (hecho: aprobado por el usuario y por Codex; migración aplicada en staging el 2026-10-21)
-- [C] Carga y publicación de videos desde el panel (Dueño y Staff): subida directa y reproducción por **Mux Video**, validación de duración, peso y formato, borrador y publicado, cupo, borrado con limpieza del asset en Mux; la prueba en iPhone y Android reales se hace al integrar la carga y el feed en staging con el plan Free de Mux (bloqueado por: catálogo)
+> Catálogo y elección de Mux en «Hecho»; carga y publicación en «Bloqueado» por su configuración externa.
+
 - [M] Feed vertical en la carta: scroll de a un video, carga y reproducción bajo demanda, enlace opcional al plato, comportamiento en solo lectura y suspendida (bloqueado por: carga y publicación)
 - [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (bloqueado por: feed)
 - [C] Comentarios con aprobación previa: envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, publicación y retención de los rechazados (bloqueado por: feed)
 - [S] Textos legales: contenido publicado por comensales (comentarios) en `/terminos` y `/privacidad`, antes de habilitar comentarios en producción
 
 ### Fase 3 — Fidelización, Wallet y cercanía (plan Premium)
-- [S] Spike descartable: emitir un pase de prueba en Apple Wallet y Google Wallet con ubicaciones — valida ADR 0003 (bloqueado por: cuentas Apple Developer y emisor de Google Wallet; requiere aprobación y pago)
+
 - [C] Programa de sellos: alta del socio con consentimiento, tarjeta, registro inmutable de sellos y canjes, escaneo desde `/sala`
 - [C] Apple Wallet: firma del `.pkpass`, web service de actualización y push por APNs — manejo de certificados
 - [C] Google Wallet: clase y objeto de fidelidad, enlace firmado, actualización por API — manejo de credenciales
@@ -54,25 +57,29 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Promociones por actualización de pase y baja del programa
 
 ### Fase 4 — Posterior al MVP
+
 - [C] Cobro automático de la suscripción (Mercado Pago Suscripciones) con activación y suspensión por webhook
 - [M] Subdominio o dominio propio por organización
 
 ## Hecho
-- [M] Edición de plato por tareas: datos y foto juntos en PC, pestañas y borradores conservados — hecho (desplegado en staging, Fly v18, 2026-10-21) → agile/cambios/editor-plato-ux.md
-- [M] Selector de Sala: cambio directo de sucursal y selección múltiple explícita — hecho (desplegado en staging, Fly v18, 2026-10-21) → agile/cambios/selector-sucursal-directo.md
+
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
+
+- [C] Catálogo del feed: WebAR y `models_3d` retirados, contratos resueltos y SuperAdmin adaptado; `video_feed` en Premium y cupo de 10 publicados — aprobado, en `origin/main`, migración y app en staging (2026-10-21) → [ficha](cambios/catalogo-video-feed.md) · ADR 0031
+- [M] Edición de plato por tareas: datos y foto juntos en PC, pestañas y borradores conservados — hecho (desplegado en staging, Fly v18, 2026-10-21) → [ficha](cambios/editor-plato-ux.md)
+- [M] Selector de Sala: cambio directo de sucursal y selección múltiple explícita — hecho (desplegado en staging, Fly v18, 2026-10-21) → [ficha](cambios/selector-sucursal-directo.md)
 - [C] Carta central con precio, disponibilidad y visibilidad por sucursal (nivel 2a): precio propio ($ 0 válido), agotado y oculto por sucursal; revisado por Codex (3 rondas); aprobado, subido y desplegado en staging con su migración (2026-10-21; el rollback del historial se acepta con su limitación) → [ficha](cambios/carta-por-sucursal.md) · ADR 0035
 - [C] Vista por sucursal de cada persona (sala, cartel, sonido, push y analítica): preferencia, no permiso; revisado por Codex (3 rondas); aprobado, subido y desplegado en staging (2026-10-21) → [ficha](cambios/vista-por-sucursal.md) · ADR 0034
 - [M] Detalle, retorno y confirmaciones y formularios, cuenta y mensajes (tandas 3 y 4 de UX): aprobados, subidos y desplegados en staging (2026-10-21) → [tanda 4](cambios/detalle-retorno-y-confirmaciones.md) · [tanda 3](cambios/formularios-cuenta-y-mensajes.md)
 - [C] Listas completas (más de 1000 filas), reordenamientos atómicos y reemplazo de imágenes sin huérfanos: aprobado por Codex, subido y desplegado en staging con su migración (2026-10-21) → [ficha](cambios/orden-e-imagenes-atomicos.md) · ADR 0033
 - [C] Cuentas globales de Auth protegidas (SuperAdmin intocable desde un local, reserva contra la carrera, 503 de sala con Auth caído, logos en el respaldo): aprobado por Codex, subido y desplegado en staging con su migración (2026-10-21) → [ficha](cambios/proteger-cuentas-globales.md) · ADR 0032
 - [C] Borrado de mesas junto con sus llamados: aprobado por Codex, subido y desplegado en staging con su migración (2026-10-21) → [ficha](cambios/borrado-de-mesas.md) · ADR 0030
-- [S] Investigación y decisión de almacenamiento y reproducción de videos cortos: elegido Mux Video (HLS adaptativo, conversión de `.mov` HEVC de iPhone, plan Free sin tarjeta para staging y USD 20/mes + 100.000 min/mes gratis en producción) — cierra ADR 0031 (2026-10-21) → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [S] Almacenamiento y reproducción de videos: Mux Video elegido y aprobado; alcance y condiciones registrados (2026-10-21) → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Borrado de categorías y platos con limpieza de fotos, confirmación en dos pasos e historial conservado; revisado por Codex, publicación autorizada por el usuario, subido a `origin` y desplegado en staging (2026-10-21), con la RLS vigente de Dueño y Staff → [ficha](cambios/borrado-de-categorias-y-platos.md) · ADR 0029
 - [C] SuperAdmin: borrado definitivo de organizaciones tras baja auditada de 30 días, con identificador escrito, motivo y auditoría; revisado por Codex, aprobado por el usuario, integrado en `main`, subido a `origin` y desplegado con su migración en staging (2026-10-20) → [ficha](cambios/borrado-de-organizaciones.md) · ADR 0028
-- [C] Retención y purga de `payments` y `payment_voids`: sobreviven al borrado de la organización y se conservan 10 años; revisión independiente aprobada, integración autorizada por el usuario, subida a `origin` y desplegada en staging (2026-10-20; plazo por confirmar con el contador antes de producción) → agile/cambios/retencion-de-pagos.md · ADR 0027
-- [C] Retención y purga de `price_history`: se purga con la organización, tras 30 días de baja auditada, por una función que nadie de la API ejecuta; aprobada por Codex, subida a `origin` y migración aplicada en staging (2026-10-20) → agile/cambios/purga-de-price-history.md · ADR 0026
-- [C] SuperAdmin: add-ons (activar, cambiar packs y fin, finalizar) y baja/reactivación de organizaciones (cierra el acceso del local por RLS, sin borrar nada); revisado por Codex en tres rondas, aprobado por el usuario e integrado a `main` y a `origin`; migración y app en staging, pendiente prueba manual del usuario (2026-10-20) → [ficha](cambios/addons-y-baja-de-organizaciones.md) · ADR 0025
+- [C] Retención y purga de `payments` y `payment_voids`: sobreviven al borrado de la organización y se conservan 10 años; revisión independiente aprobada, integración autorizada por el usuario, subida a `origin` y desplegada en staging (2026-10-20; plazo por confirmar con el contador antes de producción) → [ficha](cambios/retencion-de-pagos.md) · ADR 0027
+- [C] Retención y purga de `price_history`: se purga con la organización, tras 30 días de baja auditada, por una función que nadie de la API ejecuta; aprobada por Codex, subida a `origin` y migración aplicada en staging (2026-10-20) → [ficha](cambios/purga-de-price-history.md) · ADR 0026
+- [C] SuperAdmin: gestión de add-ons y baja/reactivación de organizaciones — aprobado, integrado y desplegado en staging; catálogo actual sin WebAR (2026-10-20; retiro 2026-10-21) → [ficha](cambios/addons-y-baja-de-organizaciones.md) · ADR 0025
 - [C] SuperAdmin anula un pago mal cargado: asiento compensatorio con motivo, solo el último pago vigente, el vencimiento vuelve al de antes y el Dueño lo ve marcado; revisado por Codex en dos rondas y aprobado por el usuario (2026-10-19; migración aplicada y desplegado en staging) → [ficha](cambios/anular-pagos.md) · ADR 0024
 - [S] Prueba en un teléfono real sobre staging: textos legales (`/terminos`, `/privacidad`, `/alergenos`), alta de una organización desde `/admin` y pantalla «Llamados» en el salón; todo bien según el usuario (2026-10-19)
 - [M] Carta en varios idiomas: español, inglés y portugués; el local escribe las traducciones en `/panel/{slug}/carta/traducciones`, la carta cae al español donde falta y no usa servicios externos; probada y aprobada por el usuario, integrada a `main` (2026-10-18; migración aplicada y desplegada a staging) → [ficha](cambios/carta-en-varios-idiomas.md) · ADR 0023
@@ -92,38 +99,38 @@ Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → fic
 - [M] Corrección del slug de sucursal por SuperAdmin con históricos reservados y redirección a la dirección vigente → [ficha](cambios/correccion-slug-sucursal.md)
 - [M · C técnico] Buscador y filtros dietarios con aviso de alérgenos junto a los filtros; integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/buscador-y-filtros-dietarios.md)
 - [M · C técnico] Disponibilidad por sucursal (agotado visible, lectura en vivo); integrado a `main` por decisión del usuario (2026-10-17) → [ficha](cambios/disponibilidad-por-sucursal.md)
-- [M] Temas de fechas especiales de la carta (San Valentín, Navidad, Halloween…), con ventana de fechas; aprobado y commiteado 2026-10-21; migración y app en staging (Fly v18) → agile/cambios/temas-de-fechas.md
-- [M] Personalización de la carta: paletas oscuras y vivas, vista previa real y estilo de carta; aprobado y commiteado 2026-10-21; migraciones y app en staging (Fly v18) → agile/cambios/personalizacion-carta.md
-- [C] Identidad del local: logo y cuatro paletas; revisión recibida sin bloqueantes, límites registrados y ajustes menores atendidos (2026-10-16) → agile/cambios/identidad-del-local.md
-- [S] Categorías y platos de la carta pública paginados; cerrado sin revisión independiente por su nivel (2026-10-16) → agile/cambios/paginacion-carta-publica.md
-- [M] Variantes y adicionales: grupos de opciones por plato (variante 1/1, adicionales 0/N) en el panel y bajo cada plato de la carta pública; lectura anónima solo de lo activo; revisado por Codex en dos rondas (2026-10-17; falta aplicar la migración y confirmar las decisiones de la ficha) → agile/cambios/variantes-y-adicionales.md
-- [C] SuperAdmin: cambiar plan a mano, suspender y reactivar, registro de pagos de solo-agregado y prueba de 14 días como concepto aparte, con auditoría; reglas A1–A8 aprobadas por el usuario y revisado por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/superadmin-planes-pagos.md · ADR 0013
-- [C] Gestión de sucursales en el panel: el Dueño lista, crea y renombra en `/panel/{slug}/sucursales` dentro del tope del plan; política `INSERT` aprobada por el usuario, revisada por Codex en dos rondas (2026-10-16; falta aplicar la migración en staging/producción) → agile/cambios/gestion-de-sucursales.md
-- [M] Rendimiento de la carta pública: fotos reducidas en WebP por `/_next/image` y caché de categorías y platos con invalidación desde el panel; LCP en 4G de 11,3 s a 1,9 s; revisado por Codex, con un límite aceptado (una lectura en vuelo durante una edición puede dejar la carta anterior hasta 60 s) (2026-10-16) → agile/cambios/rendimiento-carta-publica.md
-- [M] Alta guiada del dueño: guía de primeros pasos en el Resumen del panel (carta, mesas, QR), deducida de los datos y sin esquema; pendientes de producto en la ficha: descartar la guía y varias sucursales (2026-10-16) → agile/cambios/alta-guiada-del-dueno.md
-- [M] Cerrar la sesión de la mesa al atender «Pedir la cuenta»: un ticket anterior a la atención responde `session_closed` pasados 10 minutos de gracia (2026-10-16; falta aplicarlo en staging/producción y, si se quiere, revisión independiente) → agile/cambios/cerrar-sesion-al-atender-la-cuenta.md · ADR 0010
+- [M] Temas de fechas especiales de la carta (San Valentín, Navidad, Halloween…), con ventana de fechas; aprobado y commiteado 2026-10-21; migración y app en staging (Fly v18) → [ficha](cambios/temas-de-fechas.md)
+- [M] Personalización de la carta: paletas oscuras y vivas, vista previa real y estilo de carta; aprobado y commiteado 2026-10-21; migraciones y app en staging (Fly v18) → [ficha](cambios/personalizacion-carta.md)
+- [C] Identidad del local: logo y cuatro paletas; revisión recibida sin bloqueantes, límites registrados y ajustes menores atendidos (2026-10-16) → [ficha](cambios/identidad-del-local.md)
+- [S] Categorías y platos de la carta pública paginados; cerrado sin revisión independiente por su nivel (2026-10-16) → [ficha](cambios/paginacion-carta-publica.md)
+- [M] Variantes y adicionales: grupos por plato y publicación de opciones activas — integrado y migración aplicada en staging; decisiones de producto abiertas en Backlog (2026-10-17; estado de staging actualizado 2026-10-21) → [ficha](cambios/variantes-y-adicionales.md)
+- [C] SuperAdmin: planes, suspensión/reactivación, pagos y prueba de 14 días con auditoría — reglas A1–A8 aprobadas, integrado y migración aplicada en staging (2026-10-16; estado de staging actualizado 2026-10-21) → [ficha](cambios/superadmin-planes-pagos.md) · ADR 0013
+- [C] Gestión de sucursales: alta y renombrado dentro del tope del plan — política aprobada, integrado y migración aplicada en staging (2026-10-16; estado de staging actualizado 2026-10-21) → [ficha](cambios/gestion-de-sucursales.md)
+- [M] Rendimiento de la carta pública: fotos reducidas en WebP por `/_next/image` y caché de categorías y platos con invalidación desde el panel; LCP en 4G de 11,3 s a 1,9 s; revisado por Codex, con un límite aceptado (una lectura en vuelo durante una edición puede dejar la carta anterior hasta 60 s) (2026-10-16) → [ficha](cambios/rendimiento-carta-publica.md)
+- [M] Alta guiada del dueño: primeros pasos en el Resumen — implementado e integrado; mejoras no decididas en Backlog (2026-10-16) → [ficha](cambios/alta-guiada-del-dueno.md)
+- [M] Cierre de sesión de mesa al atender «Pedir la cuenta», con 10 minutos de gracia — revisado por Codex, integrado y migración aplicada en staging (2026-10-16; estado de staging actualizado 2026-10-21) → [ficha](cambios/cerrar-sesion-al-atender-la-cuenta.md) · ADR 0010
 - [S] Repaso de diseño del historial de precios: agrupado por día, cambio de precio destacado y etiqueta Sube/Baja; sin tocar datos ni permisos; revisado en capturas a 390 y 1280 px (2026-10-16)
 - [S] `expectNoHorizontalOverflow` mide el borde derecho de cada elemento (ignora lo recortado por un scroll propio) y reemplaza a las copias locales de tres specs; E2E completo en verde (2026-10-16); de paso, la siembra de `ticket-de-visita` ya no depende de los milisegundos
-- [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16) → agile/cambios/textos-legales.md
-- [M] SuperAdmin: el alta de una organización crea también su primera sucursal y la carta pública se abre de inmediato (2026-10-16) → agile/cambios/alta-con-primera-sucursal.md
+- [S] Textos legales: `/terminos`, `/privacidad` y `/alergenos`, enlazados desde la portada, el login y la carta; borrador pendiente de revisión legal (2026-10-16) → [ficha](cambios/textos-legales.md)
+- [M] SuperAdmin: el alta de una organización crea también su primera sucursal y la carta pública se abre de inmediato (2026-10-16) → [ficha](cambios/alta-con-primera-sucursal.md)
 - [M] Revisión de Codex automatizada desde Claude: `pnpm revision:codex` (Codex CLI en solo lectura, veredicto como código de salida) y skill `ciclo-revision-codex`; probada con Codex real y con un Codex falso (2026-10-16) → tools/revision-codex.mjs
 - [M] Revisión de Claude desde Codex; procedimiento en ambos sentidos y skill exclusiva de tareas críticas C (2026-10-17) → [ficha](cambios/revision-claude-desde-codex.md)
-- [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16) → agile/cambios/purga-de-waiter-calls.md · ADR 0014
+- [C] Purga de `waiter_calls` por antigüedad: `purge_waiter_calls`, 14 días por defecto, piso de 7, solo `service_role`; falta programar su ejecución en «Salida a producción» (2026-10-16) → [ficha](cambios/purga-de-waiter-calls.md) · ADR 0014
 - [S] SuperAdmin: quien inicia sesión sin `next` aterriza en `/admin` (y el resto en `/panel`); un `next` válido manda siempre (2026-10-15, `aea92a8`)
-- [M] Simplificación de Agile-SDD: rigor por consecuencias, verificación por impacto, una función por documento, handoff breve, sincronizador acotado a las 4 skills (2026-10-15) → agile/cambios/simplificacion-agile-sdd.md
+- [M] Simplificación de Agile-SDD: rigor por consecuencias, verificación por impacto, una función por documento, handoff breve, sincronizador acotado a las 4 skills (2026-10-15) → [ficha](cambios/simplificacion-agile-sdd.md)
 - [S] Orden local del repositorio: `output/` excluido de Git y ESLint y `docs/referencias/HUMM-MENU.png` de Git; archivos conservados (2026-10-15)
-- [C] SuperAdmin, alta de organizaciones: `/admin` y `/admin/nueva` crean una organización con su Dueño, plan y auditoría de solo-agregado (integrado a `main` 2026-10-15) → agile/cambios/superadmin-alta-de-organizaciones.md · ADR 0013
-- [M] Configuración del llamado: silenciar mesas y cooldown por sucursal en `/panel/{slug}/llamados` (2026-10-14) → agile/cambios/configuracion-del-llamado.md
-- [M] Ticket de visita: la pestaña de `/t/{token}` vence a las 3 h y la sala muestra cuánto hacía que escaneó (2026-10-14) → agile/cambios/ticket-de-visita.md · ADR 0010
-- [M] Pantalla del historial de precios: por local y por plato, Dueño y Staff (2026-10-14) → agile/cambios/pantalla-historial-de-precios.md
-- [M] Diseño gastronómico de la carta pública, dirección editorial (2026-10-14); la variante A queda como alternativa histórica (`feat/diseno-carta`, etiqueta `alt/carta-variante-a-tarjetas`) → agile/cambios/diseno-carta.md
-- [M] Panel de sala en tiempo real por sondeo corto (2026-10-14) → agile/cambios/panel-de-sala.md · ADR 0011
-- [C] Historial de cambios de precio: `price_history` de solo-agregado por trigger (2026-10-14) → agile/cambios/historial-de-precios.md · ADR 0012
-- [C] Llamado desde la mesa: `create_waiter_call` como única puerta de escritura pública (2026-10-14) → agile/cambios/llamado-desde-la-mesa.md · ADR 0010
-- [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible y entrada pública `/t/{token}` (2026-10-14) → agile/cambios/mesas-y-qr.md · ADR 0009
-- [M] Gestión de carta: categorías y platos con foto, orden y activo/inactivo (2026-10-14) → agile/cambios/gestion-de-carta.md · ADR 0008
-- [C] Acceso del personal: login, `/panel` y `/sala` por rol, gestión de personal y aviso de mora (2026-10-14) → agile/cambios/acceso-del-personal.md · ADR 0007
-- [C] Planes y entitlements: catálogo, mora derivada, límites por plan y carta suspendida (2026-10-14) → agile/cambios/planes-y-entitlements.md · ADR 0006
-- [C] Núcleo multi-tenant: membresías, roles y RLS con aislamiento entre organizaciones (2026-10-14) → agile/cambios/nucleo-multi-tenant.md · ADR 0005
-- [M] Esqueleto caminante: bootstrap + carta pública de solo lectura con RLS (2026-10-13) → agile/cambios/esqueleto-menu-publico.md
+- [C] SuperAdmin, alta de organizaciones: `/admin` y `/admin/nueva` crean una organización con su Dueño, plan y auditoría de solo-agregado (integrado a `main` 2026-10-15) → [ficha](cambios/superadmin-alta-de-organizaciones.md) · ADR 0013
+- [M] Configuración del llamado: silenciar mesas y cooldown por sucursal en `/panel/{slug}/llamados` (2026-10-14) → [ficha](cambios/configuracion-del-llamado.md)
+- [M] Ticket de visita: la pestaña de `/t/{token}` vence a las 3 h y la sala muestra cuánto hacía que escaneó (2026-10-14) → [ficha](cambios/ticket-de-visita.md) · ADR 0010
+- [M] Pantalla del historial de precios: por local y por plato, Dueño y Staff (2026-10-14) → [ficha](cambios/pantalla-historial-de-precios.md)
+- [M] Diseño gastronómico de la carta pública, dirección editorial (2026-10-14); la variante A queda como alternativa histórica (`feat/diseno-carta`, etiqueta `alt/carta-variante-a-tarjetas`) → [ficha](cambios/diseno-carta.md)
+- [M] Panel de sala en tiempo real por sondeo corto (2026-10-14) → [ficha](cambios/panel-de-sala.md) · ADR 0011
+- [C] Historial de cambios de precio: `price_history` de solo-agregado por trigger (2026-10-14) → [ficha](cambios/historial-de-precios.md) · ADR 0012
+- [C] Llamado desde la mesa: `create_waiter_call` como única puerta de escritura pública (2026-10-14) → [ficha](cambios/llamado-desde-la-mesa.md) · ADR 0010
+- [M] Mesas y QR: alta de mesas, token opaco, hoja imprimible y entrada pública `/t/{token}` (2026-10-14) → [ficha](cambios/mesas-y-qr.md) · ADR 0009
+- [M] Gestión de carta: categorías y platos con foto, orden y activo/inactivo (2026-10-14) → [ficha](cambios/gestion-de-carta.md) · ADR 0008
+- [C] Acceso del personal: login, `/panel` y `/sala` por rol, gestión de personal y aviso de mora (2026-10-14) → [ficha](cambios/acceso-del-personal.md) · ADR 0007
+- [C] Planes y entitlements: catálogo, mora derivada, límites por plan y carta suspendida (2026-10-14) → [ficha](cambios/planes-y-entitlements.md) · ADR 0006
+- [C] Núcleo multi-tenant: membresías, roles y RLS con aislamiento entre organizaciones (2026-10-14) → [ficha](cambios/nucleo-multi-tenant.md) · ADR 0005
+- [M] Esqueleto caminante: bootstrap + carta pública de solo lectura con RLS (2026-10-13) → [ficha](cambios/esqueleto-menu-publico.md)
 - [M] Exploración inicial: producto, arquitectura, ADR 0001–0004 y backlog (2026-10-13)

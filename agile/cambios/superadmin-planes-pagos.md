@@ -1,5 +1,5 @@
 # Cambio: SuperAdmin — cambiar plan, suspender y reactivar, registrar pagos y prueba gratuita como concepto aparte
-Estado: verificado en la rama `worktree-agent-ad6dc909d4071a710` (2026-10-17), sin integrar a `main` ni subir; **falta la revisión independiente de Codex** y la confirmación del usuario de las decisiones marcadas «A CONFIRMAR»
+Estado: integrado a `main`, publicado en `origin` y migración aplicada en staging (estado conciliado el 2026-10-21 con el despliegue registrado en [catálogo del feed](catalogo-video-feed.md)). Revisión y aprobación de A1–A8 registradas en «Revisión y aprobación»; las notas previas conservan su contexto histórico. Producción sigue pendiente.
 Nivel: C (dinero: plan, vigencia y pagos; autorización: nuevas escrituras solo de SuperAdmin; datos: registros que no se borran)
 
 ## Objetivo

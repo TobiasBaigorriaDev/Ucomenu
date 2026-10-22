@@ -1,5 +1,5 @@
 # Cambio: Cerrar la sesión de la mesa al atender «Pedir la cuenta» (B1 de ticket-de-visita)
-Estado: **hecho y revisado por Codex (aprobar); sin subir a GitHub**
+Estado: hecho, revisado por Codex, integrado a `main`, publicado en `origin` y migración aplicada en staging (estado conciliado el 2026-10-21 con el despliegue registrado en [catálogo del feed](catalogo-video-feed.md)). Las notas de migración posteriores conservan su contexto histórico; producción sigue pendiente.
 Nivel: **M** con revisión independiente (pedida por el usuario): endurece la puerta pública `create_waiter_call` sin dinero, permisos de terceros ni datos existentes; no hay esquema nuevo.
 
 ## Objetivo

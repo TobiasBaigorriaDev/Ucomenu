@@ -1,6 +1,6 @@
 # Cambio: gestión de sucursales en el panel del Dueño
-Estado: **Integrado a `main`** (implementado y verificado en local, 2026-10-16). **Activar/desactivar NO se hizo**: es el ítem C [desactivar sucursales](desactivar-sucursales.md); ver «Decisiones pendientes».
-Nivel: **C en rigor** (abre `INSERT` de `branches` a la API con una política nueva: toca autorización y, por el tope, dinero). Se mantuvo el diseño mínimo y conservador. Pendiente la revisión independiente que pide AGENTS.md (no se ejecutó Codex por consigna de esta tarea) y la aprobación humana de la política nueva.
+Estado: integrado a `main`, publicado en `origin` y migración aplicada en staging (estado conciliado el 2026-10-21 con el despliegue registrado en [catálogo del feed](catalogo-video-feed.md)). Activar/desactivar se entregó por separado en [su ficha](desactivar-sucursales.md). Producción sigue pendiente.
+Nivel: **C en rigor** (abre `INSERT` de `branches` a la API con una política nueva: toca autorización y, por el tope, dinero). Revisión independiente y aprobación de la política registradas en «Revisión y aprobación»; las notas previas conservan su contexto histórico.
 
 ## Objetivo
 Hasta ahora las sucursales solo existían por script o por el alta del SuperAdmin. El Dueño ahora las lista, crea y renombra en `/panel/{slug}/sucursales`, con el tope del plan a la vista y la cuenta en pausa respetada.
