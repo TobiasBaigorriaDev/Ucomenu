@@ -74,6 +74,53 @@ const conError = (assetId: string, uploadId: string, videoId: string): MuxEvent 
   data: { id: assetId, upload_id: uploadId, passthrough: videoId, status: "errored" },
 });
 
+/**
+ * Envuelve un cliente para provocar una carrera: justo ANTES de que corra la primera escritura (`update`) sobre `menu_videos`,
+ * ejecuta `antes()` (por ejemplo, otra sesión que borra el video). Así se prueba, de forma determinista, lo que pasa cuando el
+ * video cambia entre que el manejador lo lee y que escribe.
+ */
+function conCarrera(db: Db, antes: () => PromiseLike<unknown>): Db {
+  let hecho = false;
+  const interceptar = (builder: object): object =>
+    new Proxy(builder, {
+      get(objetivo, propiedad) {
+        if (propiedad === "then") {
+          // `antes()` corre una sola vez y después se ejecuta la consulta real UNA vez (devolver el constructor desde una
+          // función `async` lo ejecutaría dos veces).
+          return (alCumplir: (v: unknown) => unknown, alFallar: (e: unknown) => unknown) =>
+            (async () => {
+              if (!hecho) {
+                hecho = true;
+                await antes();
+              }
+            })().then(() => (objetivo as PromiseLike<unknown>).then(alCumplir, alFallar), alFallar);
+        }
+        const valor = Reflect.get(objetivo, propiedad) as unknown;
+        if (typeof valor !== "function") return valor;
+        return (...args: unknown[]) => {
+          const resultado = (valor as (...a: unknown[]) => unknown).apply(objetivo, args);
+          return typeof resultado === "object" && resultado !== null && "then" in resultado ? interceptar(resultado) : resultado;
+        };
+      },
+    });
+  return new Proxy(db, {
+    get(objetivo, propiedad) {
+      if (propiedad !== "from") return Reflect.get(objetivo, propiedad) as unknown;
+      return (tabla: string) => {
+        const real = objetivo.from(tabla as never) as unknown as Record<string, (...a: unknown[]) => unknown>;
+        if (tabla !== "menu_videos") return real;
+        return new Proxy(real, {
+          get(t, p) {
+            const valor = t[p as string];
+            if (p !== "update" || typeof valor !== "function") return typeof valor === "function" ? valor.bind(t) : valor;
+            return (...args: unknown[]) => interceptar(valor.apply(t, args) as object);
+          },
+        });
+      };
+    },
+  }) as Db;
+}
+
 beforeAll(() => {
   service = serviceClient();
 });
@@ -352,6 +399,65 @@ describe("un video que se está borrando", () => {
     expect(await fila(v.id)).toMatchObject({ status: "deleting", mux_asset_id: "as-ret" });
     expect(await handleMuxEvent(service, fake.mux, listo("as-ret", v.uploadId, v.id))).toBe("removed_deleting");
     expect(await fila(v.id)).toBeNull();
+  });
+});
+
+describe("carreras: el video se borra entre la lectura y la escritura", () => {
+  const borrarFila = (id: string) => () => service.from("menu_videos").delete().eq("id", id);
+  const pasarADeleting = (id: string) => () => service.from("menu_videos").update({ status: "deleting" }).eq("id", id);
+
+  it("con «subida creada», «listo» o «error»: si la fila desaparece a mitad, el asset sobrante se borra en Mux", async () => {
+    const casos: Array<[string, (v: { id: string; uploadId: string }) => MuxEvent, string]> = [
+      ["subida creada", (v) => creado(v.uploadId, "as-c-borrado", v.id), "as-c-borrado"],
+      ["listo", (v) => listo("as-l-borrado", v.uploadId, v.id), "as-l-borrado"],
+      ["listo demasiado largo", (v) => listo("as-ll-borrado", v.uploadId, v.id, { duration: 99 }), "as-ll-borrado"],
+      ["error", (v) => conError("as-e-borrado", v.uploadId, v.id), "as-e-borrado"],
+    ];
+    for (const [nombre, evento, asset] of casos) {
+      const local = await crearLocal();
+      const v = await nuevoVideo(local.id);
+      const { mux, deletedAssets } = fakeMux();
+      const resultado = await handleMuxEvent(conCarrera(service, borrarFila(v.id)), mux, evento(v));
+      expect(resultado, nombre).toBe("orphan_removed");
+      expect(deletedAssets, nombre).toContain(asset);
+      expect(await fila(v.id), nombre).toBeNull();
+    }
+  });
+
+  it("si en lugar de borrarse pasa a «deleting» entre la lectura y la escritura, el borrado se termina", async () => {
+    const casos: Array<[string, (v: { id: string; uploadId: string }) => MuxEvent, string]> = [
+      ["subida creada", (v) => creado(v.uploadId, "as-c-del", v.id), "as-c-del"],
+      ["listo", (v) => listo("as-l-del", v.uploadId, v.id), "as-l-del"],
+      ["error", (v) => conError("as-e-del", v.uploadId, v.id), "as-e-del"],
+    ];
+    for (const [nombre, evento, asset] of casos) {
+      const local = await crearLocal();
+      const v = await nuevoVideo(local.id);
+      const { mux, deletedAssets } = fakeMux();
+      expect(await handleMuxEvent(conCarrera(service, pasarADeleting(v.id)), mux, evento(v)), nombre).toBe("removed_deleting");
+      expect(deletedAssets, nombre).toEqual([asset]);
+      expect(await fila(v.id), nombre).toBeNull();
+    }
+  });
+
+  it("sin la carrera, el mismo evento se aplica normalmente (el envoltorio no cambia nada)", async () => {
+    const local = await crearLocal();
+    const v = await nuevoVideo(local.id);
+    const { mux, deletedAssets } = fakeMux();
+    expect(await handleMuxEvent(conCarrera(service, async () => undefined), mux, listo("as-sin-carrera", v.uploadId, v.id))).toBe("applied");
+    expect(await fila(v.id)).toMatchObject({ mux_status: "ready", mux_asset_id: "as-sin-carrera" });
+    expect(deletedAssets).toEqual([]);
+  });
+
+  it("si Mux falla al limpiar el sobrante tras la carrera, falla (reintento) y al repetir se borra", async () => {
+    const local = await crearLocal();
+    const v = await nuevoVideo(local.id);
+    const fake = fakeMux();
+    fake.fail("delete");
+    await expect(handleMuxEvent(conCarrera(service, borrarFila(v.id)), fake.mux, listo("as-reintento-carrera", v.uploadId, v.id))).rejects.toThrow();
+    // El reintento de Mux encuentra la fila ya borrada: huérfano.
+    expect(await handleMuxEvent(service, fake.mux, listo("as-reintento-carrera", v.uploadId, v.id))).toBe("orphan_removed");
+    expect(fake.deletedAssets).toEqual(["as-reintento-carrera"]);
   });
 });
 

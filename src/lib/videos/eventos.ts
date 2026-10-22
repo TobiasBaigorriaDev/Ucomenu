@@ -70,14 +70,31 @@ async function removeDeleting(admin: Db, mux: MuxClient | null, row: VideoRow, a
   throw new Error(`No se pudo terminar el borrado del video (${outcome}).`);
 }
 
-async function markErrored(admin: Db, row: VideoRow, assetId: string | null, code: MuxError): Promise<void> {
-  const { error } = await admin
+/** Marca el video con error. `true` si cambió una fila; `false` si ya no estaba o ya no se podía (listo, o borrándose). */
+async function markErrored(admin: Db, row: VideoRow, assetId: string | null, code: MuxError): Promise<boolean> {
+  const { data, error } = await admin
     .from("menu_videos")
     .update({ mux_status: "errored", mux_error: code, ...(assetId ? { mux_asset_id: assetId } : {}) })
     .eq("id", row.id)
     .neq("mux_status", "ready")
-    .neq("status", "deleting");
+    .neq("status", "deleting")
+    .select("id");
   if (error) throw new Error(`No se pudo marcar el video con error: ${error.message}`);
+  return data.length > 0;
+}
+
+/**
+ * Una escritura sobre la fila afectó 0 filas: entre la lectura y la escritura el video se borró o empezó a borrarse (o ya estaba
+ * en otro estado). Se vuelve a mirar para no dejar un asset sin dueño: si la fila ya no existe, el asset es un huérfano y se
+ * borra; si se está borrando, se termina de borrar; si sigue ahí, no había nada que hacer.
+ */
+async function settleLostRow(admin: Db, mux: MuxClient | null, rowId: string, assetId: string): Promise<EventOutcome> {
+  const again = await findById(admin, rowId);
+  if (!again) {
+    await needMux(mux).deleteAsset(assetId);
+    return "orphan_removed";
+  }
+  return again.status === "deleting" ? removeDeleting(admin, mux, again, assetId) : "ignored";
 }
 
 /** Resuelve la fila de un evento de asset: por `passthrough` (nuestro id) y, si no, por la subida. */
@@ -115,7 +132,7 @@ async function onUploadAssetCreated(admin: Db, mux: MuxClient | null, data: Reco
     .neq("status", "deleting")
     .select("id");
   if (error) throw new Error(`No se pudo anotar el asset del video: ${error.message}`);
-  return updated.length > 0 ? "applied" : "ignored";
+  return updated.length > 0 ? "applied" : settleLostRow(admin, mux, row.id, assetId);
 }
 
 async function onAssetReady(admin: Db, mux: MuxClient | null, data: Record<string, unknown>): Promise<EventOutcome> {
@@ -142,9 +159,10 @@ async function onAssetReady(admin: Db, mux: MuxClient | null, data: Record<strin
   const rejection: MuxError | null =
     duration === null || duration <= 0 ? "processing_failed" : duration > MAX_VIDEO_SECONDS ? "too_long" : playbackId === null ? "no_playback" : null;
   if (rejection || duration === null || playbackId === null) {
-    await markErrored(admin, row, assetId, rejection ?? "processing_failed");
+    const marked = await markErrored(admin, row, assetId, rejection ?? "processing_failed");
     await needMux(mux).deleteAsset(assetId);
-    return "applied";
+    // Si el video se estaba borrando (o ya se borró) mientras tanto, además hay que cerrar el borrado de la fila.
+    return marked ? "applied" : settleLostRow(admin, mux, row.id, assetId);
   }
 
   const { data: updated, error } = await admin
@@ -162,11 +180,7 @@ async function onAssetReady(admin: Db, mux: MuxClient | null, data: Record<strin
     .neq("status", "deleting")
     .select("id");
   if (error) throw new Error(`No se pudo dejar el video listo: ${error.message}`);
-  if (updated.length > 0) return "applied";
-
-  // 0 filas: se borró (o empezó a borrarse) entre la lectura y la escritura. Si sigue acá y se está borrando, se termina de borrar.
-  const again = await findById(admin, row.id);
-  return again?.status === "deleting" ? removeDeleting(admin, mux, again, assetId) : "ignored";
+  return updated.length > 0 ? "applied" : settleLostRow(admin, mux, row.id, assetId);
 }
 
 async function onAssetErrored(admin: Db, mux: MuxClient | null, data: Record<string, unknown>): Promise<EventOutcome> {
@@ -183,8 +197,8 @@ async function onAssetErrored(admin: Db, mux: MuxClient | null, data: Record<str
   if (!uploadId || row.mux_upload_id !== uploadId) return "ignored";
   if (row.status === "deleting") return removeDeleting(admin, mux, row, assetId);
   if (row.mux_status === "ready") return "ignored";
-  await markErrored(admin, row, assetId, "processing_failed");
-  return "applied";
+  const marked = await markErrored(admin, row, assetId, "processing_failed");
+  return marked ? "applied" : settleLostRow(admin, mux, row.id, assetId);
 }
 
 async function onUploadErrored(admin: Db, data: Record<string, unknown>): Promise<EventOutcome> {
