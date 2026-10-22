@@ -1,5 +1,5 @@
 # Cambio: Feed vertical de videos en la carta pública
-Estado: **en staging** (Fly + migración, aprobado por el usuario); probado con Chrome real contra Mux; falta Safari/iPhone y la verificación de Codex del fallback a `hls.js`. Sigue a la [carga y publicación de videos](videos-mux-parte-b.md) (hecha y en staging).
+Estado: **en staging** (Fly + migración, aprobado por el usuario); probado con Chrome real contra Mux; aprobado por Codex en 3 rondas; falta la prueba en Safari/iPhone. Sigue a la [carga y publicación de videos](videos-mux-parte-b.md) (hecha y en staging).
 Nivel: **C** — el tablero lo traía como M, pero abre **lectura pública (`anon`)** de una tabla que hasta hoy era privada y la condiciona al plan y a la mora (exposición de información a anónimos y dinero: el feed es de Premium). La parte de pantalla es M.
 
 ## Objetivo
@@ -58,4 +58,5 @@ Local (Supabase local + `next dev` en :3200 con los hosts de Mux interceptados),
 ## (C) Revisión y aprobación
 - Ronda 1 (Codex, sobre `737df04`, informe `output/revisiones/2026-10-22T03-53-33-commit-HEAD.md`): aprobar con cambios; un hallazgo **importante**: tras un `NotAllowedError` del arranque solo, el primer toque en «Reproducir» no volvía a llamar a `play()` (el botón desaparecía con el video pausado). Corregido: `play()` se pide dentro del gesto del toque (también lo exige Safari/iOS) y sigue «bloqueado» hasta que el navegador acepte. Regresión E2E «si el navegador bloquea el arranque solo…» (falla sin el arreglo, comprobado). `feed-videos` queda en 10/10.
 - Ronda 2 (Codex, verificación sobre `2223b32`, informe `output/revisiones/2026-10-22T03-59-43-commit-HEAD.md`): **APROBAR**, sin hallazgos nuevos; el hallazgo previo queda corregido.
-- Cambio posterior a la ronda 2 (fallback de HLS nativo a `hls.js`, nacido de la prueba real): verificación de Codex pendiente. Despliegue a staging: aprobado por el usuario el 2026-10-22.
+- Ronda 3 (Codex, verificación sobre `5c052c6`, informe `output/revisiones/2026-10-22T04-12-32-commit-HEAD.md`): **APROBAR**, sin hallazgos; cubre el fallback a `hls.js` (ejecución única, cancelación y limpieza al cambiar de video).
+- Despliegue a staging: aprobado por el usuario el 2026-10-22. Aprobación final del ítem: a la espera de la prueba en iPhone.

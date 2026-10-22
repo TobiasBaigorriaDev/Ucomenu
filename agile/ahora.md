@@ -4,20 +4,23 @@ Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-La carga y publicación de videos con Mux (partes A y B, ADR 0031) está hecha, en staging (Fly v21) y **ya subida a `origin/main`**. Ahora está en curso el **feed vertical de videos en la carta** (nivel C): [ficha](cambios/feed-de-videos.md). Está **implementado y probado en local** (unitarias, RLS, E2E y mutaciones; la evidencia está en la ficha), y **aprobado por Codex en 2 rondas** (un hallazgo de autoplay bloqueado, corregido con regresión; commits `737df04` y `2223b32`, solo en local).
+La carga y publicación de videos con Mux (ADR 0031) está hecha y en `origin/main`. El **feed vertical de videos en la carta** (nivel C, [ficha](cambios/feed-de-videos.md)) está **en staging**: migración `20261113100000` aplicada y app desplegada en Fly por orden del usuario. Codex lo aprobó en 3 rondas, y la última cubrió el fallback a `hls.js`.
 
-Se aprobó la dependencia `hls.js` 1.7.3. La migración `20261113100000_videos_feed_publico.sql` está aplicada solo en la base local, no en staging.
+La prueba real lo mejoró: Chrome 155 anuncia HLS nativo y lo rechaza, así que el feed ahora cae a `hls.js` si el video da error. Con ese arreglo, Chrome reprodujo el video de Mux en staging.
+
+Hay cuatro commits locales sin `git push`: `737df04`, `2223b32`, `6277961` y `5c052c6`.
 
 ## Bloqueos y límites
 
-- Falta la prueba de reproducción real con un asset de Mux de staging, en Safari/iPhone (HLS nativo) y en Chrome (`hls.js`): en E2E los hosts de Mux están interceptados.
-- Android sigue sin probarse (subida de videos). El peso de 50 MB solo se valida en el navegador.
-- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y algunas E2E ajenas (por ejemplo `mesas.spec`, con la «Mesa 3» activa). Un E2E que espera el puerto 3100 falla si se corre contra :3200.
+- Falta probar el feed en **Safari/iPhone** (HLS nativo) y en Firefox. Android sigue sin probarse (subida de videos).
+- Para esta prueba se publicó el único video, «Vhkkk», de `cafe-de-ensayo` (Premium). Se despublica desde el panel.
+- En E2E los hosts de Mux están interceptados; la reproducción real solo se comprobó a mano.
+- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y algunas E2E ajenas (por ejemplo `mesas.spec`, con la «Mesa 3» activa).
 - La producción sigue bloqueada (dominio, etc.).
 
 ## Próximo paso
 
-1. Con la aprobación del usuario: `pnpm exec supabase db push` (lo corre el usuario con `!` si el clasificador lo bloquea), desplegar a Fly con `--local-only` y probar el feed con un video publicado de `prueba-videos`.
-2. Registrar la evidencia real en la ficha y cerrar el ítem en el tablero.
+1. El usuario abre en su iPhone `https://ucomenu-staging.fly.dev/m/cafe-de-ensayo/principal` y entra con «Ver videos». Prueba que el video arranque mudo, el botón de sonido, deslizar, volver y el idioma. Con ese resultado se cierra el ítem.
+2. Decidir con el usuario el `git push` de `main` a `origin`.
 
 Después, siguiendo el tablero: likes anónimos desde la mesa (C), comentarios con aprobación (C) y los textos legales (S).
