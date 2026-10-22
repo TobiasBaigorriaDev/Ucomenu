@@ -56,7 +56,7 @@ type SlideProps = {
 
 /**
  * Un video del feed. Muestra el póster de Mux y, solo si está «preparado» (es el visible o el siguiente), le asocia su stream:
- * Safari y iOS reproducen HLS nativo; el resto lo hace con `hls.js`, que se baja recién acá (import dinámico) y no antes.
+ * Safari y iOS reproducen HLS nativo; si el navegador no puede (o lo rechaza), lo hace `hls.js`, que se baja recién acá y no antes.
  */
 function Slide({ video, index, total, prepared, active, muted, reduced, lang, onToggleMute }: SlideProps) {
   const t = TEXTOS[lang].feed;
@@ -82,9 +82,8 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, on
     let cancelled = false;
     let hls: { destroy: () => void } | null = null;
 
-    if (element.canPlayType("application/vnd.apple.mpegurl")) {
-      element.src = hlsUrl(video.playbackId);
-    } else {
+    // `hls.js` (variante liviana) por importación dinámica: se baja recién acá y solo si hace falta.
+    const attachHlsJs = () => {
       import("hls.js/light")
         .then(({ default: Hls }) => {
           if (cancelled) return;
@@ -108,7 +107,28 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, on
         .catch(() => {
           if (!cancelled) setError(true);
         });
+    };
+
+    if (element.canPlayType("application/vnd.apple.mpegurl")) {
+      // Safari e iOS reproducen HLS nativo. Pero `canPlayType` no es una garantía (Chrome 155 dice «maybe» y rechaza el stream con
+      // MEDIA_ERR_SRC_NOT_SUPPORTED): si el video da error, se suelta la fuente y se reintenta con `hls.js`.
+      const onNativeError = () => {
+        if (cancelled) return;
+        element.removeAttribute("src");
+        element.load();
+        attachHlsJs();
+      };
+      element.addEventListener("error", onNativeError, { once: true });
+      element.src = hlsUrl(video.playbackId);
+      return () => {
+        cancelled = true;
+        element.removeEventListener("error", onNativeError);
+        hls?.destroy();
+        element.removeAttribute("src");
+        element.load();
+      };
     }
+    attachHlsJs();
     return () => {
       cancelled = true;
       hls?.destroy();
@@ -167,7 +187,6 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, on
         // Preparado = visible o siguiente: con HLS nativo (Safari, iOS y Chrome reciente) `metadata` trae el manifiesto y deja al siguiente listo.
         preload={prepared ? "metadata" : "none"}
         aria-label={video.title}
-        onError={() => prepared && setError(true)}
         className="absolute inset-0 size-full object-cover"
       />
       {/* Toda la pantalla es el botón de reproducir/pausar (también por teclado). */}

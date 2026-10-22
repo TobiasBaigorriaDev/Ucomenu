@@ -1,5 +1,5 @@
 # Cambio: Feed vertical de videos en la carta pública
-Estado: **implementado en local y aprobado por la revisión independiente (2 rondas); pendiente la aprobación humana del `db push`/despliegue a staging y la prueba con un asset real**. Sigue a la [carga y publicación de videos](videos-mux-parte-b.md) (hecha y en staging).
+Estado: **en staging** (Fly + migración, aprobado por el usuario); probado con Chrome real contra Mux; falta Safari/iPhone y la verificación de Codex del fallback a `hls.js`. Sigue a la [carga y publicación de videos](videos-mux-parte-b.md) (hecha y en staging).
 Nivel: **C** — el tablero lo traía como M, pero abre **lectura pública (`anon`)** de una tabla que hasta hoy era privada y la condiciona al plan y a la mora (exposición de información a anónimos y dinero: el feed es de Premium). La parte de pantalla es M.
 
 ## Objetivo
@@ -23,7 +23,7 @@ Que el comensal vea los videos publicados del local en un feed vertical (un vide
 - [x] El feed muestra los videos en orden, uno a la vez; solo el visible y el siguiente piden su stream; los otros, solo el póster.
 - [x] «Ver plato» aparece solo con un plato visible en esa sucursal y abre su nombre, precio y descripción.
 - [x] Funciona en es/en/pt, con `prefers-reduced-motion`, a 390 px y por teclado (flechas, espacio, Esc); cuenta suspendida y sucursal desactivada dan el mismo «no disponible» que la carta.
-- [ ] Reproducción real comprobada en Safari/iPhone (HLS nativo) y en Chrome (`hls.js`) con un asset de Mux de staging.
+- [ ] Reproducción real comprobada en Safari/iPhone (HLS nativo) y en Chrome (`hls.js`) con un asset de Mux de staging. *(Chrome hecho; falta iPhone.)*
 
 ## Fuera de alcance
 Likes y comentarios, `/t/{token}/videos` (el feed desde la mesa llega con ellos), reordenar videos, subtítulos, estadísticas de reproducción, precarga más agresiva o CDN propio.
@@ -50,9 +50,12 @@ Local (Supabase local + `next dev` en :3200 con los hosts de Mux interceptados),
 - RLS: `videos-publico` 11/11 (anon solo publicado + listo + feed vigente; columnas; plan, mora, suspensión manual y baja; aislamiento; sin escritura), `acl` 21/21 (el envoltorio `video_feed_visible` entra en la matriz), `videos` y los demás de videos en verde. Se actualizó `videos.rls` (la afirmación «anon no lee nada» pasó a «anon no ve borradores ni el estado»).
 - E2E `feed-videos` 9/9 a 390 px: enlace solo con publicados y la carta no pide nada a Mux ni a `hls.js`; Pro/suspendida; orden; solo el visible y el siguiente piden stream; teclado; «Ver plato»; stream caído; `reduced-motion`; sin desborde; vacío y 404. Con ellos pasan 49 E2E vecinos (carta, idiomas, videos, videos-mux) y 64 de carta por sucursal, buscador, ticket, slugs, legal y mesas, salvo 2 de `mesas.spec` **ajenos**: uno espera el puerto 3100 y el otro depende de que la «Mesa 3 (fuera de servicio)» esté inactiva, y en la base local quedó activa.
 - Mutaciones, todas detectadas por una prueba que falla sin la defensa: política sin «publicado», sin plan/mora, `video_feed_visible` siempre verdadero, `anon` con `status`/`mux_asset_id`/`mux_error`, `anon` con UPDATE, preparar todos los videos (unitaria y E2E), «¿hay videos?» que lanza, enlace siempre visible, «Ver plato» con plato oculto. **Mutante equivalente:** quitar «listo» de la política no cambia nada porque el CHECK `menu_videos_check1` ya prohíbe publicar algo no listo (defensa en profundidad, no hay prueba que pueda distinguirlos).
-- No probado todavía: reproducción real en Safari/iPhone y en Chrome (`hls.js`) con un asset de Mux de staging; la migración `20261113100000` no está aplicada en staging.
+- **Staging (2026-10-22, con aprobación del usuario):** migración `20261113100000` aplicada con `db push` y app desplegada en Fly. Con la clave pública, un anónimo lee las columnas públicas del video publicado y recibe `42501` al pedir `status`. Para probar se **publicó el único video** (borrador listo de 4,3 s, «Vhkkk») de `cafe-de-ensayo` (Premium); se despublica desde el panel.
+- **Hallazgo de la prueba real (Chrome 155):** el navegador responde «maybe» a `canPlayType` de HLS, descarga el manifiesto y los segmentos, pero el video falla con `MEDIA_ERR_SRC_NOT_SUPPORTED` (el feed mostraba el aviso de error). Corregido: se intenta HLS nativo y, si el video da error, se suelta la fuente y se reintenta con `hls.js`. Regresión E2E (falla sin el fallback, comprobado); `feed-videos` 11/11.
+- **Chrome 155 real contra Mux, tras el arreglo:** el video avanza (3,1 s), 480×854, sin error; la carta sola no hace ningún pedido a Mux.
+- No probado todavía: Safari/iPhone (HLS nativo) y Firefox.
 
 ## (C) Revisión y aprobación
 - Ronda 1 (Codex, sobre `737df04`, informe `output/revisiones/2026-10-22T03-53-33-commit-HEAD.md`): aprobar con cambios; un hallazgo **importante**: tras un `NotAllowedError` del arranque solo, el primer toque en «Reproducir» no volvía a llamar a `play()` (el botón desaparecía con el video pausado). Corregido: `play()` se pide dentro del gesto del toque (también lo exige Safari/iOS) y sigue «bloqueado» hasta que el navegador acepte. Regresión E2E «si el navegador bloquea el arranque solo…» (falla sin el arreglo, comprobado). `feed-videos` queda en 10/10.
 - Ronda 2 (Codex, verificación sobre `2223b32`, informe `output/revisiones/2026-10-22T03-59-43-commit-HEAD.md`): **APROBAR**, sin hallazgos nuevos; el hallazgo previo queda corregido.
-- Aprobación humana del despliegue a staging: pendiente.
+- Cambio posterior a la ronda 2 (fallback de HLS nativo a `hls.js`, nacido de la prueba real): verificación de Codex pendiente. Despliegue a staging: aprobado por el usuario el 2026-10-22.

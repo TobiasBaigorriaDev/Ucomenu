@@ -252,6 +252,26 @@ test.describe("el feed", () => {
     });
   });
 
+  test("si el navegador dice poder HLS nativo pero el video da error, pasa a hls.js (Chrome 155 lo hace)", async ({ page }) => {
+    await conLocal("feed-nativo", "premium", "active", async (t) => {
+      await sembrar(t.orgId, { title: "Uno", playback: "pb-n1" });
+      await interceptarMux(page);
+      await page.addInitScript(() => {
+        const original = HTMLMediaElement.prototype.canPlayType;
+        HTMLMediaElement.prototype.canPlayType = function (tipo: string) {
+          return tipo === "application/vnd.apple.mpegurl" ? "maybe" : original.call(this, tipo);
+        };
+      });
+      await page.goto(feed(t.slug));
+      await expect(slide(page, 0)).toHaveAttribute("data-prepared", "true");
+      const video = slide(page, 0).locator("video");
+      // El navegador rechaza el stream nativo: se suelta la fuente y `hls.js` toma el video (su `src` pasa a ser un `blob:` de MSE).
+      await video.evaluate((v) => v.dispatchEvent(new Event("error")));
+      await expect.poll(() => video.evaluate((v) => (v as HTMLVideoElement).src)).toMatch(/^blob:/);
+      await expect(slide(page, 0).getByTestId("feed-error")).toHaveCount(0);
+    });
+  });
+
   test("a 390 px, con un título larguísimo, el feed no desborda", async ({ page }) => {
     await conLocal("feed-ancho", "premium", "active", async (t) => {
       const p = await platos(t.orgId);
