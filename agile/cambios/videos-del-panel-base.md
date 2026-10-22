@@ -1,5 +1,5 @@
 # Cambio: Videos del feed — base de datos y panel (parte A de «Carga y publicación de videos»)
-Estado: **implementado en local; pendiente de la revisión independiente (C) y de la aprobación.** Migración `20261111100000` aplicada solo en la base local. La parte B (Mux real: subida directa, webhook, borrado del asset y prueba en teléfonos) espera las credenciales del usuario.
+Estado: **implementado en local y aprobado por Codex (2 rondas, commit `48deee6`); pendiente de la aprobación del usuario y de subirlo a staging.** Migración `20261111100000` aplicada solo en la base local. La parte B (Mux real: subida directa, webhook, borrado del asset y prueba en teléfonos) espera las credenciales del usuario.
 Nivel: C (autorización: quién crea, publica y borra; dinero: el cupo `videos_published` del plan; exposición: qué columnas de Mux ve cada rol)
 
 ## Objetivo
@@ -58,4 +58,5 @@ Base local con las migraciones hasta `20261111100000` (aplicada con `supabase mi
 
 ## (C) Revisión y aprobación
 - **Ronda 1 (Codex, `1e51ea7`):** APROBAR CON CAMBIOS, un hallazgo Importante, **real**: el trigger de publicación solo corría en `UPDATE OF status`; un `INSERT` ya publicado (por ejemplo del servidor) con metadatos `ready` válidos eludía el plan y el cupo (ADR 0006 pide los topes también para `service_role`). **Corregido:** el trigger corre también en `INSERT` (con el acceso a `old` protegido). Dos pruebas nuevas en `videos.rls.test.ts` —alta publicada sobre el cupo y sobre un plan sin feed, y alta en bloque de 11 que se rechaza entera— que **fallan con el trigger anterior** y pasan con el nuevo (`videos` 30/30; con `videos-modulo` y `acl`, 64/64). La migración se volvió a aplicar en local desde cero.
-- **Pendiente:** ronda de verificación y la aprobación del usuario antes de subirla a staging.
+- **Ronda 2 (verificación, `48deee6`):** **APROBAR**, sin hallazgos nuevos; el previo, corregido. Revisión estática (Codex no ejecutó suites).
+- **Pendiente:** la aprobación del usuario y, con ella, `supabase db push` y el despliegue a staging (no se tocaron).
