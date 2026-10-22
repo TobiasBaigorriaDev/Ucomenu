@@ -169,6 +169,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"menu_videos": {
+                  Row: {
+                    "created_at": string,"duration_seconds": number | null,"id": string,"mux_asset_id": string | null,"mux_playback_id": string | null,"mux_status": string,"mux_upload_id": string | null,"organization_id": string,"product_id": string | null,"sort_order": number,"status": string,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"duration_seconds"?: number | null,"id"?: string,"mux_asset_id"?: string | null,"mux_playback_id"?: string | null,"mux_status"?: string,"mux_upload_id"?: string | null,"organization_id": string,"product_id"?: string | null,"sort_order"?: number,"status"?: string,"title": string
+                  }
+                  Update: {
+                    "created_at"?: string,"duration_seconds"?: number | null,"id"?: string,"mux_asset_id"?: string | null,"mux_playback_id"?: string | null,"mux_status"?: string,"mux_upload_id"?: string | null,"organization_id"?: string,"product_id"?: string | null,"sort_order"?: number,"status"?: string,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "menu_videos_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "menu_videos_product_id_organization_id_fkey"
+      columns: ["product_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
                 },"option_groups": {
                   Row: {
                     "created_at": string,"id": string,"is_active": boolean,"max_choices": number,"min_choices": number,"name": string,"organization_id": string,"product_id": string,"sort_order": number,"translations": NonNullable<Json>

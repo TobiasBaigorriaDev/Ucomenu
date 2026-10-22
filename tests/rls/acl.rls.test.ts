@@ -47,6 +47,10 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   trial_status: [false, false, false], // pura; la usa org_entitlements (estado de la prueba gratuita)
   enforce_option_group_cap: [false, false, false], // trigger de option_groups: tope técnico de 20 grupos por plato (variantes y adicionales)
   enforce_option_cap: [false, false, false], // trigger de options: tope técnico de 60 opciones por grupo (variantes y adicionales)
+  can_create_video: [true, false, true], // usada por la política de alta de menu_videos (miembro + cuenta que escribe + feed en el plan)
+  enforce_video_cap: [false, false, false], // trigger de menu_videos: tope técnico de 50 videos por organización
+  enforce_video_transition: [false, false, false], // trigger de menu_videos: la organización no se mueve y «deleting» es terminal
+  enforce_video_publish: [true, false, false], // trigger de menu_videos: feature y cupo del plan al publicar (ADR 0031)
   translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
 };
 
