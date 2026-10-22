@@ -1,5 +1,5 @@
 # Cambio: Videos del feed — base de datos y panel (parte A de «Carga y publicación de videos»)
-Estado: **implementado en local y aprobado por Codex (2 rondas, commit `48deee6`); pendiente de la aprobación del usuario y de subirlo a staging.** Migración `20261111100000` aplicada solo en la base local. La parte B (Mux real: subida directa, webhook, borrado del asset y prueba en teléfonos) espera las credenciales del usuario.
+Estado: **implementado en local y aprobado por Codex (2 rondas, commit `48deee6`); aprobado por el usuario y desplegado en staging (Fly v19).** Migración `20261111100000` aplicada solo en la base local. La parte B (Mux real: subida directa, webhook, borrado del asset y prueba en teléfonos) espera las credenciales del usuario.
 Nivel: C (autorización: quién crea, publica y borra; dinero: el cupo `videos_published` del plan; exposición: qué columnas de Mux ve cada rol)
 
 ## Objetivo
@@ -59,4 +59,9 @@ Base local con las migraciones hasta `20261111100000` (aplicada con `supabase mi
 ## (C) Revisión y aprobación
 - **Ronda 1 (Codex, `1e51ea7`):** APROBAR CON CAMBIOS, un hallazgo Importante, **real**: el trigger de publicación solo corría en `UPDATE OF status`; un `INSERT` ya publicado (por ejemplo del servidor) con metadatos `ready` válidos eludía el plan y el cupo (ADR 0006 pide los topes también para `service_role`). **Corregido:** el trigger corre también en `INSERT` (con el acceso a `old` protegido). Dos pruebas nuevas en `videos.rls.test.ts` —alta publicada sobre el cupo y sobre un plan sin feed, y alta en bloque de 11 que se rechaza entera— que **fallan con el trigger anterior** y pasan con el nuevo (`videos` 30/30; con `videos-modulo` y `acl`, 64/64). La migración se volvió a aplicar en local desde cero.
 - **Ronda 2 (verificación, `48deee6`):** **APROBAR**, sin hallazgos nuevos; el previo, corregido. Revisión estática (Codex no ejecutó suites).
-- **Pendiente:** la aprobación del usuario y, con ella, `supabase db push` y el despliegue a staging (no se tocaron).
+- **Aprobación del usuario (2026-10-22):** «Apruebo todo».
+
+### Staging — 2026-10-22
+- **Migración:** `supabase db push --dry-run` listó solo `20261111100000_videos_del_feed.sql`; el `db push` real lo corrió el usuario (los permisos de Claude Code me lo bloquean). `migration list` coincide con local y el dry-run posterior dice «Remote database is up to date». Primero la migración y después la app, porque la pantalla consulta `menu_videos`.
+- **App:** código de `main` **`c1a6a5a`**, `flyctl deploy -c fly.staging.toml --local-only --depot=false` con los mismos argumentos públicos que la v18. Fly **v19** `complete`, máquina `78177dda131e38` en `gru` (con `auto_stop`, arranca con el primer pedido). HTTP: `/`, `/login`, `/m/demo/centro`, `/privacidad`, `/terminos`, `/alergenos`: **200**; `/panel/demo/videos` y `/admin/organizaciones/demo` sin sesión: **307**; `/sala/demo/estado`: **401**.
+- No se probó con sesión en staging (lo hace el usuario: «Videos» en el menú de un local Premium y de uno Pro). Marcha atrás de la app: `--image registry.fly.io/ucomenu-staging:deployment-01M5GEM7H8GQPP2J6Y5YCH6KN1` (v18); la tabla nueva es aditiva y no estorba a la versión anterior.

@@ -24,7 +24,7 @@ Actualizado: 2026-10-21. «Hecho» indica alcance implementado e integrado; las 
 ## Bloqueado
 
 - [M] Salida a producción — preparación y staging hechos; faltan dominio, proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
-- [C] Carga y publicación de videos desde el panel con Mux — **parte A hecha** (tabla, cupo, borrado en dos pasos y pantalla; aprobada por Codex, falta la aprobación del usuario y subirla a staging → [ficha](cambios/videos-del-panel-base.md)); **parte B bloqueada** por cuenta y credenciales de Mux: subida directa, webhook, borrado del asset, validación de peso y formato y prueba real en iPhone y Android → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [C] Carga y publicación de videos desde el panel con Mux — **parte A hecha** (tabla, cupo, borrado en dos pasos y pantalla; aprobada por Codex, aprobada y en staging, Fly v19 → [ficha](cambios/videos-del-panel-base.md)); **parte B bloqueada** por cuenta y credenciales de Mux: subida directa, webhook, borrado del asset, validación de peso y formato y prueba real en iPhone y Android → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [S] Spike descartable de Apple Wallet y Google Wallet con ubicaciones — bloqueado por cuentas de Apple Developer y emisor de Google Wallet, aprobación y pago; valida ADR 0003 → [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md)
 
 ## Backlog
