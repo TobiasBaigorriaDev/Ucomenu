@@ -63,6 +63,26 @@ export type Textos = {
     cooldown: (seconds: number) => string;
     rateLimited: (minutes: number) => string;
   };
+  /** Feed de videos (ficha feed-de-videos). */
+  feed: {
+    /** El acceso desde la carta. */
+    link: string;
+    pageTitle: (organization: string) => string;
+    heading: string;
+    back: string;
+    position: (n: number, total: number) => string;
+    mute: string;
+    unmute: string;
+    play: string;
+    pause: string;
+    viewDish: string;
+    hideDish: string;
+    videoError: string;
+    emptyTitle: string;
+    emptyHint: string;
+    nextVideo: string;
+    previousVideo: string;
+  };
   unavailable: { suspendedTitle: string; suspendedBody: string; inactiveTitle: string; inactiveBody: string };
 };
 
@@ -124,6 +144,24 @@ const es: Textos = {
     already: { waiter: "Ya avisamos al personal. Enseguida te atienden.", bill: "Ya pedimos tu cuenta. Enseguida te la acercan." },
     cooldown: (s) => `Ya avisaste hace un momento. Podés volver a avisar en ${s} ${s === 1 ? "segundo" : "segundos"}.`,
     rateLimited: (m) => `Se hicieron demasiados avisos desde tu conexión. Probá de nuevo en ${m} ${m === 1 ? "minuto" : "minutos"}.`,
+  },
+  feed: {
+    link: "Ver videos",
+    pageTitle: (organization) => `Videos de ${organization}`,
+    heading: "Videos",
+    back: "Volver a la carta",
+    position: (n, total) => `Video ${n} de ${total}`,
+    mute: "Silenciar",
+    unmute: "Activar el sonido",
+    play: "Reproducir",
+    pause: "Pausar",
+    viewDish: "Ver plato",
+    hideDish: "Cerrar",
+    videoError: "No se pudo reproducir este video.",
+    emptyTitle: "Todavía no hay videos",
+    emptyHint: "Cuando el local publique videos, los vas a ver acá. Mientras tanto, mirá la carta.",
+    nextVideo: "Video siguiente",
+    previousVideo: "Video anterior",
   },
   unavailable: {
     suspendedTitle: "Carta temporalmente no disponible",
@@ -191,6 +229,24 @@ const en: Textos = {
     cooldown: (s) => `You just notified us a moment ago. You can notify again in ${s} ${s === 1 ? "second" : "seconds"}.`,
     rateLimited: (m) => `Too many notifications were sent from your connection. Try again in ${m} ${m === 1 ? "minute" : "minutes"}.`,
   },
+  feed: {
+    link: "Watch videos",
+    pageTitle: (organization) => `Videos from ${organization}`,
+    heading: "Videos",
+    back: "Back to the menu",
+    position: (n, total) => `Video ${n} of ${total}`,
+    mute: "Mute",
+    unmute: "Turn sound on",
+    play: "Play",
+    pause: "Pause",
+    viewDish: "View dish",
+    hideDish: "Close",
+    videoError: "This video could not be played.",
+    emptyTitle: "No videos yet",
+    emptyHint: "When the restaurant publishes videos, you will see them here. In the meantime, have a look at the menu.",
+    nextVideo: "Next video",
+    previousVideo: "Previous video",
+  },
   unavailable: {
     suspendedTitle: "Menu temporarily unavailable",
     suspendedBody: "The restaurant is updating its service. Ask the staff if you'd like to see the menu now.",
@@ -256,6 +312,24 @@ const pt: Textos = {
     already: { waiter: "Já avisamos a equipe. Já já alguém atende você.", bill: "Já pedimos a sua conta. Ela chega já já." },
     cooldown: (s) => `Você acabou de avisar. Pode avisar de novo em ${s} ${s === 1 ? "segundo" : "segundos"}.`,
     rateLimited: (m) => `Foram feitos avisos demais a partir da sua conexão. Tente de novo em ${m} ${m === 1 ? "minuto" : "minutos"}.`,
+  },
+  feed: {
+    link: "Ver vídeos",
+    pageTitle: (organization) => `Vídeos de ${organization}`,
+    heading: "Vídeos",
+    back: "Voltar ao cardápio",
+    position: (n, total) => `Vídeo ${n} de ${total}`,
+    mute: "Silenciar",
+    unmute: "Ativar o som",
+    play: "Reproduzir",
+    pause: "Pausar",
+    viewDish: "Ver prato",
+    hideDish: "Fechar",
+    videoError: "Não foi possível reproduzir este vídeo.",
+    emptyTitle: "Ainda não há vídeos",
+    emptyHint: "Quando o estabelecimento publicar vídeos, você os verá aqui. Enquanto isso, veja o cardápio.",
+    nextVideo: "Próximo vídeo",
+    previousVideo: "Vídeo anterior",
   },
   unavailable: {
     suspendedTitle: "Cardápio temporariamente indisponível",

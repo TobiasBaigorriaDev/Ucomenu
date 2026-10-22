@@ -4,12 +4,21 @@ Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-La **carga y publicación de videos con Mux** (partes A y B, nivel C, ADR 0031) está **hecha y en staging (Fly v21)**: [parte A](cambios/videos-del-panel-base.md) y [parte B](cambios/videos-mux-parte-b.md), aprobadas por Codex (3 rondas la B; dos carreras de huérfanos corregidas) y por el usuario. Se probó de punta a punta con Mux real: un navegador móvil emulado y, además, un **iPhone 16 con `.mov` HEVC** del usuario (subida, «Listo» solo con miniatura, despublicar, borrar —el asset desaparece de Mux— y rechazo de un video de más de 30 s). Los commits están **solo en local** (último `be6c4c8` + el de cierre), sin `git push`.
+La carga y publicación de videos con Mux (partes A y B, ADR 0031) está hecha, en staging (Fly v21) y **ya subida a `origin/main`**. Ahora está en curso el **feed vertical de videos en la carta** (nivel C): [ficha](cambios/feed-de-videos.md). Está **implementado y probado en local** (unitarias, RLS, E2E y mutaciones; la evidencia está en la ficha), pero todavía **sin revisión independiente**.
+
+Se aprobó la dependencia `hls.js` 1.7.3. La migración `20261113100000_videos_feed_publico.sql` está aplicada solo en la base local, no en staging.
 
 ## Bloqueos y límites
 
-Sin bloqueos. Pendiente menor: probar en un **Android** real. La organización de prueba `prueba-videos` (Premium) es del usuario (`tobibaigorria2023@gmail.com`); él también tiene 1 video de prueba en `cafe-de-ensayo` (borrador, listo). El plan Free de Mux guarda hasta 10 assets (hay 1). El peso de 50 MB solo se valida en el navegador. El secreto de firma del webhook ya es el correcto y está en Fly. No se hizo `pnpm build` local (pisaría el `.next` de los servidores del usuario). Con los escenarios locales cargados fallan 15 pruebas RLS y varias E2E por datos extra.
+- Falta la prueba de reproducción real con un asset de Mux de staging, en Safari/iPhone (HLS nativo) y en Chrome (`hls.js`): en E2E los hosts de Mux están interceptados.
+- Android sigue sin probarse (subida de videos). El peso de 50 MB solo se valida en el navegador.
+- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y algunas E2E ajenas (por ejemplo `mesas.spec`, con la «Mesa 3» activa). Un E2E que espera el puerto 3100 falla si se corre contra :3200.
+- La producción sigue bloqueada (dominio, etc.).
 
 ## Próximo paso
 
-Decidir con el usuario si se sube `main` a `origin`. Siguiente ítem de la fase 2: el **feed vertical en la carta** (nivel M): lectura pública de los videos (`anon`) con su caché, el reproductor HLS (Safari reproduce HLS nativo; en el resto hace falta `hls.js` o `mux-player`, una dependencia nueva que requiere aprobación) y el enlace «Ver plato»; debe cargarse bajo demanda sin penalizar el LCP de la carta. Después, likes y comentarios (nivel C, desde la mesa) y los textos legales.
+1. Commit de los archivos del feed y revisión de Codex en una ronda (`pnpm revision:codex --commit HEAD --ficha agile/cambios/feed-de-videos.md --nivel C`, luego `--verificar`).
+2. Con la aprobación del usuario: `pnpm exec supabase db push` (lo corre el usuario con `!` si el clasificador lo bloquea), desplegar a Fly con `--local-only` y probar el feed con un video publicado de `prueba-videos`.
+3. Registrar la evidencia real en la ficha y cerrar el ítem en el tablero.
+
+Después, siguiendo el tablero: likes anónimos desde la mesa (C), comentarios con aprobación (C) y los textos legales (S).

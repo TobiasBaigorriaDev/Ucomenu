@@ -11,6 +11,7 @@ import { readAllPages } from "@/lib/paginar";
 import { isValidSlug } from "@/lib/slug";
 import { applyBranchSettings, loadBranchSettings } from "@/lib/carta/availability";
 import { createPublicClient } from "@/lib/supabase/public-client";
+import { hasPublishedVideos } from "@/lib/videos/feed";
 
 export type PublicMenu = {
   organization: { id: string; name: string; slug: string; menu_palette: Palette; menu_layout: Layout; /** Tema de fecha especial vigente hoy (en Buenos Aires), o `null`. */ theme: Theme | null; logo_path?: string | null };
@@ -19,6 +20,8 @@ export type PublicMenu = {
   sections: MenuSection[];
   /** Idiomas que ofrece el local: el español y los que tengan al menos un texto traducido. */
   languages: Lang[];
+  /** ¿Hay videos publicados que el comensal pueda ver? (consulta en vivo: plan, mora y baja los ocultan en el acto). */
+  hasVideos: boolean;
 };
 
 /**
@@ -171,10 +174,12 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   const branch = org?.branches[0];
   if (!org || !branch) return unavailableOrNull(supabase, orgSlug, branchSlug);
 
-  const [{ categories, products, optionGroups, options }, settings] = await Promise.all([
+  const [{ categories, products, optionGroups, options }, settings, hasVideos] = await Promise.all([
     readRows(org.id),
     // Ajustes de ESTA sucursal (oculto, agotado, precio propio), en vivo: el catálogo cacheado es de toda la organización.
     loadBranchSettings(supabase, org.id, branch.id),
+    // ¿Hay videos para el acceso de la carta? En vivo (sin caché) y en paralelo: no suma espera ni rompe la carta si falla.
+    hasPublishedVideos(supabase, org.id),
   ]);
 
   // Un plato oculto no llega a la carta (listado, búsqueda ni detalle); una categoría sin platos visibles no se muestra (groupMenu).
@@ -192,6 +197,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
       branch: { id: branch.id, name: branch.name, slug: branch.slug },
       sections,
       languages: offeredLanguages(sections),
+      hasVideos,
     },
   };
 });

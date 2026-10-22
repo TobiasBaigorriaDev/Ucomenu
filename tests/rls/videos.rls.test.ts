@@ -151,7 +151,10 @@ describe("crear un video: quién puede", () => {
     expect((await outsider.db.from("menu_videos").insert({ organization_id: local.id, title: "x" })).error?.code).toBe(INSUFFICIENT_PRIVILEGE);
     expect((await outsider.db.from("menu_videos").select("id").eq("organization_id", local.id)).data).toEqual([]);
     expect((await anonClient().from("menu_videos").insert({ organization_id: local.id, title: "x" })).error?.code).toBe(INSUFFICIENT_PRIVILEGE);
-    expect((await anonClient().from("menu_videos").select("id")).error?.code).toBe(INSUFFICIENT_PRIVILEGE);
+    // Desde el feed público (ficha feed-de-videos) `anon` lee los videos PUBLICADOS y listos con columnas públicas; un borrador, no;
+    // y nunca el estado (el detalle está en videos-publico.rls.test.ts).
+    expect((await anonClient().from("menu_videos").select("id").eq("organization_id", local.id)).data).toEqual([]);
+    expect((await anonClient().from("menu_videos").select("status")).error?.code).toBe(INSUFFICIENT_PRIVILEGE);
     expect(await totalDe(local.id)).toBe(1);
     expect((await fila(id)).title).toBe("tt-video-1");
   });

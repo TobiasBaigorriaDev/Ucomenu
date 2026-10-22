@@ -51,6 +51,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   enforce_video_cap: [false, false, false], // trigger de menu_videos: tope técnico de 50 videos por organización
   enforce_video_transition: [false, false, false], // trigger de menu_videos: la organización no se mueve y «deleting» es terminal
   enforce_video_publish: [true, false, false], // trigger de menu_videos: feature y cupo del plan al publicar (ADR 0031)
+  video_feed_visible: [true, true, true], // usada por la política de lectura PÚBLICA de menu_videos (feed): solo contesta sí o no
   translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
 };
 

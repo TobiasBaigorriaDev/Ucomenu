@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { LegalLinks } from "@/components/legal/legal-links";
 import { LanguageSwitcher } from "@/components/menu/language-switcher";
@@ -9,6 +10,7 @@ import type { PublicMenu } from "@/lib/public-menu";
 import { logoUrl } from "@/lib/identidad/logos";
 import { paletteStyle } from "@/lib/identidad/palettes";
 import { themeStyle, THEMES } from "@/lib/identidad/temas";
+import { videosHref } from "@/lib/videos/feed";
 import { cartaFontClass } from "./carta-fonts";
 import { TemaIcono } from "./tema-icono";
 
@@ -37,6 +39,22 @@ export function PublicMenuView({
     <div lang={lang} data-layout={menu.organization.menu_layout} data-tema={theme ?? undefined} className={`${cartaFontClass} ${callBar ? "carta pb-40" : "carta"}`} style={{ ...paletteStyle(menu.organization.menu_palette), ...themeStyle(theme) }}>
       <LanguageSwitcher languages={menu.languages} current={lang} />
       <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} lang={lang} theme={theme} />
+      {menu.hasVideos ? (
+        // Solo un enlace, SIN precarga: la carta no carga nada del feed (ni video, ni `hls.js`) hasta que se entra (ficha feed-de-videos).
+        <div className="mx-auto max-w-3xl px-4 pb-6 sm:px-6">
+          <Link
+            href={`${videosHref(menu.organization.slug, menu.branch.slug)}?lang=${lang}`}
+            prefetch={false}
+            data-testid="ver-videos"
+            className="inline-flex min-h-11 items-center gap-2.5 rounded-full border-[1.5px] border-ink px-5 text-base font-semibold hover:bg-ink/5"
+          >
+            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 text-[var(--carta-terra)]" fill="currentColor">
+              <path d="M7 4.5v15L19.5 12 7 4.5Z" />
+            </svg>
+            {t.feed.link}
+          </Link>
+        </div>
+      ) : null}
       {sections.length > 0 ? (
         <MenuBrowser sections={sections} branchId={menu.branch.id} lang={lang} layout={menu.organization.menu_layout} />
       ) : (
