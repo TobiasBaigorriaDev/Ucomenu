@@ -141,8 +141,12 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, on
       return;
     }
     setPaused(false);
-    setBlocked(false);
     setStarted(true);
+    // `play()` se pide acá, dentro del gesto del toque: Safari e iOS no lo aceptan fuera de él, y si el navegador había bloqueado el
+    // arranque solo, ningún cambio de estado vuelve a disparar el efecto de arriba. Sigue «bloqueado» hasta que el navegador acepte.
+    const element = ref.current;
+    if (element && prepared) element.play().then(() => setBlocked(false), onPlayRejected);
+    else setBlocked(false);
   }
 
   return (

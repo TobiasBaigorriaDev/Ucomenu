@@ -226,6 +226,32 @@ test.describe("el feed", () => {
     });
   });
 
+  test("si el navegador bloquea el arranque solo, el primer toque en reproducir vuelve a pedirlo y lo recupera", async ({ page }) => {
+    await conLocal("feed-bloqueo", "premium", "active", async (t) => {
+      await sembrar(t.orgId, { title: "Uno", playback: "pb-b1" });
+      await interceptarMux(page);
+      // El «navegador» rechaza todo `play()` hasta que la prueba lo permite (como si faltara un gesto del usuario).
+      await page.addInitScript(() => {
+        const w = window as unknown as { __plays: number; __permitir: boolean };
+        w.__plays = 0;
+        w.__permitir = false;
+        HTMLMediaElement.prototype.play = function () {
+          w.__plays += 1;
+          return w.__permitir ? Promise.resolve() : Promise.reject(new DOMException("bloqueado", "NotAllowedError"));
+        };
+      });
+      await page.goto(feed(t.slug));
+      await expect(slide(page, 0).getByTestId("feed-play")).toBeVisible();
+      const antes = await page.evaluate(() => {
+        (window as unknown as { __permitir: boolean }).__permitir = true;
+        return (window as unknown as { __plays: number }).__plays;
+      });
+      await slide(page, 0).getByRole("button", { name: "Reproducir" }).click();
+      await expect(slide(page, 0).getByTestId("feed-play")).toHaveCount(0);
+      expect(await page.evaluate(() => (window as unknown as { __plays: number }).__plays)).toBeGreaterThan(antes);
+    });
+  });
+
   test("a 390 px, con un título larguísimo, el feed no desborda", async ({ page }) => {
     await conLocal("feed-ancho", "premium", "active", async (t) => {
       const p = await platos(t.orgId);

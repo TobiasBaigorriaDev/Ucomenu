@@ -53,4 +53,6 @@ Local (Supabase local + `next dev` en :3200 con los hosts de Mux interceptados),
 - No probado todavía: reproducción real en Safari/iPhone y en Chrome (`hls.js`) con un asset de Mux de staging; la migración `20261113100000` no está aplicada en staging.
 
 ## (C) Revisión y aprobación
-Pendiente.
+- Ronda 1 (Codex, sobre `737df04`, informe `output/revisiones/2026-10-22T03-53-33-commit-HEAD.md`): aprobar con cambios; un hallazgo **importante**: tras un `NotAllowedError` del arranque solo, el primer toque en «Reproducir» no volvía a llamar a `play()` (el botón desaparecía con el video pausado). Corregido: `play()` se pide dentro del gesto del toque (también lo exige Safari/iOS) y sigue «bloqueado» hasta que el navegador acepte. Regresión E2E «si el navegador bloquea el arranque solo…» (falla sin el arreglo, comprobado). `feed-videos` queda en 10/10.
+- Verificación de la corrección: pendiente.
+- Aprobación humana del despliegue a staging: pendiente.
