@@ -1,9 +1,23 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { createSessionClient } from "@/lib/supabase/server";
-import { canPublish, canUnpublish, formatDuration, MUX_STATUS_LABEL, quotaText, STATUS_LABEL, type VideoRow } from "@/lib/videos/estado";
+import {
+  canPublish,
+  canUnpublish,
+  formatDuration,
+  hasPendingVideos,
+  isUploadExpired,
+  MUX_ERROR_LABEL,
+  MUX_STATUS_LABEL,
+  quotaText,
+  STATUS_LABEL,
+  type VideoRow,
+} from "@/lib/videos/estado";
+import { muxConfig, thumbnailUrl } from "@/lib/videos/mux";
 import { loadProductOptions, loadVideos } from "@/lib/videos/videos";
 import { DeleteVideoForm, PublishVideoForm, SaveVideoForm } from "./video-forms";
+import { UploadVideoForm, VideosAutoRefresh } from "./video-upload";
 
 export const metadata: Metadata = { title: "Videos" };
 
@@ -11,8 +25,8 @@ const badgeClass = "inline-flex items-center rounded-full border border-ink/25 b
 const badgeStrongClass = "inline-flex items-center rounded-full bg-ink px-2.5 py-0.5 text-sm font-medium text-white";
 
 /**
- * Videos del feed (ficha videos-del-panel-base, ADR 0031): lista del local con su estado de procesamiento y de publicación, el
- * cupo del plan y las acciones de Dueño y Staff. La subida llega con Mux (parte B). La base vuelve a comprobar todo: plan,
+ * Videos del feed (fichas videos-del-panel-base y videos-mux-parte-b, ADR 0031): subida, lista del local con su estado de
+ * procesamiento y de publicación, el cupo del plan y las acciones de Dueño y Staff. La base vuelve a comprobar todo: plan,
  * cupo, cuenta al día y pertenencia; esta pantalla lo muestra con mensajes claros, no lo reemplaza.
  */
 export default async function VideosPage({ params }: PageProps<"/panel/[org]/videos">) {
@@ -25,7 +39,10 @@ export default async function VideosPage({ params }: PageProps<"/panel/[org]/vid
   // Falla cerrado: sin poder leer la cuenta, se muestra pero no se edita.
   const canWrite = ent?.canWrite === true;
   const hasFeed = ent?.features.includes("video_feed") === true;
-  const products = videos.length > 0 ? await loadProductOptions(db, orgId) : [];
+  const now = new Date();
+  const uploadConfigured = muxConfig() !== null;
+  // Los platos hacen falta para enlazar (en la lista y en el formulario de subida) solo si se va a poder usar alguno de los dos.
+  const products = videos.length > 0 || hasFeed ? await loadProductOptions(db, orgId) : [];
   const productName = new Map(products.map((product) => [product.id, product.name]));
   const quota = quotaText(ent?.usage.videos_published, ent?.limits.videos_published);
 
@@ -54,9 +71,25 @@ export default async function VideosPage({ params }: PageProps<"/panel/[org]/vid
         </p>
       ) : null}
 
+      {hasFeed ? (
+        <UploadVideoForm
+          orgSlug={membership.org.slug}
+          products={products}
+          enabled={canWrite && uploadConfigured}
+          notice={
+            !canWrite
+              ? "Tu cuenta está en solo lectura: no se pueden subir videos hasta regularizar el pago."
+              : !uploadConfigured
+                ? "La subida de videos todavía no está configurada en este servidor. Avisale al equipo de UcoMenu."
+                : null
+          }
+        />
+      ) : null}
+      {hasPendingVideos(videos, now) ? <VideosAutoRefresh /> : null}
+
       {videos.length === 0 ? (
         <p className="mt-8 max-w-prose text-lg text-muted" data-testid="videos-vacio">
-          Todavía no hay videos. Subirlos desde acá va a estar disponible muy pronto.
+          Todavía no hay videos.{hasFeed ? " Subí el primero desde acá." : ""}
         </p>
       ) : (
         <ul className="mt-6 grid grid-cols-[minmax(0,1fr)] gap-4">
@@ -69,6 +102,7 @@ export default async function VideosPage({ params }: PageProps<"/panel/[org]/vid
               plato={video.product_id ? (productName.get(video.product_id) ?? null) : null}
               canWrite={canWrite}
               canPublishNow={canWrite && hasFeed}
+              now={now}
             />
           ))}
         </ul>
@@ -84,6 +118,7 @@ function VideoItem({
   plato,
   canWrite,
   canPublishNow,
+  now,
 }: {
   video: VideoRow;
   orgSlug: string;
@@ -91,8 +126,10 @@ function VideoItem({
   plato: string | null;
   canWrite: boolean;
   canPublishNow: boolean;
+  now: Date;
 }) {
   const deleting = video.status === "deleting";
+  const expired = isUploadExpired(video, now);
   const duration = formatDuration(video.duration_seconds);
 
   return (
@@ -105,13 +142,34 @@ function VideoItem({
           {STATUS_LABEL[video.status]}
         </span>
         <span className={badgeClass} data-testid="video-procesamiento">
-          {MUX_STATUS_LABEL[video.mux_status]}
+          {expired ? "Subida vencida" : MUX_STATUS_LABEL[video.mux_status]}
         </span>
         {duration ? <span className={badgeClass}>{duration}</span> : null}
       </div>
       <p className="mt-1 text-base text-muted" data-testid="video-plato">
         {plato ? `Muestra el plato: ${plato}` : "No está enlazado a un plato."}
       </p>
+      {video.mux_status === "errored" && video.mux_error ? (
+        <p className="mt-2 text-base font-medium text-danger" data-testid="video-error">
+          {MUX_ERROR_LABEL[video.mux_error]} Borralo y subí otro.
+        </p>
+      ) : null}
+      {expired ? (
+        <p className="mt-2 text-base text-muted" data-testid="video-vencido">
+          La subida no se completó. Borralo y volvé a subirlo.
+        </p>
+      ) : null}
+      {video.mux_status === "ready" && video.mux_playback_id && !deleting ? (
+        <Image
+          src={thumbnailUrl(video.mux_playback_id)}
+          alt=""
+          width={90}
+          height={160}
+          unoptimized
+          className="mt-3 h-40 w-[5.625rem] rounded-xl border border-ink/15 bg-sand object-cover"
+          data-testid="video-miniatura"
+        />
+      ) : null}
 
       {deleting ? (
         <div className="mt-4">

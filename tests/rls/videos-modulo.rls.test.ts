@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { finalizeVideoDeletion } from "@/lib/videos/borrado";
-import type { MuxClient } from "@/lib/videos/mux";
 import { loadProductOptions, loadVideos, requestVideoDeletion, setVideoPublished, updateVideo } from "@/lib/videos/videos";
+import { fakeMux } from "./mux-fake";
 import { addMembership, createCategory, createOrg, createUser, deleteOrg, deleteUser, DIA_MS, insertProducts, serviceClient, setSubscription, type Db, type PlanCode, type TestUser } from "./helpers";
 
 /**
@@ -56,16 +56,11 @@ async function sembrar(orgId: string, cambios: { status?: "draft" | "published" 
 
 const fila = async (id: string) => (await service.from("menu_videos").select("*").eq("id", id).maybeSingle()).data;
 
-/** Un Mux de mentira que anota los borrados y puede fallar. */
+/** Un Mux de mentira que anota los borrados y puede fallar (`falla` hace fallar todos los borrados). */
 function muxDeMentira(falla = false) {
-  const borrados: string[] = [];
-  const mux: MuxClient = {
-    async deleteAsset(assetId) {
-      if (falla) throw new Error("Mux no responde");
-      borrados.push(assetId);
-    },
-  };
-  return { mux, borrados };
+  const fake = fakeMux();
+  if (falla) fake.fail("delete", true);
+  return { mux: fake.mux, borrados: fake.deletedAssets };
 }
 
 beforeAll(() => {
@@ -89,7 +84,7 @@ describe("lectura", () => {
     const videos = await loadVideos(a.owner.db, a.id);
     expect(videos.map((v) => v.id)).toEqual([segundo, primero]);
     expect(Object.keys(videos[0]).sort()).toEqual(
-      ["created_at", "duration_seconds", "id", "mux_playback_id", "mux_status", "product_id", "sort_order", "status", "title"].sort(),
+      ["created_at", "duration_seconds", "id", "mux_error", "mux_playback_id", "mux_status", "product_id", "sort_order", "status", "title"].sort(),
     );
     expect(await loadVideos(b.staff.db, a.id)).toEqual([]);
   });

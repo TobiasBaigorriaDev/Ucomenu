@@ -110,7 +110,7 @@ describe("archivos de Storage de la organización", () => {
 
 type RpcError = { code?: string; message?: string };
 
-function fakeContext(opciones: { admin?: boolean; data?: unknown; error?: RpcError | null; tree?: Tree } = {}) {
+function fakeContext(opciones: { admin?: boolean; data?: unknown; error?: RpcError | null; tree?: Tree; videos?: unknown[] | null } = {}) {
   const eventos: string[] = [];
   const query = (data: unknown) => {
     const q = { select: () => q, eq: () => q, maybeSingle: async () => ({ data, error: null }) };
@@ -118,8 +118,16 @@ function fakeContext(opciones: { admin?: boolean; data?: unknown; error?: RpcErr
   };
   const session = { from: () => query(opciones.admin === false ? null : { user_id: "actor" }) };
   const storage = fakeStorage(opciones.tree ?? { "organization-logos": { [ORG]: [file("logo.png")] } });
+  // La lectura de los videos de la organización (antes del borrado): una lista de filas, o un fallo si `videos` es null.
+  const videos = {
+    select: () => videos,
+    eq: () => videos,
+    limit: () => videos,
+    then: (resolve: (value: unknown) => unknown) =>
+      resolve(opciones.videos === null ? { data: null, error: { message: "fallo" } } : { data: opciones.videos ?? [], error: null }),
+  };
   const admin = {
-    from: () => query({ id: ORG }),
+    from: (tabla: string) => (tabla === "menu_videos" ? videos : query({ id: ORG })),
     rpc: async (nombre: string, args: Record<string, unknown>) => {
       eventos.push(`rpc:${nombre}:${JSON.stringify(args)}`);
       return { data: opciones.data ?? null, error: opciones.error ?? null };
@@ -184,7 +192,7 @@ describe("deleteOrganization", () => {
     const result = await deleteOrganization(ctx, valido);
     expect(result).toEqual({
       ok: true,
-      data: { slug: "local-1", priceHistoryPurged: 7, paymentsKept: 3, files: { removed: 1, complete: true } },
+      data: { slug: "local-1", priceHistoryPurged: 7, paymentsKept: 3, files: { removed: 1, complete: true }, mux: { removed: 0, complete: true } },
     });
     expect(eventos[0]).toBe(`rpc:admin_delete_organization:${JSON.stringify({ p_actor: "actor", p_org: ORG, p_slug: "local-1", p_reason: "Cerró el local" })}`);
     expect(eventos.slice(1).every((e) => e.startsWith("storage:"))).toBe(true);
@@ -195,5 +203,55 @@ describe("deleteOrganization", () => {
     const { ctx } = fakeContext({ data: "raro" });
     const result = await deleteOrganization(ctx, { ...valido, confirmSlug: "  local-1 " });
     expect(result).toMatchObject({ ok: true, data: { priceHistoryPurged: 0, paymentsKept: 0 } });
+  });
+
+  it("antes de borrar lee los videos y, si no puede, no borra nada", async () => {
+    const { ctx, eventos } = fakeContext({ videos: null });
+    expect(await deleteOrganization(ctx, valido, null)).toEqual({ ok: false, error: "unexpected" });
+    expect(eventos).toEqual([]);
+  });
+
+  it("después de borrar, limpia en Mux los assets y las subidas abiertas de sus videos", async () => {
+    const { ctx, eventos } = fakeContext({
+      videos: [
+        { mux_asset_id: "as-1", mux_upload_id: "up-1" },
+        { mux_asset_id: null, mux_upload_id: "up-2" },
+        { mux_asset_id: null, mux_upload_id: null }, // un borrador que nunca pidió su subida: nada que limpiar
+      ],
+    });
+    const llamadas: string[] = [];
+    const mux = {
+      createDirectUpload: async () => ({ uploadId: "x", url: "x" }),
+      cancelUpload: async (id: string) => void llamadas.push(`cancel:${id}`),
+      deleteAsset: async (id: string) => void llamadas.push(`delete:${id}`),
+    };
+    const result = await deleteOrganization(ctx, valido, mux);
+    expect(result).toMatchObject({ ok: true, data: { mux: { removed: 2, complete: true } } });
+    expect(llamadas).toEqual(["delete:as-1", "cancel:up-2"]);
+    expect(eventos[0]).toMatch(/^rpc:admin_delete_organization/); // la base primero
+  });
+
+  it("si Mux falla o no está configurado, la organización ya está borrada y el resultado dice que quedó incompleto", async () => {
+    const videos = [
+      { mux_asset_id: "as-1", mux_upload_id: null },
+      { mux_asset_id: "as-2", mux_upload_id: null },
+    ];
+    const mux = {
+      createDirectUpload: async () => ({ uploadId: "x", url: "x" }),
+      cancelUpload: async () => undefined,
+      deleteAsset: async (id: string) => {
+        if (id === "as-1") throw new Error("Mux caído");
+      },
+    };
+    const silenciar = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      expect(await deleteOrganization(fakeContext({ videos }).ctx, valido, mux)).toMatchObject({ ok: true, data: { mux: { removed: 1, complete: false } } });
+      expect(await deleteOrganization(fakeContext({ videos }).ctx, valido, null)).toMatchObject({ ok: true, data: { mux: { removed: 0, complete: false } } });
+      // Cada asset sin borrar queda en el registro con el id de la organización.
+      const registro = silenciar.mock.calls.map((c) => String(c[0]));
+      expect(registro.some((l) => l.includes("asset as-1") && l.includes(ORG))).toBe(true);
+    } finally {
+      silenciar.mockRestore();
+    }
   });
 });

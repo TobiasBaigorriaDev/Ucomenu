@@ -74,6 +74,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   const query = await searchParams;
   const deletedSlug = typeof query.borrada === "string" ? parseSlug(query.borrada) : null;
   const filesPending = query.archivos === "pendientes";
+  const videosPending = query.videos === "pendientes";
   const session = await createSessionClient();
 
   let organizations: OrganizationRow[] | null = null;
@@ -97,6 +98,12 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
             <p className="mt-2 text-danger" data-testid="aviso-archivos-pendientes">
               Quedaron fotos o logos sin borrar de Storage. Anotá el identificador «{deletedSlug}» y avisá para repetir la limpieza: sus
               archivos están en una carpeta con el id de la organización (figura en los movimientos).
+            </p>
+          ) : null}
+          {videosPending ? (
+            <p className="mt-2 text-danger" data-testid="aviso-videos-pendientes">
+              Quedaron videos sin borrar en el servicio de video (Mux). Anotá el identificador «{deletedSlug}» y avisá para limpiarlos: los
+              ids de cada video figuran en el registro del servidor.
             </p>
           ) : null}
         </div>

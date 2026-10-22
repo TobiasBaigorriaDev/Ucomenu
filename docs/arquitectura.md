@@ -131,8 +131,9 @@ Comensal (sin sesión, sin websocket)
 La realidad aumentada (`<model-viewer>`, `.glb`/`.usdz`, ADR 0002) se descartó el 2026-10-21.
 ```
 Dueño o Staff en /panel (cuenta en gracia o al día, plan Premium)
-  → subida del video (≤ 30 s, ≤ 50 MB, vertical 9:16) → validación de duración, peso y formato
-  → Direct Upload a Mux Video (HLS adaptativo y póster automáticos) → menu_videos = draft
+  → acción del servidor: crea el borrador (RLS: plan, cuenta, tope de 50) y pide la subida a Mux con el id del video en `passthrough`
+  → el navegador sube el archivo (≤ 50 MB; ≤ 30 s validado al estar listo) directo a la URL firmada de Mux
+  → webhook POST /api/mux/webhook (firma HMAC): asset_created → processing; asset.ready → ready (asset, playback público, duración ≤ 30,5 s)
   → publicar (tope videos_published en la base) → menu_videos = published
 
 Carta pública (/m/… o /t/…)
@@ -145,7 +146,8 @@ Carta pública (/m/… o /t/…)
 - **Hosting en Mux Video** (ADR 0031): subida directa desde el panel mediante URL firmada de un solo uso (*Direct Upload*), conversión automática de `.mov` HEVC de iPhone y MP4 de Android a HLS adaptativo (`max_resolution_tier = 1080p`, calidad `basic`) y póster servido por Mux, sin consumir cuota de Supabase Storage. En la base quedan solo los identificadores de Mux (`asset_id`, `playback_id`) y metadatos; las credenciales (`MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET`) viven únicamente en el servidor.
 - El feed y sus videos **no se descargan con la carta**: se cargan al entrar al feed y se reproduce solo el que está a la vista, para no penalizar el LCP de la carta.
 - Los `playback_id` de los videos publicados son públicos, como las fotos de los platos: el *feature flag* controla que el feed se ofrezca, no protege el stream. La carta nunca lista borradores.
-- Borrar un video elimina también su asset en Mux después de confirmar el borrado en la base, como las fotos (ADR 0029).
+- Borrar un video elimina también su asset en Mux, en dos pasos: la persona lo deja en `deleting` y el servidor borra el asset (o cancela la subida abierta) y recién entonces la fila; si Mux falla queda en «Eliminando» con reintento. Borrar una organización lee antes los ids de Mux de sus videos y limpia los assets después de confirmar el borrado (`removeOrganizationMux`), con aviso si quedó incompleto.
+- **Webhook de Mux** (`/api/mux/webhook`, ficha `videos-mux-parte-b`): público y sin sesión, la autoridad es la firma (`mux-signature: t=…,v1=…`, HMAC-SHA256 de `t.cuerpo` con `MUX_WEBHOOK_SECRET`, tolerancia de 5 minutos; sin secreto responde 503). Cada evento es idempotente y tolerante al orden, toca solo la fila cuyo `id` está en `passthrough` y cuyo `mux_upload_id` coincide, y borra en Mux todo asset nuestro sin fila o con la fila en `deleting`. Un asset de más de 30,5 s se borra y el video queda `errored` (`mux_error = too_long`). El peso de 50 MB solo se valida en el navegador (Mux no lo informa). `MUX_API_URL` solo se respeta si apunta a la propia máquina (servidor de pruebas de los E2E).
 
 ### Wallet y recordatorio por cercanía (fase 3)
 ```

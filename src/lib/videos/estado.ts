@@ -13,16 +13,27 @@ export type VideoRow = {
   status: VideoStatus;
   mux_status: MuxStatus;
   mux_playback_id: string | null;
+  mux_error: MuxError | null;
   duration_seconds: number | null;
   sort_order: number;
   created_at: string;
 };
 
 /** Columnas que Dueño y Staff pueden leer (los identificadores internos de Mux no se les conceden). */
-export const VIDEO_COLUMNS = "id, product_id, title, status, mux_status, mux_playback_id, duration_seconds, sort_order, created_at";
+export const VIDEO_COLUMNS =
+  "id, product_id, title, status, mux_status, mux_playback_id, mux_error, duration_seconds, sort_order, created_at";
 
 /** Mismo largo que el `check` de la base. */
 export const MAX_TITLE_LENGTH = 80;
+
+/** 30 s de la regla de producto + 0,5 s de tolerancia por el redondeo con que Mux informa la duración (mismo tope que la base). */
+export const MAX_VIDEO_SECONDS = 30.5;
+/** 50 MB por archivo (regla de producto). Solo se valida en el navegador: Mux no informa ni limita el peso. */
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
+/** La URL de subida de Mux vence a la hora; pasado ese tiempo una subida sin completar se da por vencida. */
+export const UPLOAD_EXPIRY_MS = 60 * 60 * 1000;
+
+export type MuxError = "too_long" | "no_playback" | "processing_failed" | "upload_failed";
 
 export const MUX_STATUS_LABEL: Record<MuxStatus, string> = {
   awaiting_upload: "Esperando el archivo",
@@ -66,3 +77,26 @@ export function quotaText(used: number | undefined, limit: number | null | undef
   if (typeof used !== "number" || limit === undefined) return null;
   return limit === null ? `${used} (sin límite)` : `${used} de ${limit}`;
 }
+
+/** ¿Una subida que nunca se completó? (la URL de Mux vence a la hora). */
+export function isUploadExpired(video: Pick<VideoRow, "mux_status" | "status" | "created_at">, now: Date): boolean {
+  return (
+    video.status !== "deleting" &&
+    video.mux_status === "awaiting_upload" &&
+    now.getTime() - new Date(video.created_at).getTime() > UPLOAD_EXPIRY_MS
+  );
+}
+
+/** ¿Hay algo que todavía va a cambiar solo (subiendo o procesando)? La pantalla se actualiza mientras tanto. */
+export function hasPendingVideos(videos: Pick<VideoRow, "mux_status" | "status" | "created_at">[], now: Date): boolean {
+  return videos.some(
+    (video) => video.status !== "deleting" && (video.mux_status === "processing" || (video.mux_status === "awaiting_upload" && !isUploadExpired(video, now))),
+  );
+}
+
+export const MUX_ERROR_LABEL: Record<MuxError, string> = {
+  too_long: "Dura más de 30 segundos.",
+  no_playback: "El servicio de video no lo dejó listo para reproducir.",
+  processing_failed: "No se pudo procesar el archivo. Probá con otro video.",
+  upload_failed: "La subida falló.",
+};

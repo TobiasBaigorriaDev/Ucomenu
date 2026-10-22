@@ -218,7 +218,7 @@ export async function setOrganizationActiveAction(_previous: FormState, formData
 
 /**
  * Borra la organización. Si sale bien, la página de la organización deja de existir: se redirige a la lista con el aviso en
- * la dirección (`?borrada=` y, si quedaron archivos sin borrar, `&archivos=pendientes`). Si falla, vuelve con el error.
+ * la dirección (`?borrada=` y, si quedaron archivos o videos de Mux sin borrar, `&archivos=pendientes` y `&videos=pendientes`). Si falla, vuelve con el error.
  */
 export async function deleteOrganizationAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const prepared = await organizationContext(formData);
@@ -242,7 +242,9 @@ export async function deleteOrganizationAction(_previous: FormState, formData: F
   revalidatePath(`/panel/${slug}`, "layout");
   revalidatePath(`/sala/${slug}`, "layout");
   revalidatePath(`/m/${slug}`, "layout");
-  redirect(`/admin?borrada=${encodeURIComponent(slug)}${result.data.files.complete ? "" : "&archivos=pendientes"}`);
+  redirect(
+    `/admin?borrada=${encodeURIComponent(slug)}${result.data.files.complete ? "" : "&archivos=pendientes"}${result.data.mux.complete ? "" : "&videos=pendientes"}`,
+  );
 }
 
 // ---------------------------------------------------------------------------

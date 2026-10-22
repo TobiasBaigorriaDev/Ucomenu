@@ -15,8 +15,8 @@ import { videoErrorFromDb, writeBlock, type VideoError } from "./mensajes";
 type Db = SupabaseClient<Database>;
 
 export type VideoResult<T = void> = { ok: true; data: T } | { ok: false; error: VideoError };
-const ok = <T>(data: T): VideoResult<T> => ({ ok: true, data });
-const fail = (error: VideoError): VideoResult<never> => ({ ok: false, error });
+export const ok = <T>(data: T): VideoResult<T> => ({ ok: true, data });
+export const fail = (error: VideoError): VideoResult<never> => ({ ok: false, error });
 
 export type ProductOption = { id: string; name: string };
 
@@ -52,7 +52,7 @@ export async function loadProductOptions(db: Db, orgId: string): Promise<Product
 // Apoyo
 // ---------------------------------------------------------------------------
 
-async function entitlementsOf(db: Db, orgId: string): Promise<Entitlements | null> {
+export async function entitlementsOf(db: Db, orgId: string): Promise<Entitlements | null> {
   const { data, error } = await db.rpc("org_entitlements", { p_org: orgId });
   return error ? null : parseEntitlements(data);
 }

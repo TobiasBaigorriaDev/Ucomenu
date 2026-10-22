@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { stubCalls } from "./mux-stub";
 import { alerta, createTenant, expectNoHorizontalOverflow, login, service, type Estado } from "./support";
 
 /**
@@ -16,7 +17,7 @@ async function conPlan(orgId: string, plan: "basic" | "pro" | "premium") {
   if (r.error) throw new Error(r.error.message);
 }
 
-type Siembra = { title?: string; status?: "draft" | "published" | "deleting"; listo?: boolean; conAsset?: boolean };
+type Siembra = { title?: string; status?: "draft" | "published" | "deleting"; listo?: boolean; conAsset?: boolean; assetId?: string };
 
 async function sembrar(orgId: string, cambios: Siembra = {}): Promise<string> {
   const listo = cambios.listo ?? true;
@@ -30,7 +31,7 @@ async function sembrar(orgId: string, cambios: Siembra = {}): Promise<string> {
       status: cambios.status ?? "draft",
       mux_status: listo ? "ready" : "processing",
       mux_upload_id: `up-${marca}`,
-      mux_asset_id: conAsset ? `as-${marca}` : null,
+      mux_asset_id: conAsset ? (cambios.assetId ?? `as-${marca}`) : null,
       mux_playback_id: conAsset ? `pb-${marca}` : null,
       duration_seconds: conAsset ? 18.2 : null,
     })
@@ -112,24 +113,32 @@ test.describe("videos del panel", () => {
     });
   });
 
-  test("borrar: uno que nunca subió se elimina; uno con asset queda «Eliminando» hasta que Mux responda y se puede reintentar", async ({ page }) => {
+  test("borrar: sin asset se elimina; con asset se borra en Mux; si Mux falla queda «Eliminando» y se puede reintentar", async ({ page }) => {
     await conLocal("vid-borrar", "premium", "active", async (t) => {
       const sinAsset = await sembrar(t.orgId, { title: "Sin archivo", listo: false, conAsset: false });
-      const conAsset = await sembrar(t.orgId, { title: "Con archivo" });
+      const conAsset = await sembrar(t.orgId, { title: "Con archivo", assetId: `as-ok-${randomUUID().slice(0, 8)}` });
+      // El prefijo «fail-» hace que el Mux de mentira rechace el borrado del asset (Mux caído).
+      const muxCaido = await sembrar(t.orgId, { title: "Con Mux caído", assetId: `fail-${randomUUID().slice(0, 8)}` });
       await login(page, t.owner.email, t.owner.password, lista(t.slug));
 
       await tarjeta(page, sinAsset).locator("summary", { hasText: "Borrar video" }).click();
       await tarjeta(page, sinAsset).getByRole("button", { name: "Sí, borrar el video definitivamente" }).click();
       await expect(tarjeta(page, sinAsset)).toHaveCount(0);
 
+      const asset = (await service().from("menu_videos").select("mux_asset_id").eq("id", conAsset).single()).data!.mux_asset_id!;
       await tarjeta(page, conAsset).locator("summary", { hasText: "Borrar video" }).click();
       await tarjeta(page, conAsset).getByRole("button", { name: "Sí, borrar el video definitivamente" }).click();
-      // Mux todavía no está conectado (parte B): el video sale de la lista de publicados y queda esperando el borrado del asset.
-      await expect(tarjeta(page, conAsset).getByTestId("video-estado")).toHaveText("Eliminando");
-      await expect(tarjeta(page, conAsset).getByText("falta borrarlo del servicio de video")).toBeVisible();
-      await expect(tarjeta(page, conAsset).getByRole("button", { name: "Reintentar" })).toBeVisible();
-      await expect(tarjeta(page, conAsset).getByRole("button", { name: /^Publicar/ })).toHaveCount(0);
-      expect((await service().from("menu_videos").select("status").eq("id", conAsset).single()).data?.status).toBe("deleting");
+      await expect(tarjeta(page, conAsset)).toHaveCount(0);
+      expect((await stubCalls()).filter((c) => c.method === "DELETE" && c.id === asset)).toHaveLength(1);
+
+      await tarjeta(page, muxCaido).locator("summary", { hasText: "Borrar video" }).click();
+      await tarjeta(page, muxCaido).getByRole("button", { name: "Sí, borrar el video definitivamente" }).click();
+      // Mux no responde: el video sale de la lista de publicados y queda esperando el borrado del asset.
+      await expect(tarjeta(page, muxCaido).getByTestId("video-estado")).toHaveText("Eliminando");
+      await expect(tarjeta(page, muxCaido).getByText("falta borrarlo del servicio de video")).toBeVisible();
+      await expect(tarjeta(page, muxCaido).getByRole("button", { name: "Reintentar" })).toBeVisible();
+      await expect(tarjeta(page, muxCaido).getByRole("button", { name: /^Publicar/ })).toHaveCount(0);
+      expect((await service().from("menu_videos").select("status").eq("id", muxCaido).single()).data?.status).toBe("deleting");
     });
   });
 

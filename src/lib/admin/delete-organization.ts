@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { IMAGE_BUCKET } from "@/lib/carta/images";
 import { LOGO_BUCKET } from "@/lib/identidad/logos";
 import type { Database } from "@/lib/supabase/database.types";
+import { getMuxClient, type MuxClient } from "@/lib/videos/mux";
+import { collectOrganizationMux, removeOrganizationMux, type MuxCleanup } from "@/lib/videos/organizacion";
 import { fail, isPlatformAdmin, ok, type AdminContext, type Result } from "./organizations";
 import { dbFailure, findOrgId } from "./subscriptions";
 import { parseReason, parseSlug } from "./validation";
@@ -96,7 +98,7 @@ export type DeleteOrganizationInput = {
   reason: unknown;
 };
 
-export type DeletedOrganization = { slug: string; priceHistoryPurged: number; paymentsKept: number; files: FilesCleanup };
+export type DeletedOrganization = { slug: string; priceHistoryPurged: number; paymentsKept: number; files: FilesCleanup; mux: MuxCleanup };
 
 const count = (value: unknown): number => (typeof value === "number" && Number.isFinite(value) ? value : 0);
 
@@ -104,7 +106,12 @@ const count = (value: unknown): number => (typeof value === "number" && Number.i
  * Borra una organización dada de baja hace 30 días o más. Irreversible: los archivos y las filas no vuelven (solo el respaldo
  * de docs/operacion.md). Los pagos se conservan (ADR 0027).
  */
-export async function deleteOrganization(ctx: AdminContext, input: DeleteOrganizationInput): Promise<Result<DeletedOrganization>> {
+export async function deleteOrganization(
+  ctx: AdminContext,
+  input: DeleteOrganizationInput,
+  /** El cliente de Mux para limpiar los videos (parámetro para las pruebas; por defecto, el del servidor). */
+  mux: MuxClient | null = getMuxClient(),
+): Promise<Result<DeletedOrganization>> {
   if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
   const slug = parseSlug(input.slug);
   if (!slug) return fail("org_not_found");
@@ -114,6 +121,10 @@ export async function deleteOrganization(ctx: AdminContext, input: DeleteOrganiz
   if (!reason) return fail("invalid_reason");
   const org = await findOrgId(ctx, slug);
   if (!org.ok) return org;
+
+  // Los ids de Mux de sus videos se leen ANTES: tras el borrado las filas ya no existen. Si no se pueden leer, no se borra.
+  const muxItems = await collectOrganizationMux(ctx.admin, org.data);
+  if (muxItems === null) return fail("unexpected");
 
   const { data, error } = await ctx.admin.rpc("admin_delete_organization", {
     p_actor: ctx.actorId,
@@ -127,10 +138,12 @@ export async function deleteOrganization(ctx: AdminContext, input: DeleteOrganiz
   // y la base fallara, una organización que sigue existiendo habría perdido sus fotos).
   const summary = typeof data === "object" && data !== null && !Array.isArray(data) ? data : {};
   const files = await removeOrganizationFiles(ctx.admin, org.data);
+  const muxCleanup = await removeOrganizationMux(mux, org.data, muxItems);
   return ok({
     slug,
     priceHistoryPurged: count((summary as Record<string, unknown>).price_history_purged),
     paymentsKept: count((summary as Record<string, unknown>).payments_kept),
     files,
+    mux: muxCleanup,
   });
 }

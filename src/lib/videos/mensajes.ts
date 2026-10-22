@@ -16,6 +16,8 @@ export type VideoError =
   | "forbidden"
   | "not_found"
   | "mux_pending" // salió de la lista pero falta borrar el asset en el servicio de video
+  | "mux_not_configured" // este servidor no tiene las credenciales de Mux
+  | "mux_unavailable" // Mux no respondió al crear la subida
   | "uncertain"
   | "unexpected";
 
@@ -35,6 +37,8 @@ const STATIC_MESSAGE: Record<Exclude<VideoError, "limit">, string> = {
   not_found: "No encontramos ese video. Puede que ya no exista: recargá la página.",
   mux_pending:
     "El video ya no aparece, pero todavía falta borrarlo del servicio de video. Quedó en «Eliminando»: podés reintentar el borrado desde la lista.",
+  mux_not_configured: "La subida de videos todavía no está configurada en este servidor. Avisale al equipo de UcoMenu.",
+  mux_unavailable: "No pudimos preparar la subida: el servicio de video no respondió. No se creó nada; probá de nuevo en unos minutos.",
   uncertain: "No pudimos confirmar si el cambio se guardó. Recargá la página y mirá cómo quedó antes de repetirlo.",
   unexpected: "No se pudo completar la acción. Probá de nuevo en unos minutos.",
 };

@@ -49,7 +49,7 @@ Reemplaza a la realidad aumentada (WebAR), descartada el 2026-10-21 ([ADR 0031](
 - Un **feed de videos cortos con scroll vertical** (estilo Reels) dentro de la carta pública: el local publica videos del restaurante, del ambiente y de la preparación o presentación de sus platos.
 - El comensal los mira deslizando; desde el **QR de una mesa** puede darles **like** y **comentarlos**. Los comentarios se publican solo cuando el local los aprueba.
 - Incluido en el plan **Premium** y habilitado por *feature flag* según la suscripción de la organización.
-- *Implementado:* el catálogo (`video_feed` y `videos_published` en `plans`, [ficha](../agile/cambios/catalogo-video-feed.md)) y la base y el panel de videos —tabla `menu_videos`, estados, cupo al publicar, borrado en dos pasos y la pantalla `/panel/{slug}/videos` para Dueño y Staff, [ficha](../agile/cambios/videos-del-panel-base.md)—. Faltan la subida y el procesamiento con Mux, el feed en la carta y las interacciones.
+- *Implementado:* el catálogo (`video_feed` y `videos_published` en `plans`, [ficha](../agile/cambios/catalogo-video-feed.md)) y la base y el panel de videos —tabla `menu_videos`, estados, cupo al publicar, borrado en dos pasos y la pantalla `/panel/{slug}/videos` para Dueño y Staff, [ficha](../agile/cambios/videos-del-panel-base.md)—. La subida y el procesamiento con Mux están implementados en local ([ficha](../agile/cambios/videos-mux-parte-b.md)): el navegador sube el archivo directo a Mux y el estado llega por webhook. Faltan el feed en la carta y las interacciones.
 
 ### 4. Fidelización con Wallet y recordatorio por cercanía — fase 3
 - Alta en mesa y tarjeta de fidelidad guardada en **Apple Wallet** o **Google Wallet**.
