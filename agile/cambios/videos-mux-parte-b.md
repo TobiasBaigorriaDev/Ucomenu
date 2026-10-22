@@ -1,5 +1,5 @@
 # Cambio: Videos del feed — Mux real (parte B de «Carga y publicación de videos»)
-Estado: **implementado, aprobado por Codex (3 rondas) y por el usuario; desplegado en staging (Fly v21) y probado de punta a punta con Mux real desde un navegador móvil emulado. Pendiente: la prueba en iPhone y Android reales (incluido un `.mov` HEVC).** Continúa la [parte A](videos-del-panel-base.md), ya en staging (Fly v19).
+Estado: **hecho** — implementado, aprobado por Codex (3 rondas) y por el usuario, desplegado en staging (Fly v21) y probado de punta a punta con Mux real, incluido un **iPhone 16 con `.mov` HEVC** (2026-10-22). Queda sin probar solo el **Android real**. Continúa la [parte A](videos-del-panel-base.md), ya en staging (Fly v19).
 Nivel: C (exposición: un webhook público que escribe en la base; terceros: credenciales y un servicio externo; eliminación irreversible: borrado de assets en Mux y limpieza al borrar una organización; dinero: cada asset cuenta contra el plan de Mux)
 
 ## Objetivo
@@ -30,7 +30,7 @@ Que el Dueño y el Staff suban un video desde el panel, que Mux lo procese y que
 - [x] Un evento nunca mueve un video de organización ni toca el de otra.
 - [x] Borrar una organización limpia los assets de sus videos y avisa si quedó incompleto. *(Probado con dobles de Mux y de la base; no con assets reales.)*
 - [x] Panel: se sube un archivo con progreso, el estado se actualiza solo, se ve la miniatura y el motivo de un error; sin credenciales lo dice; a 390 px no desborda.
-- [ ] Prueba real en staging con Mux: subir un clip desde un iPhone y un Android, procesarlo, publicarlo y borrarlo (queda 0 assets en Mux).
+- [x] Prueba real en staging con Mux: subir un clip desde un iPhone y un Android, procesarlo, publicarlo y borrarlo (queda 0 assets en Mux). *(iPhone 16 con `.mov` HEVC: hecho; Android: pendiente.)*
 
 ## Fuera de alcance
 Reproducir videos (feed público, HLS y caché), likes y comentarios, formato 9:16 obligatorio, reordenar videos, conciliación por consulta a Mux de los videos que no recibieron su webhook (Mux reintenta; un video atascado se borra y se vuelve a subir), moderación del contenido, límite de tasa de las altas.
@@ -91,3 +91,5 @@ Base local con las migraciones hasta `20261112100000` (aplicada con `supabase mi
 ### Primera prueba del usuario con su cuenta — 2026-10-22
 - El usuario subió **dos videos** con `tobibaigorria2023@gmail.com` en **`cafe-de-ensayo`** (Premium hasta el 31/10) y los **publicó**. Estado verificado en staging (base y Mux): ambas filas `published` / `ready`, con su asset y su playback; en Mux, 2 assets `ready` que coinciden con las filas por `passthrough` y `upload_id`: uno de **4,3 s, 9:16, 1080p** (típico de la cámara de un teléfono) y otro de **6,5 s, 3:4, 720p**. Los registros del servidor muestran los dos recorridos como `applied` (subida creada y listo), sin un solo error ni rechazo de firma posterior a la corrección del secreto. Plan Free de Mux: 2 de 10 assets usados.
 - **Falta confirmar** con el usuario: dispositivo y formato de cada video (¿`.mov` HEVC de iPhone?), si vio el paso solo de «Esperando el archivo» a «Listo» y la miniatura, y las pruebas de borde de la guía (despublicar y borrar, más de 30 s, archivo que no es video, corte de conexión).
+- **Resultado del usuario (iPhone 16, `.mov`, 2026-10-22):** los dos videos subieron y se procesaron bien, con **miniatura** y el cambio de estado automático; **despublicó** uno y **borró** otro; **un video de más de 30 s fue rechazado** en el momento de elegirlo (validación del navegador). Verificado después en staging: el video borrado ya no está en Mux (el servicio confirmó con `video.asset.deleted`), el despublicado quedó en borrador y «listo», **1 fila y 1 asset**, **cero errores** en los registros del servidor. Con esto el riesgo principal —que un `.mov` HEVC de iPhone no se procesara— queda descartado.
+- **Sin probar en un dispositivo real:** Android; un archivo que no es video y el corte de conexión a mitad de la subida (cubiertos por E2E contra el Mux de mentira); el video de más de 30 s que el navegador no pueda leer (lo cubre el servidor, probado con Mux real solo por el camino de eventos firmados y por RLS).
