@@ -62,9 +62,9 @@ async function crearLocal(plan: PlanCode = "premium", finEnMs = 30 * DIA_MS): Pr
 
 type Siembra = { status?: "draft" | "published" | "deleting"; mux_status?: "awaiting_upload" | "processing" | "ready" | "errored"; title?: string };
 
-/** Lo que dejaría el servidor al terminar el procesamiento en Mux: listo, con asset, playback y duración. */
-async function sembrar(orgId: string, cantidad: number, cambios: Siembra = {}): Promise<string[]> {
-  const filas = Array.from({ length: cantidad }, (_, i) => {
+/** Las filas que dejaría el servidor al terminar el procesamiento en Mux: listo, con asset, playback y duración. */
+function filasDeServidor(orgId: string, cantidad: number, cambios: Siembra = {}) {
+  return Array.from({ length: cantidad }, (_, i) => {
     const mux_status = cambios.mux_status ?? "ready";
     const listo = mux_status === "ready";
     const marca = `${sufijo}-${randomUUID().slice(0, 8)}-${i}`;
@@ -79,7 +79,10 @@ async function sembrar(orgId: string, cantidad: number, cambios: Siembra = {}): 
       duration_seconds: listo ? 12.5 : null,
     };
   });
-  const { data, error } = await service.from("menu_videos").insert(filas).select("id");
+}
+
+async function sembrar(orgId: string, cantidad: number, cambios: Siembra = {}): Promise<string[]> {
+  const { data, error } = await service.from("menu_videos").insert(filasDeServidor(orgId, cantidad, cambios)).select("id");
   if (error) throw new Error(`No se pudo sembrar: ${error.message}`);
   return data.map((v) => v.id);
 }
@@ -256,6 +259,28 @@ describe("las reglas de fondo valen también para el servidor (CHECK)", () => {
     const local = await crearLocal("premium");
     const r = await service.from("menu_videos").insert({ organization_id: local.id, title: "x", status: "published", mux_status: "processing" });
     expect(r.error?.code).toBe(CHECK_VIOLATION);
+    expect(await totalDe(local.id)).toBe(0);
+  });
+
+  it("un alta que nace publicada también respeta el cupo y el plan, aunque la haga el servidor", async () => {
+    const premium = await crearLocal("premium");
+    await sembrar(premium.id, 9, { status: "published" });
+    expect((await service.from("menu_videos").insert(filasDeServidor(premium.id, 1, { status: "published" }))).error).toBeNull(); // el 10.º entra
+    const once = await service.from("menu_videos").insert(filasDeServidor(premium.id, 1, { status: "published" }));
+    expect(once.error?.code).toBe(LIMIT_EXCEEDED);
+    expect(await publicados(premium.id)).toBe(10);
+
+    const pro = await crearLocal("pro");
+    const sinPlan = await service.from("menu_videos").insert(filasDeServidor(pro.id, 1, { status: "published" }));
+    expect(sinPlan.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
+    expect(sinPlan.error?.message).toContain("feature_unavailable:video_feed");
+    expect(await totalDe(pro.id)).toBe(0);
+  });
+
+  it("un alta en bloque que se pasa del cupo se rechaza entera", async () => {
+    const local = await crearLocal("premium");
+    const r = await service.from("menu_videos").insert(filasDeServidor(local.id, 11, { status: "published" }));
+    expect(r.error?.code).toBe(LIMIT_EXCEEDED);
     expect(await totalDe(local.id)).toBe(0);
   });
 

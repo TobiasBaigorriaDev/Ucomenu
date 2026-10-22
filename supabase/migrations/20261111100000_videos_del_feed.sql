@@ -106,7 +106,8 @@ create trigger menu_videos_enforce_transition
   before update on public.menu_videos
   for each row execute function private.enforce_video_transition();
 
--- Cupo del plan al PUBLICAR. Se aplica solo al pasar a `published`; despublicar y editar no se bloquean. Es SECURITY DEFINER
+-- Cupo del plan al PUBLICAR. Se aplica al pasar a `published`, ya sea con un UPDATE o con un INSERT que nace publicado (el
+-- servidor también tiene que respetar el tope: ADR 0006); despublicar y editar no se bloquean. Es SECURITY DEFINER
 -- para leer el plan y el estado de la cuenta; si el pedido trae un usuario (API) que no es miembro, no cuenta ni informa
 -- nada y deja que RLS rechace (mismo criterio que los otros topes, ADR 0006). Sin usuario (servidor) se aplica siempre.
 create function private.enforce_video_publish()
@@ -119,8 +120,14 @@ declare
   v_limit integer;
   v_count integer;
 begin
-  if new.status <> 'published' or old.status = 'published' then
+  if new.status <> 'published' then
     return new;
+  end if;
+  -- Ya estaba publicado: editarlo no consume cupo. (En un INSERT no existe `old`: por eso los dos `if` anidados.)
+  if tg_op = 'UPDATE' then
+    if old.status = 'published' then
+      return new;
+    end if;
   end if;
   if (select auth.uid()) is not null and not private.is_org_member(new.organization_id) then
     return new;
@@ -153,7 +160,7 @@ end;
 $$;
 
 create trigger menu_videos_enforce_publish
-  before update of status on public.menu_videos
+  before insert or update of status on public.menu_videos
   for each row execute function private.enforce_video_publish();
 
 revoke all on function
