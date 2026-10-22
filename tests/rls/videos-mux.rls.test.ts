@@ -75,11 +75,12 @@ const conError = (assetId: string, uploadId: string, videoId: string): MuxEvent 
 });
 
 /**
- * Envuelve un cliente para provocar una carrera: justo ANTES de que corra la primera escritura (`update`) sobre `menu_videos`,
- * ejecuta `antes()` (por ejemplo, otra sesión que borra el video). Así se prueba, de forma determinista, lo que pasa cuando el
- * video cambia entre que el manejador lo lee y que escribe.
+ * Envuelve un cliente para provocar una carrera de forma determinista: ejecuta `accion()` (por ejemplo, otra sesión que borra el
+ * video) en un punto exacto del manejador. Con `en: "escribir"` (por defecto), justo ANTES de la primera escritura (`update`) sobre
+ * `menu_videos`; con `en: "leer"`, justo DESPUÉS de la primera lectura (`select`) de esa tabla. Así se prueba qué pasa cuando el
+ * video cambia entre que el manejador lo lee y que actúa.
  */
-function conCarrera(db: Db, antes: () => PromiseLike<unknown>): Db {
+function conCarrera(db: Db, antes: () => PromiseLike<unknown>, en: "escribir" | "leer" = "escribir"): Db {
   let hecho = false;
   const interceptar = (builder: object): object =>
     new Proxy(builder, {
@@ -89,11 +90,17 @@ function conCarrera(db: Db, antes: () => PromiseLike<unknown>): Db {
           // función `async` lo ejecutaría dos veces).
           return (alCumplir: (v: unknown) => unknown, alFallar: (e: unknown) => unknown) =>
             (async () => {
-              if (!hecho) {
+              if (en === "escribir" && !hecho) {
                 hecho = true;
                 await antes();
               }
-            })().then(() => (objetivo as PromiseLike<unknown>).then(alCumplir, alFallar), alFallar);
+              const resultado = await new Promise((cumple, falla) => (objetivo as PromiseLike<unknown>).then(cumple, falla));
+              if (en === "leer" && !hecho) {
+                hecho = true;
+                await antes();
+              }
+              return resultado;
+            })().then(alCumplir, alFallar);
         }
         const valor = Reflect.get(objetivo, propiedad) as unknown;
         if (typeof valor !== "function") return valor;
@@ -112,7 +119,8 @@ function conCarrera(db: Db, antes: () => PromiseLike<unknown>): Db {
         return new Proxy(real, {
           get(t, p) {
             const valor = t[p as string];
-            if (p !== "update" || typeof valor !== "function") return typeof valor === "function" ? valor.bind(t) : valor;
+            const objetivoDeLaCarrera = en === "escribir" ? "update" : "select";
+            if (p !== objetivoDeLaCarrera || typeof valor !== "function") return typeof valor === "function" ? valor.bind(t) : valor;
             return (...args: unknown[]) => interceptar(valor.apply(t, args) as object);
           },
         });
@@ -390,13 +398,13 @@ describe("un video que se está borrando", () => {
     expect(await totalDe(local.id)).toBe(0);
   });
 
-  it("si Mux falla queda en «deleting» con el asset anotado, y el reintento del aviso termina el trabajo", async () => {
+  it("si Mux falla queda en «deleting» y el reintento del aviso termina el trabajo", async () => {
     const local = await crearLocal();
     const v = await nuevoVideo(local.id, { status: "deleting" });
     const fake = fakeMux();
     fake.fail("delete");
     await expect(handleMuxEvent(service, fake.mux, listo("as-ret", v.uploadId, v.id))).rejects.toThrow();
-    expect(await fila(v.id)).toMatchObject({ status: "deleting", mux_asset_id: "as-ret" });
+    expect(await fila(v.id)).toMatchObject({ status: "deleting", mux_asset_id: null }); // nada se perdió: Mux reintenta el aviso
     expect(await handleMuxEvent(service, fake.mux, listo("as-ret", v.uploadId, v.id))).toBe("removed_deleting");
     expect(await fila(v.id)).toBeNull();
   });
@@ -420,6 +428,23 @@ describe("carreras: el video se borra entre la lectura y la escritura", () => {
       const resultado = await handleMuxEvent(conCarrera(service, borrarFila(v.id)), mux, evento(v));
       expect(resultado, nombre).toBe("orphan_removed");
       expect(deletedAssets, nombre).toContain(asset);
+      expect(await fila(v.id), nombre).toBeNull();
+    }
+  });
+
+  it("un video que se borraba y desaparece justo después de leerlo: el asset del aviso se borra igual en Mux", async () => {
+    const casos: Array<[string, (v: { id: string; uploadId: string }) => MuxEvent, string]> = [
+      ["subida creada", (v) => creado(v.uploadId, "as-c-fin", v.id), "as-c-fin"],
+      ["listo", (v) => listo("as-l-fin", v.uploadId, v.id), "as-l-fin"],
+      ["error", (v) => conError("as-e-fin", v.uploadId, v.id), "as-e-fin"],
+    ];
+    for (const [nombre, evento, asset] of casos) {
+      const local = await crearLocal();
+      const v = await nuevoVideo(local.id, { status: "deleting" });
+      const { mux, deletedAssets } = fakeMux();
+      // Otra sesión termina el borrado (borra la fila) justo después de que el manejador la lee en «deleting».
+      expect(await handleMuxEvent(conCarrera(service, borrarFila(v.id), "leer"), mux, evento(v)), nombre).toBe("removed_deleting");
+      expect(deletedAssets, nombre).toEqual([asset]);
       expect(await fila(v.id), nombre).toBeNull();
     }
   });

@@ -59,12 +59,13 @@ function needMux(mux: MuxClient | null): MuxClient {
   return mux;
 }
 
-/** El video se estaba borrando: se anota el asset que acaba de aparecer y se termina el borrado (asset y fila). */
+/**
+ * El video se estaba borrando: el asset del EVENTO se borra en Mux aquí mismo, siempre (es idempotente), y después se termina el
+ * borrado del resto (la fila y lo que ella tuviera anotado). No se depende de anotar el asset en la fila para que otro lo borre:
+ * si el borrado terminara justo ahora, la fila ya no estaría y el asset quedaría sin dueño.
+ */
 async function removeDeleting(admin: Db, mux: MuxClient | null, row: VideoRow, assetId: string): Promise<EventOutcome> {
-  if (row.mux_asset_id !== assetId) {
-    const { error } = await admin.from("menu_videos").update({ mux_asset_id: assetId }).eq("id", row.id);
-    if (error) throw new Error(`No se pudo anotar el asset del video que se borra: ${error.message}`);
-  }
+  await needMux(mux).deleteAsset(assetId);
   const outcome = await finalizeVideoDeletion(admin, mux, row.organization_id, row.id);
   if (outcome === "deleted" || outcome === "not_found") return "removed_deleting";
   throw new Error(`No se pudo terminar el borrado del video (${outcome}).`);
