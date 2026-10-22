@@ -18,6 +18,8 @@ prompts
 memoria
 tests
 e2e
+# La configuración de Playwright importa de e2e/ (el Mux de mentira): sin e2e/ en la imagen, el type check del build fallaría.
+playwright.config.ts
 tools
 *.md
 !README.md
