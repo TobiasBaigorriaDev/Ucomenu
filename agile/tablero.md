@@ -43,7 +43,7 @@ Actualizado: 2026-10-21. «Hecho» indica alcance implementado e integrado; las 
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
 > Catálogo y elección de Mux en «Hecho»; carga y publicación en «Bloqueado» por su configuración externa.
 
-- [C] Feed vertical en la carta: scroll de a un video, carga y reproducción bajo demanda, enlace opcional al plato, comportamiento en solo lectura y suspendida — implementado en local; falta revisión independiente, staging y prueba con un asset real → [ficha](cambios/feed-de-videos.md)
+- [C] Feed vertical en la carta: scroll de a un video, carga y reproducción bajo demanda, enlace opcional al plato, comportamiento en solo lectura y suspendida — implementado en local y aprobado por Codex (2 rondas); falta la aprobación del usuario para staging y la prueba con un asset real → [ficha](cambios/feed-de-videos.md)
 - [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (bloqueado por: feed)
 - [C] Comentarios con aprobación previa: envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, publicación y retención de los rechazados (bloqueado por: feed)
 - [S] Textos legales: contenido publicado por comensales (comentarios) en `/terminos` y `/privacidad`, antes de habilitar comentarios en producción
