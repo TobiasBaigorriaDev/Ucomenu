@@ -1,6 +1,6 @@
 # Cambio: selección directa de sucursal en Sala en vivo
 
-Estado: hecho y commiteado (2026-10-21, aprobado por el usuario); sin despliegue de la app.
+Estado: hecho y commiteado (2026-10-21, aprobado por el usuario); desplegado en staging (Fly v18, commit `f63ee27`, 2026-10-21).
 Nivel: M (interacción y regresión E2E; no cambia autorización, RPC, esquema ni reglas de avisos).
 
 ## Problema y decisión

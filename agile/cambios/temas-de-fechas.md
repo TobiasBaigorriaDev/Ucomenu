@@ -1,6 +1,6 @@
 # Cambio: Temas de fechas especiales en la carta
 
-Estado: **Implementado y verificado en local; aprobado por el usuario el 2026-10-21 y commiteado** (decisión aceptada en `docs/decisiones/0037-temas-de-fechas-especiales.md`). Migración `20261109100000` **aplicada en staging el 2026-10-21** (`migration list` coincide con local); la app sin desplegar.
+Estado: **Implementado y verificado en local; aprobado por el usuario el 2026-10-21 y commiteado** (decisión aceptada en `docs/decisiones/0037-temas-de-fechas-especiales.md`). Migración `20261109100000` **aplicada en staging el 2026-10-21** (`migration list` coincide con local); app desplegada en staging (Fly v18, commit `f63ee27`).
 Nivel: **M** (amplía la identidad con valores cerrados; sin autorización nueva, dinero ni borrado).
 
 ## Objetivo y decisiones

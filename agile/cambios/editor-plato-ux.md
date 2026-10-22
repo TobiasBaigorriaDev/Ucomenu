@@ -1,6 +1,6 @@
 # Cambio: edición de platos por tarea
 
-Estado: hecho y commiteado (2026-10-21, aprobado por el usuario); sin despliegue de la app. Nivel M: presentación y navegación local; conserva acciones, reglas, permisos y persistencia.
+Estado: hecho y commiteado (2026-10-21, aprobado por el usuario); desplegado en staging (Fly v18, commit `f63ee27`, 2026-10-21). Nivel M: presentación y navegación local; conserva acciones, reglas, permisos y persistencia.
 
 ## Decisiones
 

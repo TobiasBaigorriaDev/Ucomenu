@@ -1,6 +1,6 @@
 # Cambio: Personalización de la carta por local (paletas, vista previa y estilo)
 
-Estado: **Implementado y verificado en local; aprobado por el usuario el 2026-10-21 y commiteado** (decisión aceptada en `docs/decisiones/0036-personalizacion-de-la-carta.md`). Migraciones `20261108100000` y `20261108110000` **aplicadas en staging el 2026-10-21** (`migration list` coincide con local); la app sin desplegar.
+Estado: **Implementado y verificado en local; aprobado por el usuario el 2026-10-21 y commiteado** (decisión aceptada en `docs/decisiones/0036-personalizacion-de-la-carta.md`). Migraciones `20261108100000` y `20261108110000` **aplicadas en staging el 2026-10-21** (`migration list` coincide con local); app desplegada en staging (Fly v18, commit `f63ee27`).
 Nivel: **M** (amplía un conjunto cerrado de valores y la presentación; sin autorización, datos ni dinero).
 
 ## Objetivo y decisiones
