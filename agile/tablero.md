@@ -58,7 +58,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [C] Vistas previas de funciones por organización: hecho (2026-10-23), ver «Hecho»
 
 **S2 — Promociones programadas (Happy Hour)**
-- [M] Zona horaria por sucursal (por defecto Buenos Aires; facturación y mora no cambian)
+- [M] Zona horaria por sucursal: hecho en local (2026-10-23), ver «Hecho»
 - [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, lectura pública de vigentes y paridad TS/SQL con casos de medianoche (bloqueado por: zona horaria)
 - [M] Panel de promociones del Dueño: crear, editar, pausar, duplicar, aviso de superposición y vista previa por día y hora (bloqueado por: función de precio)
 - [M] Carta con precio promocional en vivo (tachado + promoción + hasta cuándo), sin afectar el LCP (bloqueado por: función de precio)
@@ -89,6 +89,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [M] Zona horaria por sucursal: `branches.timezone` (lista cerrada de 22 zonas, Buenos Aires por defecto), editable solo por el Dueño; la facturación y la mora no cambian; implementada y verificada en local, sin subir a staging (2026-10-23) → [ficha](cambios/zona-horaria-por-sucursal.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
 - [C] Vistas previas de funciones por organización: tabla auditada con fin de hasta 90 días, `plan_grants` = plan ∪ vistas previas vigentes y bloque plegable en la ficha del SuperAdmin; aprobadas por Codex y por el usuario, con migración y app en staging (Fly versión 37, 2026-10-23); sin probar aún con sesión real de SuperAdmin → [ficha](cambios/vistas-previas-de-funciones.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 - [M] Invitación a reseñar en la carta: enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» (dock de llamados, Pro o superior), una vez al día por dispositivo, textos fijos es/en/pt; en `origin/main` y en staging, sin probar con un teléfono (2026-10-23) → [ficha](cambios/invitacion-a-resenar.md)
 - [M] Enlace de reseñas de Google por sucursal: columna validada con hosts exactos de Google (`CHECK` espejo de la validación local), editable solo por el Dueño con la cuenta al día y legible por la carta pública mientras la sucursal esté activa y publicada; implementado y verificado en local, y en staging con su migración (2026-10-23); la carta lo muestra desde la [invitación](cambios/invitacion-a-resenar.md) → [ficha](cambios/enlace-de-resenas-de-google.md)

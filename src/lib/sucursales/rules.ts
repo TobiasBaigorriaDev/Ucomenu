@@ -96,3 +96,51 @@ export function validateReviewLink(raw: unknown): { ok: true; value: string | nu
 export function publicReviewUrl(stored: unknown): string | null {
   return typeof stored === "string" && [...stored].length <= REVIEW_URL_MAX && REVIEW_URL_PATTERN.test(stored) ? stored : null;
 }
+
+// ---------------------------------------------------------------------------
+// Zona horaria de la sucursal (ficha zona-horaria-por-sucursal, ADR 0040)
+// ---------------------------------------------------------------------------
+
+/** La zona que tiene toda sucursal salvo que el Dueño elija otra. Es el valor por defecto de la columna. */
+export const DEFAULT_BRANCH_TIME_ZONE = "America/Argentina/Buenos_Aires";
+
+/**
+ * Únicas zonas que acepta una sucursal, con el nombre que ve el Dueño. Es la MISMA lista que el CHECK
+ * `branches_timezone_check` de la base; ampliarla es una migración. Una prueba confirma que Postgres y este Node conocen cada una.
+ */
+export const BRANCH_TIME_ZONES = [
+  { id: "America/Argentina/Buenos_Aires", label: "Argentina (Buenos Aires)" },
+  { id: "America/Montevideo", label: "Uruguay (Montevideo)" },
+  { id: "America/Santiago", label: "Chile (Santiago)" },
+  { id: "America/Asuncion", label: "Paraguay (Asunción)" },
+  { id: "America/La_Paz", label: "Bolivia (La Paz)" },
+  { id: "America/Sao_Paulo", label: "Brasil (São Paulo, Río de Janeiro)" },
+  { id: "America/Lima", label: "Perú (Lima)" },
+  { id: "America/Bogota", label: "Colombia (Bogotá)" },
+  { id: "America/Guayaquil", label: "Ecuador (Guayaquil)" },
+  { id: "America/Caracas", label: "Venezuela (Caracas)" },
+  { id: "America/Mexico_City", label: "México (Ciudad de México)" },
+  { id: "America/Panama", label: "Panamá" },
+  { id: "America/Costa_Rica", label: "Costa Rica" },
+  { id: "America/Guatemala", label: "Guatemala" },
+  { id: "America/Santo_Domingo", label: "República Dominicana" },
+  { id: "America/Puerto_Rico", label: "Puerto Rico" },
+  { id: "America/New_York", label: "Estados Unidos (este: Nueva York, Miami)" },
+  { id: "America/Chicago", label: "Estados Unidos (centro: Chicago)" },
+  { id: "America/Denver", label: "Estados Unidos (montaña: Denver)" },
+  { id: "America/Los_Angeles", label: "Estados Unidos (Pacífico: Los Ángeles)" },
+  { id: "Europe/Madrid", label: "España (Madrid)" },
+  { id: "Europe/Lisbon", label: "Portugal (Lisboa)" },
+] as const;
+
+const BRANCH_TIME_ZONE_IDS: ReadonlySet<string> = new Set(BRANCH_TIME_ZONES.map((zone) => zone.id));
+
+/** Zona elegida por la persona: solo las de la lista, tal cual (sin recortes ni mayúsculas «arregladas»). */
+export function validateBranchTimeZone(raw: unknown): { ok: true; value: string } | { ok: false; problem: "invalid" } {
+  return typeof raw === "string" && BRANCH_TIME_ZONE_IDS.has(raw) ? { ok: true, value: raw } : { ok: false, problem: "invalid" };
+}
+
+/** Nombre para mostrar de una zona guardada; si no está en la lista (no debería pasar) se muestra el identificador. */
+export function branchTimeZoneLabel(id: string): string {
+  return BRANCH_TIME_ZONES.find((zone) => zone.id === id)?.label ?? id;
+}

@@ -53,14 +53,14 @@ export type Database = {
                   ]
                 },"branches": {
                   Row: {
-                    "created_at": string,"google_review_url": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases": (string)[],"waiter_call_cooldown_seconds": number
+                    "created_at": string,"google_review_url": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases": (string)[],"timezone": string,"waiter_call_cooldown_seconds": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases"?: (string)[],"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
                   }
                   Update: {
-                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"slug"?: string,"slug_aliases"?: (string)[],"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"slug"?: string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
                   }
                   Relationships: [
                     {

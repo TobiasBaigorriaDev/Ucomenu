@@ -3,7 +3,7 @@ import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
 import type { Database } from "@/lib/supabase/database.types";
 import { sucursalesErrorMessage, sucursalesWriteBlock, type SucursalesError } from "./messages";
 import { readAllPages } from "@/lib/paginar";
-import { validateBranchName, validateBranchSlug, validateReviewLink } from "./rules";
+import { DEFAULT_BRANCH_TIME_ZONE, validateBranchName, validateBranchSlug, validateBranchTimeZone, validateReviewLink } from "./rules";
 
 /**
  * Gestión de sucursales (ficha gestion-de-sucursales). Todo con el cliente de la PERSONA (rol `authenticated`, RLS):
@@ -38,6 +38,8 @@ export type Sucursal = {
   isActive: boolean;
   /** Enlace de reseñas de Google, o `null` si no tiene. */
   reviewUrl: string | null;
+  /** Zona horaria IANA de la sucursal (lista cerrada de `rules.ts`). */
+  timeZone: string;
   tables: number;
   activeTables: number;
 };
@@ -47,7 +49,7 @@ const collator = new Intl.Collator("es-AR", { numeric: true, sensitivity: "base"
 /** Las sucursales de la organización, activas e inactivas (orden natural por nombre), con la cantidad de mesas. */
 export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]> {
   const [branches, tables] = await Promise.all([
-    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url, timezone").eq("organization_id", orgId).order("id").range(from, to)),
     readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
@@ -62,10 +64,11 @@ export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]>
   }
 
   return (branches.data ?? [])
-    .map(({ is_active, google_review_url, ...branch }) => ({
+    .map(({ is_active, google_review_url, timezone, ...branch }) => ({
       ...branch,
       isActive: is_active,
       reviewUrl: google_review_url,
+      timeZone: timezone || DEFAULT_BRANCH_TIME_ZONE,
       ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }),
     }))
     .sort((a, b) => collator.compare(a.name, b.name));
@@ -166,6 +169,28 @@ export async function setBranchReviewLink(db: Db, orgId: string, id: string, raw
     return fail(exists.data ? "forbidden" : "not_found");
   }
   return data[0].google_review_url === link.value ? ok(undefined) : fail("unexpected");
+}
+
+/**
+ * Cambia la zona horaria de una sucursal (ficha zona-horaria-por-sucursal). Solo el Dueño y con la cuenta al día: lo imponen la
+ * política UPDATE de `branches` y el privilegio por columna. Rige la hora de las promociones y los pedidos, no la facturación.
+ * La base vuelve a validar la zona (CHECK con la misma lista); acá se valida antes para dar un mensaje claro.
+ */
+export async function setBranchTimeZone(db: Db, orgId: string, id: string, rawZone: unknown): Promise<Result> {
+  const zone = validateBranchTimeZone(rawZone);
+  if (!zone.ok) return fail("time_zone_invalid");
+
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+
+  const { data, error } = await db.from("branches").update({ timezone: zone.value }).eq("id", id).eq("organization_id", orgId).select("id, timezone");
+  if (error) return fail(error.code === CHECK_VIOLATION ? "time_zone_invalid" : await writeFailure(db, orgId, error));
+  if (data.length === 0) {
+    const exists = await db.from("branches").select("id").eq("id", id).eq("organization_id", orgId).maybeSingle();
+    if (exists.error) return fail("unexpected");
+    return fail(exists.data ? "forbidden" : "not_found");
+  }
+  return data[0].timezone === zone.value ? ok(undefined) : fail("unexpected");
 }
 
 /**

@@ -141,6 +141,23 @@ test.describe("el Dueño administra sus sucursales", () => {
     await expect(sucursal(page, "Centro").getByTestId("sucursal-resenas")).toContainText("Sin enlace de reseñas de Google");
   });
 
+  test("cambia la zona horaria de una sucursal; por defecto es la de Buenos Aires", async ({ page }) => {
+    const t = await nuevoLocal("suc-zona");
+    await ingresar(page, t.owner, t);
+    const zona = async () => (await service().from("branches").select("timezone").eq("organization_id", t.orgId).single()).data?.timezone;
+    expect(await zona()).toBe("America/Argentina/Buenos_Aires");
+    await expect(sucursal(page, "Centro").getByTestId("sucursal-zona")).toContainText("Argentina (Buenos Aires)");
+
+    await sucursal(page, "Centro").locator("summary", { hasText: "Zona horaria" }).click();
+    await sucursal(page, "Centro").getByLabel("Zona horaria de la sucursal").selectOption("Europe/Madrid");
+    await sucursal(page, "Centro").getByRole("button", { name: "Guardar zona horaria" }).click();
+    await expect(sucursal(page, "Centro").getByRole("status")).toContainText("Zona horaria guardada");
+    await page.reload();
+    await expect(sucursal(page, "Centro").getByTestId("sucursal-zona")).toContainText("España (Madrid)");
+    expect(await zona()).toBe("Europe/Madrid");
+    await expectNoHorizontalOverflow(page);
+  });
+
   test("con varias sucursales, las demás pantallas siguen coherentes: mesas y llamados se agrupan por sucursal", async ({ page }) => {
     const t = await nuevoLocal("suc-varias");
     await service().from("branches").insert({ organization_id: t.orgId, slug: "norte", name: "Norte" });

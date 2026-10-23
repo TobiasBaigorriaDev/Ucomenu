@@ -380,6 +380,7 @@ describe("RLS y permisos de tablas", () => {
       ["branches", "google_review_url"], // solo el Dueño con la cuenta al día, por la política de branches (ficha enlace-de-resenas-de-google)
       ["branches", "is_active"], // solo el Dueño y con la cuenta al día, por la política de branches (ficha desactivar-sucursales)
       ["branches", "name"],
+      ["branches", "timezone"], // solo el Dueño con la cuenta al día, por la política de branches (ficha zona-horaria-por-sucursal)
       ["branches", "waiter_call_cooldown_seconds"], // solo el Dueño, por la política de branches
       ["tables", "is_active"],
       ["tables", "label"],

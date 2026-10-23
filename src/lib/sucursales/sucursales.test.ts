@@ -2,7 +2,20 @@ import { describe, expect, it } from "vitest";
 import { branchBreakdown, type Entitlements } from "@/lib/entitlements";
 import { branchLimitMessage, sucursalesBlockNotice, sucursalesErrorMessage, sucursalesWriteBlock } from "./messages";
 import { REVIEW_LINK_CASES } from "./resenas-casos";
-import { BRANCH_NAME_MAX, GOOGLE_REVIEW_HOSTS, REVIEW_URL_MAX, publicReviewUrl, suggestSlug, validateBranchName, validateBranchSlug, validateReviewLink } from "./rules";
+import {
+  BRANCH_NAME_MAX,
+  BRANCH_TIME_ZONES,
+  DEFAULT_BRANCH_TIME_ZONE,
+  GOOGLE_REVIEW_HOSTS,
+  REVIEW_URL_MAX,
+  branchTimeZoneLabel,
+  publicReviewUrl,
+  suggestSlug,
+  validateBranchName,
+  validateBranchSlug,
+  validateBranchTimeZone,
+  validateReviewLink,
+} from "./rules";
 
 const ent = (over: Partial<Entitlements> = {}): Entitlements => ({
   state: "active",
@@ -92,6 +105,7 @@ describe("mensajes", () => {
       "slug_duplicate",
       "review_link_invalid",
       "review_link_too_long",
+      "time_zone_invalid",
       "limit",
       "limit_reactivate",
       "blocked_read_only",
@@ -186,5 +200,39 @@ describe("publicReviewUrl (ficha invitacion-a-resenar)", () => {
   });
   it("sin enlace o con un valor que no es texto no hay invitación", () => {
     for (const v of [null, undefined, "", 42, {}]) expect(publicReviewUrl(v), String(v)).toBeNull();
+  });
+});
+
+describe("zona horaria de la sucursal (ficha zona-horaria-por-sucursal)", () => {
+  it("la zona por defecto es Buenos Aires y está en la lista", () => {
+    expect(DEFAULT_BRANCH_TIME_ZONE).toBe("America/Argentina/Buenos_Aires");
+    expect(validateBranchTimeZone(DEFAULT_BRANCH_TIME_ZONE)).toEqual({ ok: true, value: DEFAULT_BRANCH_TIME_ZONE });
+  });
+
+  it("acepta solo las zonas de la lista, tal cual", () => {
+    for (const { id } of BRANCH_TIME_ZONES) expect(validateBranchTimeZone(id), id).toEqual({ ok: true, value: id });
+    for (const malo of ["", " America/Lima", "america/lima", "America/Lima ", "EST", "UTC", "Etc/GMT+3", "posix/America/Lima", "America/Nowhere", 42, null, undefined, {}]) {
+      expect(validateBranchTimeZone(malo), String(malo)).toEqual({ ok: false, problem: "invalid" });
+    }
+  });
+
+  it("la lista no repite zonas ni etiquetas, y este Node conoce cada una (el cálculo de promociones la usa con Intl)", () => {
+    expect(new Set(BRANCH_TIME_ZONES.map((z) => z.id)).size).toBe(BRANCH_TIME_ZONES.length);
+    expect(new Set(BRANCH_TIME_ZONES.map((z) => z.label)).size).toBe(BRANCH_TIME_ZONES.length);
+    // Una zona desconocida lanza RangeError (el nombre que devuelve `resolvedOptions` puede ser un alias canónico, no se compara).
+    for (const { id } of BRANCH_TIME_ZONES) expect(() => new Intl.DateTimeFormat("en-US", { timeZone: id }), id).not.toThrow();
+    expect(() => new Intl.DateTimeFormat("en-US", { timeZone: "America/Nowhere" })).toThrow(RangeError);
+  });
+
+  it("la medianoche de cada sucursal cae en su propio día (Buenos Aires UTC−3, Madrid UTC+1 en invierno)", () => {
+    const dia = (iso: string, timeZone: string) =>
+      new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(iso));
+    expect(dia("2026-12-21T02:30:00Z", "America/Argentina/Buenos_Aires")).toBe("2026-12-20");
+    expect(dia("2026-12-21T02:30:00Z", "Europe/Madrid")).toBe("2026-12-21");
+  });
+
+  it("el nombre que se muestra sale de la lista; una zona desconocida se muestra tal cual", () => {
+    expect(branchTimeZoneLabel("America/Lima")).toBe("Perú (Lima)");
+    expect(branchTimeZoneLabel("Asia/Tokyo")).toBe("Asia/Tokyo");
   });
 });

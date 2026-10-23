@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
-import { createBranch, renameBranch, setBranchActive, setBranchReviewLink, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
+import { createBranch, renameBranch, setBranchActive, setBranchReviewLink, setBranchTimeZone, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -72,4 +72,12 @@ export async function setBranchReviewLinkAction(_previous: FormState, formData: 
   if (!id) return { error: sucursalesErrorMessage("not_found", null), values: { link } };
   const cleared = link.trim() === "";
   return outcome(slug, orgId, await setBranchReviewLink(db, orgId, id, link), cleared ? "Enlace quitado." : "Enlace guardado.", { link });
+}
+
+export async function setBranchTimeZoneAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  const timeZone = text(formData, "timezone");
+  if (!id) return { error: sucursalesErrorMessage("not_found", null), values: { timezone: timeZone } };
+  return outcome(slug, orgId, await setBranchTimeZone(db, orgId, id, timeZone), "Zona horaria guardada.", { timezone: timeZone });
 }

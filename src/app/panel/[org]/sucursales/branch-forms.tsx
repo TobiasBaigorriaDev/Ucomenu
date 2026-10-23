@@ -3,9 +3,9 @@
 import { useRef } from "react";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { inputClass, labelClass } from "@/components/panel/styles";
-import { BRANCH_NAME_MAX, REVIEW_URL_MAX, suggestSlug } from "@/lib/sucursales/rules";
+import { BRANCH_NAME_MAX, BRANCH_TIME_ZONES, REVIEW_URL_MAX, suggestSlug } from "@/lib/sucursales/rules";
 import { SLUG_MAX_LENGTH } from "@/lib/slug";
-import { createBranchAction, renameBranchAction, setBranchActiveAction, setBranchReviewLinkAction } from "./actions";
+import { createBranchAction, renameBranchAction, setBranchActiveAction, setBranchReviewLinkAction, setBranchTimeZoneAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 const summaryButtonClass =
@@ -176,6 +176,65 @@ export function ReviewLinkForm({
             </div>
             <div>
               <SubmitButton pendingLabel="Guardando…">Guardar enlace</SubmitButton>
+            </div>
+          </fieldset>
+        )}
+      </ActionForm>
+    </details>
+  );
+}
+
+/**
+ * Zona horaria de la sucursal. Rige la hora de las promociones y de los pedidos; la facturación y los vencimientos siguen en hora
+ * de Argentina. Solo se ofrecen las zonas de la lista (la base lo vuelve a comprobar).
+ */
+export function TimeZoneForm({
+  orgSlug,
+  id,
+  name,
+  timeZone,
+  canWrite,
+}: {
+  orgSlug: string;
+  id: string;
+  name: string;
+  timeZone: string;
+  canWrite: boolean;
+}) {
+  return (
+    <details>
+      <summary className={`${summaryButtonClass} ${summaryExtras}`} aria-label={`Zona horaria de ${name}`}>
+        Zona horaria
+      </summary>
+      <ActionForm action={setBranchTimeZoneAction} className="mt-3 max-w-md">
+        {(state) => (
+          <fieldset disabled={!canWrite} className="grid gap-3">
+            <input type="hidden" name="org" value={orgSlug} />
+            <input type="hidden" name="id" value={id} />
+            <div>
+              <label htmlFor={`sucursal-zona-${id}`} className={labelClass}>
+                Zona horaria de la sucursal
+              </label>
+              <select
+                id={`sucursal-zona-${id}`}
+                name="timezone"
+                defaultValue={state.values?.timezone ?? timeZone}
+                aria-describedby={`sucursal-zona-ayuda-${id}`}
+                className={`${inputClass} mt-1`}
+              >
+                {BRANCH_TIME_ZONES.map((zone) => (
+                  <option key={zone.id} value={zone.id}>
+                    {zone.label}
+                  </option>
+                ))}
+              </select>
+              <p id={`sucursal-zona-ayuda-${id}`} className="mt-1 text-sm text-muted">
+                Es la hora con la que esta sucursal aplica sus promociones y toma sus pedidos. No cambia la facturación ni los vencimientos de
+                tu cuenta, que siguen en hora de Argentina.
+              </p>
+            </div>
+            <div>
+              <SubmitButton pendingLabel="Guardando…">Guardar zona horaria</SubmitButton>
             </div>
           </fieldset>
         )}

@@ -11,6 +11,7 @@ export type SucursalesError =
   | "slug_duplicate"
   | "review_link_invalid" // el enlace de reseñas no es una dirección https de Google
   | "review_link_too_long"
+  | "time_zone_invalid" // la zona horaria no está en la lista
   | "limit" // tope de sucursales activas del plan al crear (53400)
   | "limit_reactivate" // tope de sucursales activas del plan al reactivar (53400)
   | "blocked_read_only"
@@ -29,6 +30,7 @@ const STATIC_MESSAGE: Record<Exclude<SucursalesError, "limit" | "limit_reactivat
   review_link_invalid:
     "Ese enlace no sirve: tiene que ser una dirección https de Google (por ejemplo, la que te da Google Maps o tu Perfil de Empresa en «Pedir reseñas»). No se guardó nada.",
   review_link_too_long: `El enlace puede tener hasta ${REVIEW_URL_MAX} caracteres. No se guardó nada.`,
+  time_zone_invalid: "Esa zona horaria no está disponible. Elegí una de la lista. No se guardó nada.",
   blocked_read_only:
     "Tu cuenta está en solo lectura: no se pueden modificar las sucursales hasta regularizar el pago. No se guardó ningún cambio.",
   blocked_suspended:
