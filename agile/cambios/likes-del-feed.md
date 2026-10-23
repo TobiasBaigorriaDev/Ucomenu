@@ -1,5 +1,5 @@
 # Cambio: Likes anónimos desde la mesa
-Estado: **hecho y en staging** (2026-10-22): aprobado por Codex en 2 rondas, en `origin/main`, con la migración `20261114100000` aplicada con `db push` y la app desplegada en Fly. Falta probarlo en un teléfono. Sigue al [feed de videos](feed-de-videos.md); los comentarios (ítem siguiente del tablero) reutilizan la entrada por la mesa que prueba este.
+Estado: **hecho y en staging** (2026-10-22): aprobado por Codex en 2 rondas, en `origin/main`, con la migración `20261114100000` aplicada con `db push` y la app desplegada en Fly. **Aprobado por el usuario (2026-10-23).** Falta probarlo en un teléfono. Sigue al [feed de videos](feed-de-videos.md); los comentarios (ítem siguiente del tablero) reutilizan la entrada por la mesa que prueba este.
 Nivel: **C** — abre una **escritura pública anónima** (`anon` → función de base), la condiciona al plan Premium y a la mora (dinero) y guarda un identificador pseudónimo del comensal en su dispositivo y en la base (exposición de datos personales).
 
 ## Objetivo

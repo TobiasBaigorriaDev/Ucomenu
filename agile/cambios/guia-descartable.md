@@ -1,5 +1,5 @@
 # Cambio: Guía de primeros pasos descartable por cuenta y resumen por sucursal
-Estado: **implementado y verificado en local (2026-10-23); falta subir a staging.** Resuelve las dos «decisiones pendientes» de [alta guiada del dueño](alta-guiada-del-dueno.md#decisiones-pendientes-para-quien-integra).
+Estado: **hecho y en staging (2026-10-23).** Resuelve las dos «decisiones pendientes» de [alta guiada del dueño](alta-guiada-del-dueno.md#decisiones-pendientes-para-quien-integra).
 Nivel: **M** — esquema nuevo pero solo una preferencia de la persona (no cambia permisos, planes, dinero ni borrados); mismo molde que la [vista por sucursal](vista-por-sucursal.md) (ADR 0034).
 
 ## Objetivo
@@ -23,3 +23,4 @@ Sobre el diff sin commitear de `main` (2026-10-23):
 - `pnpm typecheck`, `pnpm lint` limpios · `pnpm db:reset` con la migración nueva · `pnpm db:types`.
 - RLS: `guia-descartable` y `acl` 29/29. Unitarias de la guía 20/20 (`pnpm test` 907/908; la única falla es `textos.test.ts` («Menufeed»), ajena).
 - E2E contra el build: `alta-guiada` 15/15 (ocultar/mostrar, otro dispositivo, Staff, guía completa, dos sucursales, una sola).
+- En staging (2026-10-23): `git push` a `origin/main` (`98a0c23`), las tres migraciones (`20261116100000`, `20261117100000`, `20261118100000`) con `db push` y Fly `ucomenu-staging` versión 32 (comprobación de salud en verde). Con la clave pública, un anónimo recibe 401/`42501` al llamar a `create_waiter_call`, `set_video_like`, `submit_video_comment`, `admin_list_orphan_accounts` y `my_guide_dismissed`; `/` responde 200 y `/admin/cuentas` sin sesión redirige a `/login`. No se probó con un teléfono ni se envió ningún comentario real.

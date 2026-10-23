@@ -1,5 +1,5 @@
 # Cambio: Comentarios con aprobación previa en el feed
-Estado: **implementado y verificado en local; revisado por Codex en 3 rondas; el hallazgo que quedaba abierto fue aceptado como excepción por el usuario** (2026-10-23). **En staging** (2026-10-23). Sigue a los [likes](likes-del-feed.md): reutiliza la entrada por la mesa (`resolve_table_qr`, ticket de visita, claves HMAC, función pública única).
+Estado: **implementado y verificado en local; revisado por Codex en 3 rondas; el hallazgo que quedaba abierto fue aceptado como excepción por el usuario** (2026-10-23). **En staging** (2026-10-23). **Aprobado por el usuario (2026-10-23)**; sin probar en un teléfono real. Sigue a los [likes](likes-del-feed.md): reutiliza la entrada por la mesa (`resolve_table_qr`, ticket de visita, claves HMAC, función pública única).
 Nivel: **C** — abre una **escritura pública anónima de texto libre** (contenido de un tercero que termina en la carta del local), la condiciona al plan Premium y a la mora (dinero), guarda texto y un alias que pueden contener datos personales (exposición) y agrega una **purga irreversible** de lo rechazado.
 
 ## Objetivo

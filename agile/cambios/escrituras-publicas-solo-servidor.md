@@ -1,5 +1,5 @@
 # Cambio: Escrituras públicas de la mesa solo desde el servidor
-Estado: **implementado y verificado en local (`c83885a`); aprobado por Codex en una ronda sin hallazgos bloqueantes (2026-10-23); falta la aprobación humana para subir a `origin` y a staging.**
+Estado: **hecho y en staging (2026-10-23)**: aprobado por Codex en una ronda sin hallazgos bloqueantes y por el usuario, que pidió subirlo y desplegarlo.
 Nivel: **C** — cambia quién puede ejecutar las tres funciones que escriben en la base desde la mesa (autorización) y pone la clave de servicio en la ruta de una acción pública. Decisión: [ADR 0038](../../docs/decisiones/0038-escrituras-publicas-solo-servidor.md).
 
 ## Objetivo
@@ -21,7 +21,7 @@ Cerrar el límite conocido de [comentarios](comentarios-del-feed.md), [likes](li
 - [x] El resto de las pruebas que llamaban a las funciones con `anon` ahora lo hacen con `service_role` y mantienen su cobertura.
 - [x] E2E de llamado, sala, aviso y analítica en verde contra el build.
 - [x] Revisión independiente (C): Codex APROBAR (informe `output/revisiones/2026-10-23T06-23-24-commit-HEAD.md`); su única sugerencia (el ADR prometía «no disponible» sin la clave) quedó corregida.
-- [ ] Despliegue en staging (migración + Fly con `SUPABASE_SERVICE_ROLE_KEY`, que ya lo usa el push).
+- [x] Despliegue en staging (migración + Fly con `SUPABASE_SERVICE_ROLE_KEY`, que ya lo usa el push).
 
 ## Evidencia
 Sobre el diff sin commitear de la rama `main` (2026-10-23):
@@ -30,3 +30,4 @@ Sobre el diff sin commitear de la rama `main` (2026-10-23):
 - `pnpm build` y E2E contra el build: `llamados`, `ticket-de-visita`, `likes-feed`, `comentarios-feed`, `panel-llamados-aviso`, `analitica`, `llamado-config`, `sala-push` 92/92 en la repetición (la primera corrida tuvo fallas intermitentes que no se repitieron); `sala` y `feed-videos` 40/41 y `sala.spec:323` (la intermitente conocida) pasa sola.
 - Pruebas nuevas: una por función, con `anon`, Dueño y (en llamado) Staff recibiendo `42501` y cero filas; `acl.rls` pasa las tres a `[false, false]`.
 - Mutación no corrida: devolver el `grant … to anon` hace fallar de inmediato las tres pruebas nuevas y `acl.rls`.
+- En staging (2026-10-23): `git push` a `origin/main` (`98a0c23`), las tres migraciones (`20261116100000`, `20261117100000`, `20261118100000`) con `db push` y Fly `ucomenu-staging` versión 32 (comprobación de salud en verde). Con la clave pública, un anónimo recibe 401/`42501` al llamar a `create_waiter_call`, `set_video_like`, `submit_video_comment`, `admin_list_orphan_accounts` y `my_guide_dismissed`; `/` responde 200 y `/admin/cuentas` sin sesión redirige a `/login`. No se probó con un teléfono ni se envió ningún comentario real.
