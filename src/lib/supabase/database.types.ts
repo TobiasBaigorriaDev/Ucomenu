@@ -447,6 +447,104 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"promotion_branches": {
+                  Row: {
+                    "branch_id": string,"organization_id": string,"promotion_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"organization_id": string,"promotion_id": string
+                  }
+                  Update: {
+                    "branch_id"?: string,"organization_id"?: string,"promotion_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promotion_branches_branch_id_organization_id_fkey"
+      columns: ["branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "promotion_branches_promotion_id_organization_id_fkey"
+      columns: ["promotion_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "promotions"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
+                },"promotion_history": {
+                  Row: {
+                    "changed_at": string,"changed_by": string | null,"event": string,"id": string,"organization_id": string,"promotion_id": string,"snapshot": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "changed_at"?: string,"changed_by"?: string | null,"event": string,"id"?: string,"organization_id": string,"promotion_id": string,"snapshot": NonNullable<Json>
+                  }
+                  Update: {
+                    "changed_at"?: string,"changed_by"?: string | null,"event"?: string,"id"?: string,"organization_id"?: string,"promotion_id"?: string,"snapshot"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promotion_history_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"promotion_targets": {
+                  Row: {
+                    "category_id": string | null,"id": string,"organization_id": string,"product_id": string | null,"promotion_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "category_id"?: string | null,"id"?: string,"organization_id": string,"product_id"?: string | null,"promotion_id": string
+                  }
+                  Update: {
+                    "category_id"?: string | null,"id"?: string,"organization_id"?: string,"product_id"?: string | null,"promotion_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promotion_targets_category_id_organization_id_fkey"
+      columns: ["category_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "promotion_targets_product_id_organization_id_fkey"
+      columns: ["product_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "promotion_targets_promotion_id_organization_id_fkey"
+      columns: ["promotion_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "promotions"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
+                },"promotions": {
+                  Row: {
+                    "all_branches": boolean,"created_at": string,"discount_type": string,"discount_value": number,"end_minute": number,"ends_on": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"start_minute": number,"starts_on": string | null,"weekdays_mask": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "all_branches"?: boolean,"created_at"?: string,"discount_type": string,"discount_value": number,"end_minute": number,"ends_on"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"start_minute": number,"starts_on"?: string | null,"weekdays_mask": number
+                  }
+                  Update: {
+                    "all_branches"?: boolean,"created_at"?: string,"discount_type"?: string,"discount_value"?: number,"end_minute"?: number,"ends_on"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"start_minute"?: number,"starts_on"?: string | null,"weekdays_mask"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "promotions_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"push_subscriptions": {
                   Row: {
                     "auth_secret": string,"created_at": string,"endpoint": string,"id": string,"organization_id": string,"p256dh": string,"registered_at": string,"user_id": string
@@ -679,6 +777,11 @@ isOneToOne: false
                            },
 "drop_push_subscriptions":
 { Args: { "p_ids": (string)[] }; Returns: number
+                           },
+"effective_prices":
+{ Args: { "p_at"?: string,"p_branch": string,"p_product"?: string }; Returns: {
+              "base_price_cents": number,"discount_type": string,"discount_value": number,"ends_local": string,"price_cents": number,"product_id": string,"promotion_id": string,"promotion_name": string
+            }[]
                            },
 "my_branch_view":
 { Args: { "p_org": string }; Returns: (string)[]

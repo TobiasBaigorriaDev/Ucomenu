@@ -18,6 +18,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Para verificar
 
+- [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` (única autoridad del precio) y paridad con la réplica en TypeScript con casos de medianoche y horario de verano; implementado y verificado en local, falta la revisión independiente de Codex, la aprobación del usuario y subir la migración a staging → [ficha](cambios/promociones-y-precio-efectivo.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
 - [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada, aprobada por Codex (sin hallazgos) y por el usuario, y en staging con su migración (Fly versión 33, 2026-10-23); falta probarla con sesión de SuperAdmin y de Dueño en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
 - [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
@@ -59,9 +60,9 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 **S2 — Promociones programadas (Happy Hour)**
 - [M] Zona horaria por sucursal: hecho en local (2026-10-23), ver «Hecho»
-- [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, lectura pública de vigentes y paridad TS/SQL con casos de medianoche (bloqueado por: zona horaria)
-- [M] Panel de promociones del Dueño: crear, editar, pausar, duplicar, aviso de superposición y vista previa por día y hora (bloqueado por: función de precio)
-- [M] Carta con precio promocional en vivo (tachado + promoción + hasta cuándo), sin afectar el LCP (bloqueado por: función de precio)
+- [C] Promociones y función de precio efectivo: hecho en local (2026-10-23), pendiente de revisión independiente, ver «Para verificar»
+- [M] Panel de promociones del Dueño: crear, editar, pausar, duplicar, aviso de superposición y vista previa por día y hora (desbloqueado por la función de precio)
+- [M] Carta con precio promocional en vivo (tachado + promoción + hasta cuándo), sin afectar el LCP (desbloqueado por la función de precio)
 - [S] Pantalla del historial de promociones (Dueño)
 
 **S3 — Pedidos del mozo** (bloqueado por: función de precio efectivo)

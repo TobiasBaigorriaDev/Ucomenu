@@ -107,7 +107,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
 | Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
 | Invitación a reseñar en Google | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
-| Promociones programadas / Happy Hour (*sin implementar*) | — | ✔ | ✔ |
+| Promociones programadas / Happy Hour (*base de datos y precio efectivo hechos; panel y carta pendientes*) | — | ✔ | ✔ |
 | Pedidos que anota el mozo (*sin implementar*) | — | ✔ | ✔ |
 | Clientes recurrentes (*sin implementar*) | — | — | ✔ |
 

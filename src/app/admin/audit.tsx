@@ -73,6 +73,8 @@ function details(entry: AuditEntry): string[] {
     if (entry.organizationId) out.push(`id ${entry.organizationId}`);
     if (typeof after.payments_kept === "number" && after.payments_kept > 0) out.push(`${after.payments_kept} pagos conservados`);
     if (typeof after.price_history_purged === "number") out.push(`${after.price_history_purged} cambios de precio purgados`);
+    if (typeof after.promotion_history_purged === "number" && after.promotion_history_purged > 0)
+      out.push(`${after.promotion_history_purged} cambios de promociones purgados`);
   }
   if (entry.action === "account.deleted") {
     // Solo el id: el email de la cuenta borrada no se guarda (convención de la auditoría).

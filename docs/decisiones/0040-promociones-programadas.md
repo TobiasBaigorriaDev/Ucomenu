@@ -1,6 +1,6 @@
 # 0040 — Promociones programadas por horario de cada sucursal, con una sola función de precio efectivo en la base
 
-- Estado: aceptada (recomendaciones D5–D8 aprobadas por el usuario el 2026-10-23); implementada la zona horaria por sucursal (decisión 1), el resto pendiente
+- Estado: aceptada (recomendaciones D5–D8 aprobadas por el usuario el 2026-10-23); implementadas la zona horaria por sucursal (decisión 1) y el modelo, el historial y la función de precio (decisiones 2, 3, 4, 5, 6 y 7); pendientes el panel del Dueño y la carta
 - Fecha: 2026-10-23
 
 ## Contexto
