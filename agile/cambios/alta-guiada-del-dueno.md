@@ -29,7 +29,7 @@ El Dueño (o el Staff) de un local recién dado de alta en `/admin/nueva` caía 
 ## Fuera de alcance
 - Gestión de sucursales (el panel todavía no las crea), ocultar la guía a mano, guía para varias sucursales con avance por sucursal, y registrar la impresión de los QR.
 
-## Decisiones pendientes (para quien integra)
+## Decisiones pendientes (resueltas el 2026-10-23 → [guia-descartable](guia-descartable.md))
 1. ¿El Dueño puede **descartar** la guía completa? Hoy queda un bloque corto fijo. Descartarla sin estado propio solo se puede por dispositivo (cookie); por cuenta requeriría un campo nuevo.
 2. Con varias sucursales (hoy solo por script) la guía suma todas: basta con que una tenga mesas. Revisar cuando el panel gestione sucursales.
 

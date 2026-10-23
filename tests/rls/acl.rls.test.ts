@@ -95,6 +95,8 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   personnel_begin_reset: [false, false], // personal (ficha proteger-cuentas-globales): comprueba y reserva la cuenta antes de cambiarle la contraseña; solo service_role
   personnel_end_operation: [false, false], // personal: libera la reserva de la cuenta; solo service_role
   personnel_remove_member: [false, false], // personal: quita la membresía y reserva el borrado de la cuenta si corresponde; solo service_role
+  my_guide_dismissed: [false, true], // guía de primeros pasos (ficha guia-descartable): si quien llama la ocultó; solo lo propio
+  set_my_guide_dismissed: [false, true], // guía de primeros pasos: oculta o muestra la guía de quien llama; valida adentro (miembro)
   my_branch_view: [false, true], // vista por sucursal (ficha vista-por-sucursal, ADR 0034): la vista efectiva de quien llama; solo lo propio
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
   create_product_in_branches: [false, true], // alta del plato con sucursales donde se oculta (ADR 0035): SECURITY INVOKER, manda la RLS de quien llama

@@ -149,6 +149,32 @@ isOneToOne: true
       referencedColumns: ["user_id","organization_id"]
     }
                   ]
+                },"member_guide_dismissals": {
+                  Row: {
+                    "dismissed_at": string,"organization_id": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "dismissed_at"?: string,"organization_id": string,"user_id": string
+                  }
+                  Update: {
+                    "dismissed_at"?: string,"organization_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "member_guide_dismissals_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "member_guide_dismissals_user_id_organization_id_fkey"
+      columns: ["user_id","organization_id"]
+isOneToOne: true
+      referencedRelation: "memberships"
+      referencedColumns: ["user_id","organization_id"]
+    }
+                  ]
                 },"memberships": {
                   Row: {
                     "created_at": string,"id": string,"organization_id": string,"role": string,"user_id": string
@@ -628,6 +654,9 @@ isOneToOne: false
 "my_branch_view":
 { Args: { "p_org": string }; Returns: (string)[]
                            },
+"my_guide_dismissed":
+{ Args: { "p_org": string }; Returns: boolean
+                           },
 "org_entitlements":
 { Args: { "p_org": string }; Returns: Json
                            },
@@ -695,6 +724,9 @@ isOneToOne: false
                            },
 "set_my_branch_view":
 { Args: { "p_branches": (string)[],"p_org": string }; Returns: string
+                           },
+"set_my_guide_dismissed":
+{ Args: { "p_dismissed": boolean,"p_org": string }; Returns: string
                            },
 "set_video_like":
 { Args: { "p_device": string,"p_liked": boolean,"p_rate"?: string,"p_token": string,"p_video": string,"p_visit_started_at"?: string }; Returns: Json

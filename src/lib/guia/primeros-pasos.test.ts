@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Entitlements } from "@/lib/entitlements";
-import { buildGuide, type GuideCounts } from "./primeros-pasos";
+import { buildGuide, type GuideBranch, type GuideCounts } from "./primeros-pasos";
 
 const ACTIVE: Entitlements = { state: "active", canWrite: true, features: ["menu"], limits: {}, usage: {} };
 const PRO: Entitlements = { ...ACTIVE, features: ["menu", "waiter_call"] };
@@ -14,6 +14,7 @@ const EMPTY: GuideCounts = {
   tables: 0,
   activeTables: 0,
   branchIdsWithActiveTables: [],
+  activeTablesByBranch: {},
 };
 const FULL: GuideCounts = {
   categories: 2,
@@ -22,6 +23,7 @@ const FULL: GuideCounts = {
   tables: 4,
   activeTables: 4,
   branchIdsWithActiveTables: ["b1"],
+  activeTablesByBranch: { b1: 4 },
 };
 
 const build = (counts: GuideCounts, ent: Entitlements | null = ACTIVE, role: "owner" | "staff" = "owner", branchCount = 1) =>
@@ -150,5 +152,40 @@ describe("buildGuide: cuenta que no deja escribir", () => {
     expect(guide.blockedNotice).toContain("No pudimos comprobar");
     expect(guide.steps[0]).toMatchObject({ status: "paused" });
     expect(guide.steps[0].href).toBeUndefined();
+  });
+});
+
+describe("buildGuide: varias sucursales", () => {
+  const CENTRO: GuideBranch = { id: "b1", name: "Centro" };
+  const NORTE: GuideBranch = { id: "b2", name: "Norte" };
+  const dos = (counts: GuideCounts, branches: readonly GuideBranch[] = [CENTRO, NORTE]) =>
+    buildGuide({ counts, branchCount: branches.length, branches, ent: ACTIVE, role: "owner", slug: "cafe" });
+
+  it("con una sola sucursal no suma el resumen por sucursal", () => {
+    const guide = buildGuide({ counts: FULL, branchCount: 1, branches: [CENTRO], ent: ACTIVE, role: "owner", slug: "cafe" });
+    expect(guide).toMatchObject({ kind: "ready" });
+    expect(JSON.stringify(guide)).not.toContain("Por sucursal");
+  });
+
+  it("completa: el resumen nombra las mesas de cada sucursal y avisa de la que no tiene", () => {
+    const guide = dos({ ...FULL, tables: 4, activeTables: 4, branchIdsWithActiveTables: ["b1"], activeTablesByBranch: { b1: 4 } });
+    if (guide?.kind !== "ready") throw new Error("se esperaba la guía completa");
+    expect(guide.summary).toContain("Por sucursal: Centro: 4 mesas activas · Norte: sin mesas activas.");
+    expect(guide.hints).toEqual(["La sucursal «Norte» todavía no tiene mesas activas, así que no tiene QR."]);
+  });
+
+  it("completa con mesas en las dos: sin avisos", () => {
+    const guide = dos({ ...FULL, activeTables: 5, branchIdsWithActiveTables: ["b1", "b2"], activeTablesByBranch: { b1: 4, b2: 1 } });
+    if (guide?.kind !== "ready") throw new Error("se esperaba la guía completa");
+    expect(guide.summary).toContain("Centro: 4 mesas activas · Norte: 1 mesa activa.");
+    expect(guide.hints).toEqual([]);
+  });
+
+  it("en pasos: el paso de las mesas muestra el avance de cada sucursal y aclara que cada una tiene las suyas", () => {
+    const sinMesas = steps(dos(EMPTY));
+    expect(sinMesas.steps[1].detail).toContain("cada sucursal tiene las suyas");
+    const conUna = steps(dos({ ...EMPTY, tables: 2, activeTables: 2, branchIdsWithActiveTables: ["b2"], activeTablesByBranch: { b2: 2 } }));
+    expect(conUna.steps[1]).toMatchObject({ id: "mesas", status: "done" });
+    expect(conUna.steps[1].detail).toContain("Por sucursal: Centro: sin mesas activas · Norte: 2 mesas activas.");
   });
 });

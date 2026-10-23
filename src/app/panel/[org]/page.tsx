@@ -4,7 +4,7 @@ import { PrimerosPasos } from "@/components/panel/primeros-pasos";
 import { SonidoControl } from "@/components/panel/sonido-control";
 import { AvisoPush } from "@/components/push/aviso-push";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
-import { buildGuide, loadGuideCounts } from "@/lib/guia/primeros-pasos";
+import { buildGuide, loadGuideCounts, readGuideDismissed } from "@/lib/guia/primeros-pasos";
 import { vapidPublicKey } from "@/lib/push/config";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -20,23 +20,31 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
   const { membership } = await requireMembership(org, `/panel/${org}`);
 
   const supabase = await createSessionClient();
-  const [branches, ent, counts] = await Promise.all([
+  const [branches, ent, counts, guideDismissed] = await Promise.all([
     supabase.from("branches").select("id, slug, name, is_active").eq("organization_id", membership.org.id).order("name"),
     getEntitlements(membership.org.id),
     loadGuideCounts(supabase, membership.org.id),
+    readGuideDismissed(supabase, membership.org.id),
   ]);
 
   const isOwner = membership.role === "owner";
   // Las desactivadas no publican carta: el Resumen enlaza solo las activas y avisa si no queda ninguna.
   const activeBranches = (branches.data ?? []).filter((branch) => branch.is_active);
   const allInactive = activeBranches.length === 0 && (branches.data?.length ?? 0) > 0;
-  const guide = buildGuide({ counts, branchCount: activeBranches.length, ent, role: membership.role, slug: membership.org.slug });
+  const guide = buildGuide({
+    counts,
+    branchCount: activeBranches.length,
+    branches: activeBranches.map((branch) => ({ id: branch.id, name: branch.name })),
+    ent,
+    role: membership.role,
+    slug: membership.org.slug,
+  });
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Resumen</h1>
 
-      {guide ? <PrimerosPasos guide={guide} /> : null}
+      {guide ? <PrimerosPasos guide={guide} slug={membership.org.slug} dismissed={guideDismissed} /> : null}
 
       {/* Solo con el plan que incluye el llamado (la función de base rechazaría el alta igual) y con claves VAPID en el servidor. */}
       {ent?.features.includes("waiter_call") ? (

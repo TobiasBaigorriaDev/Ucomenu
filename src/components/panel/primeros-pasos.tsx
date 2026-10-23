@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { setGuideDismissedAction } from "@/app/panel/[org]/guia-actions";
 import type { Guide, GuideStepStatus } from "@/lib/guia/primeros-pasos";
 
 const STATUS_LABEL: Record<GuideStepStatus, string> = {
@@ -14,11 +15,33 @@ const primaryClass =
 const secondaryClass =
   "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/40 px-4 py-2 text-base font-medium text-ink";
 
+/** Un botón que oculta o vuelve a mostrar la guía (preferencia de cada persona; funciona también sin JavaScript). */
+function GuideToggle({ slug, dismissed, className }: { slug: string; dismissed: boolean; className: string }) {
+  return (
+    <form action={setGuideDismissedAction}>
+      <input type="hidden" name="org" value={slug} />
+      <input type="hidden" name="dismissed" value={dismissed ? "0" : "1"} />
+      <button type="submit" className={className} data-testid={dismissed ? "guia-mostrar" : "guia-ocultar"}>
+        {dismissed ? "Mostrar la guía de primeros pasos" : "Ocultar la guía"}
+      </button>
+    </form>
+  );
+}
+
 /**
  * Guía de primeros pasos del Resumen. El estado de cada paso va siempre en texto («Listo», «Para hacer»…), no solo en
- * color o marca. Con todo hecho se resume en una línea con atajos.
+ * color o marca. Con todo hecho se resume en una línea con atajos. Cada persona puede ocultarla (queda un renglón para volver a
+ * mostrarla): es una preferencia suya, guardada en la base, no un estado del local.
  */
-export function PrimerosPasos({ guide }: { guide: Guide }) {
+export function PrimerosPasos({ guide, slug, dismissed = false }: { guide: Guide; slug: string; dismissed?: boolean }) {
+  if (dismissed) {
+    return (
+      <div className="mt-8" data-testid="guia-oculta">
+        <GuideToggle slug={slug} dismissed className={secondaryClass} />
+      </div>
+    );
+  }
+
   if (guide.kind === "ready") {
     return (
       <section aria-labelledby="primeros-pasos" data-testid="guia-lista" className="mt-8 rounded-3xl bg-sand p-5 ring-1 ring-inset ring-ink/15 sm:p-6">
@@ -37,6 +60,9 @@ export function PrimerosPasos({ guide }: { guide: Guide }) {
               {link.label}
             </Link>
           ))}
+        </div>
+        <div className="mt-4">
+          <GuideToggle slug={slug} dismissed={false} className={`${secondaryClass} border-transparent underline underline-offset-4`} />
         </div>
       </section>
     );
@@ -84,6 +110,9 @@ export function PrimerosPasos({ guide }: { guide: Guide }) {
           </li>
         ))}
       </ol>
+      <div className="mt-4">
+        <GuideToggle slug={slug} dismissed={false} className={`${secondaryClass} border-transparent underline underline-offset-4`} />
+      </div>
     </section>
   );
 }

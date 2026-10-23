@@ -25,7 +25,7 @@ test.afterAll(async () => {
 });
 
 async function sucursalDe(t: Tenant): Promise<string> {
-  const { data } = await service().from("branches").select("id").eq("organization_id", t.orgId).single();
+  const { data } = await service().from("branches").select("id").eq("organization_id", t.orgId).eq("slug", "centro").single();
   return data!.id;
 }
 
@@ -160,7 +160,7 @@ test.describe("local completo", () => {
     await ingresar(page, t.owner, t);
 
     await expect(page.getByTestId("guia-lista")).toBeVisible();
-    await expect(page.getByTestId("guia-sugerencia")).toHaveCount(0);
+    await expect(page.getByTestId("guia-sugerencia").filter({ hasText: "Norte" })).toHaveCount(0);
     await expect(page.getByTestId("guia-lista").getByRole("link", { name: "Atender llamados en Sala en vivo" })).toBeVisible();
   });
 });
@@ -229,5 +229,88 @@ test.describe("aislamiento entre locales", () => {
 
     await page.goto(`/panel/${lleno.slug}`);
     await expect(page.getByTestId("guia-lista")).toContainText("3 platos en la carta y 2 mesas activas");
+  });
+});
+
+test.describe("ocultar la guía (preferencia de cada persona)", () => {
+  test("el Dueño la oculta, queda un renglón para volver a mostrarla, y sigue oculta al recargar y en otro dispositivo; el Staff conserva la suya", async ({ page, browser }) => {
+    const t = await nuevoLocal("guia-oculta");
+    await ingresar(page, t.owner, t);
+    await expect(page.getByTestId("guia-pasos")).toBeVisible();
+
+    await page.getByTestId("guia-ocultar").click();
+    await expect(page.getByTestId("guia-pasos")).toHaveCount(0);
+    await expect(page.getByTestId("guia-oculta")).toBeVisible();
+    await expect(page.getByTestId("guia-mostrar")).toHaveText("Mostrar la guía de primeros pasos");
+    await expectNoHorizontalOverflow(page);
+
+    // Sigue oculta al recargar y desde otro dispositivo (otra sesión): vive en la cuenta, no en el navegador.
+    await page.reload();
+    await expect(page.getByTestId("guia-oculta")).toBeVisible();
+    const otro = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    try {
+      const otraPagina = await otro.newPage();
+      await ingresar(otraPagina, t.owner, t);
+      await expect(otraPagina.getByTestId("guia-oculta")).toBeVisible();
+      await expect(otraPagina.getByTestId("guia-pasos")).toHaveCount(0);
+    } finally {
+      await otro.close();
+    }
+
+    // La del Staff es suya: sigue a la vista.
+    const delStaff = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    try {
+      const paginaStaff = await delStaff.newPage();
+      await ingresar(paginaStaff, t.staff, t);
+      await expect(paginaStaff.getByTestId("guia-pasos")).toBeVisible();
+    } finally {
+      await delStaff.close();
+    }
+
+    // Volver a mostrarla.
+    await page.getByTestId("guia-mostrar").click();
+    await expect(page.getByTestId("guia-pasos")).toBeVisible();
+    await expect(page.getByTestId("guia-oculta")).toHaveCount(0);
+  });
+
+  test("también se oculta la guía completa", async ({ page }) => {
+    const t = await nuevoLocal("guia-oculta-lista");
+    await sembrarCarta(t, { platos: 2 });
+    await sembrarMesas(t, 1);
+    await ingresar(page, t.owner, t);
+    await expect(page.getByTestId("guia-lista")).toBeVisible();
+    await page.getByTestId("guia-ocultar").click();
+    await expect(page.getByTestId("guia-lista")).toHaveCount(0);
+    await expect(page.getByTestId("guia-oculta")).toBeVisible();
+  });
+});
+
+test.describe("varias sucursales", () => {
+  test("la guía muestra el avance de cada sucursal y avisa de la que no tiene mesas", async ({ page }) => {
+    const t = await nuevoLocal("guia-sucursales", { plan: "pro" });
+    const norte = await service().from("branches").insert({ organization_id: t.orgId, slug: "norte", name: "Norte" }).select("id").single();
+    if (norte.error) throw new Error(norte.error.message);
+    await sembrarCarta(t, { platos: 2 });
+    await sembrarMesas(t, 2); // solo en Centro
+    await ingresar(page, t.owner, t);
+
+    const lista = page.getByTestId("guia-lista");
+    await expect(lista).toContainText("Por sucursal: Centro: 2 mesas activas · Norte: sin mesas activas.");
+    await expect(page.getByTestId("guia-sugerencia").filter({ hasText: "«Norte» todavía no tiene mesas activas" })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    // Con mesas en Norte el aviso desaparece.
+    await service().from("tables").insert({ organization_id: t.orgId, branch_id: norte.data.id, label: "Mesa 1" });
+    await page.reload();
+    await expect(lista).toContainText("Centro: 2 mesas activas · Norte: 1 mesa activa.");
+    await expect(page.getByTestId("guia-sugerencia").filter({ hasText: "Norte" })).toHaveCount(0);
+  });
+
+  test("con una sola sucursal no aparece el resumen por sucursal", async ({ page }) => {
+    const t = await nuevoLocal("guia-una");
+    await sembrarCarta(t, { platos: 2 });
+    await sembrarMesas(t, 1);
+    await ingresar(page, t.owner, t);
+    await expect(page.getByTestId("guia-lista")).not.toContainText("Por sucursal");
   });
 });

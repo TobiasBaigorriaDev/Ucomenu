@@ -20,7 +20,12 @@ export type GuideCounts = {
   activeTables: number;
   /** Sucursales con al menos una mesa activa (la hoja de QR es por sucursal). */
   branchIdsWithActiveTables: string[];
+  /** Mesas activas por sucursal (solo las sucursales activas con alguna mesa activa). */
+  activeTablesByBranch: Record<string, number>;
 };
+
+/** Una sucursal activa del local, para el resumen por sucursal. */
+export type GuideBranch = { id: string; name: string };
 
 export type GuideStepId = "carta" | "mesas" | "qr";
 /**
@@ -58,6 +63,19 @@ export type Guide =
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
+/**
+ * Con varias sucursales, cuántas mesas activas tiene cada una («Centro: 4 mesas · Norte: sin mesas activas»). Con una sola no
+ * hace falta. Las mesas son por sucursal (la carta es central, ADR 0035), así que el avance de cada una se ve acá.
+ */
+function branchSummary(branches: readonly GuideBranch[], counts: GuideCounts): string | null {
+  if (branches.length < 2) return null;
+  const parts = branches.map((branch) => {
+    const n = counts.activeTablesByBranch[branch.id] ?? 0;
+    return `${branch.name}: ${n === 0 ? "sin mesas activas" : plural(n, "mesa activa", "mesas activas")}`;
+  });
+  return `Por sucursal: ${parts.join(" · ")}.`;
+}
+
 /** Por qué la guía no ofrece acciones de escritura (o `null`). Sin dato del plan falla cerrado. El Staff nunca recibe plan ni fechas. */
 function blockedNotice(ent: Entitlements | null, role: Role): string | null {
   if (!ent) return "No pudimos comprobar el estado de la cuenta, así que por ahora no podemos ofrecerte acciones.";
@@ -74,11 +92,15 @@ function blockedNotice(ent: Entitlements | null, role: Role): string | null {
 export function buildGuide(input: {
   counts: GuideCounts;
   branchCount: number;
+  /** Las sucursales activas con su nombre; con más de una, la guía muestra el avance de cada una. */
+  branches?: readonly GuideBranch[];
   ent: Entitlements | null;
   role: Role;
   slug: string;
 }): Guide | null {
   const { counts, branchCount, ent, role, slug } = input;
+  const branches = input.branches ?? [];
+  const perBranch = branchSummary(branches, counts);
   if (branchCount === 0) return null;
 
   const base = `/panel/${slug}`;
@@ -96,6 +118,12 @@ export function buildGuide(input: {
         `${plural(counts.visibleWithoutPhoto, "plato sin foto", "platos sin foto")}: una foto ayuda a elegir. Sumala desde la carta.`,
       );
     }
+    // Con varias sucursales, avisa de las que todavía no tienen mesas (sin QR, sus clientes no pueden llamar ni ver el feed).
+    if (branches.length > 1) {
+      for (const branch of branches) {
+        if ((counts.activeTablesByBranch[branch.id] ?? 0) === 0) hints.push(`La sucursal «${branch.name}» todavía no tiene mesas activas, así que no tiene QR.`);
+      }
+    }
     const links: GuideLink[] = [
       { href: printHref, label: "Imprimir los QR" },
       { href: `${base}/carta`, label: "Ver la carta en el panel" },
@@ -104,7 +132,7 @@ export function buildGuide(input: {
     if (canWrite && ent?.features.includes("waiter_call")) links.push({ href: `/sala/${slug}`, label: "Atender llamados en Sala en vivo" });
     return {
       kind: "ready",
-      summary: `Tu local está listo: ${plural(counts.visibleProducts, "plato", "platos")} en la carta y ${plural(counts.activeTables, "mesa activa", "mesas activas")} con su QR.`,
+      summary: `Tu local está listo: ${plural(counts.visibleProducts, "plato", "platos")} en la carta y ${plural(counts.activeTables, "mesa activa", "mesas activas")} con su QR.${perBranch ? ` ${perBranch}` : ""}`,
       hints,
       links,
     };
@@ -137,7 +165,7 @@ export function buildGuide(input: {
     ? {
         id: "mesas",
         title: "Agregá tus mesas",
-        detail: `${plural(counts.activeTables, "mesa activa", "mesas activas")}, cada una con su propio QR.`,
+        detail: `${plural(counts.activeTables, "mesa activa", "mesas activas")}, cada una con su propio QR.${perBranch ? ` ${perBranch}` : ""}`,
         status: "done",
         href: `${base}/mesas`,
         cta: "Ver las mesas",
@@ -147,7 +175,7 @@ export function buildGuide(input: {
         title: "Agregá tus mesas",
         detail:
           counts.tables === 0
-            ? "Cada mesa tiene su propio QR. Agregá una por cada mesa de tu salón."
+            ? `Cada mesa tiene su propio QR. Agregá una por cada mesa de tu salón${branches.length > 1 ? " (cada sucursal tiene las suyas)" : ""}.`
             : "Tus mesas están todas inactivas. Activá al menos una para que tenga QR.",
         status: pending,
         ...action(`${base}/mesas`, counts.tables === 0 ? "Agregar la primera mesa" : "Activar mesas"),
@@ -221,5 +249,28 @@ export async function loadGuideCounts(db: Db, orgId: string): Promise<GuideCount
     tables: ofActiveBranches.length,
     activeTables: active.length,
     branchIdsWithActiveTables: [...new Set(active.map((table) => table.branch_id))],
+    activeTablesByBranch: active.reduce<Record<string, number>>((byBranch, table) => {
+      byBranch[table.branch_id] = (byBranch[table.branch_id] ?? 0) + 1;
+      return byBranch;
+    }, {}),
   };
+}
+
+// ---------------------------------------------------------------------------
+// Ocultar la guía (preferencia de cada persona; ficha guia-descartable)
+// ---------------------------------------------------------------------------
+
+/**
+ * ¿Ocultó quien llama la guía de este local? Es una preferencia: ante un error de la base se muestra la guía (falla abierto, no
+ * esconde ayuda por una falla pasajera).
+ */
+export async function readGuideDismissed(db: Db, orgId: string): Promise<boolean> {
+  const { data, error } = await db.rpc("my_guide_dismissed", { p_org: orgId });
+  return !error && data === true;
+}
+
+/** Oculta (`true`) o vuelve a mostrar (`false`) la guía de quien llama. `false` si la base la rechaza o falla. */
+export async function setGuideDismissed(db: Db, orgId: string, dismissed: boolean): Promise<boolean> {
+  const { data, error } = await db.rpc("set_my_guide_dismissed", { p_org: orgId, p_dismissed: dismissed });
+  return !error && data === "ok";
 }
