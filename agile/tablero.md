@@ -37,6 +37,7 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 - [S] Dominio: elegir nombre definitivo y autorizar la compra — pospuesto por el usuario; bloquea producción y QR definitivos → [procedimiento](../docs/produccion.md)
 - [S] Resolver las decisiones todavía abiertas de variantes y adicionales — conservar el comportamiento vigente hasta decisión explícita → [decisiones pendientes](cambios/variantes-y-adicionales.md#a-confirmar-decisiones-conservadoras-tomadas-sin-poder-preguntar)
 - [S] Evaluar si la guía de primeros pasos debe poder descartarse y cómo resume varias sucursales — propuestas pendientes, sin cambio aceptado → [ficha](cambios/alta-guiada-del-dueno.md#decisiones-pendientes-para-quien-integra)
+- [C] Verificar en la base el ticket de visita y la conexión de las escrituras públicas (llamado, likes y comentarios): hoy los arma y comprueba la acción de servidor y las funciones los aceptan omitidos, así que quien las llame directo con la clave pública y un token de mesa esquiva la sesión cerrada y el límite por conexión (en comentarios lo acotan un tope por organización y el de pendientes). Decidir entre firma del ticket verificable en la base o funciones solo para `service_role` → [límite conocido](../docs/decisiones/0031-feed-de-videos-cortos.md) · [ficha](cambios/comentarios-del-feed.md)
 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 
