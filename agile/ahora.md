@@ -4,10 +4,12 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-Del incremento «Salón y crecimiento», S1 está hecha y en staging (Fly versión 37): sucursal adicional, enlace de reseñas, invitación a reseñar y vistas previas de funciones. De S2 (Promociones) hay dos piezas hechas **solo en local, sin subir a staging ni a `origin`**:
+Del incremento «Salón y crecimiento», S1 está hecha y en staging (Fly versión 37). De S2 (Promociones) hay dos piezas aprobadas por Codex y por el usuario (2026-10-23), con **las migraciones aplicadas en staging y los commits en `origin/main` (hasta `09a7dbd`), pero la app sin desplegar**:
 
-- **Zona horaria por sucursal (M)**, [ficha](cambios/zona-horaria-por-sucursal.md), migración `20261122100000`, commit `4130912`. Lista cerrada de 22 zonas, la edita el Dueño. Facturación y mora siguen en hora de Argentina.
-- **Promociones y precio efectivo (C)**, [ficha](cambios/promociones-y-precio-efectivo.md), migración `20261123100000`, commits `12e3bb7`, `c70da2b` y `74562af`. Tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` y su réplica `src/lib/promociones/precio.ts`. **Codex aprobó en la ronda 3**; falta tu aprobación humana antes de subir la migración, porque toca planes y la función de borrado de organizaciones. Nada la llama todavía.
+- **Zona horaria por sucursal (M)**, [ficha](cambios/zona-horaria-por-sucursal.md), migración `20261122100000`.
+- **Promociones y precio efectivo (C)**, [ficha](cambios/promociones-y-precio-efectivo.md), migración `20261123100000`. Tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` y su réplica `src/lib/promociones/precio.ts`. Nada la llama todavía.
+
+`fly deploy -c fly.staging.toml` fue denegado por el clasificador de permisos de Claude Code. No hace falta con urgencia: la app de staging no usa lo nuevo.
 
 ## Bloqueos y límites
 
@@ -17,7 +19,7 @@ Del incremento «Salón y crecimiento», S1 está hecha y en staging (Fly versi�
 
 ## Próximo paso
 
-1. Aprobar (o no) la migración de promociones; si se aprueba, subirla a staging junto con la de zona horaria.
+1. Desplegar la app en staging (`fly deploy -c fly.staging.toml`, a mano o con permiso explícito) cuando haya una pantalla que use lo nuevo.
 2. Siguientes de S2, ya desbloqueados: panel de promociones del Dueño (M), carta con precio promocional en vivo (M) y pantalla del historial (S). Los pedidos (S3) usan `effective_prices`.
 3. Probar en staging con sesión real: vistas previas, sucursal adicional, enlace de reseñas y zona horaria.
 4. Pendientes anteriores: teléfono real (llamado, likes, comentarios), `/admin/cuentas` y **rotar la `service_role` legacy de staging** (urgente: se imprimió por error en el registro de una sesión del 2026-10-23).

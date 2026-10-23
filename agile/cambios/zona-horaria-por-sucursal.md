@@ -27,7 +27,7 @@ Migración `20261122100000`, sobre el diff de `main` (2026-10-23):
 - `pnpm db:reset` y `pnpm db:types`; `pnpm typecheck`, `pnpm lint` y `pnpm build` en verde.
 - RLS: `zona-horaria` + `acl` + `enlace-de-resenas` 45/45 (la lista de columnas actualizables de `acl` suma `timezone`).
 - Unitarias de `src/lib/sucursales` 29/29. E2E `sucursales` 17/17 con la prueba nueva (cambiar a Madrid, recargar, sin desborde a 390 px).
-- No probado: el formulario con sesión de Dueño en staging ni en un teléfono; la migración todavía no está en staging.
+- Staging (2026-10-23): migración `20261122100000` aplicada junto con la de promociones; commits en `origin/main`. La app todavía no está desplegada (Fly versión 37), así que el formulario no existe allí. No probado con sesión de Dueño en staging ni en un teléfono.
 
 ## Fuera de alcance
 Usar la zona en promociones y pedidos (siguientes fichas); mostrar la hora local de la sucursal en otras pantallas; zonas fuera de la lista; dirección de la sucursal.

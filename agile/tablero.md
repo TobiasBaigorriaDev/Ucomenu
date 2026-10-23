@@ -18,7 +18,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Para verificar
 
-- [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` (única autoridad del precio) y paridad con la réplica en TypeScript con casos de medianoche y horario de verano; implementado, verificado en local y aprobado por Codex (3 rondas); falta la aprobación del usuario y subir la migración a staging → [ficha](cambios/promociones-y-precio-efectivo.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
+- [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` (única autoridad del precio) y paridad con la réplica en TypeScript con casos de medianoche y horario de verano; implementado, verificado en local y aprobado por Codex (3 rondas) y por el usuario, con la migración en staging; falta desplegar la app en Fly → [ficha](cambios/promociones-y-precio-efectivo.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
 - [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada, aprobada por Codex (sin hallazgos) y por el usuario, y en staging con su migración (Fly versión 33, 2026-10-23); falta probarla con sesión de SuperAdmin y de Dueño en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
 - [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
@@ -60,7 +60,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 **S2 — Promociones programadas (Happy Hour)**
 - [M] Zona horaria por sucursal: hecho en local (2026-10-23), ver «Hecho»
-- [C] Promociones y función de precio efectivo: hecho en local y aprobado por Codex (2026-10-23), pendiente de tu aprobación, ver «Para verificar»
+- [C] Promociones y función de precio efectivo: hecho y aprobado (2026-10-23), migración en staging, ver «Para verificar»
 - [M] Panel de promociones del Dueño: crear, editar, pausar, duplicar, aviso de superposición y vista previa por día y hora (desbloqueado por la función de precio)
 - [M] Carta con precio promocional en vivo (tachado + promoción + hasta cuándo), sin afectar el LCP (desbloqueado por la función de precio)
 - [S] Pantalla del historial de promociones (Dueño)
@@ -90,7 +90,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
-- [M] Zona horaria por sucursal: `branches.timezone` (lista cerrada de 22 zonas, Buenos Aires por defecto), editable solo por el Dueño; la facturación y la mora no cambian; implementada y verificada en local, sin subir a staging (2026-10-23) → [ficha](cambios/zona-horaria-por-sucursal.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
+- [M] Zona horaria por sucursal: `branches.timezone` (lista cerrada de 22 zonas, Buenos Aires por defecto), editable solo por el Dueño; la facturación y la mora no cambian; implementada y verificada en local, migración en staging y app sin desplegar (2026-10-23) → [ficha](cambios/zona-horaria-por-sucursal.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
 - [C] Vistas previas de funciones por organización: tabla auditada con fin de hasta 90 días, `plan_grants` = plan ∪ vistas previas vigentes y bloque plegable en la ficha del SuperAdmin; aprobadas por Codex y por el usuario, con migración y app en staging (Fly versión 37, 2026-10-23); sin probar aún con sesión real de SuperAdmin → [ficha](cambios/vistas-previas-de-funciones.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 - [M] Invitación a reseñar en la carta: enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» (dock de llamados, Pro o superior), una vez al día por dispositivo, textos fijos es/en/pt; en `origin/main` y en staging, sin probar con un teléfono (2026-10-23) → [ficha](cambios/invitacion-a-resenar.md)
 - [M] Enlace de reseñas de Google por sucursal: columna validada con hosts exactos de Google (`CHECK` espejo de la validación local), editable solo por el Dueño con la cuenta al día y legible por la carta pública mientras la sucursal esté activa y publicada; implementado y verificado en local, y en staging con su migración (2026-10-23); la carta lo muestra desde la [invitación](cambios/invitacion-a-resenar.md) → [ficha](cambios/enlace-de-resenas-de-google.md)
