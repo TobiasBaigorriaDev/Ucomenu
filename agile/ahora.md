@@ -4,26 +4,22 @@ Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-La carga y publicación de videos con Mux (ADR 0031) y el **feed vertical en la carta** están **hechos y en staging** (Fly con la migración `20261113100000`). El usuario lo probó desde el QR de la mesa y le gustó: [ficha](cambios/feed-de-videos.md).
+Los **likes anónimos desde la mesa** están hechos en local y aprobados por Codex en dos rondas: [ficha](cambios/likes-del-feed.md). Un corazón con conteo en cada video; desde `/t/{token}/videos` es un botón (un like por dispositivo y video) y sin mesa solo se ve el conteo. La puerta de escritura es `set_video_like`; el navegador guarda, solo al primer toque, un código aleatorio (decisión del usuario), y `/privacidad` ya lo dice.
 
-El feed vive también bajo `/t/{token}/videos` y conserva la barra de llamado. Intenta HLS nativo y cae a `hls.js` si el video da error.
-
-No hay trabajo a medias. Hay **12 commits locales sin `git push`** (desde `737df04`). Falta decidir con el usuario si se suben a `origin/main`.
+No hay trabajo a medias. Hay **14 commits locales sin `git push`** (desde `737df04`; los dos últimos son los likes: `fb5a3ac` y `ed30bcd`). La migración `20261114100000` **no está en staging**.
 
 ## Bloqueos y límites
 
-- Sin probar: Firefox, Safari de escritorio y Android (también la subida de videos). Está en «Para verificar» del tablero.
-- En staging está publicado el video «Vhkkk» de `cafe-de-ensayo`, solo para la prueba; se despublica desde el panel.
-- Con `next dev`, el indicador de Next («1 Insight») bloquea clics en varias E2E; contra el build pasan. `next dev` y `next build` se detienen una vez para mostrar un aviso de actualización y arrancan al reintentar. No se actualizó Next.
-- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y `mesas.spec:74`. `pnpm db:reset` lo restablece.
-- `tools/escenarios-locales.mjs` es local, sin versionar y ajena al feed.
+- Falta la aprobación del usuario para subir a `origin/main` y desplegar (migración con `db push` y Fly). Es nivel C: no hacerlo sin pedirla.
+- Sin probar en teléfono real, Firefox, Safari de escritorio ni Android (está en «Para verificar»); tampoco los likes con Mux real y varios videos.
+- Con `next dev` el indicador de Next bloquea clics en E2E; contra el build pasan. `next dev` y `next build` se detienen una vez con un aviso de actualización de Next y arrancan al reintentar. No se actualizó Next.
+- Fallas ajenas, intermitentes en corridas en paralelo: `owner-lectura.rls` (restricción de `audit_log`) y `videos-mux.spec:145` (contador del Mux de mentira); pasan solas.
+- `tools/escenarios-locales.mjs` es local, sin versionar y ajena.
 - La producción sigue bloqueada (dominio, etc.).
 
 ## Próximo paso
 
-Elegir del tablero, por valor y riesgo. Los dos siguientes son nivel C (ficha, RLS, una revisión independiente y aprobación humana):
+Elegir del tablero, por valor y riesgo. Lo que sigue en la fase 2:
 
-1. **Likes anónimos desde la mesa.** Está desbloqueado. Pide una función pública única de base con el ticket de visita (como `create_waiter_call`), un voto por dispositivo y video, límite por cliente y ningún dato del comensal. Decidir: botón y conteo en el feed, y qué ve quien entra sin mesa.
-2. **Comentarios con aprobación previa**, después de los likes. Falta la cola de moderación.
-
-Antes de producción hacen falta los textos legales (S). Aparte, el ítem S de pruebas en Android y otros navegadores.
+1. **Comentarios con aprobación previa** (C): envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, retención de los rechazados. Reutiliza la entrada por la mesa que probaron los likes (`resolve_table_qr`, ticket de visita, función pública única). Antes de producción hacen falta los textos legales de comentarios (S).
+2. Si el usuario lo aprueba: subir y desplegar los likes y probarlos desde su teléfono.

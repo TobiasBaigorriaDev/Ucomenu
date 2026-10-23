@@ -1,5 +1,5 @@
 # Cambio: Likes anónimos desde la mesa
-Estado: **implementado y verificado en local** (2026-10-22); falta la revisión independiente y la aprobación del usuario para subir y desplegar (la migración `20261114100000` no está en staging). Sigue al [feed de videos](feed-de-videos.md); los comentarios (ítem siguiente del tablero) reutilizan la entrada por la mesa que prueba este.
+Estado: **hecho en local** (2026-10-22), aprobado por Codex en 2 rondas; falta la aprobación del usuario para subir y desplegar (la migración `20261114100000` no está en staging) y probarlo en un teléfono. Sigue al [feed de videos](feed-de-videos.md); los comentarios (ítem siguiente del tablero) reutilizan la entrada por la mesa que prueba este.
 Nivel: **C** — abre una **escritura pública anónima** (`anon` → función de base), la condiciona al plan Premium y a la mora (dinero) y guarda un identificador pseudónimo del comensal en su dispositivo y en la base (exposición de datos personales).
 
 ## Objetivo
@@ -61,3 +61,5 @@ Local (Supabase local + build de producción en :3100), sobre el árbol de traba
 
 ## (C) Revisión y aprobación
 - Ronda 1 (Codex, sobre `fb5a3ac`, informe `output/revisiones/2026-10-23T01-50-58-commit-HEAD.md`): aprobar con cambios; un hallazgo **importante**, reproducido leyendo la función: la comprobación «ya estaba» iba antes del lock por conexión, así que dos pedidos idénticos con el cupo en 59 pasaban ambos esa comprobación, el primero ponía el like 60 y el segundo, tras el lock, veía el cupo lleno y respondía `rate_limited` con el like ya guardado (la pantalla lo desmarcaba). Corregido: el lock se toma primero y el duplicado se mira dentro de la sección serializada. Regresión RLS (retiene el lock desde otra sesión y lanza los dos pedidos): **falla con la función anterior y pasa con la nueva**; `video-likes` 28/28, `acl`, `tables` y `videos-publico` en verde. La migración se editó en su lugar porque no estaba en ninguna base compartida.
+- Ronda 2 (verificación sobre `ed30bcd`, informe `output/revisiones/2026-10-23T01-57-29-commit-HEAD.md`): **APROBAR**, sin hallazgos nuevos; el previo queda corregido y la regresión cubre el caso.
+- Aprobación humana: **pendiente** (subir `origin/main` y desplegar la migración y la app a staging; la política de privacidad cambió de texto).
