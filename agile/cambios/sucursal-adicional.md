@@ -1,5 +1,5 @@
 # Cambio: Sucursal adicional para el plan Pro
-Estado: **implementado y verificado en local (2026-10-23)**; pendiente la revisión independiente (Codex) y la aprobación antes de aplicar la migración en staging.
+Estado: **implementado y verificado en local (2026-10-23)**; revisión independiente de Codex aprobada sin hallazgos; pendiente la aprobación del usuario antes de aplicar la migración en staging.
 Nivel: C (dinero y límites del plan; la cancelación desactiva sucursales)
 
 ## Objetivo
@@ -55,4 +55,6 @@ Sobre el diff de `main` (2026-10-23), migración `20261119100000`:
 - Rollback de la migración: volver a las definiciones de `org_limit` y `admin_change_plan` anteriores y quitar la fila `extra_branch` (solo si no hay contratos vigentes; si los hay, finalizarlos antes).
 
 ## (C) Revisión y aprobación
-- Diseño aprobado por el usuario el 2026-10-23 (D1–D4). Pendiente: revisión independiente (Codex) y aprobación antes de aplicar la migración en staging.
+- Diseño aprobado por el usuario el 2026-10-23 (D1–D4).
+- Revisión independiente de Codex: 1 ronda sobre el commit `295046e` (nivel C, solo lectura, estática: no reprodujo las pruebas). Sin hallazgos; veredicto APROBAR. No reemplaza la aprobación humana.
+- Pendiente: aprobación del usuario antes de aplicar la migración en staging.

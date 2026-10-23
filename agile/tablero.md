@@ -18,7 +18,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Para verificar
 
-- [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada y verificada en local (2026-10-23); falta la revisión independiente (Codex) y la aprobación antes de la migración en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
+- [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada y verificada en local (2026-10-23); revisión de Codex aprobada (sin hallazgos); falta la aprobación del usuario antes de la migración en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
 - [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
 - [S] Probar en un Android real la subida de videos desde el panel y el feed (también en Firefox y en Safari de escritorio) — sin resultado; el feed se probó en Chrome y en el teléfono del usuario → [ficha](cambios/feed-de-videos.md)
