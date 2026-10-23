@@ -1,5 +1,5 @@
 # Cambio: Vistas previas de funciones por organización
-Estado: **implementado y verificado en local (2026-10-23); falta la revisión independiente y la aprobación del usuario para subir la migración**.
+Estado: **implementado, verificado en local y aprobado por Codex (2026-10-23); falta la aprobación del usuario para subir la migración**.
 Nivel: C (autorización: habilita funciones fuera del plan que paga la organización)
 
 ## Objetivo
@@ -47,5 +47,5 @@ Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 ## (C) Revisión y aprobación
 - Diseño aprobado por el usuario el 2026-10-23 (ADR 0039, decisión 5).
 - Revisión independiente de Codex, ronda 1 sobre `196e5a6` (nivel C, solo lectura, estática): APROBAR CON CAMBIOS, un hallazgo. **Real:** la prueba de actor no SuperAdmin cubría solo `admin_end_feature_preview`; quitar la guarda de `admin_set_feature_preview` no se habría detectado. Corregido con una llamada directa de alta con `service_role` y actor Dueño (`42501`, sin fila ni movimiento); sin la guarda, esa prueba falla (comprobado).
-- Ronda de verificación: pendiente.
+- Ronda de verificación sobre `eb5d1d4`: sin hallazgos, hallazgo previo corregido; veredicto **APROBAR**. No reemplaza la aprobación del usuario.
 - Aprobación del usuario para subir la migración a staging: pendiente.
