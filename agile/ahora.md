@@ -10,7 +10,7 @@ Del incremento «Salón y crecimiento» (diseño aprobado el 2026-10-23) están 
 - **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000`.
 - **Invitación a reseñar en la carta (M)**, [ficha](cambios/invitacion-a-resenar.md): en `origin/main` y en staging.
 
-**Vistas previas de funciones por organización (C)**, [ficha](cambios/vistas-previas-de-funciones.md): implementada y verificada en **local**, migración `20261121100000` (tabla `organization_feature_previews`, `plan_grants` = plan ∪ vistas previas vigentes, dos funciones de SuperAdmin con auditoría y el bloque en la ficha de la organización). Aprobada por Codex y por el usuario. Migración y app en staging (Fly versión 36) y commits en `origin/main`. Ninguna de las cuatro funciones (`orders`, `promotions`, `review_invite`, `customers`) la lee todavía: cada ficha de función cablea la suya.
+**Vistas previas de funciones por organización (C)**, [ficha](cambios/vistas-previas-de-funciones.md): implementada y verificada en **local**, migración `20261121100000` (tabla `organization_feature_previews`, `plan_grants` = plan ∪ vistas previas vigentes, dos funciones de SuperAdmin con auditoría y el bloque en la ficha de la organización). Aprobada por Codex y por el usuario. Migración y app en staging (Fly versión 37, con el bloque en filas plegables) y commits en `origin/main`. Ninguna de las cuatro funciones (`orders`, `promotions`, `review_invite`, `customers`) la lee todavía: cada ficha de función cablea la suya.
 
 ## Bloqueos y límites
 
