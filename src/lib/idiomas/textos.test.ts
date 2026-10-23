@@ -28,7 +28,7 @@ describe("textos de la carta", () => {
   it("no queda una carta a medio traducir: en inglés y portugués casi nada coincide con el español", () => {
     // Coinciden de forma legítima los nombres propios, el pie «Made with UcoMenu» no (se traduce) y poco más.
     const es = new Map(collect(TEXTOS.es));
-    const allowed = /logoAlt|branch|photoAlt|vegano|vegetarian|dietary\.vegan|dietary\.vegetarian|sending|unavailableTitle|languageLabel|legal\.privacy|allergenLink|legal\.allergens|feed\.(heading|mute|pause|commentSending|commentCounter)/;
+    const allowed = /logoAlt|branch|photoAlt|vegano|vegetarian|dietary\.vegan|dietary\.vegetarian|sending|unavailableTitle|languageLabel|legal\.privacy|allergenLink|legal\.allergens|feed\.(heading|mute|pause|commentSending|commentCounter|commentCancel)/;
     for (const lang of ["en", "pt"] as const) {
       const same = collect(TEXTOS[lang]).filter(([path, text]) => es.get(path) === text && !allowed.test(path));
       expect(same.map(([path]) => path), lang).toEqual([]);

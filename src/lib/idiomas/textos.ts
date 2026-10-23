@@ -100,6 +100,8 @@ export type Textos = {
     commentBodyLabel: string;
     commentPlaceholder: string;
     commentCounter: (used: number, max: number) => string;
+    commentWrite: string;
+    commentCancel: string;
     commentSend: string;
     commentSending: string;
     commentSent: string;
@@ -203,6 +205,8 @@ const es: Textos = {
     commentBodyLabel: "Tu comentario",
     commentPlaceholder: "Contanos qué te pareció",
     commentCounter: (used, max) => `${used} de ${max}`,
+    commentWrite: "Escribir un comentario",
+    commentCancel: "Cancelar",
     commentSend: "Enviar comentario",
     commentSending: "Enviando…",
     commentSent: "Gracias. Tu comentario se publicará cuando el local lo apruebe.",
@@ -310,6 +314,8 @@ const en: Textos = {
     commentBodyLabel: "Your comment",
     commentPlaceholder: "Tell us what you thought",
     commentCounter: (used, max) => `${used} of ${max}`,
+    commentWrite: "Write a comment",
+    commentCancel: "Cancel",
     commentSend: "Send comment",
     commentSending: "Sending…",
     commentSent: "Thank you. Your comment will be published once the restaurant approves it.",
@@ -417,6 +423,8 @@ const pt: Textos = {
     commentBodyLabel: "Seu comentário",
     commentPlaceholder: "Conte o que você achou",
     commentCounter: (used, max) => `${used} de ${max}`,
+    commentWrite: "Escrever um comentário",
+    commentCancel: "Cancelar",
     commentSend: "Enviar comentário",
     commentSending: "Enviando…",
     commentSent: "Obrigado. Seu comentário será publicado quando o restaurante aprovar.",

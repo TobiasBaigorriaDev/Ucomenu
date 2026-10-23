@@ -13,7 +13,10 @@ export type CommentAccess = LikeAccess;
 const circle = "grid size-11 shrink-0 place-items-center rounded-full bg-black/55 backdrop-blur-sm";
 const countClass = "text-sm leading-none font-semibold tabular-nums text-white [text-shadow:0_1px_3px_rgb(0_0_0/0.8)]";
 const fieldClass =
-  "w-full rounded-xl border-[1.5px] border-black/30 bg-white px-3 py-2 text-base text-black placeholder:text-black/55 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-black";
+  "w-full rounded-2xl border-[1.5px] border-ink/35 bg-white px-3.5 py-2.5 text-base text-ink placeholder:text-muted/80 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink";
+/** Botones de la hoja: el mismo lenguaje que las celdas de «Llamar al mozo» (radio grande y colores de la paleta del local). */
+const cellBase =
+  "inline-flex min-h-12 items-center justify-center rounded-3xl px-5 py-2 text-base font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60";
 
 function BubbleIcon() {
   return (
@@ -62,16 +65,21 @@ function formatDate(iso: string, lang: Lang): string {
 
 /**
  * La hoja de comentarios de un video (ficha comentarios-del-feed): los aprobados, más nuevos primero y por páginas, y, solo desde la
- * mesa con el comentario habilitado, el formulario. Lo enviado NO aparece: queda pendiente hasta que el local lo apruebe, y la hoja lo
- * dice. Las teclas de adentro no llegan al feed (las flechas mueven el cursor del texto, no el video; Escape cierra la hoja).
+ * mesa con el comentario habilitado, un botón «Escribir un comentario» que recién al tocarlo muestra el nombre (opcional) y el texto.
+ * Lo enviado NO aparece: queda pendiente hasta que el local lo apruebe, y la hoja lo dice. Es una tarjeta flotante con la misma superficie
+ * y el mismo radio que la barra de llamado y la tarjeta de «Ver plato». Las teclas de adentro no llegan al feed (las flechas mueven el
+ * cursor del texto, no el video; Escape cierra el formulario y, sin él, la hoja).
  */
 export function CommentsSheet({ videoId, access, lang, hasBar, onClose }: { videoId: string; access: CommentAccess | null; lang: Lang; hasBar: boolean; onClose: () => void }) {
   const t = TEXTOS[lang].feed;
   const sheet = useRef<HTMLDivElement>(null);
+  const aliasField = useRef<HTMLInputElement>(null);
+  const writeButton = useRef<HTMLButtonElement>(null);
   const [comments, setComments] = useState<PublicComment[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [composing, setComposing] = useState(false);
   const [alias, setAlias] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -127,10 +135,26 @@ export function CommentsSheet({ videoId, access, lang, hasBar, onClose }: { vide
     };
   }, [videoId, lang, t.commentsLoadError]);
 
+  function startWriting() {
+    setSent(false);
+    setError(null);
+    setComposing(true);
+    // El campo recién existe después de este render.
+    requestAnimationFrame(() => aliasField.current?.focus());
+  }
+
+  function stopWriting() {
+    setComposing(false);
+    setError(null);
+    requestAnimationFrame(() => writeButton.current?.focus());
+  }
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     // Nada de lo que se teclea acá mueve el feed ni lo cierra.
     event.stopPropagation();
-    if (event.key === "Escape") onClose();
+    if (event.key !== "Escape") return;
+    if (composing) stopWriting();
+    else onClose();
   }
 
   const used = lengthOf(normalizeText(body));
@@ -147,9 +171,14 @@ export function CommentsSheet({ videoId, access, lang, hasBar, onClose }: { vide
       if (result.ok) {
         setBody("");
         setSent(true);
+        setComposing(false);
+        requestAnimationFrame(() => writeButton.current?.focus());
       } else {
         setError(result.message);
-        if (result.expired) setExpired(true);
+        if (result.expired) {
+          setExpired(true);
+          setComposing(false);
+        }
       }
     } catch {
       setError(t.commentError);
@@ -167,16 +196,16 @@ export function CommentsSheet({ videoId, access, lang, hasBar, onClose }: { vide
       tabIndex={-1}
       onKeyDown={onKeyDown}
       data-testid="feed-comentarios-hoja"
-      className={`absolute inset-x-0 bottom-0 z-30 flex max-h-[78%] flex-col rounded-t-3xl bg-white text-black shadow-2xl outline-none ${hasBar ? "pb-2" : "pb-[max(0.75rem,env(safe-area-inset-bottom))]"}`}
+      className={`absolute inset-x-3 z-30 flex max-h-[80%] flex-col rounded-[1.75rem] bg-porcelain text-ink shadow-[0_10px_28px_-10px_rgb(0_0_0/0.5)] ring-1 ring-ink/15 outline-none ${hasBar ? "bottom-2" : "bottom-[max(0.75rem,env(safe-area-inset-bottom))]"}`}
     >
-      <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-2">
+      <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-1">
         <h3 className="font-display text-2xl leading-tight">{t.comments}</h3>
         <button
           type="button"
           onClick={onClose}
           aria-label={t.closeComments}
           data-testid="feed-comentarios-cerrar"
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-black/10 text-black hover:bg-black/15 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-black"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-ink/10 text-ink hover:bg-ink/15 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-6" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
             <path d="m6 6 12 12M18 6 6 18" />
@@ -186,51 +215,60 @@ export function CommentsSheet({ videoId, access, lang, hasBar, onClose }: { vide
 
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-3" data-testid="feed-comentarios-lista">
         {comments.length > 0 ? (
-          <ul className="grid gap-3">
+          <ul className="divide-y divide-ink/10">
             {comments.map((comment) => (
-              <li key={comment.id} data-testid="feed-comentario" className="min-w-0">
-                <p className="text-sm text-black/65">
-                  <span className="font-semibold text-black">{comment.alias ?? t.anonymous}</span> · {formatDate(comment.created_at, lang)}
+              <li key={comment.id} data-testid="feed-comentario" className="min-w-0 py-3 first:pt-1">
+                <p className="text-sm text-muted">
+                  <span className="font-semibold text-ink">{comment.alias ?? t.anonymous}</span> · {formatDate(comment.created_at, lang)}
                 </p>
                 <p className="mt-0.5 text-base leading-snug [overflow-wrap:anywhere]">{comment.body}</p>
               </li>
             ))}
           </ul>
         ) : loading ? null : loadError ? null : (
-          <p className="text-base text-black/70" data-testid="feed-comentarios-vacio">
+          <p className="py-2 text-base text-muted" data-testid="feed-comentarios-vacio">
             {t.commentsEmpty}
           </p>
         )}
         {loading ? (
-          <p role="status" className="py-2 text-base text-black/70">
+          <p role="status" className="py-2 text-base text-muted">
             {t.commentsLoading}
           </p>
         ) : null}
         {loadError ? (
-          <p role="alert" className="py-2 text-base text-black/80" data-testid="feed-comentarios-error-carga">
+          <p role="alert" className="py-2 text-base font-medium text-danger" data-testid="feed-comentarios-error-carga">
             {loadError}
           </p>
         ) : null}
         {hasMore && !loading ? (
-          <button
-            type="button"
-            onClick={() => loadPage(comments.length)}
-            data-testid="feed-comentarios-mas"
-            className="mt-3 inline-flex min-h-11 items-center rounded-full border-[1.5px] border-black px-5 text-base font-semibold hover:bg-black/5 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-black"
-          >
+          <button type="button" onClick={() => loadPage(comments.length)} data-testid="feed-comentarios-mas" className={`${cellBase} mt-2 min-h-11 border-[1.5px] border-ink/40 text-ink hover:bg-ink/5`}>
             {t.commentsMore}
           </button>
         ) : null}
       </div>
 
-      {canWrite ? (
-        <form onSubmit={submit} className="grid gap-3 border-t border-black/15 px-5 pt-3" data-testid="feed-comentarios-form">
+      {canWrite && !composing ? (
+        <div className="grid gap-2 border-t border-ink/10 p-2">
+          {sent ? (
+            <p role="status" className="px-3 pt-1 text-[0.9375rem] leading-snug font-medium" data-testid="feed-comentarios-enviado">
+              {t.commentSent}
+            </p>
+          ) : null}
+          <button type="button" ref={writeButton} onClick={startWriting} data-testid="feed-comentarios-escribir" className={`${cellBase} w-full bg-brand text-[var(--on-accent)] hover:opacity-90`}>
+            {t.commentWrite}
+          </button>
+        </div>
+      ) : null}
+
+      {canWrite && composing ? (
+        <form onSubmit={submit} className="grid gap-3 border-t border-ink/10 px-5 pt-3 pb-4" data-testid="feed-comentarios-form">
           <div>
             <label htmlFor={`alias-${videoId}`} className="text-sm font-semibold">
               {t.commentAliasLabel}
             </label>
             <input
               id={`alias-${videoId}`}
+              ref={aliasField}
               type="text"
               value={alias}
               onChange={(event) => setAlias(event.target.value)}
@@ -256,33 +294,28 @@ export function CommentsSheet({ videoId, access, lang, hasBar, onClose }: { vide
               data-testid="feed-comentarios-texto"
               className={`${fieldClass} mt-1 resize-none`}
             />
-            <p id={`contador-${videoId}`} className={`mt-1 text-right text-sm tabular-nums ${tooLong ? "font-semibold text-[#b3261e]" : "text-black/65"}`} data-testid="feed-comentarios-contador">
+            <p id={`contador-${videoId}`} className={`mt-1 text-right text-sm tabular-nums ${tooLong ? "font-semibold text-danger" : "text-muted"}`} data-testid="feed-comentarios-contador">
               {t.commentCounter(used, MAX_COMMENT_LENGTH)}
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              type="submit"
-              disabled={sending || used === 0 || tooLong}
-              data-testid="feed-comentarios-enviar"
-              className="inline-flex min-h-11 items-center rounded-full bg-black px-6 text-base font-semibold text-white hover:bg-black/85 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-black disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {sending ? t.commentSending : t.commentSend}
-            </button>
-          </div>
-          {sent ? (
-            <p role="status" className="text-base font-medium" data-testid="feed-comentarios-enviado">
-              {t.commentSent}
-            </p>
-          ) : null}
           {error ? (
-            <p role="alert" className="text-base font-medium text-[#b3261e]" data-testid="feed-comentarios-error">
+            <p role="alert" className="text-[0.9375rem] leading-snug font-medium text-danger" data-testid="feed-comentarios-error">
               {error}
             </p>
           ) : null}
+          <div className="grid grid-cols-[1fr_1.5fr] gap-2">
+            <button type="button" onClick={stopWriting} data-testid="feed-comentarios-cancelar" className={`${cellBase} bg-blush text-ink hover:opacity-90`}>
+              {t.commentCancel}
+            </button>
+            <button type="submit" disabled={sending || used === 0 || tooLong} data-testid="feed-comentarios-enviar" className={`${cellBase} bg-brand text-[var(--on-accent)] hover:opacity-90`}>
+              {sending ? t.commentSending : t.commentSend}
+            </button>
+          </div>
         </form>
-      ) : error ? (
-        <p role="alert" className="border-t border-black/15 px-5 pt-3 text-base font-medium" data-testid="feed-comentarios-error">
+      ) : null}
+
+      {!canWrite && error ? (
+        <p role="alert" className="border-t border-ink/10 px-5 py-3 text-[0.9375rem] leading-snug font-medium" data-testid="feed-comentarios-error">
           {error}
         </p>
       ) : null}

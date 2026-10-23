@@ -82,7 +82,9 @@ async function abrir(page: Page) {
   await expect(page.getByRole("status").filter({ hasText: "Cargando" })).toHaveCount(0);
 }
 
+/** Abre el formulario (recién aparece al tocar «Escribir un comentario») y lo completa. */
 async function escribir(page: Page, texto: string, alias = "") {
+  if ((await page.getByTestId("feed-comentarios-form").count()) === 0) await page.getByTestId("feed-comentarios-escribir").click();
   await page.getByTestId("feed-comentarios-alias").fill(alias);
   await page.getByTestId("feed-comentarios-texto").fill(texto);
 }
@@ -102,6 +104,13 @@ test.describe("desde la mesa", () => {
 
         await abrir(page);
         await expect(page.getByTestId("feed-comentarios-vacio")).toBeVisible();
+        // El formulario no aparece solo: primero un botón, y recién al tocarlo el nombre y el comentario.
+        await expect(page.getByTestId("feed-comentarios-form")).toHaveCount(0);
+        await expect(page.getByTestId("feed-comentarios-escribir")).toHaveText("Escribir un comentario");
+        await expectNoHorizontalOverflow(page);
+        await page.getByTestId("feed-comentarios-escribir").click();
+        await expect(page.getByTestId("feed-comentarios-alias")).toBeFocused();
+        await expect(page.getByTestId("feed-comentarios-escribir")).toHaveCount(0);
         await expect(page.getByTestId("feed-comentarios-enviar")).toBeDisabled();
         await expectNoHorizontalOverflow(page);
         await escribir(page, "  Qué rico\n se ve  ", "Ana");
@@ -109,7 +118,9 @@ test.describe("desde la mesa", () => {
         await page.getByTestId("feed-comentarios-enviar").click();
 
         await expect(page.getByTestId("feed-comentarios-enviado")).toHaveText("Gracias. Tu comentario se publicará cuando el local lo apruebe.");
-        await expect(page.getByTestId("feed-comentarios-texto")).toHaveValue("");
+        // Al enviar, el formulario se guarda y vuelve el botón.
+        await expect(page.getByTestId("feed-comentarios-form")).toHaveCount(0);
+        await expect(page.getByTestId("feed-comentarios-escribir")).toBeVisible();
         // Pendiente: ni en la hoja ni en la base pública.
         await expect(page.getByTestId("feed-comentario")).toHaveCount(0);
         const filas = await comentarios(video);
@@ -176,6 +187,7 @@ test.describe("desde la mesa", () => {
           await expect(directo.page.getByTestId("feed-comentario")).toContainText("Volvemos el sábado");
           // Sin mesa: se lee, no se escribe.
           await expect(directo.page.getByTestId("feed-comentarios-form")).toHaveCount(0);
+          await expect(directo.page.getByTestId("feed-comentarios-escribir")).toHaveCount(0);
           await expectNoHorizontalOverflow(directo.page);
         } finally {
           await directo.context.close();
@@ -239,11 +251,20 @@ test.describe("desde la mesa", () => {
         await expect(page.getByTestId("feed-video")).toHaveCount(2);
         await expect(page.getByTestId("feed-posicion")).toHaveText("1 / 2");
         await abrir(page);
+        await page.getByTestId("feed-comentarios-escribir").click();
         await page.getByTestId("feed-comentarios-texto").focus();
         await page.keyboard.type("hola");
         await page.keyboard.press("ArrowDown");
         await page.keyboard.press("PageDown");
         await expect(page.getByTestId("feed-posicion")).toHaveText("1 / 2");
+        // Escape cierra primero el formulario (y conserva lo escrito) y recién el segundo cierra la hoja.
+        await page.keyboard.press("Escape");
+        await expect(page.getByTestId("feed-comentarios-form")).toHaveCount(0);
+        await expect(hoja(page)).toBeVisible();
+        await expect(page.getByTestId("feed-comentarios-escribir")).toBeFocused();
+        await page.getByTestId("feed-comentarios-escribir").click();
+        await expect(page.getByTestId("feed-comentarios-texto")).toHaveValue("hola");
+        await page.keyboard.press("Escape");
         await page.keyboard.press("Escape");
         await expect(hoja(page)).toHaveCount(0);
         await expect(page).toHaveURL(new RegExp(`/t/${token}/videos`));
@@ -307,6 +328,7 @@ test.describe("desde la mesa", () => {
         await abrir(page);
         await expect(page.getByTestId("feed-comentario")).toContainText("Ya estaba publicado");
         await expect(page.getByTestId("feed-comentarios-form")).toHaveCount(0);
+        await expect(page.getByTestId("feed-comentarios-escribir")).toHaveCount(0);
       } finally {
         await context.close();
       }
