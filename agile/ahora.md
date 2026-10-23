@@ -10,7 +10,7 @@ Decisiones propias (ficha y ADR 0031): rechazados 7 días y pendientes 30 (`purg
 
 ## Bloqueos y límites
 
-- **Habilitar comentarios en producción** exige la revisión de un abogado de los textos (ya escritos, **sin desplegar**: `/privacidad` y `/terminos` de staging todavía no mencionan los comentarios) y programar la purga.
+- **Habilitar comentarios en producción** exige la revisión de un abogado de los textos (ya escritos y en staging) y programar la purga.
 - Falta probar en un teléfono real (teclado en pantalla con la hoja abierta) y los likes, igual que antes; Firefox, Safari de escritorio y Android siguen en «Para verificar».
 - E2E contra el build (con `next dev` el indicador de Next bloquea clics). `next dev` y `next build` se detienen una vez con un aviso de actualización de Next; no se actualizó. Un `EPERM` sobre `.next` (OneDrive) se resuelve borrando `.next`.
 - Fallas ajenas, intermitentes: `sala.spec:327`, `videos-mux.spec:145` y a veces `owner-lectura.rls`; pasan solas.
