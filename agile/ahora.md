@@ -4,26 +4,26 @@ Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-La **fase 2 llegó al feed**: carga y publicación de videos con Mux (ADR 0031) y feed vertical en la carta están **hechos y en staging** (Fly con la migración `20261113100000`). El usuario probó el feed desde el QR de la mesa y le gustó. Ver [ficha](cambios/feed-de-videos.md).
+La carga y publicación de videos con Mux (ADR 0031) y el **feed vertical en la carta** están **hechos y en staging** (Fly con la migración `20261113100000`). El usuario lo probó desde el QR de la mesa y le gustó: [ficha](cambios/feed-de-videos.md).
 
 El feed vive también bajo `/t/{token}/videos` y conserva la barra de llamado. Intenta HLS nativo y cae a `hls.js` si el video da error.
 
-No hay trabajo a medias. Hay **11 commits locales sin `git push`** (desde `737df04` hasta `b3c9caa`, más el de esta documentación). Falta decidir con el usuario si se suben a `origin/main`.
+No hay trabajo a medias. Hay **12 commits locales sin `git push`** (desde `737df04`). Falta decidir con el usuario si se suben a `origin/main`.
 
 ## Bloqueos y límites
 
-- Sin probar: Firefox, Safari de escritorio y Android (también la subida de videos). Está listado en «Para verificar» del tablero.
+- Sin probar: Firefox, Safari de escritorio y Android (también la subida de videos). Está en «Para verificar» del tablero.
 - En staging está publicado el video «Vhkkk» de `cafe-de-ensayo`, solo para la prueba; se despublica desde el panel.
-- Con `next dev`, el indicador de Next («1 Insight») tapa botones y bloquea clics en varias E2E; contra el build (`pnpm build` y `pnpm test:e2e`) pasan. `next dev` y `next build` se detienen una vez para mostrar un aviso de actualización y arrancan al reintentar. No se actualizó Next.
-- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y `mesas.spec:74` (la «Mesa 3» quedó activa). `pnpm db:reset` lo restablece.
-- `tools/escenarios-locales.mjs` es una herramienta local sin versionar, ajena al feed.
+- Con `next dev`, el indicador de Next («1 Insight») bloquea clics en varias E2E; contra el build pasan. `next dev` y `next build` se detienen una vez para mostrar un aviso de actualización y arrancan al reintentar. No se actualizó Next.
+- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y `mesas.spec:74`. `pnpm db:reset` lo restablece.
+- `tools/escenarios-locales.mjs` es local, sin versionar y ajena al feed.
 - La producción sigue bloqueada (dominio, etc.).
 
 ## Próximo paso
 
-Elegir del tablero, por valor y riesgo. Los dos que siguen son nivel C (ficha, tests de RLS, una revisión independiente y aprobación humana):
+Elegir del tablero, por valor y riesgo. Los dos siguientes son nivel C (ficha, RLS, una revisión independiente y aprobación humana):
 
-1. **Likes anónimos desde la mesa.** El feed de la mesa ya existe, así que está desbloqueado. Pide una función pública única de base con el ticket de visita (como `create_waiter_call`), un voto por dispositivo y video, límite por cliente y ningún dato del comensal. Decisiones a tomar: botón y conteo en el feed, y qué ve quien entra sin mesa.
-2. **Comentarios con aprobación previa.** Conviene hacerlos después de los likes, que prueban la función pública. Falta la cola de moderación.
+1. **Likes anónimos desde la mesa.** Está desbloqueado. Pide una función pública única de base con el ticket de visita (como `create_waiter_call`), un voto por dispositivo y video, límite por cliente y ningún dato del comensal. Decidir: botón y conteo en el feed, y qué ve quien entra sin mesa.
+2. **Comentarios con aprobación previa**, después de los likes. Falta la cola de moderación.
 
-Antes de producción también hace falta el ítem S de textos legales. Como comprobación aparte, está el ítem S de pruebas en un Android real y en otros navegadores.
+Antes de producción hacen falta los textos legales (S). Aparte, el ítem S de pruebas en Android y otros navegadores.
