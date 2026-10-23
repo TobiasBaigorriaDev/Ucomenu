@@ -1,5 +1,5 @@
 # Cambio: Vistas previas de funciones por organización
-Estado: **implementado, verificado en local, aprobado por Codex y por el usuario; migración y app en staging (2026-10-23, Fly versión 37 con las filas plegables)**.
+Estado: **hecho: implementado, verificado en local, aprobado por Codex y por el usuario; migración y app en staging (2026-10-23, Fly versión 37 con las filas plegables)**.
 Nivel: C (autorización: habilita funciones fuera del plan que paga la organización)
 
 ## Objetivo
@@ -51,3 +51,4 @@ Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 - Revisión independiente de Codex, ronda 1 sobre `196e5a6` (nivel C, solo lectura, estática): APROBAR CON CAMBIOS, un hallazgo. **Real:** la prueba de actor no SuperAdmin cubría solo `admin_end_feature_preview`; quitar la guarda de `admin_set_feature_preview` no se habría detectado. Corregido con una llamada directa de alta con `service_role` y actor Dueño (`42501`, sin fila ni movimiento); sin la guarda, esa prueba falla (comprobado).
 - Ronda de verificación sobre `eb5d1d4`: sin hallazgos, hallazgo previo corregido; veredicto **APROBAR**. No reemplaza la aprobación del usuario.
 - Aprobación del usuario para subir la migración a staging: 2026-10-23 (solo la migración; el despliegue de la app queda aparte).
+- Aprobación del usuario del ajuste de interfaz y del resultado en staging: 2026-10-23.

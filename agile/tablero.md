@@ -20,7 +20,6 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 - [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada, aprobada por Codex (sin hallazgos) y por el usuario, y en staging con su migración (Fly versión 33, 2026-10-23); falta probarla con sesión de SuperAdmin y de Dueño en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
-- [C] Vistas previas de funciones por organización (SuperAdmin, auditadas, con fin de hasta 90 días; `plan_grants` = plan ∪ vistas previas vigentes): implementada y verificada en local (2026-10-23, migración `20261121100000`); aprobada por Codex (2 rondas) y migración y app en staging (Fly versión 37, 2026-10-23); falta probar el bloque con sesión de SuperAdmin → [ficha](cambios/vistas-previas-de-funciones.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 - [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
 - [S] Probar en un Android real la subida de videos desde el panel y el feed (también en Firefox y en Safari de escritorio) — sin resultado; el feed se probó en Chrome y en el teléfono del usuario → [ficha](cambios/feed-de-videos.md)
 - [S] Ticket de visita en teléfono real: volver a la carta tras más de 3 h con la pantalla apagada y comprobar nuevo escaneo y recuperación de pestañas descartadas — sin resultado registrado del ensayo iniciado el 2026-10-19 → [ficha](cambios/ticket-de-visita.md)
@@ -56,7 +55,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [C] Sucursal adicional: ver «Para verificar»
 - [M] Enlace de reseñas de Google por sucursal: hecho en local (2026-10-23), ver «Hecho»
 - [M] Invitación a reseñar en la carta: hecho (2026-10-23), ver «Hecho»
-- [C] Vistas previas de funciones por organización: implementada y verificada en local, pendiente de revisión y de subir (ver «Para verificar»)
+- [C] Vistas previas de funciones por organización: hecho (2026-10-23), ver «Hecho»
 
 **S2 — Promociones programadas (Happy Hour)**
 - [M] Zona horaria por sucursal (por defecto Buenos Aires; facturación y mora no cambian)
@@ -90,6 +89,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [C] Vistas previas de funciones por organización: tabla auditada con fin de hasta 90 días, `plan_grants` = plan ∪ vistas previas vigentes y bloque plegable en la ficha del SuperAdmin; aprobadas por Codex y por el usuario, con migración y app en staging (Fly versión 37, 2026-10-23); sin probar aún con sesión real de SuperAdmin → [ficha](cambios/vistas-previas-de-funciones.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 - [M] Invitación a reseñar en la carta: enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» (dock de llamados, Pro o superior), una vez al día por dispositivo, textos fijos es/en/pt; en `origin/main` y en staging, sin probar con un teléfono (2026-10-23) → [ficha](cambios/invitacion-a-resenar.md)
 - [M] Enlace de reseñas de Google por sucursal: columna validada con hosts exactos de Google (`CHECK` espejo de la validación local), editable solo por el Dueño con la cuenta al día y legible por la carta pública mientras la sucursal esté activa y publicada; implementado y verificado en local, y en staging con su migración (2026-10-23); la carta lo muestra desde la [invitación](cambios/invitacion-a-resenar.md) → [ficha](cambios/enlace-de-resenas-de-google.md)
 - [M] Guía de primeros pasos descartable por cuenta (preferencia guardada en la base, con renglón para volver a mostrarla) y resumen por sucursal cuando hay varias; en `origin/main` y en staging (2026-10-23) → [ficha](cambios/guia-descartable.md)
