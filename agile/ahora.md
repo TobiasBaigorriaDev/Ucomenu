@@ -6,7 +6,7 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 
 Los **comentarios con aprobación previa** están implementados y verificados en local, **sin subir a staging**; Codex los revisó en 3 rondas y queda un hallazgo que espera decisión del usuario (nivel C): [ficha](cambios/comentarios-del-feed.md). Desde la mesa, una hoja de comentarios en cada video del feed con alias opcional; lo enviado queda pendiente y se aprueba, rechaza o retira desde `/panel/{slug}/comentarios` (Dueño y Staff). La puerta de alta es `submit_video_comment`; la migración es `20261115100000`.
 
-Decisiones propias, ya en la ficha y en la enmienda del ADR 0031: los rechazados se borran a los 7 días y los pendientes a los 30 (`purge_video_comments`, **sin programar**: paso 4.b de `docs/produccion.md`); rechazar o retirar nunca se bloquea por mora; sin identificador por dispositivo ni nada guardado en el teléfono.
+Decisiones propias (ficha y ADR 0031): rechazados 7 días y pendientes 30 (`purge_video_comments`, **sin programar**: `docs/produccion.md`, 4.b); rechazar o retirar nunca se bloquea por mora; nada se guarda en el teléfono.
 
 Los likes (anteriores) están en `origin/main` y en staging.
 
@@ -14,8 +14,8 @@ Los likes (anteriores) están en `origin/main` y en staging.
 
 - **Habilitar comentarios en producción** exige los textos legales (ítem S del tablero) y programar la purga. Hoy `/privacidad` no menciona los comentarios.
 - Falta probar en un teléfono real (teclado en pantalla con la hoja abierta) y los likes, igual que antes; Firefox, Safari de escritorio y Android siguen en «Para verificar».
-- Con `next dev` el indicador de Next bloquea clics en E2E; contra el build pasan. `next dev` y `next build` se detienen una vez con un aviso de actualización de Next. No se actualizó Next.
-- Fallas ajenas, intermitentes: `sala.spec:327`, `videos-mux.spec:145` y a veces `owner-lectura.rls`; pasan solas. Una corrida completa de E2E perdió el servidor de pruebas a mitad.
+- E2E contra el build (con `next dev` el indicador de Next bloquea clics). `next dev` y `next build` se detienen una vez con un aviso de actualización de Next; no se actualizó. Un `EPERM` sobre `.next` (OneDrive) se resuelve borrando `.next`.
+- Fallas ajenas, intermitentes: `sala.spec:327`, `videos-mux.spec:145` y a veces `owner-lectura.rls`; pasan solas.
 - `tools/escenarios-locales.mjs` es local, sin versionar y ajena.
 - La producción sigue bloqueada (dominio, etc.).
 
