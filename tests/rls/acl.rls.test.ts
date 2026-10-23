@@ -57,6 +57,10 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   enforce_comment_moderation: [false, false, false], // trigger de video_comments: solo cambia el estado, nada vuelve a pendiente (ADR 0031)
   video_is_public: [true, true, true], // usada por la política de lectura PÚBLICA de video_comments: ¿el video se ve hoy en el feed? Solo contesta sí o no
   video_feed_visible: [true, true, true], // usada por la política de lectura PÚBLICA de menu_videos (feed): solo contesta sí o no
+  can_manage_promotions: [true, false, true], // usada por las políticas de escritura de promotions y sus tablas (ficha promociones-y-precio-efectivo): Dueño + función en el plan + cuenta al día
+  record_promotion_change: [true, false, false], // trigger de promotions, promotion_targets y promotion_branches: escribe promotion_history (la API no tiene INSERT)
+  promotion_history_append_only: [false, false, false], // trigger de promotion_history: rechaza UPDATE, DELETE y TRUNCATE
+  purge_organization_promotion_history: [true, false, false], // purga del historial de promociones al borrar una organización (ADR 0040): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
   translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
 };
 
@@ -109,6 +113,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   replace_product_image: [false, true], // foto del plato: SECURITY INVOKER, devuelve la foto saliente; manda la RLS de quien llama
   register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
   set_my_branch_view: [false, true], // vista por sucursal: guarda la elección de quien llama; valida adentro (miembro, sucursales activas del local)
+  effective_prices: [true, true], // precio efectivo de la carta y los pedidos (ADR 0040): SECURITY DEFINER, solo devuelve lo que la carta publica; el instante solo lo elige un miembro
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
   unregister_push_subscription: [false, true], // aviso de llamados (ADR 0020): borra solo las suscripciones propias
 };

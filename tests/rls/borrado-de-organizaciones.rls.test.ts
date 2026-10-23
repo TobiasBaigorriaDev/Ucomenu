@@ -283,8 +283,16 @@ describe("el historial de promociones (ficha promociones-y-precio-efectivo)", ()
   it("la función de purga no la ejecuta nadie de la API, y rechaza una organización activa", async () => {
     const local = await crearLocal(1);
     await conPromociones(local);
-    const r = await service.rpc("purge_organization_promotion_history" as never, { p_org: local.id } as never);
-    expect(r.error).not.toBeNull();
+    // Ningún rol de la API (ni service_role, ni PUBLIC) ejecuta la purga ni las funciones del historial; las políticas y la API no pueden llamarlas.
+    for (const funcion of [
+      "private.purge_organization_promotion_history(uuid)",
+      "private.record_promotion_change()",
+      "private.promotion_history_append_only()",
+    ]) {
+      for (const rol of ["anon", "authenticated", "service_role", "public"]) {
+        expect(sql(`select has_function_privilege('${rol}', '${funcion}', 'execute')`)[0][0], `${rol} ${funcion}`).toBe("f");
+      }
+    }
     expect(() => sql(`select private.purge_organization_promotion_history('${local.id}')`)).toThrow(/organization_still_active/);
     expect(cuenta("promotion_history", local.id)).toBe(3);
   });
