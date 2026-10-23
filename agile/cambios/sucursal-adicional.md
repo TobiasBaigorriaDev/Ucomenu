@@ -1,5 +1,5 @@
 # Cambio: Sucursal adicional para el plan Pro
-Estado: **implementado y verificado en local (2026-10-23)**; revisión independiente de Codex aprobada sin hallazgos; pendiente la aprobación del usuario antes de aplicar la migración en staging.
+Estado: **implementado, aprobado por Codex y por el usuario, y en staging (2026-10-23)**.
 Nivel: C (dinero y límites del plan; la cancelación desactiva sucursales)
 
 ## Objetivo
@@ -36,7 +36,8 @@ Sobre el diff de `main` (2026-10-23), migración `20261119100000`:
 - Corrida completa de `pnpm test:rls` (52 archivos): 1136 de 1142 pruebas en verde; las 6 fallas eran las listas de `acl`/`billing` (corregidas) y `owner-lectura` (intermitente conocida: pasa sola).
 - Unitarias: validaciones, errores de la base, mensajes del tope, desglose del Dueño e historial (`pnpm test` 907+ en verde; falla ajena conocida: `textos.test.ts`).
 - E2E contra el build: `superadmin-sucursal-adicional` 3/3 (vender, el Dueño ve «2 de 3 (2 del plan + 1 adicional · ARS 12.000/mes)», quitar eligiendo cuál se desactiva, «Pedí una sucursal adicional» al llegar al tope, Básico/Premium sin formulario), más `superadmin-addons-baja`, `sucursales`, `desactivar-sucursales`, `cuenta-pagos-historial` y `superadmin-planes-pagos` en verde.
-- Sin probar: staging y teléfono real.
+- Staging (2026-10-23): `supabase db push` aplicó `20261119100000` y `20261120100000` a `ucomenu-staging` (solo esas dos, tras `--dry-run`); Fly `ucomenu-staging` versión 33 (`fly deploy` con la imagen de Docker, árbol confirmado `0155ea6`). `/`, `/login`, `/terminos` y `/privacidad` responden 200 y `/admin` redirige al login. Con la clave pública, `anon` recibe `42501` al llamar a `admin_set_extra_branches`, lee `branches.google_review_url` (nulo) y no lee `addons`. No se vendió ninguna sucursal adicional ni se probó con un teléfono.
+- Sin probar: la interfaz nueva con sesión de SuperAdmin y de Dueño en staging, y el teléfono real.
 
 ## Decisiones tomadas al implementar
 - La fila `extra_branch` lleva ceros en las columnas viejas de WebAR (siguen siendo `not null`); no se tocan.
@@ -57,4 +58,4 @@ Sobre el diff de `main` (2026-10-23), migración `20261119100000`:
 ## (C) Revisión y aprobación
 - Diseño aprobado por el usuario el 2026-10-23 (D1–D4).
 - Revisión independiente de Codex: 1 ronda sobre el commit `295046e` (nivel C, solo lectura, estática: no reprodujo las pruebas). Sin hallazgos; veredicto APROBAR. No reemplaza la aprobación humana.
-- Pendiente: aprobación del usuario antes de aplicar la migración en staging.
+- Aprobación del usuario para subir las migraciones y desplegar a staging: 2026-10-23.

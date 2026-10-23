@@ -4,12 +4,12 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-Del incremento «Salón y crecimiento» (diseño aprobado el 2026-10-23) están hechas en local las dos primeras piezas de S1:
+Del incremento «Salón y crecimiento» (diseño aprobado el 2026-10-23) están hechas, aprobadas y en staging (Fly versión 33, migraciones `20261119100000` y `20261120100000`) las dos primeras piezas de S1:
 
-- **Sucursal adicional (C)**, [ficha](cambios/sucursal-adicional.md): migración `20261119100000` (catálogo con `extra_branch`, `org_limit`, `admin_set_extra_branches`, `admin_change_plan`), bloque en la ficha de SuperAdmin con elección de las sucursales a desactivar, y cupo, precio y aviso «Pedí una sucursal adicional» para el Dueño. Verificada con RLS (23 pruebas propias, concurrencia incluida), unitarias y E2E. Codex la revisó (1 ronda sobre `295046e`, sin hallazgos, APROBAR). **Falta la aprobación del usuario** antes de aplicarla en staging.
-- **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000` y formulario en Sucursales. Verificado en local; la carta todavía no lo muestra.
+- **Sucursal adicional (C)**, [ficha](cambios/sucursal-adicional.md): migración `20261119100000` (catálogo con `extra_branch`, `org_limit`, `admin_set_extra_branches`, `admin_change_plan`), bloque en la ficha de SuperAdmin con elección de las sucursales a desactivar, y cupo, precio y aviso «Pedí una sucursal adicional» para el Dueño. Verificada con RLS (23 pruebas propias, concurrencia incluida), unitarias y E2E. Codex la revisó (1 ronda sobre `295046e`, sin hallazgos, APROBAR) y el usuario aprobó subirla a staging.
+- **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000` y formulario en Sucursales. Verificado en local y en staging; la carta todavía no lo muestra.
 
-Ambas están en un solo commit local, sin subir a `origin` ni a staging. Los incrementos anteriores siguen en `origin/main` (`98a0c23`) y staging (Fly versión 32).
+Ambas están en un solo commit local (`295046e`, más docs `0155ea6`), **sin subir a `origin`**: los commits de documentación `b16c43d` y los dos nuevos esperan un `git push`. Los incrementos anteriores siguen en `origin/main` (`6575de6`).
 
 ## Bloqueos y límites
 
@@ -20,6 +20,6 @@ Ambas están en un solo commit local, sin subir a `origin` ni a staging. Los inc
 
 ## Próximo paso
 
-1. Con la aprobación del usuario, `db push` de las dos migraciones y despliegue a staging.
+1. Probar en staging, con sesión de SuperAdmin y de Dueño, vender y quitar una sucursal adicional y guardar un enlace de reseñas; decidir el `git push` a `origin/main`.
 2. Invitación a reseñar en la carta (M, ya desbloqueada) y vistas previas por organización (C).
 3. Pendientes anteriores: probar en un teléfono real (llamado, likes, comentarios), `/admin/cuentas` y rotar la `service_role` legacy de staging.

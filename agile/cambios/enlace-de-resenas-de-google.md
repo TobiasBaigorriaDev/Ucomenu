@@ -25,7 +25,7 @@ Migración `20261120100000`, sobre el diff de `main` (2026-10-23):
 - `pnpm db:reset` y `pnpm db:types`; `pnpm typecheck`, `pnpm lint` y `pnpm build` en verde.
 - RLS: `enlace-de-resenas` 10/10 (paridad del `CHECK` y la validación local con 32 casos; escritura del Dueño, del Staff, de otra organización y de `anon`; cuenta en solo lectura y suspendida; lectura pública con sucursal desactivada, cuenta suspendida y organización dada de baja).
 - Unitarias de `rules` y mensajes en verde. E2E `sucursales` 16/16 con la prueba nueva (guardar, rechazar uno ajeno conservando lo escrito, quitar; sin desborde a 390 px).
-- Sin probar: staging y teléfono real. La carta pública todavía no muestra el enlace.
+- Staging (2026-10-23): migración `20261120100000` aplicada y app en Fly versión 33; con la clave pública, `anon` lee `branches.google_review_url` (nulo). Sin probar el formulario con sesión de Dueño en staging ni en un teléfono. La carta pública todavía no muestra el enlace.
 
 ## Fuera de alcance
 La invitación en la carta (pie y «Pedir la cuenta»), sus textos es/en/pt y el cierre diario; comprobar que el enlace abre una página de reseñas; enlaces de otros sitios (TripAdvisor, etc.).
