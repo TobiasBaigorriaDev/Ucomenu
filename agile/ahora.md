@@ -4,20 +4,24 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-Los **comentarios con aprobación previa** están implementados, **en `origin/main` y en staging** (migración `20261115100000` y Fly); Codex los revisó en 3 rondas y el usuario aceptó como excepción el último hallazgo (nivel C): [ficha](cambios/comentarios-del-feed.md). Desde la mesa, una hoja de comentarios en cada video del feed con alias opcional; lo enviado queda pendiente y se aprueba, rechaza o retira desde `/panel/{slug}/comentarios` (Dueño y Staff). La puerta de alta es `submit_video_comment`; la migración es `20261115100000`.
+La **Fase 3 (fidelización, Wallet, cercanía) quedó fuera de este incremento** por decisión del usuario; va en otro. Se cerró casi todo «Mejoras y decisiones pendientes del MVP» en local, en `main` y **sin subir a `origin` ni a staging**:
 
-Decisiones propias (ficha y ADR 0031): rechazados 7 días y pendientes 30 (`purge_video_comments`, **sin programar**: `docs/produccion.md`, 4.b); rechazar o retirar nunca se bloquea por mora; nada se guarda en el teléfono.
+- **Escrituras públicas solo desde el servidor** (nivel C): `create_waiter_call`, `set_video_like` y `submit_video_comment` las ejecuta solo `service_role` (migración `20261116100000`, [ADR 0038](../docs/decisiones/0038-escrituras-publicas-solo-servidor.md), [ficha](cambios/escrituras-publicas-solo-servidor.md)). Aprobado por Codex.
+- **Cuentas de Auth sin local** (nivel C): `/admin/cuentas`, borrado a mano con email, motivo y reserva (migración `20261117100000`, [ficha](cambios/cuentas-sin-local.md)). Aprobado por Codex en 3 rondas.
+- **Guía de primeros pasos** descartable por cuenta y resumen por sucursal (nivel M, migración `20261118100000`, [ficha](cambios/guia-descartable.md)).
+- **Variantes y adicionales**: las seis decisiones conservadoras quedaron confirmadas, sin código.
 
 ## Bloqueos y límites
 
-- **Habilitar comentarios en producción** exige la revisión de un abogado de los textos (ya escritos y en staging) y programar la purga.
-- Falta probar en un teléfono real (teclado en pantalla con la hoja abierta) y los likes, igual que antes; Firefox, Safari de escritorio y Android siguen en «Para verificar».
-- E2E contra el build (con `next dev` el indicador de Next bloquea clics). `next dev` y `next build` se detienen una vez con un aviso de actualización de Next; no se actualizó. Un `EPERM` sobre `.next` (OneDrive) se resuelve borrando `.next`.
-- Fallas ajenas, intermitentes: `sala.spec:327`, `videos-mux.spec:145` y a veces `owner-lectura.rls`; pasan solas.
-- La producción sigue bloqueada (dominio, etc.).
+- **Subir a `origin` y a staging** (3 migraciones + Fly) exige aprobación del usuario. La app ahora depende de `SUPABASE_SERVICE_ROLE_KEY` en la ruta de llamar, dar like y comentar (Fly ya la tiene por el push).
+- Sigue pendiente: el **dominio** (pospuesto por el usuario) y, para habilitar comentarios en producción, la revisión de un abogado y programar la purga.
+- Sin probar en teléfono real: comentarios y likes (Firefox, Safari de escritorio y Android, en «Para verificar»).
+- `pnpm test` tiene una falla ajena a estos cambios: `textos.test.ts` («Menufeed» igual en es y en, commit `07facba`).
+- E2E contra el build; `next build` se detiene una vez por un aviso de Next. Fallas ajenas intermitentes: `sala.spec:323`, `owner-lectura.rls`.
 
 ## Próximo paso
 
-1. Probar los comentarios en un teléfono real en staging (ya con la hoja nueva) (QR de «Mesa 1» de `cafe-de-ensayo`: enviar, aprobar en el panel y verlo). El límite aceptado (la función pública no verifica ticket ni conexión; acotado por 30 cada 10 minutos por local y 100 pendientes) tiene su ítem de endurecimiento en el tablero.
-2. Elegir del tablero, por valor y riesgo.
-3. Rotar la `service_role` legacy de staging (salió impresa en una sesión); si Fly la usa como secreto, actualizarla con `fly secrets set`.
+1. Verificación completa hecha sobre `e3831dd` (2026-10-23): RLS 51 archivos, 1139/1139; build; E2E 422/424 (las dos fallas, `sala.spec:323` y `videos-mux.spec:145`, pasan solas al repetir).
+2. Con aprobación del usuario: subir `main` y desplegar las tres migraciones y Fly en staging; después probar en un teléfono (comentarios, likes, llamado).
+3. Rotar la `service_role` legacy de staging (salió impresa en una sesión); `fly secrets set`.
+4. Elegir del tablero: dominio, Salida a producción, o abrir el incremento de fidelización.
