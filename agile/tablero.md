@@ -42,9 +42,8 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
-> Catálogo, elección de Mux, carga y publicación de videos, el feed, los likes y los comentarios están en «Hecho»; queda el texto legal (que bloquea habilitar comentarios en producción).
+> Catálogo, elección de Mux, carga y publicación de videos, el feed, los likes y los comentarios están en «Hecho»; el texto legal de los comentarios también está hecho; para habilitarlos en producción faltan la revisión de un abogado y programar la purga.
 
-- [S] Textos legales: contenido publicado por comensales (comentarios) en `/terminos` y `/privacidad`, antes de habilitar comentarios en producción
 
 ### Fase 3 — Fidelización, Wallet y cercanía (plan Premium)
 
@@ -63,6 +62,7 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [S] Textos legales de los comentarios: `/privacidad` y `/terminos` explican aprobación previa, qué se guarda, plazos de borrado (7 y 30 días), cómo pedir que se quite uno y las reglas para comensales y locales (2026-10-23); falta la revisión de un abogado → [ficha](cambios/textos-legales.md#ampliación--comentarios-del-feed-2026-10-23)
 - [C] Comentarios con aprobación previa: `submit_video_comment` (única puerta; nace pendiente), hoja de comentarios en el feed, cola de moderación para Dueño y Staff en `/panel/{slug}/comentarios`, rechazados 7 días y pendientes 30 (purga `purge_video_comments`, sin programar); implementado y verificado en local; aprobado por Codex con el límite de la función pública aceptado por el usuario como excepción (3 rondas, 2026-10-23); en `origin/main` y en staging (2026-10-23); sin probar en teléfono → [ficha](cambios/comentarios-del-feed.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Likes anónimos desde la mesa: `set_video_like` (única puerta), un like por dispositivo y video con código aleatorio en el navegador, conteo público y límite por conexión; `/privacidad` actualizada; aprobado por Codex (2 rondas, 2026-10-22); en `origin/main` y en staging (2026-10-22); sin probar en teléfono → [ficha](cambios/likes-del-feed.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Feed vertical de videos en la carta, también desde la mesa (`/t/{token}/videos`, con la barra de llamado): lectura pública por política de base, `hls.js` con fallback; aprobado por Codex (5 rondas), en staging y probado por el usuario (2026-10-22); sin probar en Firefox, Safari de escritorio ni Android → [ficha](cambios/feed-de-videos.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)

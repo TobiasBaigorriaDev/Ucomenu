@@ -10,7 +10,7 @@ Decisiones propias (ficha y ADR 0031): rechazados 7 días y pendientes 30 (`purg
 
 ## Bloqueos y límites
 
-- **Habilitar comentarios en producción** exige los textos legales (ítem S del tablero) y programar la purga. Hoy `/privacidad` no menciona los comentarios.
+- **Habilitar comentarios en producción** exige la revisión de un abogado de los textos (ya escritos, **sin desplegar**: `/privacidad` y `/terminos` de staging todavía no mencionan los comentarios) y programar la purga.
 - Falta probar en un teléfono real (teclado en pantalla con la hoja abierta) y los likes, igual que antes; Firefox, Safari de escritorio y Android siguen en «Para verificar».
 - E2E contra el build (con `next dev` el indicador de Next bloquea clics). `next dev` y `next build` se detienen una vez con un aviso de actualización de Next; no se actualizó. Un `EPERM` sobre `.next` (OneDrive) se resuelve borrando `.next`.
 - Fallas ajenas, intermitentes: `sala.spec:327`, `videos-mux.spec:145` y a veces `owner-lectura.rls`; pasan solas.
@@ -20,5 +20,5 @@ Decisiones propias (ficha y ADR 0031): rechazados 7 días y pendientes 30 (`purg
 ## Próximo paso
 
 1. Probar los comentarios en un teléfono real en staging (ya con la hoja nueva) (QR de «Mesa 1» de `cafe-de-ensayo`: enviar, aprobar en el panel y verlo). El límite aceptado (la función pública no verifica ticket ni conexión; acotado por 30 cada 10 minutos por local y 100 pendientes) tiene su ítem de endurecimiento en el tablero.
-2. Elegir del tablero: textos legales (S) de comentarios.
+2. Elegir del tablero, por valor y riesgo.
 3. Rotar la `service_role` legacy de staging (salió impresa en una sesión); si Fly la usa como secreto, actualizarla con `fly secrets set`.

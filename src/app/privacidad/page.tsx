@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LegalDocument, LegalSection } from "@/components/legal/legal-document";
 import { WAITER_CALL_RETENTION_DAYS, contactEmail } from "@/lib/legal";
+import { PENDING_RETENTION_DAYS, REJECTED_RETENTION_DAYS } from "@/lib/videos/retencion";
 
 export const metadata: Metadata = {
   title: "Privacidad",
@@ -32,6 +33,20 @@ export default function PrivacyPage() {
           resultado de un solo sentido calculado a partir de él, junto con el video y la fecha; no guarda la mesa ni quién sos. Para
           evitar abusos, durante una hora el servidor asocia además a ese «me gusta» un valor derivado de tu dirección IP (no la
           IP), que después se borra. Podés eliminar el código borrando los datos del sitio en tu navegador.
+        </p>
+        <p>
+          En ese mismo caso también podés dejar un <strong>comentario</strong> sobre un video, con un nombre opcional (puede ser un
+          apodo o quedar vacío). <strong>No escribas datos personales tuyos ni de otras personas</strong>, como teléfonos,
+          direcciones o apellidos. Guardamos el texto, el nombre si lo pusiste, el video, la fecha y el estado del comentario, y,
+          durante una hora, un valor derivado de tu dirección IP (no la IP) para limitar los envíos repetidos; después se borra.
+          No guardamos la mesa ni nada en tu dispositivo.
+        </p>
+        <p>
+          Un comentario <strong>no se publica hasta que el local lo aprueba</strong>: hasta entonces solo lo ven el dueño y el
+          personal del local. Si lo aprueban, lo puede ver cualquier persona que abra los videos de esa carta, con el nombre que
+          pusiste y la fecha, hasta que el local lo retire o se borre el video. Los comentarios rechazados se borran a los{" "}
+          {REJECTED_RETENTION_DAYS} días y los que nadie revisa, a los {PENDING_RETENTION_DAYS} días. Como no guardamos quién sos,
+          para pedir que se quite un comentario tuyo indicanos el local, el video y el texto (ver «Tus derechos»).
         </p>
         <p>
           Como en cualquier sitio web, el servidor que te entrega la página y su proveedor de alojamiento pueden registrar datos
@@ -70,6 +85,10 @@ export default function PrivacyPage() {
           de un local) quedan en un registro de auditoría que no se modifica.
         </p>
         <p>
+          El dueño y el personal ven los comentarios que dejan los comensales en los videos de su local (los pendientes, los
+          aprobados y los rechazados que todavía no se borraron) y deciden cuáles se publican.
+        </p>
+        <p>
           La carta, los precios, las fotos y demás contenido pertenecen al local, que decide qué publica. El local puede pedir
           que se corrija o se quite lo que haya cargado.
         </p>
@@ -81,6 +100,9 @@ export default function PrivacyPage() {
           autenticación y alojamiento de la aplicación) que tratan datos por nuestra cuenta y solo para prestar el servicio.
           Algunos de esos servidores pueden estar fuera de la Argentina. Solo entregaremos datos a una autoridad cuando la ley
           lo exija.
+        </p>
+        <p>
+          Lo que un local publica en su carta, incluidos los comentarios que aprobó, lo puede ver cualquiera que abra esa carta.
         </p>
       </LegalSection>
 
@@ -100,6 +122,11 @@ export default function PrivacyPage() {
           ) : (
             " Para hacerlo, contactá al equipo de UcoMenu por el medio por el que te dimos acceso al servicio."
           )}
+        </p>
+        <p>
+          Si un comentario tuyo ya está publicado y querés que se quite, o si aparecen datos personales tuyos en el de otra
+          persona, pedilo al local o al equipo de UcoMenu indicando el local, el video y el texto: lo retiramos o le pedimos al
+          local que lo haga.
         </p>
         <p>
           La Agencia de Acceso a la Información Pública, en su carácter de órgano de control de la Ley 25.326, tiene la

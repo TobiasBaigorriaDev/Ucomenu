@@ -15,10 +15,7 @@ type Db = SupabaseClient<Database>;
 
 export type CommentStatus = "pending" | "approved" | "rejected";
 
-/** Días que se conserva un comentario rechazado antes de que la purga lo borre (por defecto de `purge_video_comments`). */
-export const REJECTED_RETENTION_DAYS = 7;
-/** Días que espera un comentario sin moderar antes de que la purga lo borre. */
-export const PENDING_RETENTION_DAYS = 30;
+export { PENDING_RETENTION_DAYS, REJECTED_RETENTION_DAYS } from "./retencion";
 /** Pendientes por organización antes de que los comensales no puedan enviar más (mismo tope que la base). */
 export const PENDING_CAP = 100;
 /** Filas que muestra cada lista. */

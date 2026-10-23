@@ -28,6 +28,22 @@ test("la política de privacidad dice los 14 días y que el identificador no es 
   await expect(page.getByText("No guardamos tu IP")).toBeVisible();
 });
 
+test("la política de privacidad explica los comentarios: aprobación previa, plazos de borrado y que no guarda nada en el dispositivo", async ({ page }) => {
+  await page.goto("/privacidad");
+  await expect(page.getByText("no se publica hasta que el local lo aprueba")).toBeVisible();
+  await expect(page.getByText(/Los comentarios rechazados se borran a los\s+7\s+días y los que nadie revisa, a los\s+30\s+días/)).toBeVisible();
+  await expect(page.getByText("No escribas datos personales tuyos ni de otras personas")).toBeVisible();
+  await expect(page.getByText("No guardamos la mesa ni nada en tu dispositivo")).toBeVisible();
+});
+
+test("los términos fijan las reglas de los comentarios para comensales y locales", async ({ page }) => {
+  await page.goto("/terminos");
+  await expect(page.getByText("no se publica hasta que el local lo aprueba")).toBeVisible();
+  await expect(page.getByText("Sos responsable de lo que escribís")).toBeVisible();
+  await expect(page.getByText("Sos responsable de lo que aprobás")).toBeVisible();
+  await expect(page.getByText(/ni por los comentarios que dejan los comensales/)).toBeVisible();
+});
+
 for (const [origen, ruta] of [
   ["la portada", "/"],
   ["el login", "/login"],

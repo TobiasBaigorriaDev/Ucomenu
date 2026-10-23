@@ -36,6 +36,29 @@ export default function TermsPage() {
             salón.
           </li>
         </ul>
+        <p>Si el local tiene videos, desde el QR de tu mesa también podés dejar un comentario. Al hacerlo:</p>
+        <ul>
+          <li>
+            Sos responsable de lo que escribís. No publiques insultos, amenazas, contenido ilícito o engañoso, publicidad ni
+            enlaces, y no incluyas datos personales tuyos ni de otras personas (teléfonos, direcciones, apellidos).
+          </li>
+          <li>
+            Tu comentario <strong>no se publica hasta que el local lo aprueba</strong>. El local puede aprobarlo, rechazarlo o
+            retirarlo cuando quiera, sin tener que explicarte por qué, y no está obligado a publicar nada.
+          </li>
+          <li>
+            Si se aprueba, lo puede ver cualquier persona que abra los videos de esa carta, con el nombre que pusiste (o
+            «Anónimo») y la fecha. Los comentarios que no se publican se borran solos pasado un tiempo, como explica la{" "}
+            <Link href="/privacidad" className="underline underline-offset-2">
+              política de privacidad
+            </Link>
+            .
+          </li>
+          <li>
+            El sistema limita los envíos repetidos desde una misma conexión. No intentes eludir esos límites ni comentar desde
+            una mesa en la que no estás.
+          </li>
+        </ul>
       </LegalSection>
 
       <LegalSection title="3. Si sos un local">
@@ -51,6 +74,11 @@ export default function TermsPage() {
           <li>
             No uses el servicio para publicar contenido ilícito, engañoso o que infrinja derechos de terceros. Podemos
             suspender una carta que lo haga.
+          </li>
+          <li>
+            Si tu plan incluye videos con comentarios, vos decidís cuáles se publican: revisalos antes de aprobarlos y retirá los
+            que correspondan. Sos responsable de lo que aprobás, que queda publicado en tu carta. No apruebes contenido ilícito,
+            ofensivo o que incluya datos personales de terceros.
           </li>
         </ul>
       </LegalSection>
@@ -77,8 +105,10 @@ export default function TermsPage() {
 
       <LegalSection title="6. Responsabilidad">
         <p>
-          UcoMenu no es responsable por el contenido que publica cada local, ni por la atención, los productos o la información
-          de alérgenos que el local brinde. En la medida que la ley lo permita, nuestra responsabilidad se limita a los daños
+          UcoMenu no es responsable por el contenido que publica cada local, ni por los comentarios que dejan los comensales ni
+          por la decisión del local de aprobarlos, ni por la atención, los productos o la información de alérgenos que el
+          local brinde. Si algún contenido publicado en una carta te afecta, avisanos y, de corresponder, pedimos al local que lo
+          retire o lo retiramos. En la medida que la ley lo permita, nuestra responsabilidad se limita a los daños
           directos causados por un incumplimiento nuestro. Esto no excluye los derechos que la ley reconoce a los consumidores.
         </p>
       </LegalSection>
