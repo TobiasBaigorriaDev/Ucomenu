@@ -303,6 +303,28 @@ describe("cuando Auth falla o la respuesta se pierde", () => {
     expect(reservas(cuenta)).toBe(0);
   });
 
+  it("tras un «no pudimos confirmar», repetir es seguro: la cuenta intacta se borra y la ya borrada responde «no existe»", async () => {
+    const intacta = await cuentaSinLocal();
+    const sinRespuesta = (alBorrar?: () => Promise<void>) =>
+      adminCtx(superAdmin, conAuth(service, {
+        deleteUser: async () => {
+          await alBorrar?.();
+          return { data: { user: null }, error: RED };
+        },
+        getUserById: async () => ({ data: { user: null }, error: RED }),
+      }));
+
+    expect(await borrar(intacta, {}, sinRespuesta())).toEqual({ ok: false, error: "uncertain_change" });
+    expect(await borrar(intacta)).toEqual({ ok: true, data: undefined }); // la cuenta seguía: ahora sí se borra y se audita
+    expect(movimientos(intacta)).toBe("1");
+
+    const yaBorrada = await cuentaSinLocal();
+    const incierta = await borrar(yaBorrada, {}, sinRespuesta(async () => void (await service.auth.admin.deleteUser(yaBorrada.id))));
+    expect(incierta).toEqual({ ok: false, error: "uncertain_change" });
+    expect(await borrar(yaBorrada)).toEqual({ ok: false, error: "orphan_not_found" }); // ya no existe; sin constancia (residuo aceptado)
+    expect(movimientos(yaBorrada)).toBe("0");
+  });
+
   it("si se pierde la respuesta de la reserva no se tocó Auth: no se dice «incierto», se dice que no se cambió nada", async () => {
     const cuenta = await cuentaSinLocal();
     const ctx = adminCtx(superAdmin, conAuth(service, {}, { admin_begin_orphan_delete: async () => ({ data: null, error: { message: "fetch failed" } }) }));
