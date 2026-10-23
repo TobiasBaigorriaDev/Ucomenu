@@ -6,7 +6,7 @@ import { canDeleteNow, DELETION_WAIT_DAYS, deletionAvailableAt } from "@/lib/adm
 import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
 import { AUDIT_LIMIT } from "@/lib/admin/organizations";
 import { listAdminBranches } from "@/lib/admin/branches";
-import { getOrganizationDetail, isVoidable, PAYMENTS_LIMIT, type PaymentRow } from "@/lib/admin/subscriptions";
+import { getOrganizationDetail, isVoidable, PAYMENTS_LIMIT, previewableFeatures, type PaymentRow } from "@/lib/admin/subscriptions";
 import { isBillingCycle, MAX_EXTRA_PACKS, MAX_PREVIEW_DAYS, PREVIEW_FEATURE_LABEL, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { accountState, BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
@@ -107,6 +107,8 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
   const org = result.data;
   const branches = await listAdminBranches({ session: await createSessionClient(), admin: createAdminClient(), actorId: user.id }, org.id);
   const now = new Date();
+  // Lo que el plan ya incluye no se ofrece: una vista previa no agrega nada (y la base la rechazaría).
+  const previewable = previewableFeatures(org.featurePreviews);
   const suspended = org.suspendedAt !== null;
   const datesState = accountState(org.periodEnd, false, now);
   const cycle = isBillingCycle(org.billingCycle) ? org.billingCycle : "monthly";
@@ -288,38 +290,56 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           Vistas previas de funciones
         </h2>
         <p className="mt-2 max-w-prose leading-relaxed text-muted">
-          Habilitan una función nueva a este local, con fin obligatorio (hasta {MAX_PREVIEW_DAYS} días) y motivo. Se suman a las del plan; si la cuenta está en mora
-          o suspendida, la mora manda. El Dueño no ve la vista previa ni el motivo. Una función solo responde cuando ya está construida.
+          Habilitan una función nueva a este local por hasta {MAX_PREVIEW_DAYS} días, con motivo. La mora manda; el Dueño no las ve.
         </p>
-        <ul className="mt-3 divide-y divide-ink/15">
-          {org.featurePreviews.map((item) => (
-            <li key={item.feature} data-testid="vista-previa" data-feature={item.feature} data-active={item.preview?.active ? "true" : "false"} className="py-5">
-              <h3 className="font-display text-xl">{PREVIEW_FEATURE_LABEL[item.feature]}</h3>
-              <p className="mt-1 text-base break-words" data-testid="vista-previa-estado">
-                {item.inPlan
-                  ? "Ya la incluye el plan."
-                  : item.preview === null
-                    ? "Sin vista previa."
-                    : item.preview.active
-                      ? `Vigente hasta el ${formatDateWithYear(item.preview.endsAt)} · motivo: ${item.preview.reason}`
-                      : `Terminó el ${formatDateWithYear(item.preview.endsAt)} · motivo: ${item.preview.reason}`}
-              </p>
-              {item.inPlan ? null : (
-                <>
-                  <FeaturePreviewForm
-                    slug={org.slug}
-                    feature={item.feature}
-                    active={item.preview?.active === true}
-                    endsOn={item.preview?.active ? todayInArgentina(new Date(item.preview.endsAt)) : ""}
-                    minDate={todayInArgentina(now)}
-                    maxDate={todayInArgentina(new Date(now.getTime() + (MAX_PREVIEW_DAYS - 1) * DAY_MS))}
-                  />
-                  {item.preview?.active ? <EndFeaturePreviewForm slug={org.slug} feature={item.feature} name={PREVIEW_FEATURE_LABEL[item.feature]} /> : null}
-                </>
-              )}
-            </li>
-          ))}
-        </ul>
+        {previewable.length === 0 ? (
+          <p className="mt-3 max-w-prose text-base text-muted" data-testid="vistas-previas-vacio">
+            El plan de esta organización ya incluye todas las funciones nuevas: no hay nada que habilitar.
+          </p>
+        ) : (
+          <ul className="mt-3 divide-y divide-ink/15">
+            {previewable.map((item) => {
+              const active = item.preview?.active === true;
+              return (
+                <li key={item.feature} data-testid="vista-previa" data-feature={item.feature} data-active={active ? "true" : "false"}>
+                  <details>
+                    <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center justify-between gap-x-4 gap-y-1 py-3 [&::-webkit-details-marker]:hidden">
+                      <span className="min-w-0">
+                        <span className="block font-display text-lg">{PREVIEW_FEATURE_LABEL[item.feature]}</span>
+                        <span className="block text-base break-words" data-testid="vista-previa-estado">
+                          {item.preview === null ? (
+                            <span className="text-muted">Sin vista previa</span>
+                          ) : (
+                            <>
+                              <span className={active ? "font-medium" : "text-muted"}>
+                                {active ? "Vigente hasta el" : "Terminó el"} {formatDateWithYear(item.preview.endsAt)}
+                              </span>
+                              <span className="block text-sm text-muted">motivo: {item.preview.reason}</span>
+                            </>
+                          )}
+                        </span>
+                      </span>
+                      <span className="text-base text-cobalt underline underline-offset-2">
+                        {active ? "Cambiar el fin o terminar" : item.preview === null ? "Habilitar" : "Volver a habilitar"}
+                      </span>
+                    </summary>
+                    <div className="pb-4">
+                      <FeaturePreviewForm
+                        slug={org.slug}
+                        feature={item.feature}
+                        active={active}
+                        endsOn={active && item.preview ? todayInArgentina(new Date(item.preview.endsAt)) : ""}
+                        minDate={todayInArgentina(now)}
+                        maxDate={todayInArgentina(new Date(now.getTime() + (MAX_PREVIEW_DAYS - 1) * DAY_MS))}
+                      />
+                      {active ? <EndFeaturePreviewForm slug={org.slug} feature={item.feature} name={PREVIEW_FEATURE_LABEL[item.feature]} /> : null}
+                    </div>
+                  </details>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </section>
 
       <section aria-labelledby="seccion-suspension" className="panel-cell mt-6">

@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { purgeAuditLogWhere } from "../tests/rls/purge-price-history";
 import { todayInArgentina } from "../src/lib/admin/validation";
 import { SEED_PASSWORD, alerta, createTenant, expectNoHorizontalOverflow, login, service } from "./support";
@@ -15,6 +15,13 @@ const detalle = (slug: string) => `/admin/organizaciones/${slug}`;
 const enDias = (dias: number) => todayInArgentina(new Date(Date.now() + dias * DIA_MS));
 const funcion = (page: Page, clave: string) => page.getByTestId("vistas-previas").locator(`[data-feature="${clave}"]`);
 
+/** Abre la fila (el acordeón) si no está abierta: tras guardar, React puede dejarla como estaba. */
+async function abrir(fila: Locator) {
+  const detalles = fila.locator("details").first();
+  if ((await detalles.getAttribute("open")) === null) await detalles.locator("summary").first().click();
+  await expect(detalles).toHaveAttribute("open", "");
+}
+
 const limpiarAuditoria = (orgId: string) => purgeAuditLogWhere(`organization_id = '${orgId}'`);
 
 test.describe("vistas previas de funciones", () => {
@@ -24,10 +31,16 @@ test.describe("vistas previas de funciones", () => {
       await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(t.slug));
       const pedidos = funcion(page, "orders");
       await expect(page.getByTestId("vistas-previas").getByTestId("vista-previa")).toHaveCount(4);
-      await expect(pedidos.getByTestId("vista-previa-estado")).toHaveText("Sin vista previa.");
+      await expect(pedidos.getByTestId("vista-previa-estado")).toHaveText("Sin vista previa");
+      // Las cuatro filas entran sin scroll largo: los formularios están plegados hasta que se pide uno.
+      await expect(pedidos.locator("#preview-fin-orders")).toBeHidden();
       await expectNoHorizontalOverflow(page);
+      // Plegadas, las cuatro filas ocupan poco: no hay que bajar mucho para verlas todas.
+      const alto = (await page.getByTestId("vistas-previas").boundingBox())!.height;
+      expect(alto).toBeLessThan(480);
 
       // Sin motivo no se envía (el campo es obligatorio); con fin y motivo, queda vigente.
+      await abrir(pedidos);
       await pedidos.locator("#preview-fin-orders").fill(enDias(14));
       await pedidos.locator("#preview-motivo-orders").fill("Piloto con el local");
       await pedidos.getByRole("button", { name: "Habilitar función" }).click();
@@ -48,13 +61,15 @@ test.describe("vistas previas de funciones", () => {
       await dueno.close();
 
       // Cambiar el fin.
+      await abrir(pedidos);
       await pedidos.locator("#preview-fin-orders").fill(enDias(30));
       await pedidos.locator("#preview-motivo-orders").fill("Se extiende el piloto");
       await pedidos.getByRole("button", { name: "Cambiar el fin" }).click();
       await expect(pedidos.getByTestId("vista-previa-estado")).toContainText("motivo: Se extiende el piloto");
       await expect(page.getByTestId("auditoria").filter({ hasText: "Vista previa de función modificada" })).toBeVisible();
 
-      // Terminarla.
+      // Terminarla (la fila se plegó al guardar).
+      await abrir(pedidos);
       await pedidos.getByText("Terminar la vista previa de Pedidos del mozo").click();
       await pedidos.locator("#preview-fin-motivo-orders").fill("Terminó el piloto");
       await pedidos.getByRole("button", { name: "Terminar vista previa" }).click();
@@ -62,6 +77,7 @@ test.describe("vistas previas de funciones", () => {
       await expect(pedidos).toHaveAttribute("data-active", "false");
       await expect(page.getByTestId("auditoria").filter({ hasText: "Vista previa de función finalizada" })).toContainText("motivo: Terminó el piloto");
       await expect(pedidos.getByText("Terminar la vista previa de Pedidos del mozo")).toHaveCount(0);
+      await expect(pedidos.getByText("Volver a habilitar")).toBeVisible();
     } finally {
       await limpiarAuditoria(t.orgId);
       await t.cleanup();
@@ -74,12 +90,13 @@ test.describe("vistas previas de funciones", () => {
       await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(t.slug));
       const promos = funcion(page, "promotions");
       // Pasado el tope de 90 días: el navegador lo marca inválido (max) y no envía; saltamos esa barrera para ver el mensaje del servidor.
+      await abrir(promos);
       await promos.locator("#preview-fin-promotions").evaluate((el: HTMLInputElement) => el.removeAttribute("max"));
       await promos.locator("#preview-fin-promotions").fill(enDias(200));
       await promos.locator("#preview-motivo-promotions").fill("Demasiado largo");
       await promos.getByRole("button", { name: "Habilitar función" }).click();
       await expect(alerta(page)).toContainText("hasta 90 días");
-      await expect(promos.getByTestId("vista-previa-estado")).toHaveText("Sin vista previa.");
+      await expect(promos.getByTestId("vista-previa-estado")).toHaveText("Sin vista previa");
       expect((await service().from("organization_feature_previews").select("feature").eq("organization_id", t.orgId)).data).toEqual([]);
     } finally {
       await limpiarAuditoria(t.orgId);

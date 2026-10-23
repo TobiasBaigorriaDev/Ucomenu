@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AdminContext } from "./organizations";
-import { changePlan, endAddon, endFeaturePreview, isAddonActive, isVoidable, registerPayment, setAddon, setExtraBranches, setFeaturePreview, setOrganizationActive, setSuspension, voidPayment } from "./subscriptions";
+import { changePlan, endAddon, endFeaturePreview, isAddonActive, previewableFeatures, isVoidable, registerPayment, setAddon, setExtraBranches, setFeaturePreview, setOrganizationActive, setSuspension, voidPayment } from "./subscriptions";
 import { accountState, parseEntitlements, trialStatus, moraNotice } from "@/lib/entitlements";
 import { formatMoney } from "./format";
 import {
@@ -501,6 +501,14 @@ describe("vistas previas de funciones (ficha vistas-previas-de-funciones)", () =
     expect(await setFeaturePreview(ctx, entrada, NOW)).toEqual({ ok: true, data: undefined });
     expect(await endFeaturePreview(ctx, { slug: "local-1", feature: "orders", reason: "Fin" })).toEqual({ ok: true, data: undefined });
     expect(llamadas).toEqual(["admin_set_feature_preview", "admin_end_feature_preview"]);
+  });
+
+  it("previewableFeatures: no ofrece lo que el plan ya incluye", () => {
+    const fila = (feature: (typeof PREVIEW_FEATURES)[number], inPlan: boolean) => ({ feature, inPlan, preview: null });
+    const filas = [fila("orders", false), fila("promotions", true), fila("review_invite", false), fila("customers", true)];
+    expect(previewableFeatures(filas).map((f) => f.feature)).toEqual(["orders", "review_invite"]);
+    expect(previewableFeatures([fila("orders", true)])).toEqual([]);
+    expect(previewableFeatures([])).toEqual([]);
   });
 
   it("los errores de la base se traducen", async () => {

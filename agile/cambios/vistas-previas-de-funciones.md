@@ -10,7 +10,7 @@ Que el SuperAdmin habilite una función nueva a un local piloto antes de que lle
 2. **Entitlements:** `private.plan_grants(org, feature)` = features del plan **o** una vista previa con `ends_at > clock_timestamp()`. `has_feature` no cambia: la mora manda (gracia concede; solo lectura y suspendida no, porque esas claves no están entre las que se ven en solo lectura). `org_entitlements` suma las cuatro claves a la lista que informa.
 3. **Dos funciones, solo `service_role`:** `admin_set_feature_preview(actor, org, función, fin, motivo)` (alta o cambio de fin) y `admin_end_feature_preview(actor, org, función, motivo)`. Recomprueban al actor, bloquean la suscripción (se serializan con plan, pagos y add-ons) y escriben `audit_log` en la misma transacción: `feature_preview.started | changed | ended`, con motivo.
 4. **Reglas:** fin obligatorio, futuro y de hasta **90 días** (la aplicación lo escribe como fecha, vale hasta las 23:59 de Argentina; la base deja un día de margen). Motivo de 1 a 200 caracteres. Si el plan ya incluye la función, `feature_in_plan`; si la vista previa vigente ya vence en ese fin, `preview_unchanged`; terminar una no vigente, `preview_not_active`. Terminada o vencida, la fila se conserva y se puede volver a habilitar.
-5. **Ficha del SuperAdmin:** bloque «Vistas previas de funciones» con las cuatro funciones, su estado (sin vista previa / vigente hasta / terminó) y el formulario de fin y motivo; terminar va plegado. Sin el bloque en el panel del Dueño.
+5. **Ficha del SuperAdmin:** bloque «Vistas previas de funciones» compacto: una fila plegable por función con su estado (sin vista previa / vigente hasta / terminó) y, al abrirla, el formulario de fin y motivo y el de terminar. No se ofrecen las funciones que el plan ya incluye; si el plan las incluye todas, el bloque lo dice. Sin el bloque en el panel del Dueño.
 6. **Lo que NO hace todavía:** ninguna de las cuatro funciones existe aún, así que la vista previa solo se observa en `has_feature` y `org_entitlements`. El bloque lo dice. `review_invite` no se cableó a la invitación ya implementada (hoy depende del plan).
 
 ## Aceptación
@@ -33,6 +33,7 @@ Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 - Unitarias: validación, rechazos antes de la base y traducción de errores (`src/lib/admin`, 120 en verde).
 - E2E contra el build: `superadmin-vistas-previas` 2/2 (habilitar, cambiar el fin, terminar; el Dueño no ve nada; fin fuera de rango) más `superadmin-sucursal-adicional` y `superadmin-addons-baja` en verde.
 - Staging (2026-10-23): `supabase db push --dry-run` mostró solo `20261121100000` y `supabase db push` la aplicó a `ucomenu-staging`; un nuevo `--dry-run` confirma que la base está al día. Commits en `origin/main` (`b87bacb`); Fly `ucomenu-staging` versión 36 (imagen `deployment-01M5N8G3P1FT9WCSFY8N7J2NX5`, marcha atrás: `fly deploy -c fly.staging.toml --image` con la de la v35). `/`, `/login`, `/terminos` y `/privacidad` responden 200 y `/admin` redirige al login.
+- Ajuste de interfaz (2026-10-23, solo local; sin desplegar): filas plegables (el bloque a 390 px mide menos de 480 px) y `previewableFeatures` oculta lo que el plan ya incluye (unitaria). `superadmin-vistas-previas` 2/2 y `superadmin-sucursal-adicional` 3/3 contra el build.
 - Sin probar: el bloque con sesión real de SuperAdmin en staging.
 
 ## (C) Invariantes

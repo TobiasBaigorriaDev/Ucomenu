@@ -434,6 +434,11 @@ export type FeaturePreviewRow = {
   preview: { endsAt: string; reason: string; active: boolean } | null;
 };
 
+/** Las funciones que de verdad se pueden habilitar: las que el plan ya incluye no se ofrecen (la base también las rechazaría). */
+export function previewableFeatures(rows: FeaturePreviewRow[]): FeaturePreviewRow[] {
+  return rows.filter((row) => !row.inPlan);
+}
+
 export type PaymentRow = {
   id: string;
   createdAt: string;
