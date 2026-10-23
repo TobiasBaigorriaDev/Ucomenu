@@ -1,5 +1,5 @@
 # Cambio: Vistas previas de funciones por organización
-Estado: **implementado, verificado en local, aprobado por Codex y por el usuario; migración en staging (2026-10-23); la interfaz aún no está desplegada ahí**.
+Estado: **implementado, verificado en local, aprobado por Codex y por el usuario; migración y app en staging (2026-10-23, Fly versión 36)**.
 Nivel: C (autorización: habilita funciones fuera del plan que paga la organización)
 
 ## Objetivo
@@ -32,8 +32,8 @@ Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 - Corrida completa de `pnpm test:rls` (54 archivos): 1193 de 1193 en verde.
 - Unitarias: validación, rechazos antes de la base y traducción de errores (`src/lib/admin`, 120 en verde).
 - E2E contra el build: `superadmin-vistas-previas` 2/2 (habilitar, cambiar el fin, terminar; el Dueño no ve nada; fin fuera de rango) más `superadmin-sucursal-adicional` y `superadmin-addons-baja` en verde.
-- Staging (2026-10-23): `supabase db push --dry-run` mostró solo `20261121100000` y `supabase db push` la aplicó a `ucomenu-staging`; un nuevo `--dry-run` confirma que la base está al día. No se desplegó la app en Fly ni se probó nada contra staging.
-- Sin probar: la interfaz con sesión real de SuperAdmin (hace falta desplegar la app a staging).
+- Staging (2026-10-23): `supabase db push --dry-run` mostró solo `20261121100000` y `supabase db push` la aplicó a `ucomenu-staging`; un nuevo `--dry-run` confirma que la base está al día. Commits en `origin/main` (`b87bacb`); Fly `ucomenu-staging` versión 36 (imagen `deployment-01M5N8G3P1FT9WCSFY8N7J2NX5`, marcha atrás: `fly deploy -c fly.staging.toml --image` con la de la v35). `/`, `/login`, `/terminos` y `/privacidad` responden 200 y `/admin` redirige al login.
+- Sin probar: el bloque con sesión real de SuperAdmin en staging.
 
 ## (C) Invariantes
 - Solo `service_role`, desde una acción de SuperAdmin, escribe vistas previas, y siempre con `audit_log` en la misma transacción.
