@@ -1,5 +1,5 @@
 # Cambio: Feed vertical de videos en la carta pública
-Estado: **en staging** (Fly + migración, aprobado por el usuario); probado con Chrome real contra Mux; aprobado por Codex en 3 rondas; falta la prueba en Safari/iPhone. Sigue a la [carga y publicación de videos](videos-mux-parte-b.md) (hecha y en staging).
+Estado: **hecho** (2026-10-22): en staging (Fly + migración), aprobado por Codex en 5 rondas y probado por el usuario en su teléfono («funciona bien»; el panel «Ver plato» se ajustó a su gusto). Pendiente solo lo listado en «No probado». Sigue a la [carga y publicación de videos](videos-mux-parte-b.md).
 Nivel: **C** — el tablero lo traía como M, pero abre **lectura pública (`anon`)** de una tabla que hasta hoy era privada y la condiciona al plan y a la mora (exposición de información a anónimos y dinero: el feed es de Premium). La parte de pantalla es M.
 
 ## Objetivo
@@ -25,7 +25,7 @@ Que el comensal vea los videos publicados del local en un feed vertical (un vide
 - [x] «Ver plato» aparece solo con un plato visible en esa sucursal y abre su nombre, precio y descripción.
 - [x] Desde la mesa, el feed conserva la barra de llamado (llamar al mozo y pedir la cuenta funcionan), no la tapa y «Volver» regresa a la carta de la mesa; sin mesa no hay barra.
 - [x] Funciona en es/en/pt, con `prefers-reduced-motion`, a 390 px y por teclado (flechas, espacio, Esc); cuenta suspendida y sucursal desactivada dan el mismo «no disponible» que la carta.
-- [ ] Reproducción real comprobada en Safari/iPhone (HLS nativo) y en Chrome (`hls.js`) con un asset de Mux de staging. *(Chrome hecho; falta iPhone.)*
+- [x] Reproducción real comprobada con un asset de Mux de staging: Chrome 155 (`hls.js` por el fallback) y el teléfono del usuario (la entrada por el QR de la mesa).
 
 ## Fuera de alcance
 Likes y comentarios, reordenar videos, subtítulos, estadísticas de reproducción, precarga más agresiva o CDN propio.
@@ -55,11 +55,12 @@ Local (Supabase local + `next dev` en :3200 con los hosts de Mux interceptados),
 - **Staging (2026-10-22, con aprobación del usuario):** migración `20261113100000` aplicada con `db push` y app desplegada en Fly. Con la clave pública, un anónimo lee las columnas públicas del video publicado y recibe `42501` al pedir `status`. Para probar se **publicó el único video** (borrador listo de 4,3 s, «Vhkkk») de `cafe-de-ensayo` (Premium); se despublica desde el panel.
 - **Hallazgo de la prueba real (Chrome 155):** el navegador responde «maybe» a `canPlayType` de HLS, descarga el manifiesto y los segmentos, pero el video falla con `MEDIA_ERR_SRC_NOT_SUPPORTED` (el feed mostraba el aviso de error). Corregido: se intenta HLS nativo y, si el video da error, se suelta la fuente y se reintenta con `hls.js`. Regresión E2E (falla sin el fallback, comprobado); `feed-videos` 11/11.
 - **Chrome 155 real contra Mux, tras el arreglo:** el video avanza (3,1 s), 480×854, sin error; la carta sola no hace ningún pedido a Mux.
-- No probado todavía: Safari/iPhone (HLS nativo) y Firefox.
+- **Prueba del usuario (2026-10-22), en su teléfono, desde `/t/{token}` de «Mesa 1» de `cafe-de-ensayo`:** el feed funciona; encontró que desaparecía el llamado al mozo (decisión 10, corregido) y que el panel «Ver plato» se veía feo por el aire entre la descripción y los botones: pasó a una **tarjeta flotante** con el margen de la barra de llamado (`b3c9caa`, solo estilo; E2E 14/14); dijo que le gustó.
+- No probado: Firefox, Safari de escritorio y Android; la reproducción con varios videos (en staging hay uno solo, el deslizado se probó con E2E); el feed en el idioma inglés y portugués con Mux real (textos revisados por prueba unitaria).
 
 ## (C) Revisión y aprobación
 - Ronda 1 (Codex, sobre `737df04`, informe `output/revisiones/2026-10-22T03-53-33-commit-HEAD.md`): aprobar con cambios; un hallazgo **importante**: tras un `NotAllowedError` del arranque solo, el primer toque en «Reproducir» no volvía a llamar a `play()` (el botón desaparecía con el video pausado). Corregido: `play()` se pide dentro del gesto del toque (también lo exige Safari/iOS) y sigue «bloqueado» hasta que el navegador acepte. Regresión E2E «si el navegador bloquea el arranque solo…» (falla sin el arreglo, comprobado). `feed-videos` queda en 10/10.
 - Ronda 2 (Codex, verificación sobre `2223b32`, informe `output/revisiones/2026-10-22T03-59-43-commit-HEAD.md`): **APROBAR**, sin hallazgos nuevos; el hallazgo previo queda corregido.
 - Ronda 3 (Codex, verificación sobre `5c052c6`, informe `output/revisiones/2026-10-22T04-12-32-commit-HEAD.md`): **APROBAR**, sin hallazgos; cubre el fallback a `hls.js` (ejecución única, cancelación y limpieza al cambiar de video).
 - Ronda 4 (Codex, sobre `0a52a84`, el feed bajo `/t/{token}/videos`; informe `output/revisiones/2026-10-23T00-36-40-commit-HEAD.md`): aprobar con cambios; un hallazgo **importante**: la barra de llamado crece al mostrar su confirmación y, con el alto reservado fijo, invadía el pie del video. Corregido midiendo la barra real (`ResizeObserver`); la prueba ahora también comprueba el estado con mensaje (falla sin la medición, comprobado). Ronda 5 (verificación sobre `62b250e`, informe `output/revisiones/2026-10-23T00-42-45-commit-HEAD.md`): **APROBAR**, sin hallazgos.
-- Despliegue a staging: aprobado por el usuario el 2026-10-22. Aprobación final del ítem: a la espera de la prueba en iPhone.
+- Despliegue a staging: aprobado por el usuario el 2026-10-22. **Aprobación final del ítem: el usuario, tras probarlo (2026-10-22).** La ronda 4 y su verificación (ronda 5) cubren el feed de la mesa; el ajuste de estilo del panel no tuvo revisión (solo estilo, sin permisos ni datos).

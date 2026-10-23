@@ -4,23 +4,26 @@ Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-La carga y publicación de videos con Mux (ADR 0031) está hecha y en `origin/main`. El **feed vertical de videos en la carta** (nivel C, [ficha](cambios/feed-de-videos.md)) está **en staging**: migración `20261113100000` aplicada y app desplegada en Fly por orden del usuario. Codex lo aprobó en 3 rondas, y la última cubrió el fallback a `hls.js`.
+La **fase 2 llegó al feed**: carga y publicación de videos con Mux (ADR 0031) y feed vertical en la carta están **hechos y en staging** (Fly con la migración `20261113100000`). El usuario probó el feed desde el QR de la mesa y le gustó. Ver [ficha](cambios/feed-de-videos.md).
 
-La prueba real lo mejoró dos veces. Chrome 155 anuncia HLS nativo y lo rechaza, así que el feed cae a `hls.js` si el video da error (Chrome reprodujo el video de Mux en staging). Además, al entrar al feed desde la mesa desaparecía el llamado al mozo: ahora existe `/t/{token}/videos`, que conserva la barra de llamado y mide su alto real. Codex aprobó ambos cambios (5 rondas en total).
+El feed vive también bajo `/t/{token}/videos` y conserva la barra de llamado. Intenta HLS nativo y cae a `hls.js` si el video da error.
 
-Hay commits locales sin `git push` desde `737df04` hasta el último de esta tanda (feed, fallback a `hls.js`, feed de la mesa).
+No hay trabajo a medias. Hay **11 commits locales sin `git push`** (desde `737df04` hasta `b3c9caa`, más el de esta documentación). Falta decidir con el usuario si se suben a `origin/main`.
 
 ## Bloqueos y límites
 
-- Falta probar el feed en **Safari/iPhone** (HLS nativo) y en Firefox. Android sigue sin probarse (subida de videos).
-- Para esta prueba se publicó el único video, «Vhkkk», de `cafe-de-ensayo` (Premium). Se despublica desde el panel.
-- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y `mesas.spec:74` (la «Mesa 3» quedó activa).
-- Con `next dev`, el indicador de Next («1 Insight») tapa botones y bloquea clics en varias E2E; contra el build pasan. `next dev` y `next build` se detienen una vez para mostrar un aviso de actualización y arrancan al reintentar.
+- Sin probar: Firefox, Safari de escritorio y Android (también la subida de videos). Está listado en «Para verificar» del tablero.
+- En staging está publicado el video «Vhkkk» de `cafe-de-ensayo`, solo para la prueba; se despublica desde el panel.
+- Con `next dev`, el indicador de Next («1 Insight») tapa botones y bloquea clics en varias E2E; contra el build (`pnpm build` y `pnpm test:e2e`) pasan. `next dev` y `next build` se detienen una vez para mostrar un aviso de actualización y arrancan al reintentar. No se actualizó Next.
+- La base local tiene datos de escenarios extra: fallan 15 pruebas RLS y `mesas.spec:74` (la «Mesa 3» quedó activa). `pnpm db:reset` lo restablece.
+- `tools/escenarios-locales.mjs` es una herramienta local sin versionar, ajena al feed.
 - La producción sigue bloqueada (dominio, etc.).
 
 ## Próximo paso
 
-1. El usuario prueba en su iPhone el feed desde el QR de la mesa (`/t/{token}` de «Mesa 1» de `cafe-de-ensayo`): sonido, deslizar, volver y que «Llamar al mozo» / «Pedir la cuenta» sigan en el feed. Con ese resultado se cierra el ítem.
-2. Decidir con el usuario el `git push` de `main` a `origin`.
+Elegir del tablero, por valor y riesgo. Los dos que siguen son nivel C (ficha, tests de RLS, una revisión independiente y aprobación humana):
 
-Después: likes anónimos (C), comentarios con aprobación (C) y los textos legales (S).
+1. **Likes anónimos desde la mesa.** El feed de la mesa ya existe, así que está desbloqueado. Pide una función pública única de base con el ticket de visita (como `create_waiter_call`), un voto por dispositivo y video, límite por cliente y ningún dato del comensal. Decisiones a tomar: botón y conteo en el feed, y qué ve quien entra sin mesa.
+2. **Comentarios con aprobación previa.** Conviene hacerlos después de los likes, que prueban la función pública. Falta la cola de moderación.
+
+Antes de producción también hace falta el ítem S de textos legales. Como comprobación aparte, está el ítem S de pruebas en un Android real y en otros navegadores.

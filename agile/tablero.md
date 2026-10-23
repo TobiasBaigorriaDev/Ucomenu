@@ -6,7 +6,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
-Actualizado: 2026-10-21. «Hecho» indica alcance implementado e integrado; las comprobaciones manuales pendientes se listan aparte. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
+Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las comprobaciones manuales pendientes se listan aparte. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
 
 ## En curso
 
@@ -19,12 +19,12 @@ Actualizado: 2026-10-21. «Hecho» indica alcance implementado e integrado; las 
 ## Para verificar
 
 - [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
+- [S] Probar en un Android real la subida de videos desde el panel y el feed (también en Firefox y en Safari de escritorio) — sin resultado; el feed se probó en Chrome y en el teléfono del usuario → [ficha](cambios/feed-de-videos.md)
 - [S] Ticket de visita en teléfono real: volver a la carta tras más de 3 h con la pantalla apagada y comprobar nuevo escaneo y recuperación de pestañas descartadas — sin resultado registrado del ensayo iniciado el 2026-10-19 → [ficha](cambios/ticket-de-visita.md)
 
 ## Bloqueado
 
 - [M] Salida a producción — preparación y staging hechos; faltan dominio, proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
-- [C] ~~Carga y publicación de videos desde el panel con Mux~~ — **hecho** (partes A y B aprobadas por Codex, en staging, Fly v21; probado con un iPhone 16 y un `.mov` HEVC; Android sin probar) → [parte A](cambios/videos-del-panel-base.md) · [parte B](cambios/videos-mux-parte-b.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [S] Spike descartable de Apple Wallet y Google Wallet con ubicaciones — bloqueado por cuentas de Apple Developer y emisor de Google Wallet, aprobación y pago; valida ADR 0003 → [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md)
 
 ## Backlog
@@ -41,11 +41,10 @@ Actualizado: 2026-10-21. «Hecho» indica alcance implementado e integrado; las 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
-> Catálogo y elección de Mux en «Hecho»; carga y publicación en «Bloqueado» por su configuración externa.
+> Catálogo, elección de Mux, carga y publicación de videos y el feed están en «Hecho»; quedan likes, comentarios y textos legales.
 
-- [C] Feed vertical en la carta: scroll de a un video, carga y reproducción bajo demanda, enlace opcional al plato, comportamiento en solo lectura y suspendida — en staging, aprobado por Codex (3 rondas) y probado con Chrome real contra Mux; falta probarlo en un iPhone → [ficha](cambios/feed-de-videos.md)
-- [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (bloqueado por: feed)
-- [C] Comentarios con aprobación previa: envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, publicación y retención de los rechazados (bloqueado por: feed)
+- [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (el feed y la entrada por la mesa ya existen; falta decidir la forma de la interfaz en el feed)
+- [C] Comentarios con aprobación previa: envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, publicación y retención de los rechazados (el feed ya existe; conviene hacerlo después de los likes, que prueban la función pública)
 - [S] Textos legales: contenido publicado por comensales (comentarios) en `/terminos` y `/privacidad`, antes de habilitar comentarios en producción
 
 ### Fase 3 — Fidelización, Wallet y cercanía (plan Premium)
@@ -65,6 +64,8 @@ Actualizado: 2026-10-21. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [C] Feed vertical de videos en la carta, también desde la mesa (`/t/{token}/videos`, con la barra de llamado): lectura pública por política de base, `hls.js` con fallback; aprobado por Codex (5 rondas), en staging y probado por el usuario (2026-10-22); sin probar en Firefox, Safari de escritorio ni Android → [ficha](cambios/feed-de-videos.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [C] Carga y publicación de videos desde el panel con Mux: hecho (partes A y B aprobadas por Codex, en staging, Fly v21; probado con un iPhone 16 y un `.mov` HEVC; Android sin probar) → [parte A](cambios/videos-del-panel-base.md) · [parte B](cambios/videos-mux-parte-b.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Catálogo del feed: WebAR y `models_3d` retirados, contratos resueltos y SuperAdmin adaptado; `video_feed` en Premium y cupo de 10 publicados — aprobado, en `origin/main`, migración y app en staging (2026-10-21) → [ficha](cambios/catalogo-video-feed.md) · ADR 0031
 - [M] Edición de plato por tareas: datos y foto juntos en PC, pestañas y borradores conservados — hecho (desplegado en staging, Fly v18, 2026-10-21) → [ficha](cambios/editor-plato-ux.md)
 - [M] Selector de Sala: cambio directo de sucursal y selección múltiple explícita — hecho (desplegado en staging, Fly v18, 2026-10-21) → [ficha](cambios/selector-sucursal-directo.md)

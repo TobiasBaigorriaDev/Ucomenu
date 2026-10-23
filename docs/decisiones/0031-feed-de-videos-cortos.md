@@ -35,4 +35,5 @@ El comensal es anónimo y sin registro; la única escritura pública que existe 
 - El feed se carga bajo demanda; no puede penalizar el LCP de la carta (objetivo < 2,5 s en 4G).
 - Las funciones de add-ons de ADR 0025 (`admin_set_addon`, `admin_end_addon`) quedan sin add-ons en el catálogo; se conservan para futuros add-ons.
 - Premium se vende cuando se entregue lo que incluye (videos en la fase 2, fidelización en la fase 3); venderlo antes solo con videos sería una decisión comercial aparte.
+- **Reproductor (implementado, 2026-10-22):** `hls.js/light` por importación dinámica y solo si hace falta, en vez de `mux-player` (más pesado y con analítica propia). Se intenta primero HLS nativo y, si el video da error, se cae a `hls.js`: no se confía en `canPlayType` (Chrome 155 responde «maybe» y rechaza el stream). El feed existe también bajo `/t/{token}/videos` para no perder la mesa, y con ella el llamado al mozo y, más adelante, likes y comentarios.
 - Los incrementos de implementación son **C**: tocan el catálogo de planes (dinero), abren escrituras anónimas y publican contenido.
