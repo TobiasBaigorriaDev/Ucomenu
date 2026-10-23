@@ -3,9 +3,9 @@
 import { useRef } from "react";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { inputClass, labelClass } from "@/components/panel/styles";
-import { BRANCH_NAME_MAX, suggestSlug } from "@/lib/sucursales/rules";
+import { BRANCH_NAME_MAX, REVIEW_URL_MAX, suggestSlug } from "@/lib/sucursales/rules";
 import { SLUG_MAX_LENGTH } from "@/lib/slug";
-import { createBranchAction, renameBranchAction, setBranchActiveAction } from "./actions";
+import { createBranchAction, renameBranchAction, setBranchActiveAction, setBranchReviewLinkAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 const summaryButtonClass =
@@ -116,6 +116,66 @@ export function RenameBranchForm({
             </div>
             <div>
               <SubmitButton pendingLabel="Guardando…">Guardar nombre</SubmitButton>
+            </div>
+          </fieldset>
+        )}
+      </ActionForm>
+    </details>
+  );
+}
+
+/**
+ * Enlace de reseñas de Google de la sucursal. Vacío lo quita. Solo se aceptan direcciones https de Google; la base lo vuelve a
+ * comprobar. Es un dato de la carta pública: lo ve cualquiera que abra la carta de esta sucursal.
+ */
+export function ReviewLinkForm({
+  orgSlug,
+  id,
+  name,
+  link,
+  canWrite,
+}: {
+  orgSlug: string;
+  id: string;
+  name: string;
+  link: string | null;
+  canWrite: boolean;
+}) {
+  return (
+    <details>
+      <summary className={`${summaryButtonClass} ${summaryExtras}`} aria-label={`Enlace de reseñas de ${name}`}>
+        Enlace de reseñas
+      </summary>
+      <ActionForm action={setBranchReviewLinkAction} className="mt-3 max-w-md">
+        {(state) => (
+          <fieldset disabled={!canWrite} className="grid gap-3">
+            <input type="hidden" name="org" value={orgSlug} />
+            <input type="hidden" name="id" value={id} />
+            <div>
+              <label htmlFor={`sucursal-resenas-${id}`} className={labelClass}>
+                Enlace de reseñas de Google
+              </label>
+              <input
+                id={`sucursal-resenas-${id}`}
+                name="link"
+                type="url"
+                inputMode="url"
+                maxLength={REVIEW_URL_MAX}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="https://g.page/r/…/review"
+                aria-describedby={`sucursal-resenas-ayuda-${id}`}
+                defaultValue={state.values?.link ?? link ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+              <p id={`sucursal-resenas-ayuda-${id}`} className="mt-1 text-sm text-muted">
+                Pegá el enlace que te da Google al pedir reseñas (g.page, Google Maps o search.google.com). Solo se aceptan direcciones de Google. Vacío
+                lo quita.
+              </p>
+            </div>
+            <div>
+              <SubmitButton pendingLabel="Guardando…">Guardar enlace</SubmitButton>
             </div>
           </fieldset>
         )}

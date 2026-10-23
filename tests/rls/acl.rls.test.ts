@@ -26,6 +26,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   org_can_write: [true, false, true], // usada por políticas de escritura
   org_is_published: [true, true, true], // usada por las políticas de lectura pública (anon incluido)
   org_limit: [true, false, false],
+  org_extra_branches: [true, false, false], // sucursales adicionales vigentes (ficha sucursal-adicional): la usan org_limit y org_entitlements, ambas definer; sin EXECUTE para la API
   org_state: [true, false, false],
   plan_grants: [true, false, false],
   enforce_table_limit: [true, false, false], // trigger de tables (ADR 0006 / mesas y QR)
@@ -71,6 +72,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_delete_organization: [false, false], // SuperAdmin (ficha borrado-de-organizaciones, ADR 0028): borra definitivamente una organización dada de baja hace 30 días; solo service_role
   admin_end_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): finaliza un add-on vigente; solo service_role
   admin_set_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): activa un add-on o cambia packs y fin; solo service_role
+  admin_set_extra_branches: [false, false], // SuperAdmin (ficha sucursal-adicional, ADR 0039): cantidad de sucursales adicionales y sucursales a desactivar; solo service_role
   admin_set_organization_active: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones, ADR 0025): da de baja o reactiva una organización; solo service_role
   admin_change_plan: [false, false], // SuperAdmin (ficha superadmin-planes-pagos): solo service_role, desde la acción de servidor
   admin_create_organization: [false, false], // SuperAdmin (ADR 0013): solo service_role, desde la acción de servidor
@@ -258,6 +260,7 @@ describe("RLS y permisos de tablas", () => {
       ["admin_record_account_deleted", "f", "f", "f", "t"],
       ["admin_register_payment", "f", "f", "f", "t"],
       ["admin_set_addon", "f", "f", "f", "t"],
+      ["admin_set_extra_branches", "f", "f", "f", "t"],
       ["admin_set_organization_active", "f", "f", "f", "t"],
       ["admin_set_suspension", "f", "f", "f", "t"],
       ["admin_void_payment", "f", "f", "f", "t"],

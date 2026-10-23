@@ -104,6 +104,31 @@ export function parseExtraPacks(raw: unknown): number | null {
   return packs <= MAX_EXTRA_PACKS ? packs : null;
 }
 
+/** Sucursales adicionales que se pueden vender (ADR 0039): de 0 a 3. */
+export const MAX_EXTRA_BRANCHES = 3;
+
+/** Cantidad de sucursales adicionales: un entero de 0 a 3 («» cuenta como 0). `null` si no sirve. */
+export function parseExtraBranches(raw: unknown): number | null {
+  if (raw === undefined || raw === null) return 0;
+  if (typeof raw !== "string") return null;
+  const text = raw.trim();
+  if (text === "") return 0;
+  if (!/^\d$/.test(text)) return null;
+  const quantity = Number(text);
+  return quantity <= MAX_EXTRA_BRANCHES ? quantity : null;
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Sucursales elegidas para desactivar: ids sin repetir (a lo sumo 3). `null` si algún valor no es un id o hay repetidos. */
+export function parseBranchSelection(raw: unknown): string[] | null {
+  if (raw === undefined || raw === null) return [];
+  if (!Array.isArray(raw) || raw.length > MAX_EXTRA_BRANCHES) return null;
+  const ids = raw.map((value) => (typeof value === "string" ? value.trim().toLowerCase() : ""));
+  if (ids.some((id) => !UUID.test(id)) || new Set(ids).size !== ids.length) return null;
+  return ids;
+}
+
 /** Fin del add-on: opcional. `""` = sin fecha de fin; si no, la misma regla que «vigente hasta». `undefined` si no sirve. */
 export function parseAddonEnd(raw: unknown, now: Date): string | null | undefined {
   if (raw === undefined || raw === null) return null;

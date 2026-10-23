@@ -18,6 +18,8 @@ import {
   isPlanCode,
   parseAddonEnd,
   parseAmountToCents,
+  parseBranchSelection,
+  parseExtraBranches,
   parseExtraPacks,
   parsePaidOn,
   parsePeriodEnd,
@@ -69,6 +71,9 @@ const DB_ERRORS: Record<string, AdminError> = {
   addon_not_allowed: "addon_not_allowed",
   addon_unchanged: "addon_unchanged",
   addon_not_active: "addon_not_active",
+  branches_selection_invalid: "branches_selection_invalid",
+  extra_branches_must_end: "extra_branches_must_end",
+  addon_has_own_action: "addon_has_own_action",
   already_inactive: "already_inactive",
   already_active: "already_active",
   slug_mismatch: "slug_mismatch",
@@ -288,6 +293,40 @@ export async function endAddon(ctx: AdminContext, input: EndAddonInput): Promise
   return error ? dbFailure(error) : ok(undefined);
 }
 
+export type SetExtraBranchesInput = {
+  slug: unknown;
+  /** Cantidad como la escribe la persona («0» a «3»); 0 = finalizar. */
+  quantity: unknown;
+  /** Ids de las sucursales a desactivar cuando la baja deja más activas que el tope nuevo. */
+  deactivate: unknown;
+  reason: unknown;
+};
+
+/**
+ * Pone la cantidad de sucursales adicionales de una organización Pro (ficha sucursal-adicional, ADR 0039). Al bajar la
+ * cantidad, la base exige desactivar exactamente las sucursales que sobran y que la persona eligió; nunca decide sola.
+ */
+export async function setExtraBranches(ctx: AdminContext, input: SetExtraBranchesInput): Promise<Result> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  const quantity = parseExtraBranches(input.quantity);
+  if (quantity === null) return fail("invalid_extra_branches");
+  const selection = parseBranchSelection(input.deactivate);
+  if (selection === null) return fail("branches_selection_invalid");
+  const reason = parseReason(input.reason);
+  if (!reason) return fail("invalid_reason");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const { error } = await ctx.admin.rpc("admin_set_extra_branches", {
+    p_actor: ctx.actorId,
+    p_org: org.data,
+    p_quantity: quantity,
+    p_deactivate: selection,
+    p_reason: reason,
+  });
+  return error ? dbFailure(error) : ok(undefined);
+}
+
 // ---------------------------------------------------------------------------
 // Lectura: detalle de una organización
 // ---------------------------------------------------------------------------
@@ -309,6 +348,21 @@ export type AddonRow = {
 export function isAddonActive(endsAt: string | null, now: Date): boolean {
   return endsAt === null || new Date(endsAt).getTime() > now.getTime();
 }
+
+/** Sucursales adicionales de la organización (ficha sucursal-adicional); `null` en el detalle si el catálogo no las ofrece. */
+export type ExtraBranchesRow = {
+  /** ¿Lo admite el plan actual? Solo Pro. */
+  allowedByPlan: boolean;
+  /** Sucursales adicionales vigentes. */
+  quantity: number;
+  max: number;
+  priceCents: number;
+  currency: string;
+  /** Tope de sucursales del plan sin adicionales (`null` = sin tope). */
+  planBranches: number | null;
+  /** Sucursales activas, para elegir cuáles se desactivan. */
+  activeBranches: { id: string; name: string; slug: string }[];
+};
 
 export type PaymentRow = {
   id: string;
@@ -354,6 +408,7 @@ export type OrganizationDetail = {
   trial: TrialStatus;
   payments: PaymentRow[];
   addons: AddonRow[];
+  extraBranches: ExtraBranchesRow | null;
   audit: AuditEntry[];
 };
 
@@ -380,7 +435,7 @@ export async function getOrganizationDetail(
   if (org.error) return fail("unexpected");
   if (!org.data) return fail("org_not_found");
 
-  const [sub, owners, payments, audit, catalog, contracted, lifecycle] = await Promise.all([
+  const [sub, owners, payments, audit, catalog, contracted, lifecycle, activeBranches, plans] = await Promise.all([
     ctx.admin
       .from("subscriptions")
       .select("plan_code, billing_cycle, trial_ends_at, current_period_end, suspended_at")
@@ -395,7 +450,10 @@ export async function getOrganizationDetail(
       .order("id", { ascending: false })
       .limit(PAYMENTS_LIMIT),
     listAuditLog(ctx, { organizationId: org.data.id }),
-    ctx.admin.from("addons").select("code, name, base_model_quota, pack_size, allowed_plans").order("code"),
+    ctx.admin
+      .from("addons")
+      .select("code, name, base_model_quota, pack_size, allowed_plans, grants_limit, quota_per_pack, max_packs, price_cents, currency")
+      .order("code"),
     ctx.admin.from("subscription_addons").select("addon_code, extra_packs, ends_at").eq("organization_id", org.data.id),
     // Último evento de ciclo de vida (baja o reactivación): de cuándo corre el plazo del borrado. No depende de AUDIT_LIMIT.
     ctx.session
@@ -406,15 +464,29 @@ export async function getOrganizationDetail(
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(1),
+    ctx.admin.from("branches").select("id, name, slug").eq("organization_id", org.data.id).eq("is_active", true).order("name").order("id"),
+    ctx.admin.from("plans").select("code, max_branches"),
   ]);
-  if (sub.error || !sub.data || owners.error || payments.error || !audit.ok || catalog.error || contracted.error || lifecycle.error) {
+  if (
+    sub.error ||
+    !sub.data ||
+    owners.error ||
+    payments.error ||
+    !audit.ok ||
+    catalog.error ||
+    contracted.error ||
+    lifecycle.error ||
+    activeBranches.error ||
+    plans.error
+  ) {
     return fail("unexpected");
   }
   const lastLifecycle = lifecycle.data[0];
   const deactivatedAt = !org.data.is_active && lastLifecycle?.action === "organization.deactivated" ? lastLifecycle.created_at : null;
 
   const planCode = sub.data.plan_code;
-  const addons: AddonRow[] = catalog.data.map((a) => {
+  // Los add-ons que conceden un límite tienen su propia acción y su propio bloque (no pasan por el formulario genérico).
+  const addons: AddonRow[] = catalog.data.filter((a) => a.grants_limit === null).map((a) => {
     const row = contracted.data.find((c) => c.addon_code === a.code);
     return {
       code: a.code,
@@ -433,6 +505,21 @@ export async function getOrganizationDetail(
         : null,
     };
   });
+
+  const extraAddon = catalog.data.find((a) => a.grants_limit === "branches");
+  const extraContract = extraAddon ? contracted.data.find((c) => c.addon_code === extraAddon.code) : undefined;
+  const extraBranches: ExtraBranchesRow | null =
+    extraAddon && extraAddon.quota_per_pack !== null && extraAddon.max_packs !== null && extraAddon.price_cents !== null && extraAddon.currency !== null
+      ? {
+          allowedByPlan: extraAddon.allowed_plans.includes(planCode),
+          quantity: extraContract && isAddonActive(extraContract.ends_at, now) ? Math.min(extraContract.extra_packs, extraAddon.max_packs) * extraAddon.quota_per_pack : 0,
+          max: extraAddon.max_packs * extraAddon.quota_per_pack,
+          priceCents: extraAddon.price_cents,
+          currency: extraAddon.currency,
+          planBranches: plans.data.find((p) => p.code === planCode)?.max_branches ?? null,
+          activeBranches: activeBranches.data,
+        }
+      : null;
 
   // El pago que define la vigencia actual es el que se puede anular: tiene que estar en la lista aunque los últimos
   // PAYMENTS_LIMIT (vigentes y anulados) lo hayan dejado afuera (p. ej. tras muchas correcciones).
@@ -501,6 +588,7 @@ export async function getOrganizationDetail(
       voided: voidedById.get(p.id) ?? null,
     })),
     addons,
+    extraBranches,
     audit: audit.data,
   });
 }

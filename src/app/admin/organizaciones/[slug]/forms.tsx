@@ -11,6 +11,7 @@ import {
   endAddonAction,
   registerPaymentAction,
   setAddonAction,
+  setExtraBranchesAction,
   setOrganizationActiveAction,
   setSuspensionAction,
   voidPaymentAction,
@@ -375,6 +376,102 @@ export function AddonForm({
           </div>
           <div>
             <SubmitButton pendingLabel="Guardando…">{active ? "Guardar cambios" : "Activar add-on"}</SubmitButton>
+          </div>
+        </>
+      )}
+    </ActionForm>
+  );
+}
+
+/**
+ * Sucursales adicionales (ficha sucursal-adicional, ADR 0039): la cantidad vigente, el motivo y, si bajarla deja más
+ * sucursales activas que el tope nuevo, la elección de cuáles se desactivan. La cuenta es la misma que hace la base
+ * (`max(0, min(baja, activas − tope nuevo))`); la base valida de nuevo y se niega si la selección no coincide.
+ */
+export function ExtraBranchesForm({
+  slug,
+  quantity,
+  max,
+  planBranches,
+  activeBranches,
+}: {
+  slug: string;
+  quantity: number;
+  max: number;
+  planBranches: number | null;
+  activeBranches: { id: string; name: string; slug: string }[];
+}) {
+  const [target, setTarget] = useState(String(quantity));
+  const next = /^\d$/.test(target) ? Number(target) : quantity;
+  const required =
+    planBranches === null ? 0 : Math.max(0, Math.min(quantity - next, activeBranches.length - (planBranches + next)));
+  return (
+    <ActionForm action={setExtraBranchesAction} className="mt-4 grid max-w-md gap-4">
+      {(state) => (
+        <>
+          <input type="hidden" name="slug" value={slug} />
+          <div>
+            <label htmlFor="extra-cantidad" className={labelClass}>
+              Sucursales adicionales
+            </label>
+            <input
+              id="extra-cantidad"
+              name="quantity"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={max}
+              step={1}
+              required
+              aria-describedby="extra-cantidad-hint"
+              value={target}
+              onChange={(event) => setTarget(event.target.value)}
+              className={`${inputClass} mt-1`}
+            />
+            <p id="extra-cantidad-hint" className="mt-1 text-sm text-muted">
+              De 0 a {max}. Poner 0 las finaliza. Se cobran junto con la suscripción.
+            </p>
+          </div>
+          {required > 0 ? (
+            <fieldset data-testid="extra-desactivar" className="grid gap-2">
+              <legend className={labelClass}>
+                Elegí {required === 1 ? "la sucursal que se desactiva" : `las ${required} sucursales que se desactivan`}
+              </legend>
+              <p className="text-sm text-muted">
+                Con ese cupo sobran sucursales activas. Desactivar no borra nada: conservan mesas, QR, alias e historial y el Dueño las puede
+                reactivar si hay cupo.
+              </p>
+              {activeBranches.map((branch) => (
+                <label key={branch.id} className="flex min-h-11 items-center gap-3 text-base">
+                  <input type="checkbox" name="deactivate" value={branch.id} className="size-5 shrink-0" />
+                  <span className="min-w-0 break-words">
+                    {branch.name} <span className="text-muted">({branch.slug})</span>
+                  </span>
+                </label>
+              ))}
+            </fieldset>
+          ) : null}
+          <div>
+            <label htmlFor="extra-motivo" className={labelClass}>
+              Motivo del cambio
+            </label>
+            <input
+              id="extra-motivo"
+              name="reason"
+              type="text"
+              required
+              maxLength={200}
+              autoComplete="off"
+              aria-describedby="extra-motivo-hint"
+              defaultValue={state.values?.reason ?? ""}
+              className={`${inputClass} mt-1`}
+            />
+            <p id="extra-motivo-hint" className="mt-1 text-sm text-muted">
+              {REASON_HINT}
+            </p>
+          </div>
+          <div>
+            <SubmitButton pendingLabel="Guardando…">Guardar sucursales adicionales</SubmitButton>
           </div>
         </>
       )}

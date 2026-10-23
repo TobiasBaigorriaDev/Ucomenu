@@ -199,6 +199,18 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
     case "addon.activated":
     case "addon.changed":
     case "addon.ended": {
+      if (d.addon === "extra_branch") {
+        // Sucursales adicionales (ficha sucursal-adicional): se cuentan sucursales, no «packs».
+        if (row.action === "addon.ended") {
+          if (isDate(d.ends_at)) lines.push(`Finalizaron el ${formatDateWithYear(d.ends_at)}`);
+          return { title: "Sucursales adicionales finalizadas por UcoMenu", lines };
+        }
+        if (typeof d.extra_packs === "number") lines.push(d.extra_packs === 1 ? "1 sucursal adicional" : `${d.extra_packs} sucursales adicionales`);
+        return {
+          title: row.action === "addon.activated" ? "Sucursales adicionales activadas por UcoMenu" : "Sucursales adicionales modificadas por UcoMenu",
+          lines,
+        };
+      }
       const name = isStr(d.addon) ? (ADDON_LABEL[d.addon] ?? d.addon) : "Add-on";
       if (row.action !== "addon.ended" && typeof d.extra_packs === "number") lines.push(d.extra_packs === 0 ? "Sin packs extra" : `${d.extra_packs} packs extra`);
       if (row.action === "addon.ended") {

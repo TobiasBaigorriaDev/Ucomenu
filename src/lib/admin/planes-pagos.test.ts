@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AdminContext } from "./organizations";
-import { changePlan, endAddon, isAddonActive, isVoidable, registerPayment, setAddon, setOrganizationActive, setSuspension, voidPayment } from "./subscriptions";
+import { changePlan, endAddon, isAddonActive, isVoidable, registerPayment, setAddon, setExtraBranches, setOrganizationActive, setSuspension, voidPayment } from "./subscriptions";
 import { accountState, parseEntitlements, trialStatus, moraNotice } from "@/lib/entitlements";
 import { formatMoney } from "./format";
 import {
@@ -10,6 +10,8 @@ import {
   isPaymentMethod,
   parseAddonEnd,
   parseAmountToCents,
+  parseBranchSelection,
+  parseExtraBranches,
   parseExtraPacks,
   parsePaidOn,
   parseReason,
@@ -420,5 +422,48 @@ describe("add-ons (ficha addons-y-baja-de-organizaciones)", () => {
       expect(await endAddon(ctx, { slug: "local-1", addon: "ensayo", reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
       expect(await setOrganizationActive(ctx, { slug: "local-1", active: true, reason: "x" })).toEqual({ ok: false, error: "uncertain_change" });
     }
+  });
+});
+
+describe("sucursales adicionales (ficha sucursal-adicional)", () => {
+  const ID_A = "0b6f1c9e-3b0a-4c43-8f55-2f8e6a1d9a01";
+  const ID_B = "7a1d3f52-9c3e-4e0b-a1b8-5d9e4c2f7b02";
+
+  it("parseExtraBranches: enteros de 0 a 3; vacío cuenta como 0", () => {
+    expect(parseExtraBranches("0")).toBe(0);
+    expect(parseExtraBranches(" 3 ")).toBe(3);
+    expect(parseExtraBranches("")).toBe(0);
+    expect(parseExtraBranches(undefined)).toBe(0);
+    for (const malo of ["4", "-1", "1.5", "01", "10", "abc", 2, {}]) expect(parseExtraBranches(malo), String(malo)).toBeNull();
+  });
+
+  it("parseBranchSelection: ids sin repetir (a lo sumo 3); nada = vacío", () => {
+    expect(parseBranchSelection(undefined)).toEqual([]);
+    expect(parseBranchSelection([])).toEqual([]);
+    expect(parseBranchSelection([ID_A.toUpperCase(), ` ${ID_B} `])).toEqual([ID_A, ID_B]);
+    for (const malo of [[ID_A, ID_A], ["no-es-un-id"], [ID_A, 5], "texto", [ID_A, ID_B, ID_A, ID_B]]) {
+      expect(parseBranchSelection(malo), JSON.stringify(malo)).toBeNull();
+    }
+  });
+
+  it("lo inválido se rechaza antes de llamar a la base y lo válido llega con la selección", async () => {
+    const entrada = { slug: "local-1", quantity: "1", deactivate: [], reason: "Contrató" };
+    const { ctx, llamadas } = fakeContext({ data: null });
+    expect(await setExtraBranches(ctx, { ...entrada, quantity: "4" })).toEqual({ ok: false, error: "invalid_extra_branches" });
+    expect(await setExtraBranches(ctx, { ...entrada, deactivate: ["x"] })).toEqual({ ok: false, error: "branches_selection_invalid" });
+    expect(await setExtraBranches(ctx, { ...entrada, reason: " " })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(llamadas).toEqual([]);
+    expect(await setExtraBranches(ctx, { ...entrada, deactivate: [ID_A] })).toEqual({ ok: true, data: undefined });
+    expect(llamadas).toEqual(["admin_set_extra_branches"]);
+  });
+
+  it("los errores de la base se traducen", async () => {
+    for (const mensaje of ["branches_selection_invalid", "addon_not_allowed", "addon_unchanged", "invalid_packs"] as const) {
+      const { ctx } = fakeContext({ data: null, error: { code: mensaje === "invalid_packs" ? "22023" : "55000", message: mensaje } });
+      const r = await setExtraBranches(ctx, { slug: "local-1", quantity: "1", deactivate: [], reason: "x" });
+      expect(r, mensaje).toEqual({ ok: false, error: mensaje });
+    }
+    const { ctx } = fakeContext({ data: null, error: { code: "55000", message: "extra_branches_must_end" } });
+    expect(await changePlan(ctx, { slug: "local-1", plan: "basic", billingCycle: "monthly", reason: "x" })).toEqual({ ok: false, error: "extra_branches_must_end" });
   });
 });

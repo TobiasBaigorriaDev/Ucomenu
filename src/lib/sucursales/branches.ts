@@ -3,7 +3,7 @@ import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
 import type { Database } from "@/lib/supabase/database.types";
 import { sucursalesErrorMessage, sucursalesWriteBlock, type SucursalesError } from "./messages";
 import { readAllPages } from "@/lib/paginar";
-import { validateBranchName, validateBranchSlug } from "./rules";
+import { validateBranchName, validateBranchSlug, validateReviewLink } from "./rules";
 
 /**
  * Gestión de sucursales (ficha gestion-de-sucursales). Todo con el cliente de la PERSONA (rol `authenticated`, RLS):
@@ -31,14 +31,23 @@ const INSUFFICIENT_PRIVILEGE = "42501";
 // Lectura
 // ---------------------------------------------------------------------------
 
-export type Sucursal = { id: string; slug: string; name: string; isActive: boolean; tables: number; activeTables: number };
+export type Sucursal = {
+  id: string;
+  slug: string;
+  name: string;
+  isActive: boolean;
+  /** Enlace de reseñas de Google, o `null` si no tiene. */
+  reviewUrl: string | null;
+  tables: number;
+  activeTables: number;
+};
 
 const collator = new Intl.Collator("es-AR", { numeric: true, sensitivity: "base" });
 
 /** Las sucursales de la organización, activas e inactivas (orden natural por nombre), con la cantidad de mesas. */
 export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]> {
   const [branches, tables] = await Promise.all([
-    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url").eq("organization_id", orgId).order("id").range(from, to)),
     readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
@@ -53,7 +62,12 @@ export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]>
   }
 
   return (branches.data ?? [])
-    .map(({ is_active, ...branch }) => ({ ...branch, isActive: is_active, ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }) }))
+    .map(({ is_active, google_review_url, ...branch }) => ({
+      ...branch,
+      isActive: is_active,
+      reviewUrl: google_review_url,
+      ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }),
+    }))
     .sort((a, b) => collator.compare(a.name, b.name));
 }
 
@@ -125,6 +139,33 @@ export async function renameBranch(db: Db, orgId: string, id: string, rawName: s
     return fail(exists.data ? "forbidden" : "not_found");
   }
   return ok(undefined);
+}
+
+/**
+ * Guarda (o quita, si viene vacío) el enlace de reseñas de Google de una sucursal (ficha enlace-de-resenas-de-google). Solo el
+ * Dueño y con la cuenta al día: lo imponen la política UPDATE de `branches` y el privilegio por columna. La base vuelve a
+ * validar el host (CHECK); acá se valida antes para dar un mensaje claro.
+ */
+export async function setBranchReviewLink(db: Db, orgId: string, id: string, rawLink: unknown): Promise<Result> {
+  const link = validateReviewLink(rawLink);
+  if (!link.ok) return fail(link.problem === "too_long" ? "review_link_too_long" : "review_link_invalid");
+
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+
+  const { data, error } = await db
+    .from("branches")
+    .update({ google_review_url: link.value })
+    .eq("id", id)
+    .eq("organization_id", orgId)
+    .select("id, google_review_url");
+  if (error) return fail(error.code === CHECK_VIOLATION ? "review_link_invalid" : await writeFailure(db, orgId, error));
+  if (data.length === 0) {
+    const exists = await db.from("branches").select("id").eq("id", id).eq("organization_id", orgId).maybeSingle();
+    if (exists.error) return fail("unexpected");
+    return fail(exists.data ? "forbidden" : "not_found");
+  }
+  return data[0].google_review_url === link.value ? ok(undefined) : fail("unexpected");
 }
 
 /**

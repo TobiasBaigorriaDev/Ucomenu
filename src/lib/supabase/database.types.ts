@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "addons": {
                   Row: {
-                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at": string,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number
+                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at": string,"currency": string | null,"grants_limit": string | null,"max_packs": number | null,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number,"price_cents": number | null,"quota_per_pack": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at"?: string,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number
+                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at"?: string,"currency"?: string | null,"grants_limit"?: string | null,"max_packs"?: number | null,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number,"price_cents"?: number | null,"quota_per_pack"?: number | null
                   }
                   Update: {
-                    "allowed_plans"?: (string)[],"base_model_quota"?: number,"code"?: string,"created_at"?: string,"monthly_price_usd_cents"?: number,"name"?: string,"pack_monthly_price_usd_cents"?: number,"pack_size"?: number
+                    "allowed_plans"?: (string)[],"base_model_quota"?: number,"code"?: string,"created_at"?: string,"currency"?: string | null,"grants_limit"?: string | null,"max_packs"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"pack_monthly_price_usd_cents"?: number,"pack_size"?: number,"price_cents"?: number | null,"quota_per_pack"?: number | null
                   }
                   Relationships: [
                     
@@ -53,14 +53,14 @@ export type Database = {
                   ]
                 },"branches": {
                   Row: {
-                    "created_at": string,"id": string,"is_active": boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases": (string)[],"waiter_call_cooldown_seconds": number
+                    "created_at": string,"google_review_url": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases": (string)[],"waiter_call_cooldown_seconds": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases"?: (string)[],"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases"?: (string)[],"waiter_call_cooldown_seconds"?: number
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"slug"?: string,"slug_aliases"?: (string)[],"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"slug"?: string,"slug_aliases"?: (string)[],"waiter_call_cooldown_seconds"?: number
                   }
                   Relationships: [
                     {
@@ -632,6 +632,9 @@ isOneToOne: false
                            },
 "admin_set_addon":
 { Args: { "p_actor": string,"p_addon": string,"p_ends_at": string,"p_extra_packs": number,"p_org": string,"p_reason": string }; Returns: undefined
+                           },
+"admin_set_extra_branches":
+{ Args: { "p_actor": string,"p_deactivate": (string)[],"p_org": string,"p_quantity": number,"p_reason": string }; Returns: undefined
                            },
 "admin_set_organization_active":
 { Args: { "p_active": boolean,"p_actor": string,"p_org": string,"p_reason": string }; Returns: undefined

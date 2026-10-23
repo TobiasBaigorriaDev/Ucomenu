@@ -71,6 +71,11 @@ export type AdminError =
   | "addon_not_active"
   | "already_inactive"
   | "already_active"
+  // Sucursal adicional (ficha sucursal-adicional)
+  | "invalid_extra_branches"
+  | "branches_selection_invalid"
+  | "extra_branches_must_end"
+  | "addon_has_own_action"
   // Borrado definitivo (ficha borrado-de-organizaciones, ADR 0028)
   | "slug_mismatch"
   | "organization_still_active"
@@ -142,9 +147,15 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   invalid_addon: "Elegí un add-on válido.",
   invalid_packs: "Los packs extra tienen que ser un número entero de 0 a 50.",
   invalid_ends_at: "«Termina el» tiene que ser una fecha futura, de hasta 2 años (o dejalo vacío para que no tenga fin).",
-  addon_not_allowed: "El plan actual de la organización no admite este add-on (hace falta Pro o Premium). Cambiá el plan primero.",
+  addon_not_allowed: "El plan actual de la organización no admite este add-on (por ejemplo, las sucursales adicionales son solo para Pro). Cambiá el plan primero.",
   addon_unchanged: "El add-on ya está vigente con esos packs y esa fecha de fin: no hay nada que cambiar.",
   addon_not_active: "Ese add-on no está vigente en esta organización, así que no hay nada que finalizar. Recargá la página para ver su estado.",
+  invalid_extra_branches: "Las sucursales adicionales tienen que ser un número entero de 0 a 3.",
+  branches_selection_invalid:
+    "Las sucursales que elegiste para desactivar no coinciden con las que hay que desactivar ahora (la organización pudo cambiar): recargá la página y elegí de nuevo. No se cambió nada.",
+  extra_branches_must_end:
+    "El plan nuevo tiene tope de sucursales y no admite sucursales adicionales: finalizalas primero (poniendo 0) y elegí qué sucursales se desactivan. No se cambió nada.",
+  addon_has_own_action: "Ese add-on se gestiona desde su propio formulario (sucursales adicionales), no desde este.",
   already_inactive: "La organización ya está dada de baja.",
   already_active: "La organización ya está activa: no hay nada que reactivar.",
   slug_mismatch: "El identificador que escribiste no coincide con el de la organización. No se borró nada.",

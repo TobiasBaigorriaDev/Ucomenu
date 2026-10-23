@@ -14,9 +14,11 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Seleccionado
 
-- [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las que exceden — primera tarea del incremento «Salón y crecimiento» → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
+- (vacío)
 
 ## Para verificar
+
+- [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada y verificada en local (2026-10-23); falta la revisión independiente (Codex) y la aprobación antes de la migración en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
 - [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
 - [S] Probar en un Android real la subida de videos desde el panel y el feed (también en Firefox y en Safari de escritorio) — sin resultado; el feed se probó en Chrome y en el teléfono del usuario → [ficha](cambios/feed-de-videos.md)
@@ -50,9 +52,9 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 > Reglas en `docs/producto.md` (módulos 7 a 10 y sucursal adicional) y motivos en los ADR 0039 a 0042. Orden recomendado: S1 → S2 → S3 → S4. Promociones va antes que Pedidos porque los pedidos copian el precio efectivo; Clientes depende de Pedidos y de la revisión legal. Dentro de cada fase, el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
 **S1 — Ingresos y confianza**
-- [C] Sucursal adicional: ver «Seleccionado»
-- [M] Enlace de reseñas de Google por sucursal (columna validada con hosts de Google, solo el Dueño la edita)
-- [M] Invitación a reseñar en la carta: pie para todos los planes y tras «Pedir la cuenta» con Pro o superior; textos fijos es/en/pt, sin pregunta previa ni incentivos (bloqueado por: enlace de reseñas)
+- [C] Sucursal adicional: ver «Para verificar»
+- [M] Enlace de reseñas de Google por sucursal: hecho en local (2026-10-23), ver «Hecho»
+- [M] Invitación a reseñar en la carta: pie para todos los planes y tras «Pedir la cuenta» con Pro o superior; textos fijos es/en/pt, sin pregunta previa ni incentivos (desbloqueada: el enlace de reseñas ya existe)
 - [C] Vistas previas de funciones por organización (SuperAdmin, auditadas, con fin; `plan_grants` = plan ∪ vistas previas)
 
 **S2 — Promociones programadas (Happy Hour)**
@@ -87,6 +89,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [M] Enlace de reseñas de Google por sucursal: columna validada con hosts exactos de Google (`CHECK` espejo de la validación local), editable solo por el Dueño con la cuenta al día y legible por la carta pública mientras la sucursal esté activa y publicada; implementado y verificado en local (2026-10-23), sin staging; la carta todavía no lo muestra → [ficha](cambios/enlace-de-resenas-de-google.md)
 - [M] Guía de primeros pasos descartable por cuenta (preferencia guardada en la base, con renglón para volver a mostrarla) y resumen por sucursal cuando hay varias; en `origin/main` y en staging (2026-10-23) → [ficha](cambios/guia-descartable.md)
 - [C] Cuentas de Auth sin ningún local: se conservan y SuperAdmin las lista en `/admin/cuentas` y borra una a mano (email escrito, motivo, reserva de la cuenta y constancia sin el email); aprobado por Codex (3 rondas), en `origin/main` y en staging (2026-10-23) → [ficha](cambios/cuentas-sin-local.md) · [ADR 0032](../docs/decisiones/0032-reserva-de-cuentas-globales.md)
 - [C] Escrituras públicas de la mesa solo desde el servidor: `create_waiter_call`, `set_video_like` y `submit_video_comment` las ejecuta únicamente `service_role` y la acción de servidor verifica antes ticket y conexión; cierra el límite aceptado de llamado, likes y comentarios; aprobado por Codex, en `origin/main` y en staging (2026-10-23) → [ficha](cambios/escrituras-publicas-solo-servidor.md) · [ADR 0038](../docs/decisiones/0038-escrituras-publicas-solo-servidor.md)

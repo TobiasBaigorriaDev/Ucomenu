@@ -21,7 +21,7 @@ export const ACTION_LABEL: Record<string, string> = {
 };
 
 // WebAR ya no está en el catálogo (ADR 0031), pero sus movimientos siguen en la auditoría y se nombran.
-const ADDON_NAME: Record<string, string> = { webar: "WebAR" };
+const ADDON_NAME: Record<string, string> = { webar: "WebAR", extra_branch: "Sucursal adicional" };
 
 const dateTime = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -78,12 +78,22 @@ function details(entry: AuditEntry): string[] {
   if (entry.action.startsWith("addon.")) {
     const addon = str(after.addon);
     if (addon) out.push(ADDON_NAME[addon] ?? addon);
-    if (typeof after.extra_packs === "number") out.push(`${after.extra_packs} packs extra`);
+    const sucursales = addon === "extra_branch";
+    if (typeof after.extra_packs === "number") {
+      out.push(sucursales ? `${after.extra_packs} ${after.extra_packs === 1 ? "sucursal adicional" : "sucursales adicionales"}` : `${after.extra_packs} packs extra`);
+    }
     const ends = str(after.ends_at);
     if (entry.action === "addon.ended") {
       if (ends) out.push(`finalizado el ${formatDateWithYear(ends)}`);
-    } else {
+    } else if (!sucursales) {
       out.push(ends ? `termina el ${formatDateWithYear(ends)}` : "sin fecha de fin");
+    }
+    // Sucursales que se desactivaron en el mismo movimiento (solo el identificador: el nombre puede cambiar).
+    if (Array.isArray(after.deactivated_branches) && after.deactivated_branches.length > 0) {
+      const slugs = after.deactivated_branches
+        .map((branch) => (typeof branch === "object" && branch !== null && "slug" in branch ? str((branch as { slug: unknown }).slug) : null))
+        .filter((slug): slug is string => slug !== null);
+      if (slugs.length > 0) out.push(`desactivadas: ${slugs.join(", ")}`);
     }
   }
   const reason = str(after.reason);

@@ -499,7 +499,7 @@ describe("tablas de planes y suscripciones", () => {
     }
   });
 
-  it("cualquier usuario con sesión lee el catálogo de planes y add-ons (vacío desde ADR 0031)", async () => {
+  it("cualquier usuario con sesión lee el catálogo de planes y add-ons (solo la sucursal adicional desde ADR 0039)", async () => {
     const planes = await staffUser.db.from("plans").select("code, max_videos_published").order("code");
     const addons = await staffUser.db.from("addons").select("code");
 
@@ -508,9 +508,9 @@ describe("tablas de planes y suscripciones", () => {
       { code: "premium", max_videos_published: 10 },
       { code: "pro", max_videos_published: 0 },
     ]);
-    // `addons-y-baja.rls` siembra un add-on de ensayo `tt_*` mientras corre; el catálogo real no tiene ninguno.
+    // `addons-y-baja.rls` siembra un add-on de ensayo `tt_*` mientras corre; el catálogo real tiene solo la sucursal adicional.
     expect(addons.error).toBeNull();
-    expect(addons.data?.filter((a) => !a.code.startsWith("tt_"))).toEqual([]);
+    expect(addons.data?.filter((a) => !a.code.startsWith("tt_"))).toEqual([{ code: "extra_branch" }]);
   });
 
   it("nadie escribe planes, add-ons ni suscripciones por la API", async () => {

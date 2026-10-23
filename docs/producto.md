@@ -81,7 +81,7 @@ Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases 
 - La carta muestra el precio anterior tachado, el promocional y hasta cuándo rige. Cada cambio de una promoción queda en su historial; el historial de precios de lista no cambia.
 
 #### 9. Invitación a reseñar en Google (todos los planes)
-- El Dueño carga por sucursal el **enlace de reseñas** de su perfil de Google (solo direcciones de Google).
+- El Dueño carga por sucursal el **enlace de reseñas** de su perfil de Google (solo direcciones de Google). *Implementado el 2026-10-23 (Sucursales → «Enlace de reseñas»); falta la invitación en la carta.*
 - La carta muestra un enlace discreto en el pie y, con plan Pro o superior, una invitación tras «Pedir la cuenta». Se puede cerrar y no se repite en el día.
 - Respeta la [política de Google](https://support.google.com/contributionpolicy/answer/7400114): el mismo mensaje para todos, **sin preguntar antes si le gustó**, sin estrellas ni incentivos y con textos fijos (es/en/pt) que el local no edita.
 
@@ -98,7 +98,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | --- | :---: | :---: | :---: |
 | **Precio mensual** | USD 20 | USD 40 | USD 70 |
 | **Precio anual** | USD 190 | USD 380 | USD 670 |
-| Sucursales | 1 | hasta 2 (+ hasta 3 adicionales, *sin implementar*) | sin límite |
+| Sucursales | 1 | hasta 2 (+ hasta 3 adicionales) | sin límite |
 | Mesas | hasta 20 | hasta 50 por sucursal | sin límite |
 | Platos activos | hasta 80 | hasta 200 | sin límite |
 | Menú digital + QR por mesa + identidad visual | ✔ | ✔ | ✔ |
@@ -112,7 +112,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Clientes recurrentes (*sin implementar*) | — | — | ✔ |
 
 - **Feed de videos cortos:** incluido en Premium, con un cupo de **10 videos publicados** (parametrizable en la base). Reemplaza al add-on WebAR (+USD 25/mes, cupo de 15 platos 3D y packs de +10), que se descartó el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); hoy no hay ningún add-on a la venta.
-- **Sucursal adicional** *(aceptada el 2026-10-23, sin implementar; [ADR 0039](decisiones/0039-sucursal-adicional-y-vistas-previas.md))*: solo plan Pro, **ARS 12.000/mes** por sucursal (precio en pesos, parametrizable en la base), hasta 3 adicionales. Se cobra junto con la suscripción y sigue su ciclo y su mora. Al cancelarla, el SuperAdmin desactiva con el Dueño las sucursales que excedan el tope (desactivar es reversible); no quedan sucursales activas sin pagar.
+- **Sucursal adicional** *(implementada el 2026-10-23; [ADR 0039](decisiones/0039-sucursal-adicional-y-vistas-previas.md))*: solo plan Pro, **ARS 12.000/mes** por sucursal (precio en pesos, parametrizable en la base), hasta 3 adicionales. Se cobra junto con la suscripción y sigue su ciclo y su mora. Al cancelarla, el SuperAdmin desactiva con el Dueño las sucursales que excedan el tope (desactivar es reversible); no quedan sucursales activas sin pagar.
 - **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito. Toda organización nueva arranca con esta prueba a partir de su fecha de alta, sin intervención de nadie. *(Confirmado 2026-10-14.)*
 - **Límites:** son techos para *crear* y para *activar* (no se puede superar el tope). Los platos se cuentan solo si están activos (`is_active`): con el tope alcanzado se bloquea tanto crear un plato activo como pasar uno inactivo a activo; pasar un plato de activo a inactivo siempre se permite, para que el local pueda acomodarse a su cupo. Misma regla para sucursales y mesas. *(Confirmado 2026-10-14.)*
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.

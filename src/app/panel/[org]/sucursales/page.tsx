@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { loadSucursales } from "@/lib/sucursales/branches";
+import { branchBreakdown } from "@/lib/entitlements";
 import { branchLimitMessage, sucursalesBlockNotice } from "@/lib/sucursales/messages";
 import { createSessionClient } from "@/lib/supabase/server";
-import { CreateBranchForm, RenameBranchForm, ToggleBranchActiveForm } from "./branch-forms";
+import { CreateBranchForm, RenameBranchForm, ReviewLinkForm, ToggleBranchActiveForm } from "./branch-forms";
 
 export const metadata: Metadata = { title: "Sucursales" };
 
@@ -45,6 +46,7 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
       <p className="mt-4 text-lg" data-testid="sucursales-uso">
         Sucursales activas:{" "}
         <span className="font-medium tabular-nums">{typeof limit === "number" ? `${used} de ${limit}` : `${used}, sin tope`}</span>
+        {branchBreakdown(ent) ? <span className="text-base text-muted" data-testid="sucursales-desglose"> ({branchBreakdown(ent)})</span> : null}
       </p>
 
       <section aria-labelledby="lista" className="panel-cell mt-6">
@@ -79,6 +81,9 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
                   {branch.activeTables === 1 ? "1 mesa activa" : `${branch.activeTables} mesas activas`}
                   {branch.tables > branch.activeTables ? ` (${branch.tables} en total)` : ""}
                 </p>
+                <p className="mt-1 text-base text-muted break-all" data-testid="sucursal-resenas">
+                  {branch.reviewUrl ? `Enlace de reseñas: ${branch.reviewUrl}` : "Sin enlace de reseñas de Google."}
+                </p>
                 <div className="mt-3 flex flex-wrap items-start gap-2">
                   {branch.isActive ? (
                     <Link href={`/m/${membership.org.slug}/${branch.slug}`} className={linkButtonClass} aria-label={`Ver la carta de ${branch.name}`}>
@@ -89,6 +94,7 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
                     Mesas
                   </Link>
                   <RenameBranchForm orgSlug={membership.org.slug} id={branch.id} name={branch.name} canWrite={canWrite} />
+                  <ReviewLinkForm orgSlug={membership.org.slug} id={branch.id} name={branch.name} link={branch.reviewUrl} canWrite={canWrite} />
                   <ToggleBranchActiveForm
                     orgSlug={membership.org.slug}
                     id={branch.id}

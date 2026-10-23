@@ -113,6 +113,34 @@ test.describe("el Dueño administra sus sucursales", () => {
     // Se puede renombrar aun con el tope de sucursales alcanzado (Básico).
   });
 
+  test("guarda, cambia y quita el enlace de reseñas de Google; uno que no es de Google se rechaza", async ({ page }) => {
+    const t = await nuevoLocal("suc-resenas");
+    await ingresar(page, t.owner, t);
+    const enlace = (await service().from("branches").select("google_review_url").eq("organization_id", t.orgId).single()).data;
+    expect(enlace?.google_review_url).toBeNull();
+    await expect(sucursal(page, "Centro").getByTestId("sucursal-resenas")).toContainText("Sin enlace de reseñas de Google");
+
+    await sucursal(page, "Centro").locator("summary", { hasText: "Enlace de reseñas" }).click();
+    const campo = sucursal(page, "Centro").getByLabel("Enlace de reseñas de Google");
+    await campo.fill("https://evil.example/g.page/r/abc/review");
+    await sucursal(page, "Centro").getByRole("button", { name: "Guardar enlace" }).click();
+    await expect(alerta(page)).toContainText("tiene que ser una dirección https de Google");
+    await expect(campo).toHaveValue("https://evil.example/g.page/r/abc/review"); // lo escrito se conserva ante un error
+
+    await campo.fill("https://g.page/r/CabcdEFGH1234/review");
+    await sucursal(page, "Centro").getByRole("button", { name: "Guardar enlace" }).click();
+    await expect(sucursal(page, "Centro").getByRole("status")).toContainText("Enlace guardado");
+    await page.reload();
+    await expect(sucursal(page, "Centro").getByTestId("sucursal-resenas")).toContainText("https://g.page/r/CabcdEFGH1234/review");
+    await expectNoHorizontalOverflow(page);
+
+    await sucursal(page, "Centro").locator("summary", { hasText: "Enlace de reseñas" }).click();
+    await sucursal(page, "Centro").getByLabel("Enlace de reseñas de Google").fill("");
+    await sucursal(page, "Centro").getByRole("button", { name: "Guardar enlace" }).click();
+    await expect(sucursal(page, "Centro").getByRole("status")).toContainText("Enlace quitado");
+    await expect(sucursal(page, "Centro").getByTestId("sucursal-resenas")).toContainText("Sin enlace de reseñas de Google");
+  });
+
   test("con varias sucursales, las demás pantallas siguen coherentes: mesas y llamados se agrupan por sucursal", async ({ page }) => {
     const t = await nuevoLocal("suc-varias");
     await service().from("branches").insert({ organization_id: t.orgId, slug: "norte", name: "Norte" });

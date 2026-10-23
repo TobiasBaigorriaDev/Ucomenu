@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
-import { createBranch, renameBranch, setBranchActive, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
+import { createBranch, renameBranch, setBranchActive, setBranchReviewLink, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -63,4 +63,13 @@ export async function setBranchActiveAction(_previous: FormState, formData: Form
   if (!id || (desired !== "true" && desired !== "false")) return { error: sucursalesErrorMessage("not_found", null) };
   const active = desired === "true";
   return outcome(slug, orgId, await setBranchActive(db, orgId, id, active), active ? "Sucursal reactivada." : "Sucursal desactivada.");
+}
+
+export async function setBranchReviewLinkAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  const link = text(formData, "link");
+  if (!id) return { error: sucursalesErrorMessage("not_found", null), values: { link } };
+  const cleared = link.trim() === "";
+  return outcome(slug, orgId, await setBranchReviewLink(db, orgId, id, link), cleared ? "Enlace quitado." : "Enlace guardado.", { link });
 }

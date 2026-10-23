@@ -29,6 +29,14 @@ export type Entitlements = {
   trialEndsAt?: string;
   /** Solo para el Dueño: la cuenta la suspendió a mano el equipo de UcoMenu (no es mora). */
   suspendedManually?: boolean;
+  /**
+   * Solo para el Dueño de un plan que admite sucursales adicionales (Pro): cuántas tiene vigentes, el precio mensual de cada una
+   * y cuántas se pueden contratar en total. El Staff no recibe ni cantidad ni precio.
+   */
+  extraBranches?: number;
+  extraBranchPriceCents?: number;
+  extraBranchCurrency?: string;
+  extraBranchMax?: number;
   limits: Record<string, number | null>;
   usage: Record<string, number>;
 };
@@ -59,6 +67,10 @@ export function parseEntitlements(raw: unknown): Entitlements | null {
     trialStatus: TRIAL_STATUSES.find((t) => t === raw.trial_status),
     trialEndsAt: typeof raw.trial_ends_at === "string" ? raw.trial_ends_at : undefined,
     suspendedManually: raw.suspended_manually === true ? true : undefined,
+    extraBranches: typeof raw.extra_branches === "number" ? raw.extra_branches : undefined,
+    extraBranchPriceCents: typeof raw.extra_branch_price_cents === "number" ? raw.extra_branch_price_cents : undefined,
+    extraBranchCurrency: typeof raw.extra_branch_currency === "string" ? raw.extra_branch_currency : undefined,
+    extraBranchMax: typeof raw.extra_branch_max === "number" ? raw.extra_branch_max : undefined,
     limits: isRecord(raw.limits)
       ? Object.fromEntries(
           Object.entries(raw.limits).filter((e): e is [string, number | null] => e[1] === null || typeof e[1] === "number"),
@@ -66,6 +78,30 @@ export function parseEntitlements(raw: unknown): Entitlements | null {
       : {},
     usage: numbers(raw.usage),
   };
+}
+
+/** Precio mensual como lo lee el Dueño: «ARS 12.000» (sin centavos si son cero). */
+export function formatMonthlyPrice(cents: number, currency: string): string {
+  const amount = new Intl.NumberFormat("es-AR", {
+    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
+  return `${currency} ${amount}`;
+}
+
+/**
+ * Cómo se reparte el tope de sucursales del Dueño: las del plan y las adicionales (con su costo mensual). `null` si no tiene
+ * adicionales vigentes o si no hay tope numérico.
+ */
+export function branchBreakdown(ent: Entitlements | null): string | null {
+  const limit = ent?.limits.branches;
+  const extra = ent?.extraBranches;
+  if (typeof limit !== "number" || !extra || extra < 1) return null;
+  const price =
+    typeof ent?.extraBranchPriceCents === "number" && ent.extraBranchCurrency
+      ? ` · ${formatMonthlyPrice(ent.extraBranchPriceCents * extra, ent.extraBranchCurrency)}/mes`
+      : "";
+  return `${limit - extra} del plan + ${extra} ${extra === 1 ? "adicional" : "adicionales"}${price}`;
 }
 
 export const PLAN_NAME: Record<string, string> = { basic: "Básico", pro: "Pro", premium: "Premium" };

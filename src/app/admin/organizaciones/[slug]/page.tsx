@@ -14,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { StatusPill } from "../../status-pill";
-import { AddOwnerForm, AddonForm, ChangePlanForm, DeleteOrganizationForm, EndAddonForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
+import { AddOwnerForm, AddonForm, ChangePlanForm, DeleteOrganizationForm, EndAddonForm, ExtraBranchesForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
@@ -189,6 +189,44 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         <ChangePlanForm slug={org.slug} plan={org.plan} billingCycle={org.billingCycle} />
       </section>
 
+      {org.extraBranches ? (
+        <section aria-labelledby="seccion-sucursales-extra" className="panel-cell mt-6" data-testid="sucursales-extra">
+          <h2 id="seccion-sucursales-extra" className="font-display text-2xl">
+            Sucursales adicionales
+          </h2>
+          <p className="mt-2 max-w-prose leading-relaxed text-muted">
+            Solo para el plan Pro: hasta {org.extraBranches.max} sucursales más, a {formatMoney(org.extraBranches.priceCents, org.extraBranches.currency)} por
+            mes cada una. Se cobran junto con la suscripción (un solo pago por plan y adicionales). Al quitarlas, las sucursales que sobren se desactivan: las
+            elegís vos.
+          </p>
+          {org.extraBranches.allowedByPlan ? (
+            <>
+              <p className="mt-3 text-base break-words" data-testid="sucursales-extra-estado">
+                {org.extraBranches.quantity === 0
+                  ? "Sin sucursales adicionales."
+                  : `${org.extraBranches.quantity} ${org.extraBranches.quantity === 1 ? "sucursal adicional vigente" : "sucursales adicionales vigentes"} · ${formatMoney(
+                      org.extraBranches.priceCents * org.extraBranches.quantity,
+                      org.extraBranches.currency,
+                    )} por mes`}{" "}
+                · {org.extraBranches.activeBranches.length} {org.extraBranches.activeBranches.length === 1 ? "activa" : "activas"} de un tope de{" "}
+                {(org.extraBranches.planBranches ?? 0) + org.extraBranches.quantity}.
+              </p>
+              <ExtraBranchesForm
+                slug={org.slug}
+                quantity={org.extraBranches.quantity}
+                max={org.extraBranches.max}
+                planBranches={org.extraBranches.planBranches}
+                activeBranches={org.extraBranches.activeBranches}
+              />
+            </>
+          ) : (
+            <p className="mt-3 max-w-prose text-base text-muted" data-testid="sucursales-extra-plan">
+              Hace falta el plan Pro. {org.plan === "premium" ? "Premium no tiene tope de sucursales." : "Cambiá el plan primero."}
+            </p>
+          )}
+        </section>
+      ) : null}
+
       <section aria-labelledby="seccion-addons" className="panel-cell mt-6">
         <h2 id="seccion-addons" className="font-display text-2xl">
           Add-ons
@@ -199,7 +237,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         </p>
         {org.addons.length === 0 ? (
           <p className="mt-3 max-w-prose text-base text-muted" data-testid="addons-vacio">
-            Hoy no hay add-ons a la venta. El feed de videos cortos viene incluido en el plan Premium (no se activa acá).
+            Hoy no hay otros add-ons a la venta. Las sucursales adicionales se gestionan en su bloque de arriba; el feed de videos cortos viene incluido en el plan Premium (no se activa acá).
           </p>
         ) : null}
         <ul className="mt-3 divide-y divide-ink/15">

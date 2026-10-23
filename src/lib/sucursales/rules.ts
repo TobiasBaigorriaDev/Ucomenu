@@ -37,3 +37,54 @@ export function suggestSlug(name: string): string {
     .slice(0, SLUG_MAX_LENGTH)
     .replace(/-+$/g, "");
 }
+
+// ---------------------------------------------------------------------------
+// Enlace de reseñas de Google (ficha enlace-de-resenas-de-google)
+// ---------------------------------------------------------------------------
+
+/** Debe coincidir con el CHECK `branches_google_review_url_check` de la base (en caracteres). */
+export const REVIEW_URL_MAX = 500;
+
+/**
+ * Únicos sitios a los que puede apuntar el enlace: los de los perfiles de Google (`g.page`, `search.google.com`, `maps.app.goo.gl`,
+ * Maps…). Es la MISMA lista que el CHECK de la base; ampliarla es una migración. Sin puertos ni usuario: solo el host exacto.
+ */
+export const GOOGLE_REVIEW_HOSTS = [
+  "g.page",
+  "g.co",
+  "goo.gl",
+  "maps.app.goo.gl",
+  "share.google",
+  "search.google.com",
+  "maps.google.com",
+  "google.com",
+  "www.google.com",
+  "google.com.ar",
+  "www.google.com.ar",
+] as const;
+
+const escapeHost = (host: string) => host.replace(/\./g, String.raw`\.`);
+
+/**
+ * https, host exacto de la lista y, si sigue algo, empieza con «/». Sin espacios, caracteres de control ni barras invertidas.
+ * Espejo del CHECK de la base: una prueba de RLS compara los dos con la misma tabla de casos.
+ */
+export const REVIEW_URL_PATTERN = new RegExp(
+  String.raw`^https://(${GOOGLE_REVIEW_HOSTS.map(escapeHost).join("|")})(/[^\s\u0000-\u001f\u007f\\]*)?$`,
+  "i",
+);
+
+export type ReviewLinkProblem = "invalid" | "too_long";
+
+/**
+ * Enlace de reseñas tal como lo escribe la persona. Vacío = quitarlo (`value: null`). Se recortan los espacios de los bordes y no se
+ * «arregla» nada más: lo que no sea una dirección https de Google se rechaza.
+ */
+export function validateReviewLink(raw: unknown): { ok: true; value: string | null } | { ok: false; problem: ReviewLinkProblem } {
+  if (raw === undefined || raw === null) return { ok: true, value: null };
+  if (typeof raw !== "string") return { ok: false, problem: "invalid" };
+  const value = raw.trim();
+  if (value === "") return { ok: true, value: null };
+  if ([...value].length > REVIEW_URL_MAX) return { ok: false, problem: "too_long" };
+  return REVIEW_URL_PATTERN.test(value) ? { ok: true, value } : { ok: false, problem: "invalid" };
+}

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { deleteOrganization } from "@/lib/admin/delete-organization";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
-import { changePlan, endAddon, registerPayment, setAddon, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
+import { changePlan, endAddon, registerPayment, setAddon, setExtraBranches, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
 import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
@@ -190,6 +190,28 @@ export async function endAddonAction(_previous: FormState, formData: FormData): 
   revalidatePath(prepared.page);
   revalidatePath(`/panel/${prepared.slug}`, "layout");
   return { ok: true, message: "Listo: el add-on quedó finalizado. Se conservan los packs por si se vuelve a activar." };
+}
+
+export async function setExtraBranchesAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { quantity: text(formData, "quantity"), reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+  const deactivate = formData.getAll("deactivate").filter((value): value is string => typeof value === "string");
+
+  const result = await setExtraBranches(prepared.ctx, { slug: prepared.slug, ...values, deactivate });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath(prepared.page);
+  // Desactivar sucursales cambia lo que ven el Dueño, la sala y la carta pública.
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  revalidatePath(`/sala/${prepared.slug}`, "layout");
+  revalidatePath(`/m/${prepared.slug}`, "layout");
+  return {
+    ok: true,
+    message: deactivate.length
+      ? "Listo: la cantidad de sucursales adicionales quedó registrada y se desactivaron las sucursales elegidas (conservan mesas, QR e historial). Todo figura en los movimientos."
+      : "Listo: la cantidad de sucursales adicionales quedó registrada y figura en los movimientos.",
+  };
 }
 
 export async function setOrganizationActiveAction(_previous: FormState, formData: FormData): Promise<FormState> {

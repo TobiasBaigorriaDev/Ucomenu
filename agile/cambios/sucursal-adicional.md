@@ -1,5 +1,5 @@
 # Cambio: Sucursal adicional para el plan Pro
-Estado: idea (diseño aprobado el 2026-10-23; sin implementar)
+Estado: **implementado y verificado en local (2026-10-23)**; pendiente la revisión independiente (Codex) y la aprobación antes de aplicar la migración en staging.
 Nivel: C (dinero y límites del plan; la cancelación desactiva sucursales)
 
 ## Objetivo
@@ -15,22 +15,34 @@ Que el SuperAdmin venda a una organización Pro hasta **3 sucursales adicionales
 7. **Pagos:** no cambian; el SuperAdmin registra un solo pago por plan + adicionales.
 
 ## Aceptación
-- [ ] Dado un Pro con 2 sucursales activas, cuando el SuperAdmin pone 1 sucursal adicional, entonces el Dueño crea (o reactiva) la 3.ª y la 4.ª da `53400` con el tope 3.
-- [ ] Dado un Básico o un Premium, cuando el SuperAdmin intenta poner sucursales adicionales, entonces recibe `addon_not_allowed` y nada cambia.
-- [ ] Cuando se piden 4, entonces `invalid_packs`.
-- [ ] Dado un Pro con 3 activas y 1 adicional, cuando el SuperAdmin la finaliza sin elegir sucursal, entonces `branches_selection_invalid` y no cambia nada; eligiendo una, queda desactivada, el add-on finalizado y una sola entrada `addon.ended` con la sucursal.
-- [ ] Dado un Pro con 2 activas y 1 adicional, cuando se finaliza, entonces no se exige desactivar nada.
-- [ ] Dado un Pro con 3 activas y 1 adicional, cuando el SuperAdmin pasa a Premium, entonces el add-on se finaliza en la misma transacción y las 3 siguen activas; a Básico, `extra_branches_must_end`.
-- [ ] Cuando dos altas de sucursal compiten por el último cupo, o un alta compite con la baja del add-on, entonces el resultado respeta el tope final (entra a lo sumo una o la baja exige otra selección).
-- [ ] El Dueño ve el add-on y su precio en Suscripción y en su historial; el Staff no ve precio ni cantidad; otra organización no ve nada.
-- [ ] El Dueño no puede escribir `addons` ni `subscription_addons` ni ejecutar la función (ni por la API ni con su sesión).
-- [ ] En mora, el cupo no cambia y las escrituras siguen bloqueadas por `org_can_write`, como hoy.
+- [x] Dado un Pro con 2 sucursales activas, cuando el SuperAdmin pone 1 sucursal adicional, entonces el Dueño crea (o reactiva) la 3.ª y la 4.ª da `53400` con el tope 3.
+- [x] Dado un Básico o un Premium, cuando el SuperAdmin intenta poner sucursales adicionales, entonces recibe `addon_not_allowed` y nada cambia.
+- [x] Cuando se piden 4, entonces `invalid_packs`.
+- [x] Dado un Pro con 3 activas y 1 adicional, cuando el SuperAdmin la finaliza sin elegir sucursal, entonces `branches_selection_invalid` y no cambia nada; eligiendo una, queda desactivada, el add-on finalizado y una sola entrada `addon.ended` con la sucursal.
+- [x] Dado un Pro con 2 activas y 1 adicional, cuando se finaliza, entonces no se exige desactivar nada.
+- [x] Dado un Pro con 3 activas y 1 adicional, cuando el SuperAdmin pasa a Premium, entonces el add-on se finaliza en la misma transacción y las 3 siguen activas; a Básico, `extra_branches_must_end`.
+- [x] Cuando dos altas de sucursal compiten por el último cupo, o un alta compite con la baja del add-on, entonces el resultado respeta el tope final (entra a lo sumo una o la baja exige otra selección).
+- [x] El Dueño ve el add-on y su precio en Suscripción y en su historial; el Staff no ve precio ni cantidad; otra organización no ve nada.
+- [x] El Dueño no puede escribir `addons` ni `subscription_addons` ni ejecutar la función (ni por la API ni con su sesión).
+- [x] En mora, el cupo no cambia y las escrituras siguen bloqueadas por `org_can_write`, como hoy.
 
 ## Fuera de alcance
 Cobro automático, prorrateo, fecha de fin programada, sucursales adicionales en Básico, add-ons de mesas o platos, desactivación automática sin elección.
 
 ## Evidencia
-- (pendiente)
+Sobre el diff de `main` (2026-10-23), migración `20261119100000`:
+- `pnpm db:reset` y `pnpm db:types` con la migración nueva; `pnpm typecheck` y `pnpm lint` limpios; `pnpm build` en verde.
+- RLS: `sucursal-adicional` 23/23 (catálogo; vender; Básico/Premium; 4 → `invalid_packs`; fórmula de desactivaciones incluida la del exceso heredado; selección ajena, inactiva, repetida o inexistente; cambio de plan; dos altas por el último cupo; alta y reactivación contra la baja del add-on; lo que ve cada rol; permisos; mora). Mutación: sin el advisory lock de `admin_set_extra_branches`, la prueba «reactivación contra la baja» falla. `acl` y `billing` actualizadas (función y fila nuevas) y en verde; `addons-y-baja`, `retiro-webar`, `limits`, `planes-pagos` y `desactivar-sucursales` siguen en verde en la corrida completa.
+- Corrida completa de `pnpm test:rls` (52 archivos): 1136 de 1142 pruebas en verde; las 6 fallas eran las listas de `acl`/`billing` (corregidas) y `owner-lectura` (intermitente conocida: pasa sola).
+- Unitarias: validaciones, errores de la base, mensajes del tope, desglose del Dueño e historial (`pnpm test` 907+ en verde; falla ajena conocida: `textos.test.ts`).
+- E2E contra el build: `superadmin-sucursal-adicional` 3/3 (vender, el Dueño ve «2 de 3 (2 del plan + 1 adicional · ARS 12.000/mes)», quitar eligiendo cuál se desactiva, «Pedí una sucursal adicional» al llegar al tope, Básico/Premium sin formulario), más `superadmin-addons-baja`, `sucursales`, `desactivar-sucursales`, `cuenta-pagos-historial` y `superadmin-planes-pagos` en verde.
+- Sin probar: staging y teléfono real.
+
+## Decisiones tomadas al implementar
+- La fila `extra_branch` lleva ceros en las columnas viejas de WebAR (siguen siendo `not null`); no se tocan.
+- Finalizar conserva la fila y su cantidad (como el resto de los add-ons); el cupo se calcula solo con contratos vigentes sobre un plan que los admite, y `least(extra_packs, max_packs)` acota una fila fuera de rango.
+- `admin_set_addon` / `admin_end_addon` quedan para add-ons futuros que no concedan cupo; con `extra_branch` responden `addon_has_own_action`.
+- El precio del catálogo (`addons`) es legible por cualquier sesión como el de `plans`; lo que no se expone al Staff es la cantidad contratada (`subscription_addons` es del Dueño) y los datos de `org_entitlements`.
 
 ## (C) Invariantes
 - Activas ≤ tope del plan + adicionales vigentes después de cualquier operación del add-on (el exceso tolerado es solo el heredado de un cambio de plan).

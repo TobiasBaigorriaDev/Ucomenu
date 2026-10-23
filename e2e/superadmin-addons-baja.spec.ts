@@ -6,8 +6,9 @@ import { SEED_PASSWORD, alerta, createTenant, expectNoHorizontalOverflow, login,
  * SuperAdmin: add-ons y baja de organizaciones (nivel C, ficha addons-y-baja-de-organizaciones), contra el build y el
  * Supabase local, a 390 px. Cada prueba trabaja sobre un local propio (`createTenant`) y lo borra con su auditoría.
  *
- * Desde ADR 0031 el catálogo real de add-ons está vacío (WebAR se retiró). La pantalla se prueba vacía y, para las
- * funciones que se conservan, con un add-on de ensayo que se inserta y se borra acá (ficha catalogo-video-feed).
+ * Desde ADR 0031 el catálogo genérico de add-ons está vacío (WebAR se retiró); la sucursal adicional tiene su propio bloque
+ * (`superadmin-sucursal-adicional.spec.ts`). La pantalla se prueba sin add-ons genéricos y, para las funciones que se
+ * conservan, con un add-on de ensayo que se inserta y se borra acá (ficha catalogo-video-feed).
  */
 
 const ADMIN_EMAIL = "admin@ucomenu.test";
@@ -26,15 +27,15 @@ async function conPlan(orgId: string, plan: "basic" | "pro" | "premium") {
 const limpiarAuditoria = (orgId: string) => purgeAuditLogWhere(`organization_id = '${orgId}'`);
 
 test.describe("add-ons", () => {
-  // Serie: la primera prueba necesita el catálogo vacío y las demás lo llenan con un add-on de ensayo.
+  // Serie: la primera prueba necesita el catálogo genérico vacío y las demás lo llenan con un add-on de ensayo.
   test.describe.configure({ mode: "serial" });
 
-  test("el catálogo está vacío: dice que no hay add-ons a la venta y no ofrece formularios", async ({ page }) => {
+  test("sin add-ons genéricos: dice que no hay otros a la venta y no ofrece formularios", async ({ page }) => {
     const t = await createTenant("adm-addon-vacio");
     try {
       await conPlan(t.orgId, "premium");
       await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(t.slug));
-      await expect(page.getByTestId("addons-vacio")).toContainText("Hoy no hay add-ons a la venta");
+      await expect(page.getByTestId("addons-vacio")).toContainText("Hoy no hay otros add-ons a la venta");
       await expect(page.getByTestId("addons-vacio")).toContainText("Premium");
       await expect(page.getByTestId("addon")).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Activar add-on" })).toHaveCount(0);

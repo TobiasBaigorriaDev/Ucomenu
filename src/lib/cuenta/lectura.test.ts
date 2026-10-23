@@ -198,3 +198,14 @@ describe("add-ons y reactivación (ficha addons-y-baja-de-organizaciones)", () =
     expect(describeHistory(fila("organization.reactivated", { reason: "x" }))).toEqual({ title: "Local reactivado por UcoMenu", lines: [] });
   });
 });
+
+describe("sucursales adicionales en el historial (ficha sucursal-adicional)", () => {
+  it("se cuentan sucursales, no «packs», y no se muestra fin ni motivo", () => {
+    const activado = describeHistory(fila("addon.activated", { addon: "extra_branch", extra_packs: 1, ends_at: null, reason: "nota interna" }));
+    expect(activado).toEqual({ title: "Sucursales adicionales activadas por UcoMenu", lines: ["1 sucursal adicional"] });
+    const cambiado = describeHistory(fila("addon.changed", { addon: "extra_branch", extra_packs: 3 }));
+    expect(cambiado).toEqual({ title: "Sucursales adicionales modificadas por UcoMenu", lines: ["3 sucursales adicionales"] });
+    const finalizado = describeHistory(fila("addon.ended", { addon: "extra_branch", ends_at: "2026-10-19T14:30:00+00:00" }));
+    expect(finalizado).toEqual({ title: "Sucursales adicionales finalizadas por UcoMenu", lines: ["Finalizaron el 19 de octubre de 2026"] });
+  });
+});

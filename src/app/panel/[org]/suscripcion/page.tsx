@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { loadOwnerAccount, type Page } from "@/lib/cuenta/cargar";
 import { describeHistory, describePayment, formatDateTime, formatDay, parseCursor, type HistoryRow, type PaymentRow } from "@/lib/cuenta/lectura";
-import { formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL, type BillingState } from "@/lib/entitlements";
+import { branchBreakdown, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL, type BillingState } from "@/lib/entitlements";
 import { createSessionClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Suscripción" };
@@ -68,6 +68,14 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
             <Row label="Prueba gratuita">
               {TRIAL_STATUS_LABEL[ent.trialStatus]}
               {ent.trialStatus !== "converted" && ent.trialEndsAt ? ` · hasta el ${formatDateWithYear(ent.trialEndsAt)}` : ""}
+            </Row>
+          ) : null}
+          {typeof ent.limits.branches === "number" ? (
+            <Row label="Sucursales">
+              <span data-testid="suscripcion-sucursales">
+                {ent.usage.branches ?? 0} de {ent.limits.branches}
+                {branchBreakdown(ent) ? ` (${branchBreakdown(ent)})` : ""}
+              </span>
             </Row>
           ) : null}
           {ent.periodEnd ? <Row label="Vence">{formatDateWithYear(ent.periodEnd)}</Row> : null}

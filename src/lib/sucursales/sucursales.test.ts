@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { Entitlements } from "@/lib/entitlements";
+import { branchBreakdown, type Entitlements } from "@/lib/entitlements";
 import { branchLimitMessage, sucursalesBlockNotice, sucursalesErrorMessage, sucursalesWriteBlock } from "./messages";
-import { BRANCH_NAME_MAX, suggestSlug, validateBranchName, validateBranchSlug } from "./rules";
+import { REVIEW_LINK_CASES } from "./resenas-casos";
+import { BRANCH_NAME_MAX, GOOGLE_REVIEW_HOSTS, REVIEW_URL_MAX, suggestSlug, validateBranchName, validateBranchSlug, validateReviewLink } from "./rules";
 
 const ent = (over: Partial<Entitlements> = {}): Entitlements => ({
   state: "active",
@@ -89,6 +90,8 @@ describe("mensajes", () => {
       "slug_blank",
       "slug_invalid",
       "slug_duplicate",
+      "review_link_invalid",
+      "review_link_too_long",
       "limit",
       "limit_reactivate",
       "blocked_read_only",
@@ -109,5 +112,69 @@ describe("mensajes", () => {
     expect(sucursalesBlockNotice(ent({ state: "read_only", canWrite: false }))).toContain("solo lectura");
     expect(sucursalesBlockNotice(ent({ state: "suspended", canWrite: false }))).toContain("suspendida");
     expect(sucursalesWriteBlock(null)).toBe("unexpected");
+  });
+});
+
+describe("sucursales adicionales (ficha sucursal-adicional)", () => {
+  const conAdicional = (extra: number, over: Partial<Entitlements> = {}) =>
+    ent({
+      limits: { branches: 2 + extra },
+      extraBranches: extra,
+      extraBranchPriceCents: 1_200_000,
+      extraBranchCurrency: "ARS",
+      extraBranchMax: 3,
+      ...over,
+    });
+
+  it("al llegar al tope, el Dueño de Pro lee «Pedí una sucursal adicional» con el precio", () => {
+    const mensaje = branchLimitMessage(conAdicional(0));
+    expect(mensaje).toContain("Pedí una sucursal adicional a UcoMenu (ARS 12.000/mes cada una)");
+    expect(mensaje).toContain("desactivá una");
+    expect(mensaje).not.toContain("cambiar de plan");
+    const reactivar = sucursalesErrorMessage("limit_reactivate", conAdicional(1));
+    expect(reactivar).toContain("Pedí una sucursal adicional");
+    expect(reactivar).toContain("No se reactivó");
+  });
+
+  it("sin oferta (Básico, Premium, Staff o ya en el máximo) queda la salida de siempre y nunca un precio", () => {
+    for (const e of [ent(), conAdicional(3), ent({ extraBranchMax: undefined, extraBranches: undefined })]) {
+      const mensaje = branchLimitMessage(e);
+      expect(mensaje).toContain("contactá a UcoMenu para cambiar de plan");
+      expect(mensaje).not.toMatch(/ARS|12\.000/);
+    }
+  });
+
+  it("el desglose cuenta las del plan y las adicionales con su costo; sin adicionales no hay desglose", () => {
+    expect(branchBreakdown(conAdicional(1))).toBe("2 del plan + 1 adicional · ARS 12.000/mes");
+    expect(branchBreakdown(conAdicional(2))).toBe("2 del plan + 2 adicionales · ARS 24.000/mes");
+    expect(branchBreakdown(conAdicional(0))).toBeNull();
+    expect(branchBreakdown(ent())).toBeNull();
+    expect(branchBreakdown(null)).toBeNull();
+    expect(branchBreakdown(ent({ limits: { branches: null as unknown as number }, extraBranches: 1 }))).toBeNull();
+  });
+});
+
+describe("validateReviewLink (ficha enlace-de-resenas-de-google)", () => {
+  it("responde según la tabla de casos que también recorre la prueba de la base", () => {
+    for (const { url, valid } of REVIEW_LINK_CASES) {
+      expect(validateReviewLink(url).ok, JSON.stringify(url)).toBe(valid);
+    }
+  });
+
+  it("recorta los espacios de los bordes, y vacío o ausente lo quita", () => {
+    expect(validateReviewLink("  https://g.page/r/abc/review \n")).toEqual({ ok: true, value: "https://g.page/r/abc/review" });
+    for (const vacio of ["", "   ", undefined, null]) expect(validateReviewLink(vacio), String(vacio)).toEqual({ ok: true, value: null });
+    expect(validateReviewLink(42)).toEqual({ ok: false, problem: "invalid" });
+  });
+
+  it("distingue lo demasiado largo de lo que no es de Google", () => {
+    expect(validateReviewLink("https://g.page/" + "a".repeat(REVIEW_URL_MAX))).toEqual({ ok: false, problem: "too_long" });
+    expect(validateReviewLink("https://example.com/a")).toEqual({ ok: false, problem: "invalid" });
+    expect(validateReviewLink("https://g.page/" + "a".repeat(REVIEW_URL_MAX - "https://g.page/".length)).ok).toBe(true);
+  });
+
+  it("la lista de hosts no tiene comodines ni repetidos", () => {
+    expect(new Set(GOOGLE_REVIEW_HOSTS).size).toBe(GOOGLE_REVIEW_HOSTS.length);
+    for (const host of GOOGLE_REVIEW_HOSTS) expect(host).toMatch(/^[a-z0-9.]+$/);
   });
 });
