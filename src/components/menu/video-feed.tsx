@@ -248,6 +248,9 @@ export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVid
   const t = TEXTOS[lang].feed;
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
+  // La barra de llamado crece al mostrar su respuesta: el feed termina donde ella empieza, medida de verdad (no un alto fijo).
+  const barSlot = useRef<HTMLDivElement>(null);
+  const [barHeight, setBarHeight] = useState(0);
   const [active, setActive] = useState(0);
   const [muted, setMuted] = useState(true);
   const reduced = useSyncExternalStore(subscribeReducedMotion, reducedMotionNow, () => false);
@@ -268,6 +271,16 @@ export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVid
     return () => observer.disconnect();
   }, [videos.length]);
 
+  useEffect(() => {
+    const bar = barSlot.current?.firstElementChild;
+    if (!bar) return;
+    const measure = () => setBarHeight(Math.ceil(bar.getBoundingClientRect().height));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(bar);
+    return () => observer.disconnect();
+  }, [callBar]);
+
   function go(direction: 1 | -1) {
     const target = neighbor(active, videos.length, direction);
     scroller.current?.querySelector(`[data-index="${target}"]`)?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
@@ -287,10 +300,10 @@ export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVid
 
   return (
     <div className="fixed inset-0 bg-black text-white" data-testid="feed">
-      {/* Con la barra de llamado de la mesa, el feed termina donde ella empieza (no la tapa): su alto es el de sus dos botones. */}
+      {/* Con la barra de llamado de la mesa, el feed termina donde ella empieza (no la tapa). Antes de medirla, un alto estimado. */}
       <div
         className="relative mx-auto w-full max-w-md"
-        style={{ height: callBar ? "calc(100% - 5.75rem - env(safe-area-inset-bottom))" : "100%" }}
+        style={{ height: !callBar ? "100%" : barHeight > 0 ? `calc(100% - ${barHeight}px)` : "calc(100% - 5.75rem - env(safe-area-inset-bottom))" }}
         onKeyDown={onKeyDown}
       >
         <header className="absolute inset-x-0 top-0 z-20 mx-auto flex max-w-md items-center justify-between gap-3 bg-gradient-to-b from-black/70 to-transparent px-3 pt-3 pb-6">
@@ -337,7 +350,11 @@ export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVid
           {t.position(active + 1, videos.length)}: {videos[active]?.title}
         </p>
       </div>
-      {callBar}
+      {callBar ? (
+        <div ref={barSlot} className="contents">
+          {callBar}
+        </div>
+      ) : null}
     </div>
   );
 }

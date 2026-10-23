@@ -339,6 +339,15 @@ test.describe("el feed desde la mesa conserva el llamado al mozo", () => {
       // Y funciona: el llamado llega al personal desde el feed.
       await barra.getByRole("button", { name: "Llamar al mozo" }).click();
       await expect(page.getByTestId("mensaje-llamado")).toBeVisible();
+      // La barra creció con la confirmación: el video sigue terminando donde ella empieza (revisión de Codex, ronda 1 de la mesa).
+      await expect
+        .poll(async () => {
+          const conMensaje = (await barra.boundingBox())!;
+          const video = (await slide(page, 0).boundingBox())!;
+          return conMensaje.y - (video.y + video.height);
+        })
+        .toBeGreaterThanOrEqual(-1);
+      expect((await barra.boundingBox())!.height).toBeGreaterThan(cajaBarra.height);
       const llamados = await service().from("waiter_calls").select("kind").eq("organization_id", t.orgId);
       expect(llamados.data?.map((l) => l.kind)).toEqual(["waiter"]);
 
