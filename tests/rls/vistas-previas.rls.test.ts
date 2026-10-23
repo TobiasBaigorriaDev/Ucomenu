@@ -271,6 +271,16 @@ describe("quién puede", () => {
     expect(tiene(local.id)).toBe(true);
 
     // La función de base, con un actor que no es SuperAdmin, tampoco (aunque se llame con la clave de servicio).
+    const altaImpostora = await service.rpc("admin_set_feature_preview", {
+      p_actor: local.owner.id,
+      p_org: local.id,
+      p_feature: "customers",
+      p_ends_at: new Date(Date.now() + 5 * DIA_MS).toISOString(),
+      p_reason: "x",
+    });
+    expect(altaImpostora.error?.code).toBe("42501");
+    expect(tiene(local.id, "customers")).toBe(false);
+    expect((await filas(local.id)).map((f) => f.feature)).toEqual([FEATURE]);
     const impostor = await service.rpc("admin_end_feature_preview", { p_actor: local.owner.id, p_org: local.id, p_feature: FEATURE, p_reason: "x" });
     expect(impostor.error?.code).toBe("42501");
     expect(tiene(local.id)).toBe(true);

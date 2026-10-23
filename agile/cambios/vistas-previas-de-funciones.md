@@ -28,7 +28,7 @@ Cobro, que el Dueño vea o pida vistas previas, avisos al Dueño antes del fin, 
 ## Evidencia
 Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 - `pnpm db:reset` y `pnpm db:types` con la migración; `pnpm typecheck` y `pnpm lint` limpios; `pnpm build` en verde.
-- RLS: `vistas-previas` 20/20 y `acl` 22/22 (la lista de columnas de `branches` estaba desactualizada desde la ficha del enlace de reseñas: se agregó `google_review_url`). Mutación: sin `ends_at > clock_timestamp()` en `plan_grants`, fallan 4 pruebas (vencer sola, terminar, volver a habilitar y habilitar contra terminar). La prueba de `feature_in_plan` simula el plan en una transacción que se revierte (ninguna clave está todavía en un plan).
+- RLS: `vistas-previas` 20/20 y `acl` 22/22 (tras la ronda 1) (la lista de columnas de `branches` estaba desactualizada desde la ficha del enlace de reseñas: se agregó `google_review_url`). Mutación: sin `ends_at > clock_timestamp()` en `plan_grants`, fallan 4 pruebas (vencer sola, terminar, volver a habilitar y habilitar contra terminar). La prueba de `feature_in_plan` simula el plan en una transacción que se revierte (ninguna clave está todavía en un plan).
 - Corrida completa de `pnpm test:rls` (54 archivos): 1193 de 1193 en verde.
 - Unitarias: validación, rechazos antes de la base y traducción de errores (`src/lib/admin`, 120 en verde).
 - E2E contra el build: `superadmin-vistas-previas` 2/2 (habilitar, cambiar el fin, terminar; el Dueño no ve nada; fin fuera de rango) más `superadmin-sucursal-adicional` y `superadmin-addons-baja` en verde.
@@ -46,5 +46,6 @@ Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 
 ## (C) Revisión y aprobación
 - Diseño aprobado por el usuario el 2026-10-23 (ADR 0039, decisión 5).
-- Revisión independiente de Codex: pendiente (una ronda, solo lectura).
+- Revisión independiente de Codex, ronda 1 sobre `196e5a6` (nivel C, solo lectura, estática): APROBAR CON CAMBIOS, un hallazgo. **Real:** la prueba de actor no SuperAdmin cubría solo `admin_end_feature_preview`; quitar la guarda de `admin_set_feature_preview` no se habría detectado. Corregido con una llamada directa de alta con `service_role` y actor Dueño (`42501`, sin fila ni movimiento); sin la guarda, esa prueba falla (comprobado).
+- Ronda de verificación: pendiente.
 - Aprobación del usuario para subir la migración a staging: pendiente.
