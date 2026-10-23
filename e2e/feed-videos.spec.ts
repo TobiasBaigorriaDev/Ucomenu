@@ -14,6 +14,16 @@ const carta = (slug: string) => `/m/${slug}/centro`;
 const feed = (slug: string) => `/m/${slug}/centro/videos`;
 const slide = (page: Page, i: number) => page.locator(`[data-testid=feed-video][data-index="${i}"]`);
 
+// Con `next dev`, el indicador de Next (esquina inferior izquierda; a veces expandido como «1 Insight») tapa botones del feed y
+// bloquea el clic. No existe en el build de producción: se quita de la página para que no interfiera.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    const quitar = () => document.querySelectorAll("nextjs-portal").forEach((nodo) => nodo.remove());
+    new MutationObserver(quitar).observe(document, { childList: true, subtree: true });
+    quitar();
+  });
+});
+
 async function conPlan(orgId: string, plan: "basic" | "pro" | "premium") {
   const r = await service().from("subscriptions").update({ plan_code: plan }).eq("organization_id", orgId);
   if (r.error) throw new Error(r.error.message);
@@ -290,6 +300,81 @@ test.describe("el feed", () => {
       await page.getByRole("link", { name: "Volver a la carta" }).click();
       await expect(page).toHaveURL(new RegExp(`/m/${t.slug}/centro`));
       expect((await page.goto(`/m/${t.slug}/no-existe/videos`))?.status()).toBe(404);
+    });
+  });
+});
+
+test.describe("el feed desde la mesa conserva el llamado al mozo", () => {
+  async function mesa(orgId: string, activa = true) {
+    const branch = await service().from("branches").select("id").eq("organization_id", orgId).single();
+    const r = await service()
+      .from("tables")
+      .insert({ organization_id: orgId, branch_id: branch.data!.id, label: "Mesa 7", is_active: activa })
+      .select("qr_token")
+      .single();
+    if (r.error) throw new Error(r.error.message);
+    return r.data.qr_token as string;
+  }
+
+  test("el enlace de la carta de mesa va al feed de la mesa; la barra sigue, no tapa el video y llama al mozo", async ({ page }) => {
+    await conLocal("feed-mesa", "premium", "active", async (t) => {
+      await sembrar(t.orgId, { title: "Uno", playback: "pb-mesa1", sort: 1 });
+      await sembrar(t.orgId, { title: "Dos", playback: "pb-mesa2", sort: 2 });
+      const token = await mesa(t.orgId);
+      await interceptarMux(page);
+      await page.goto(`/t/${token}`);
+      await expect(page.getByTestId("ver-videos")).toHaveAttribute("href", `/t/${token}/videos?lang=es`);
+      await page.getByTestId("ver-videos").click();
+      await expect(page).toHaveURL(new RegExp(`/t/${token}/videos`));
+      await expect(page.getByTestId("feed-video")).toHaveCount(2);
+
+      // La barra de llamado sigue ahí y el video termina donde ella empieza.
+      const barra = page.getByTestId("barra-llamado");
+      await expect(barra).toBeVisible();
+      const cajaBarra = (await barra.boundingBox())!;
+      const cajaVideo = (await slide(page, 0).boundingBox())!;
+      expect(cajaVideo.y + cajaVideo.height).toBeLessThanOrEqual(cajaBarra.y + 1);
+      await expectNoHorizontalOverflow(page);
+
+      // Y funciona: el llamado llega al personal desde el feed.
+      await barra.getByRole("button", { name: "Llamar al mozo" }).click();
+      await expect(page.getByTestId("mensaje-llamado")).toBeVisible();
+      const llamados = await service().from("waiter_calls").select("kind").eq("organization_id", t.orgId);
+      expect(llamados.data?.map((l) => l.kind)).toEqual(["waiter"]);
+
+      // Volver lleva a la carta de la mesa (con la barra y el número de mesa).
+      await page.getByTestId("feed-volver").click();
+      await expect(page).toHaveURL(new RegExp(`/t/${token}([?]|$)`));
+      await expect(page.getByTestId("mesa")).toHaveText("Mesa 7");
+      await expect(page.getByTestId("barra-llamado")).toBeVisible();
+    });
+  });
+
+  test("el feed por la sucursal (sin mesa) no tiene barra de llamado", async ({ page }) => {
+    await conLocal("feed-sin-mesa", "premium", "active", async (t) => {
+      await sembrar(t.orgId, { title: "Uno", playback: "pb-sm1" });
+      await interceptarMux(page);
+      await page.goto(feed(t.slug));
+      await expect(page.getByTestId("feed-video")).toHaveCount(1);
+      await expect(page.getByTestId("barra-llamado")).toHaveCount(0);
+    });
+  });
+
+  test("mesa desactivada: el feed se ve sin barra; token desconocido: 404; sin videos: aviso con la barra", async ({ page }) => {
+    await conLocal("feed-mesa-off", "premium", "active", async (t) => {
+      await sembrar(t.orgId, { title: "Uno", playback: "pb-off1" });
+      const apagada = await mesa(t.orgId, false);
+      await interceptarMux(page);
+      await page.goto(`/t/${apagada}/videos`);
+      await expect(page.getByTestId("feed-video")).toHaveCount(1);
+      await expect(page.getByTestId("barra-llamado")).toHaveCount(0);
+      expect((await page.goto("/t/00000000000000000000000000000000/videos"))?.status()).toBe(404);
+    });
+    await conLocal("feed-mesa-vacia", "premium", "active", async (t) => {
+      const token = await mesa(t.orgId);
+      await page.goto(`/t/${token}/videos`);
+      await expect(page.getByTestId("feed-vacio")).toBeVisible();
+      await expect(page.getByTestId("barra-llamado")).toBeVisible();
     });
   });
 });

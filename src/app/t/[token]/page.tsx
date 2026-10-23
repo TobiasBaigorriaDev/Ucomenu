@@ -47,8 +47,8 @@ export default async function TablePage({ params, searchParams }: PageProps<"/t/
   // aunque alguien fuerce la acción, la función de base responde «no disponible». El ticket de visita (que se emite en cada
   // carga de la página, nunca desde caché) lo valida la acción: una pestaña vieja deja de poder avisar (ticket-de-visita).
   return table.callsEnabled ? (
-    <PublicMenuView menu={menu} lang={lang} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} lang={lang} />} />
+    <PublicMenuView menu={menu} lang={lang} videosPath={`/t/${token}/videos`} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} lang={lang} />} />
   ) : (
-    <PublicMenuView menu={menu} lang={lang} tableLabel={table.tableActive ? table.tableLabel : null} />
+    <PublicMenuView menu={menu} lang={lang} videosPath={`/t/${token}/videos`} tableLabel={table.tableActive ? table.tableLabel : null} />
   );
 }

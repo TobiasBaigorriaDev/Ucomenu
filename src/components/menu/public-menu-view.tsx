@@ -24,12 +24,15 @@ export function PublicMenuView({
   menu,
   tableLabel,
   callBar,
+  videosPath,
   lang,
 }: {
   menu: PublicMenu;
   lang: Lang;
   tableLabel?: string | null;
   callBar?: ReactNode;
+  /** Dónde está el feed desde esta entrada (en la mesa, bajo `/t/{token}` para no perderla); por defecto, el de la sucursal. */
+  videosPath?: string;
 }) {
   const { sections } = menu;
   const t = TEXTOS[lang];
@@ -43,7 +46,7 @@ export function PublicMenuView({
         // Solo un enlace, SIN precarga: la carta no carga nada del feed (ni video, ni `hls.js`) hasta que se entra (ficha feed-de-videos).
         <div className="mx-auto max-w-3xl px-4 pb-6 sm:px-6">
           <Link
-            href={`${videosHref(menu.organization.slug, menu.branch.slug)}?lang=${lang}`}
+            href={`${videosPath ?? videosHref(menu.organization.slug, menu.branch.slug)}?lang=${lang}`}
             prefetch={false}
             data-testid="ver-videos"
             className="inline-flex min-h-11 items-center gap-2.5 rounded-full border-[1.5px] border-ink px-5 text-base font-semibold hover:bg-ink/5"

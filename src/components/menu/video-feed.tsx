@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import { formatArs } from "@/lib/money";
@@ -176,7 +176,7 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, on
       data-index={index}
       data-prepared={prepared ? "true" : "false"}
       data-testid="feed-video"
-      className="relative h-dvh snap-start snap-always overflow-hidden bg-black"
+      className="relative h-full snap-start snap-always overflow-hidden bg-black"
     >
       <video
         ref={ref}
@@ -244,7 +244,7 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, on
  * Feed vertical de videos (ficha feed-de-videos): un video a la vez con `scroll-snap`, mudo y en bucle. Solo el visible y el
  * siguiente piden su stream. Flechas, botones de siguiente/anterior y Escape (vuelve a la carta) para teclado y escritorio.
  */
-export function VideoFeed({ videos, lang, backHref }: { videos: FeedVideo[]; lang: Lang; backHref: string }) {
+export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVideo[]; lang: Lang; backHref: string; callBar?: ReactNode }) {
   const t = TEXTOS[lang].feed;
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
@@ -287,7 +287,12 @@ export function VideoFeed({ videos, lang, backHref }: { videos: FeedVideo[]; lan
 
   return (
     <div className="fixed inset-0 bg-black text-white" data-testid="feed">
-      <div className="mx-auto h-full w-full max-w-md" onKeyDown={onKeyDown}>
+      {/* Con la barra de llamado de la mesa, el feed termina donde ella empieza (no la tapa): su alto es el de sus dos botones. */}
+      <div
+        className="relative mx-auto w-full max-w-md"
+        style={{ height: callBar ? "calc(100% - 5.75rem - env(safe-area-inset-bottom))" : "100%" }}
+        onKeyDown={onKeyDown}
+      >
         <header className="absolute inset-x-0 top-0 z-20 mx-auto flex max-w-md items-center justify-between gap-3 bg-gradient-to-b from-black/70 to-transparent px-3 pt-3 pb-6">
           <Link
             href={backHref}
@@ -332,6 +337,7 @@ export function VideoFeed({ videos, lang, backHref }: { videos: FeedVideo[]; lan
           {t.position(active + 1, videos.length)}: {videos[active]?.title}
         </p>
       </div>
+      {callBar}
     </div>
   );
 }

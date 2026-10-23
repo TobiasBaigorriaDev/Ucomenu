@@ -15,6 +15,7 @@ Que el comensal vea los videos publicados del local en un feed vertical (un vide
 7. **Dependencia nueva, aprobada por el usuario (2026-10-22): `hls.js` 1.7.3** (Apache-2.0, sin dependencias propias), importada de forma dinámica. Se descartó `mux-player` (más pesado y trae analítica propia).
 8. **Idiomas**: los textos fijos del feed van en es/en/pt como el resto de la carta; el título de cada video no se traduce.
 9. **Sin videos publicados** la ruta muestra un aviso con el enlace a la carta (no un 404: el enlace puede estar guardado).
+10. **El feed desde la mesa (agregado 2026-10-22, por la prueba del usuario):** al entrar al feed desde la carta de una mesa (`/t/{token}`) desaparecía el llamado al mozo, porque el feed vivía solo bajo `/m/…`. Ahora existe `/t/{token}/videos`: misma resolución, mismos estados y mismo 404 que `/t/{token}`, y la **misma barra de llamado** (`CallBar`, con un ticket de visita emitido en esa carga). El enlace «Ver videos» de la carta de mesa apunta ahí y «Volver» regresa a la carta de la mesa. El feed termina donde empieza la barra (no la tapa); sin llamado (mesa desactivada o silenciada, plan sin llamados) no hay barra. La pantalla se comparte entre ambas rutas (`FeedScreen`). No cambia lo que lee `anon` ni los permisos.
 
 ## Aceptación
 - [x] `anon` lee un video solo si está publicado y listo y su organización tiene el feed vigente; nunca borradores, con error, en borrado ni sin procesar; nunca los identificadores internos de Mux ni el estado.
@@ -22,11 +23,12 @@ Que el comensal vea los videos publicados del local en un feed vertical (un vide
 - [x] La carta muestra «Videos» solo con videos publicados y no hace ninguna petición de video, de `hls.js` ni a Mux al cargarse.
 - [x] El feed muestra los videos en orden, uno a la vez; solo el visible y el siguiente piden su stream; los otros, solo el póster.
 - [x] «Ver plato» aparece solo con un plato visible en esa sucursal y abre su nombre, precio y descripción.
+- [x] Desde la mesa, el feed conserva la barra de llamado (llamar al mozo y pedir la cuenta funcionan), no la tapa y «Volver» regresa a la carta de la mesa; sin mesa no hay barra.
 - [x] Funciona en es/en/pt, con `prefers-reduced-motion`, a 390 px y por teclado (flechas, espacio, Esc); cuenta suspendida y sucursal desactivada dan el mismo «no disponible» que la carta.
 - [ ] Reproducción real comprobada en Safari/iPhone (HLS nativo) y en Chrome (`hls.js`) con un asset de Mux de staging. *(Chrome hecho; falta iPhone.)*
 
 ## Fuera de alcance
-Likes y comentarios, `/t/{token}/videos` (el feed desde la mesa llega con ellos), reordenar videos, subtítulos, estadísticas de reproducción, precarga más agresiva o CDN propio.
+Likes y comentarios, reordenar videos, subtítulos, estadísticas de reproducción, precarga más agresiva o CDN propio.
 
 ## (C) Invariantes
 1. Lo que `anon` puede leer de `menu_videos` son solo videos publicados y listos de organizaciones con el feed vigente, con las columnas públicas listadas; nada más.
