@@ -23,6 +23,8 @@ export type Textos = {
   detailAllergens: string;
   madeWith: string;
   languageLabel: string;
+  /** Invitación a reseñar en Google (ficha invitacion-a-resenar): textos fijos, iguales para todos y que el local no edita. */
+  review: { footer: string; invite: string; action: string; close: string };
   legal: { nav: string; terms: string; privacy: string; allergens: string };
   count: {
     dishes: (n: number) => string;
@@ -127,6 +129,7 @@ const es: Textos = {
   detailAllergens: "La información de alérgenos la declara el local. Ante cualquier duda, consultá al personal.",
   madeWith: "Hecho con UcoMenu",
   languageLabel: "Idioma",
+  review: { footer: "Dejá tu reseña en Google", invite: "Si querés, podés dejar tu reseña de este lugar en Google.", action: "Dejar una reseña", close: "Cerrar" },
   legal: { nav: "Información legal", terms: "Términos de uso", privacy: "Privacidad", allergens: "Aviso de alérgenos" },
   count: {
     dishes: (n) => (n === 1 ? "1 plato" : `${n} platos`),
@@ -238,6 +241,7 @@ const en: Textos = {
   detailAllergens: "Allergen information is declared by the restaurant. If in doubt, ask the staff.",
   madeWith: "Made with UcoMenu",
   languageLabel: "Language",
+  review: { footer: "Leave a review on Google", invite: "If you'd like, you can leave a review of this place on Google.", action: "Leave a review", close: "Close" },
   legal: { nav: "Legal information", terms: "Terms of use", privacy: "Privacy", allergens: "Allergen notice" },
   count: {
     dishes: (n) => (n === 1 ? "1 dish" : `${n} dishes`),
@@ -348,6 +352,7 @@ const pt: Textos = {
   detailAllergens: "As informações sobre alérgenos são declaradas pelo estabelecimento. Em caso de dúvida, pergunte à equipe.",
   madeWith: "Feito com UcoMenu",
   languageLabel: "Idioma",
+  review: { footer: "Deixe sua avaliação no Google", invite: "Se quiser, você pode deixar uma avaliação deste lugar no Google.", action: "Deixar uma avaliação", close: "Fechar" },
   legal: { nav: "Informações legais", terms: "Termos de uso", privacy: "Privacidade", allergens: "Aviso de alérgenos" },
   count: {
     dishes: (n) => (n === 1 ? "1 prato" : `${n} pratos`),

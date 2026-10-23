@@ -19,6 +19,23 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * ¿Toca ofrecer la invitación a reseñar? Una vez al día (día del dispositivo) por sucursal: la primera vez que se pide la cuenta se
+ * marca y las siguientes no la repiten, la haya cerrado o no. Sin almacenamiento (modo privado, bloqueado) se ofrece sin recordar.
+ */
+function claimReviewInvite(branchId: string): boolean {
+  try {
+    const now = new Date();
+    const day = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+    const key = `ucomenu:resenas:${branchId}`;
+    if (window.localStorage.getItem(key) === day) return false;
+    window.localStorage.setItem(key, day);
+  } catch {
+    // Sin almacenamiento no se puede recordar: se ofrece igual (el cierre sigue valiendo en esta pantalla).
+  }
+  return true;
+}
+
 /** Con tres celdas el ancho no alcanza para icono y texto en una línea: se apilan, y el texto puede ocupar dos. */
 const cellStacked = "min-h-16 flex-col gap-1 px-2 text-[0.9375rem] leading-tight text-center";
 
@@ -109,8 +126,30 @@ function useSessionExpired(ttlMs: number): boolean {
  * `videosHref` suma la tercera celda, el acceso al feed (solo en la carta y si el local tiene videos; en el feed no hace falta,
  * ya tiene su propio «volver»). Es navegación: sigue disponible con el ticket vencido.
  */
-export function CallBar({ token, ticket, ttlMs, lang, videosHref }: { token: string; ticket: string; ttlMs: number; lang: Lang; videosHref?: string }) {
-  const [state, formAction] = useActionState<CallState, FormData>(createWaiterCallAction, {});
+export function CallBar({
+  token,
+  ticket,
+  ttlMs,
+  lang,
+  videosHref,
+  reviewUrl,
+  reviewKey,
+}: {
+  token: string;
+  ticket: string;
+  ttlMs: number;
+  lang: Lang;
+  videosHref?: string;
+  /** Enlace de reseñas de Google de la sucursal; sin él no hay invitación. `reviewKey` (la sucursal) acota «una vez al día» por dispositivo. */
+  reviewUrl?: string | null;
+  reviewKey?: string;
+}) {
+  const [state, formAction] = useActionState<CallState & { invite?: boolean }, FormData>(async (previous, formData) => {
+    const next: CallState & { invite?: boolean } = await createWaiterCallAction(previous, formData);
+    // La invitación se ofrece solo tras pedir la cuenta, cuando el pedido se registró de verdad, y una vez al día por dispositivo.
+    return reviewUrl && reviewKey && next.kind === "bill" && next.tone === "ok" && claimReviewInvite(reviewKey) ? { ...next, invite: true } : next;
+  }, {});
+  const [closed, setClosed] = useState<unknown>(null);
   const sessionExpired = useSessionExpired(ttlMs) || state.expired === true;
 
   return (
@@ -138,6 +177,21 @@ export function CallBar({ token, ticket, ttlMs, lang, videosHref }: { token: str
           >
             {state.message}
           </p>
+        ) : null}
+        {!sessionExpired && state.invite && reviewUrl && closed !== state ? (
+          <div data-testid="invitacion-resenas" className="mb-2 flex items-start gap-2 rounded-2xl bg-ink/5 px-3 py-2">
+            <p className="flex-1 text-[0.9375rem] leading-snug text-ink">
+              {TEXTOS[lang].review.invite}{" "}
+              <a href={reviewUrl} target="_blank" rel="noopener noreferrer" className="font-semibold underline underline-offset-4">
+                {TEXTOS[lang].review.action}
+              </a>
+            </p>
+            <button type="button" onClick={() => setClosed(state)} aria-label={TEXTOS[lang].review.close} className="-my-1 -mr-1 inline-flex size-11 shrink-0 items-center justify-center rounded-full text-ink hover:bg-ink/10">
+              <Icon>
+                <path d="M6 6l12 12M18 6 6 18" />
+              </Icon>
+            </button>
+          </div>
         ) : null}
         {sessionExpired ? videosHref ? <VideosCell href={videosHref} lang={lang} stacked={false} /> : null : <Buttons lang={lang} videosHref={videosHref} />}
       </div>

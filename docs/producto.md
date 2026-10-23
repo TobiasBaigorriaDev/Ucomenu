@@ -81,8 +81,8 @@ Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases 
 - La carta muestra el precio anterior tachado, el promocional y hasta cuándo rige. Cada cambio de una promoción queda en su historial; el historial de precios de lista no cambia.
 
 #### 9. Invitación a reseñar en Google (todos los planes)
-- El Dueño carga por sucursal el **enlace de reseñas** de su perfil de Google (solo direcciones de Google). *Implementado el 2026-10-23 (Sucursales → «Enlace de reseñas»); falta la invitación en la carta.*
-- La carta muestra un enlace discreto en el pie y, con plan Pro o superior, una invitación tras «Pedir la cuenta». Se puede cerrar y no se repite en el día.
+- El Dueño carga por sucursal el **enlace de reseñas** de su perfil de Google (solo direcciones de Google). *Implementado el 2026-10-23 (Sucursales → «Enlace de reseñas»).*
+- La carta muestra un enlace discreto en el pie y, con plan Pro o superior, una invitación tras «Pedir la cuenta». Se puede cerrar y no se repite en el día. *Implementado en local el 2026-10-23.*
 - Respeta la [política de Google](https://support.google.com/contributionpolicy/answer/7400114): el mismo mensaje para todos, **sin preguntar antes si le gustó**, sin estrellas ni incentivos y con textos fijos (es/en/pt) que el local no edita.
 
 #### 10. Clientes recurrentes (Premium) — [ADR 0042](decisiones/0042-clientes-recurrentes.md)
@@ -106,7 +106,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Analítica básica (posterior al MVP) | — | ✔ | ✔ |
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
 | Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
-| Invitación a reseñar en Google (*sin implementar*) | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
+| Invitación a reseñar en Google | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
 | Promociones programadas / Happy Hour (*sin implementar*) | — | ✔ | ✔ |
 | Pedidos que anota el mozo (*sin implementar*) | — | ✔ | ✔ |
 | Clientes recurrentes (*sin implementar*) | — | — | ✔ |

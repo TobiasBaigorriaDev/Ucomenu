@@ -54,7 +54,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 **S1 — Ingresos y confianza**
 - [C] Sucursal adicional: ver «Para verificar»
 - [M] Enlace de reseñas de Google por sucursal: hecho en local (2026-10-23), ver «Hecho»
-- [M] Invitación a reseñar en la carta: pie para todos los planes y tras «Pedir la cuenta» con Pro o superior; textos fijos es/en/pt, sin pregunta previa ni incentivos (desbloqueada: el enlace de reseñas ya existe)
+- [M] Invitación a reseñar en la carta: hecho en local (2026-10-23), ver «Hecho»
 - [C] Vistas previas de funciones por organización (SuperAdmin, auditadas, con fin; `plan_grants` = plan ∪ vistas previas)
 
 **S2 — Promociones programadas (Happy Hour)**
@@ -89,7 +89,8 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
-- [M] Enlace de reseñas de Google por sucursal: columna validada con hosts exactos de Google (`CHECK` espejo de la validación local), editable solo por el Dueño con la cuenta al día y legible por la carta pública mientras la sucursal esté activa y publicada; implementado y verificado en local, y en staging con su migración (2026-10-23); la carta todavía no lo muestra → [ficha](cambios/enlace-de-resenas-de-google.md)
+- [M] Invitación a reseñar en la carta: enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» (dock de llamados, Pro o superior), una vez al día por dispositivo, textos fijos es/en/pt; implementado y verificado en local (2026-10-23), sin subir → [ficha](cambios/invitacion-a-resenar.md)
+- [M] Enlace de reseñas de Google por sucursal: columna validada con hosts exactos de Google (`CHECK` espejo de la validación local), editable solo por el Dueño con la cuenta al día y legible por la carta pública mientras la sucursal esté activa y publicada; implementado y verificado en local, y en staging con su migración (2026-10-23); la carta lo muestra desde la [invitación](cambios/invitacion-a-resenar.md) → [ficha](cambios/enlace-de-resenas-de-google.md)
 - [M] Guía de primeros pasos descartable por cuenta (preferencia guardada en la base, con renglón para volver a mostrarla) y resumen por sucursal cuando hay varias; en `origin/main` y en staging (2026-10-23) → [ficha](cambios/guia-descartable.md)
 - [C] Cuentas de Auth sin ningún local: se conservan y SuperAdmin las lista en `/admin/cuentas` y borra una a mano (email escrito, motivo, reserva de la cuenta y constancia sin el email); aprobado por Codex (3 rondas), en `origin/main` y en staging (2026-10-23) → [ficha](cambios/cuentas-sin-local.md) · [ADR 0032](../docs/decisiones/0032-reserva-de-cuentas-globales.md)
 - [C] Escrituras públicas de la mesa solo desde el servidor: `create_waiter_call`, `set_video_like` y `submit_video_comment` las ejecuta únicamente `service_role` y la acción de servidor verifica antes ticket y conexión; cierra el límite aceptado de llamado, likes y comentarios; aprobado por Codex, en `origin/main` y en staging (2026-10-23) → [ficha](cambios/escrituras-publicas-solo-servidor.md) · [ADR 0038](../docs/decisiones/0038-escrituras-publicas-solo-servidor.md)

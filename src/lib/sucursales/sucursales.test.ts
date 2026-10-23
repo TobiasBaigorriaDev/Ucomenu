@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { branchBreakdown, type Entitlements } from "@/lib/entitlements";
 import { branchLimitMessage, sucursalesBlockNotice, sucursalesErrorMessage, sucursalesWriteBlock } from "./messages";
 import { REVIEW_LINK_CASES } from "./resenas-casos";
-import { BRANCH_NAME_MAX, GOOGLE_REVIEW_HOSTS, REVIEW_URL_MAX, suggestSlug, validateBranchName, validateBranchSlug, validateReviewLink } from "./rules";
+import { BRANCH_NAME_MAX, GOOGLE_REVIEW_HOSTS, REVIEW_URL_MAX, publicReviewUrl, suggestSlug, validateBranchName, validateBranchSlug, validateReviewLink } from "./rules";
 
 const ent = (over: Partial<Entitlements> = {}): Entitlements => ({
   state: "active",
@@ -176,5 +176,15 @@ describe("validateReviewLink (ficha enlace-de-resenas-de-google)", () => {
   it("la lista de hosts no tiene comodines ni repetidos", () => {
     expect(new Set(GOOGLE_REVIEW_HOSTS).size).toBe(GOOGLE_REVIEW_HOSTS.length);
     for (const host of GOOGLE_REVIEW_HOSTS) expect(host).toMatch(/^[a-z0-9.]+$/);
+  });
+});
+
+describe("publicReviewUrl (ficha invitacion-a-resenar)", () => {
+  it("la carta solo usa lo que cumple la lista de Google, sin recortar ni arreglar nada", () => {
+    for (const { url, valid } of REVIEW_LINK_CASES) expect(publicReviewUrl(url), JSON.stringify(url)).toBe(valid ? url : null);
+    expect(publicReviewUrl(" https://g.page/r/abc/review")).toBeNull();
+  });
+  it("sin enlace o con un valor que no es texto no hay invitación", () => {
+    for (const v of [null, undefined, "", 42, {}]) expect(publicReviewUrl(v), String(v)).toBeNull();
   });
 });

@@ -83,6 +83,14 @@ export function PublicMenuView({
         <p className="text-sm leading-relaxed text-muted">
           {t.footerAllergens}
         </p>
+        {menu.branch.reviewUrl ? (
+          // Invitación discreta y fija para todos los planes: el mismo enlace y texto para cualquiera que llegue al pie, sin preguntar nada antes.
+          <p className="mt-4 text-sm">
+            <a href={menu.branch.reviewUrl} target="_blank" rel="noopener noreferrer" data-testid="resenas-pie" className="inline-flex min-h-11 items-center font-medium text-ink underline underline-offset-4 hover:text-[var(--carta-terra)]">
+              {t.review.footer}
+            </a>
+          </p>
+        ) : null}
         <LegalLinks className="mt-4 flex justify-center text-muted" lang={lang} />
         <p className="mt-5 text-sm text-muted">{t.madeWith}</p>
       </footer>

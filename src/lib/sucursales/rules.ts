@@ -88,3 +88,11 @@ export function validateReviewLink(raw: unknown): { ok: true; value: string | nu
   if ([...value].length > REVIEW_URL_MAX) return { ok: false, problem: "too_long" };
   return REVIEW_URL_PATTERN.test(value) ? { ok: true, value } : { ok: false, problem: "invalid" };
 }
+
+/**
+ * El enlace de reseñas como lo usa la carta pública: el guardado, si cumple la lista de Google, o `null`. La carta no confía en
+ * la columna (el CHECK ya la acota; esto es la segunda barrera antes de ponerla en un `href`) y no «arregla» nada.
+ */
+export function publicReviewUrl(stored: unknown): string | null {
+  return typeof stored === "string" && [...stored].length <= REVIEW_URL_MAX && REVIEW_URL_PATTERN.test(stored) ? stored : null;
+}

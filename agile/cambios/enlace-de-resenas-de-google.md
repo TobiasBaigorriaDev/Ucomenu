@@ -3,7 +3,7 @@ Estado: **implementado y verificado en local (2026-10-23).** Primera pieza del m
 Nivel: **M** — una columna y un privilegio por columna; no toca dinero, planes ni borrados. El único riesgo de exposición es que el enlace lo lee la carta pública, así que se acota a direcciones de Google.
 
 ## Objetivo
-Que el Dueño cargue, por sucursal, el enlace de reseñas de su perfil de Google, para que después la carta pueda invitar a reseñar. Esta ficha solo guarda y valida el dato; **no cambia la carta pública**.
+Que el Dueño cargue, por sucursal, el enlace de reseñas de su perfil de Google, para que después la carta pueda invitar a reseñar. Esta ficha solo guarda y valida el dato; **no cambia la carta pública** (la invitación llegó después: [ficha](invitacion-a-resenar.md)).
 
 ## Decisiones (particulares)
 1. **Columna `branches.google_review_url`** (nula = sin enlace), migración `20261120100000`. `CHECK`: `https`, host **exacto** de una lista de Google (`g.page`, `g.co`, `goo.gl`, `maps.app.goo.gl`, `share.google`, `search.google.com`, `maps.google.com`, `google.com`, `www.google.com`, `google.com.ar`, `www.google.com.ar`), después del host solo `/…` (sin usuario, sin puerto, sin `?`/`#` pegados al host), sin espacios, caracteres de control ni barras invertidas, de 1 a 500 caracteres. Ampliar la lista es una migración.

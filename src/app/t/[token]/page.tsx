@@ -50,7 +50,7 @@ export default async function TablePage({ params, searchParams }: PageProps<"/t/
   const videosPath = `/t/${token}/videos`;
   const videosHref = menu.hasVideos ? `${videosPath}?lang=${lang}` : undefined;
   return table.callsEnabled ? (
-    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} lang={lang} videosHref={videosHref} />} />
+    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} lang={lang} videosHref={videosHref} reviewUrl={menu.branch.reviewUrl} reviewKey={menu.branch.id} />} />
   ) : (
     <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableActive ? table.tableLabel : null} />
   );

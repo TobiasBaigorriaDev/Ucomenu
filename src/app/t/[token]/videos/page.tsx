@@ -43,6 +43,6 @@ export default async function TableVideosPage({ params, searchParams }: PageProp
   // Un solo ticket de visita por carga, para el llamado y para los likes. Los botones solo existen si la base informa que se puede
   // (llamar: plan, cuenta al día, mesa activa y no silenciada; likes y comentarios: plan con feed, cuenta que escribe, mesa y sucursal activas).
   const ticket = issueVisitTicket(token);
-  const callBar = table.callsEnabled ? <CallBar token={token} ticket={ticket} ttlMs={VISIT_TTL_MS} lang={lang} /> : undefined;
+  const callBar = table.callsEnabled ? <CallBar token={token} ticket={ticket} ttlMs={VISIT_TTL_MS} lang={lang} reviewUrl={menu.branch.reviewUrl} reviewKey={menu.branch.id} /> : undefined;
   return <FeedScreen menu={menu} lang={lang} backHref={backHref} callBar={callBar} likes={table.likesEnabled ? { token, ticket } : undefined} comments={table.commentsEnabled ? { token, ticket } : undefined} />;
 }

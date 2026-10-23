@@ -8,6 +8,7 @@ import type { Lang } from "@/lib/idiomas/idiomas";
 import { offeredLanguages } from "@/lib/idiomas/localizar";
 import { parseTranslations, type Translations } from "@/lib/idiomas/traducciones";
 import { readAllPages } from "@/lib/paginar";
+import { publicReviewUrl } from "@/lib/sucursales/rules";
 import { isValidSlug } from "@/lib/slug";
 import { applyBranchSettings, loadBranchSettings } from "@/lib/carta/availability";
 import { createPublicClient } from "@/lib/supabase/public-client";
@@ -15,7 +16,8 @@ import { hasPublishedVideos } from "@/lib/videos/feed";
 
 export type PublicMenu = {
   organization: { id: string; name: string; slug: string; menu_palette: Palette; menu_layout: Layout; /** Tema de fecha especial vigente hoy (en Buenos Aires), o `null`. */ theme: Theme | null; logo_path?: string | null };
-  branch: { id: string; name: string; slug: string };
+  /** `reviewUrl`: enlace de reseñas de Google de la sucursal (ya comprobado contra los hosts de Google), o `null`. */
+  branch: { id: string; name: string; slug: string; reviewUrl: string | null };
   /** Textos originales (en español) con sus traducciones; la página los resuelve al idioma elegido con `localizeSections`. */
   sections: MenuSection[];
   /** Idiomas que ofrece el local: el español y los que tengan al menos un texto traducido. */
@@ -165,7 +167,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .select("id, name, slug, menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, branches!inner(id, name, slug)")
+    .select("id, name, slug, menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, branches!inner(id, name, slug, google_review_url)")
     .eq("slug", orgSlug)
     .or(`slug.eq.${branchSlug},slug_aliases.cs.{${branchSlug}}`, { referencedTable: "branches" })
     .maybeSingle();
@@ -194,7 +196,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
         theme: activeTheme({ theme: org.menu_theme, from: org.menu_theme_from, until: org.menu_theme_until }, new Date()),
         logo_path: org.logo_path,
       },
-      branch: { id: branch.id, name: branch.name, slug: branch.slug },
+      branch: { id: branch.id, name: branch.name, slug: branch.slug, reviewUrl: publicReviewUrl(branch.google_review_url) },
       sections,
       languages: offeredLanguages(sections),
       hasVideos,

@@ -7,9 +7,11 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 Del incremento «Salón y crecimiento» (diseño aprobado el 2026-10-23) están hechas, aprobadas y en staging (Fly versión 33, migraciones `20261119100000` y `20261120100000`) las dos primeras piezas de S1:
 
 - **Sucursal adicional (C)**, [ficha](cambios/sucursal-adicional.md): migración `20261119100000` (catálogo con `extra_branch`, `org_limit`, `admin_set_extra_branches`, `admin_change_plan`), bloque en la ficha de SuperAdmin con elección de las sucursales a desactivar, y cupo, precio y aviso «Pedí una sucursal adicional» para el Dueño. Verificada con RLS (23 pruebas propias, concurrencia incluida), unitarias y E2E. Codex la revisó (1 ronda sobre `295046e`, sin hallazgos, APROBAR) y el usuario aprobó subirla a staging.
-- **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000` y formulario en Sucursales. Verificado en local y en staging; la carta todavía no lo muestra.
+- **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000` y formulario en Sucursales. Verificado en local y en staging; la carta lo muestra desde la invitación.
 
-Ambas están en `origin/main` (`eeec5f2`, subido el 2026-10-23) y en staging. El upgrade de Next (`34e17fa`) está en `origin/main` (`4dd6aeb`) y en staging.
+- **Invitación a reseñar en la carta (M)**, [ficha](cambios/invitacion-a-resenar.md): enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» con Pro o superior (una vez al día por dispositivo), textos fijos es/en/pt. Verificada en local; commit local sin subir ni desplegar.
+
+Las dos primeras están en `origin/main` (`eeec5f2`, subido el 2026-10-23) y en staging. El upgrade de Next (`34e17fa`) está en `origin/main` (`4dd6aeb`) y en staging.
 
 ## Bloqueos y límites
 
@@ -21,5 +23,5 @@ Ambas están en `origin/main` (`eeec5f2`, subido el 2026-10-23) y en staging. El
 ## Próximo paso
 
 1. Probar en staging, con sesión de SuperAdmin y de Dueño, vender y quitar una sucursal adicional y guardar un enlace de reseñas.
-2. Invitación a reseñar en la carta (M, ya desbloqueada) y vistas previas por organización (C).
+2. Subir y probar en staging la invitación a reseñar (con enlace cargado, plan Pro, pedir la cuenta desde un teléfono); luego vistas previas por organización (C).
 3. Pendientes anteriores: probar en un teléfono real (llamado, likes, comentarios), `/admin/cuentas` y rotar la `service_role` legacy de staging.
