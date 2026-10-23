@@ -1,5 +1,5 @@
 # Cambio: Invitación a reseñar en la carta
-Estado: **implementado y verificado en local (2026-10-23).** Segunda pieza del módulo 9 de [producto](../../docs/producto.md); usa el dato de la [ficha del enlace](enlace-de-resenas-de-google.md).
+Estado: **implementado, verificado en local y desplegado en staging (2026-10-23).** Segunda pieza del módulo 9 de [producto](../../docs/producto.md); usa el dato de la [ficha del enlace](enlace-de-resenas-de-google.md).
 Nivel: **M** — solo lectura pública de un dato ya acotado a Google y dos piezas de interfaz; sin migración, dinero, permisos ni borrados.
 
 ## Objetivo
@@ -21,11 +21,11 @@ Que la carta invite a dejar una reseña en Google cuando la sucursal tiene enlac
 - [x] Un valor guardado que no cumpla la lista de Google no llega a la carta.
 
 ## Evidencia
-Sobre el diff de `main` (2026-10-23), sin commit aún:
+Commits `fec2870` y `468988d` (2026-10-23):
 - `pnpm typecheck` y `pnpm lint` en verde; `pnpm build` correcto.
 - Unitarias de `sucursales` en verde (incluye `publicReviewUrl` contra la tabla de casos compartida). En `idiomas` solo falla la prueba ajena de siempre (`feed.dockLink`, «Menufeed»).
 - E2E contra el build: `resenas-carta` (3 pruebas nuevas), `llamados`, `idiomas` y `carta`: 53 de 53.
-- No probado en un teléfono real ni en staging.
+- Staging (2026-10-23): `origin/main` en `468988d`; Fly `ucomenu-staging` versión 35 (imagen de Docker con `--remote-only`, árbol confirmado). Sin migración. `/`, `/login`, `/terminos` y `/privacidad` responden 200 y `/admin` redirige al login. Sin probar la invitación con un local Pro, un enlace cargado ni un teléfono real.
 
 ## Fuera de alcance
 Comprobar que el enlace abre la página de reseñas; medir clics; otros sitios de reseñas; editar los textos por local.
