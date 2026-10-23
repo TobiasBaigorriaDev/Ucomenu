@@ -557,6 +557,60 @@ describe("effective_prices: quién lo ve y cuándo se aplica", () => {
     expect((await precios(stranger.db, local.branch, local.product, dentroDeCinco)).data).toEqual([expect.objectContaining({ price_cents: 1000, promotion_id: null })]);
   });
 
+  it("un plato o una categoría desactivados no se exponen aunque tengan promoción (lo mismo que la carta pública)", async () => {
+    const local = await nuevoLocal();
+    const categoria = await createCategory(service, local.id, "Postres");
+    const postre = await service.from("products").insert({ organization_id: local.id, category_id: categoria, name: "Flan", price_cents: 800 }).select("id").single();
+    const promo = await promoDelDueno(local);
+    await apuntar(local, promo);
+    await apuntar(local, promo, { product: postre.data!.id });
+    const anon = anonClient();
+    const ids = async () => ((await precios(anon, local.branch)).data ?? []).map((f) => f.product_id).sort();
+    expect(await ids()).toEqual([local.product, postre.data!.id].sort());
+
+    await service.from("products").update({ is_active: false }).eq("id", local.product).throwOnError();
+    expect(await ids()).toEqual([postre.data!.id]);
+    expect((await precios(anon, local.branch, local.product)).data).toEqual([]);
+    // También para quien es miembro: lo que no se publica no tiene precio efectivo.
+    expect((await precios(owner.db, local.branch, local.product)).data).toEqual([]);
+
+    await service.from("categories").update({ is_active: false }).eq("id", categoria).throwOnError();
+    expect(await ids()).toEqual([]);
+    expect((await precios(anon, local.branch, postre.data!.id)).data).toEqual([]);
+
+    await service.from("products").update({ is_active: true }).eq("id", local.product).throwOnError();
+    await service.from("categories").update({ is_active: true }).eq("id", categoria).throwOnError();
+    expect(await ids()).toEqual([local.product, postre.data!.id].sort());
+  });
+
+  it("el desempate llega a los microsegundos: gana la alta más antigua aunque su id sea mayor, y la réplica coincide", async () => {
+    const local = await nuevoLocal();
+    const idPrimera = "ffffffff-0000-4000-8000-000000000000";
+    const idSegunda = "00000000-0000-4000-8000-000000000001";
+    const base = { organization_id: local.id, name: "Fija", discount_type: "fixed_price", discount_value: 700, weekdays_mask: 127, start_minute: 0, end_minute: 1440 };
+    await service.from("promotions").insert({ ...base, id: idSegunda, created_at: "2026-01-01T00:00:00.000900Z" }).throwOnError();
+    await service.from("promotions").insert({ ...base, id: idPrimera, created_at: "2026-01-01T00:00:00.000100Z" }).throwOnError();
+    for (const id of [idPrimera, idSegunda]) await apuntar(local, id);
+    const fila = (await precios(anonClient(), local.branch, local.product)).data?.[0];
+    expect(fila?.promotion_id).toBe(idPrimera);
+
+    const promos = (await service.from("promotions").select("*").eq("organization_id", local.id)).data ?? [];
+    const reglas: PromotionRule[] = promos.map((p) => ({
+      id: p.id,
+      name: p.name,
+      discountType: p.discount_type as PromotionRule["discountType"],
+      discountValue: p.discount_value,
+      weekdaysMask: p.weekdays_mask,
+      startMinute: p.start_minute,
+      endMinute: p.end_minute,
+      startsOn: p.starts_on,
+      endsOn: p.ends_on,
+      createdAt: p.created_at,
+    }));
+    const ts = effectivePrice({ basePriceCents: 1000, promotions: reglas, timeZone: "America/Argentina/Buenos_Aires", at: new Date() });
+    expect(ts.promotion?.id).toBe(idPrimera);
+  });
+
   it("una promoción pausada no se aplica; reanudarla la aplica", async () => {
     const local = await nuevoLocal();
     const promo = await promoDelDueno(local, { is_active: false });

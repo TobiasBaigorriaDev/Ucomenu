@@ -105,12 +105,31 @@ const auditoria = async (orgId: string) =>
 const borrados = async (orgId: string) => (await auditoria(orgId)).filter((a) => a.action === "organization.deleted");
 const triggerEncendido = (nombre: string) => sql(`select tgenabled from pg_trigger where tgname = '${nombre}'`)[0][0] === "O";
 const triggersEncendidos = () =>
-  ["price_history_no_update_delete", "payments_no_update_delete", "payment_voids_no_update_delete", "audit_log_no_update_delete"].every(
-    triggerEncendido,
-  );
+  [
+    "price_history_no_update_delete",
+    "payments_no_update_delete",
+    "payment_voids_no_update_delete",
+    "audit_log_no_update_delete",
+    "promotion_history_no_update_delete",
+  ].every(triggerEncendido);
 
 const baja = (local: Pick<Local, "slug">, active: boolean, quien: TestUser = admin) =>
   setOrganizationActive(ctx(quien), { slug: local.slug, active, reason: "Cierra el local" });
+
+/** Una promoción con su plato y un cambio: deja 3 constancias en `promotion_history` (alta, plato, cambio). */
+async function conPromociones(local: Pick<Local, "id" | "productId">) {
+  const promo = await service
+    .from("promotions")
+    .insert({ organization_id: local.id, name: "Mitad", discount_type: "percent", discount_value: 50, weekdays_mask: 127, start_minute: 0, end_minute: 1440 })
+    .select("id")
+    .single();
+  if (promo.error) throw new Error(`promoción: ${promo.error.message}`);
+  const objetivo = await service.from("promotion_targets").insert({ organization_id: local.id, promotion_id: promo.data.id, product_id: local.productId });
+  if (objetivo.error) throw new Error(`objetivo: ${objetivo.error.message}`);
+  const cambio = await service.from("promotions").update({ discount_value: 40 }).eq("id", promo.data.id);
+  if (cambio.error) throw new Error(`cambio: ${cambio.error.message}`);
+  expect(cuenta("promotion_history", local.id)).toBe(3);
+}
 
 /** Hace que la baja auditada tenga la antigüedad pedida (la auditoría solo se agrega: se apaga su trigger un momento, como hace la limpieza de pruebas). */
 function envejecerBaja(orgId: string, hace: string) {
@@ -215,6 +234,59 @@ describe("quién puede: solo SuperAdmin, solo por el servidor", () => {
     expect(existe(local.id)).toBe(true);
     expect(historial(local.id)).toBe(3);
     expect(await borrados(local.id)).toHaveLength(0);
+  });
+});
+
+describe("el historial de promociones (ficha promociones-y-precio-efectivo)", () => {
+  it("la función real de borrado lo purga en la misma transacción, lo cuenta en la auditoría y el resumen, y se lleva las promociones", async () => {
+    const local = await crearLocal(2);
+    const vecina = await crearLocal(1);
+    await conPromociones(local);
+    await conPromociones(vecina);
+    await darDeBaja(local, "31 days");
+
+    const r = await directa(local.id, local.slug, "Cerró hace meses");
+    expect(r.error).toBeNull();
+    expect(r.data).toMatchObject({ price_history_purged: 2, promotion_history_purged: 3 });
+
+    expect(existe(local.id)).toBe(false);
+    for (const tabla of ["promotions", "promotion_targets", "promotion_history"]) expect(cuenta(tabla, local.id), tabla).toBe(0);
+    const hechos = await borrados(local.id);
+    expect(hechos).toHaveLength(1);
+    expect(hechos[0].after).toMatchObject({ price_history_purged: 2, promotion_history_purged: 3 });
+    expect(triggersEncendidos()).toBe(true);
+
+    // La vecina conserva sus promociones y su historial.
+    expect(cuenta("promotions", vecina.id)).toBe(1);
+    expect(cuenta("promotion_history", vecina.id)).toBe(3);
+  });
+
+  it("si el borrado se rechaza (baja de menos de 30 días) o la transacción se deshace, el historial queda entero y el trigger encendido", async () => {
+    const reciente = await crearLocal(1);
+    await conPromociones(reciente);
+    await darDeBaja(reciente, "5 days");
+    expect(await borrar(reciente)).toEqual({ ok: false, error: "deactivation_too_recent" });
+    expect(cuenta("promotion_history", reciente.id)).toBe(3);
+
+    const local = await crearLocal(1);
+    await conPromociones(local);
+    await darDeBaja(local);
+    expect(() =>
+      sql(`begin; select public.admin_delete_organization('${admin.id}', '${local.id}', '${local.slug}', 'x'); select 1/0; commit`),
+    ).toThrow(/division by zero/);
+    expect(existe(local.id)).toBe(true);
+    expect(cuenta("promotion_history", local.id)).toBe(3);
+    expect(cuenta("promotions", local.id)).toBe(1);
+    expect(triggersEncendidos()).toBe(true);
+  });
+
+  it("la función de purga no la ejecuta nadie de la API, y rechaza una organización activa", async () => {
+    const local = await crearLocal(1);
+    await conPromociones(local);
+    const r = await service.rpc("purge_organization_promotion_history" as never, { p_org: local.id } as never);
+    expect(r.error).not.toBeNull();
+    expect(() => sql(`select private.purge_organization_promotion_history('${local.id}')`)).toThrow(/organization_still_active/);
+    expect(cuenta("promotion_history", local.id)).toBe(3);
   });
 });
 

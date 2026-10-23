@@ -9,7 +9,7 @@
  *  - `startsOn` / `endsOn` (inclusivos) se miden sobre el día en que EMPIEZA la franja.
  *  - Porcentaje: base × (100 − p) / 100, mitad hacia arriba, en enteros. Monto: base − monto, piso 0. Precio fijo: el valor.
  *  - Una promoción solo se aplica si deja el precio ESTRICTAMENTE por debajo del de lista. Gana el precio más bajo; empate: la más
- *    antigua (`createdAt`, a milisegundos) y luego el `id`.
+ *    antigua (`createdAt`, a microsegundos) y luego el `id`.
  */
 
 export type DiscountType = "percent" | "amount" | "fixed_price";
@@ -148,7 +148,26 @@ export function effectivePrice(input: { basePriceCents: number; promotions: read
 
 function beats(a: { rule: PromotionRule; price: number }, b: { rule: PromotionRule; price: number }): boolean {
   if (a.price !== b.price) return a.price < b.price;
-  const byAge = Date.parse(a.rule.createdAt) - Date.parse(b.rule.createdAt);
+  const byAge = compareInstants(a.rule.createdAt, b.rule.createdAt);
   if (byAge !== 0) return byAge < 0;
   return a.rule.id < b.rule.id;
+}
+
+/**
+ * Compara dos instantes ISO al microsegundo. Postgres guarda `created_at` con microsegundos y `Date.parse` los pierde: dos altas del
+ * mismo milisegundo se desempatarían distinto que en la base. Devuelve negativo, cero o positivo.
+ */
+export function compareInstants(left: string, right: string): number {
+  const a = splitInstant(left);
+  const b = splitInstant(right);
+  return a.seconds !== b.seconds ? a.seconds - b.seconds : a.micros - b.micros;
+}
+
+/** Segundos enteros desde 1970 y microsegundos de la fracción (0–999999). */
+export function splitInstant(iso: string): { seconds: number; micros: number } {
+  const match = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})(?:\.(\d+))?(Z|[+-]\d{2}(?::?\d{2})?)?$/.exec(iso.trim());
+  if (!match) return { seconds: Date.parse(iso) / 1000, micros: 0 };
+  const [, date, time, fraction = "", zone = "Z"] = match;
+  const offset = zone === "Z" ? "Z" : zone.length === 3 ? `${zone}:00` : zone.length === 5 ? `${zone.slice(0, 3)}:${zone.slice(3)}` : zone;
+  return { seconds: Date.parse(`${date}T${time}${offset}`) / 1000, micros: Number(`${fraction}000000`.slice(0, 6)) };
 }

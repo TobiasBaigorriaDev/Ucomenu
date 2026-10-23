@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { BRANCH_TIME_ZONES } from "@/lib/sucursales/rules";
 import { CASE_BRANCHES, PRICE_SCENARIOS, ruleOf } from "./casos-precio";
-import { effectivePrice, isoWeekday, previousDate, promotionPriceCents, wallClock, windowEndsLocal, type PromotionRule } from "./precio";
+import { effectivePrice, compareInstants, isoWeekday, previousDate, promotionPriceCents, wallClock, windowEndsLocal, type PromotionRule } from "./precio";
 
 describe("la tabla de casos del precio efectivo (la misma que recorre la base de datos)", () => {
   for (const scenario of PRICE_SCENARIOS) {
@@ -88,5 +88,46 @@ describe("piezas del cálculo", () => {
     const zone = "America/Argentina/Buenos_Aires";
     expect(effectivePrice({ basePriceCents: 900, promotions: [], timeZone: zone, at })).toEqual({ basePriceCents: 900, priceCents: 900, promotion: null });
     expect(effectivePrice({ basePriceCents: 900, promotions: [rule({ weekdaysMask: 1 })], timeZone: zone, at }).promotion).toBeNull(); // el viernes no es lunes
+  });
+});
+
+describe("el desempate por antigüedad llega a los microsegundos, como en la base", () => {
+  const fijo = (id: string, createdAt: string): PromotionRule => ({
+    id,
+    name: id,
+    discountType: "fixed_price",
+    discountValue: 700,
+    weekdaysMask: 127,
+    startMinute: 0,
+    endMinute: 1440,
+    startsOn: null,
+    endsOn: null,
+    createdAt,
+  });
+  const at = new Date("2026-12-18T15:00:00Z");
+  const zone = "America/Argentina/Buenos_Aires";
+
+  it("dos altas del mismo milisegundo: gana la primera aunque su id sea mayor", () => {
+    const primera = fijo("ffffffff-0000-4000-8000-000000000000", "2026-01-01T00:00:00.000100+00:00");
+    const segunda = fijo("00000000-0000-4000-8000-000000000001", "2026-01-01T00:00:00.000900+00:00");
+    for (const orden of [[primera, segunda], [segunda, primera]]) {
+      expect(effectivePrice({ basePriceCents: 1000, promotions: orden, timeZone: zone, at }).promotion?.id).toBe(primera.id);
+    }
+  });
+
+  it("con la misma alta exacta gana el id menor", () => {
+    const a = fijo("00000000-0000-4000-8000-00000000000a", "2026-01-01T00:00:00.5+00:00");
+    const b = fijo("00000000-0000-4000-8000-00000000000b", "2026-01-01T00:00:00.500000+00:00");
+    expect(effectivePrice({ basePriceCents: 1000, promotions: [b, a], timeZone: zone, at }).promotion?.id).toBe(a.id);
+  });
+
+  it("lee los formatos de fecha que devuelve la base y compara al microsegundo", () => {
+    expect(compareInstants("2026-01-01T00:00:00.000100+00:00", "2026-01-01T00:00:00.000100Z")).toBe(0);
+    expect(compareInstants("2026-01-01T00:00:00+00", "2026-01-01T00:00:00Z")).toBe(0);
+    expect(compareInstants("2026-01-01 00:00:00.123456+00", "2026-01-01T00:00:00.123456Z")).toBe(0);
+    expect(compareInstants("2026-01-01T03:00:00.000001+03:00", "2026-01-01T00:00:00Z")).toBe(1);
+    expect(compareInstants("2026-01-01T00:00:00.1234567Z", "2026-01-01T00:00:00.123456Z")).toBe(0);
+    expect(compareInstants("2026-01-01T00:00:00.000900Z", "2026-01-01T00:00:00.000100Z")).toBeGreaterThan(0);
+    expect(compareInstants("2026-01-01T00:00:01Z", "2026-01-01T00:00:00.999999Z")).toBeGreaterThan(0);
   });
 });

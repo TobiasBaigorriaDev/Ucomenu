@@ -32,13 +32,17 @@
 -- `p_at` (instante a consultar, para la vista previa por día y hora del Dueño) solo lo respeta quien es miembro de la organización;
 -- para cualquier otro el instante es siempre el actual (una promoción futura no se filtra a la carta).
 --
--- Rollback (local: git revert + `pnpm db:reset`). En una base con datos, en UNA transacción y DESPUÉS de desplegar el código anterior:
--- volver a crear `public.admin_delete_organization` con el cuerpo de 20261102100000_borrado_de_organizaciones.sql,
--- `drop function public.effective_prices(uuid, uuid, timestamptz), private.purge_organization_promotion_history(uuid),
--- private.can_manage_promotions(uuid)`, `drop table public.promotion_branches, public.promotion_targets, public.promotions`,
--- quitar `promotions` de `plans.features` y de `plans_features_check`. `promotion_history` es un registro de auditoría de
--- solo-agregado: CONSERVARLO (y a su tabla) mientras tenga filas; sin filas, `drop table public.promotion_history` y sus funciones
--- `private.record_promotion_change`, `private.promotion_history_append_only`.
+-- Rollback (local: git revert + `pnpm db:reset`). En una base con datos, en UNA transacción y DESPUÉS de desplegar el código anterior,
+-- en este orden (las políticas de las tablas dependen de `can_manage_promotions`, así que primero se sueltan las tablas):
+--   1. `drop table public.promotion_branches, public.promotion_targets, public.promotions;` (arrastra sus políticas y triggers)
+--   2. `drop function public.effective_prices(uuid, uuid, timestamptz), private.can_manage_promotions(uuid);`
+--   3. quitar `promotions` de `plans.features` y de `plans_features_check`.
+--   4. `promotion_history` es un registro de auditoría de solo-agregado: si tiene filas, CONSERVARLA y conservar también
+--      `private.purge_organization_promotion_history` y ESTA versión de `admin_delete_organization` (la anterior no purga el historial y
+--      el borrado de esas organizaciones fallaría por la clave RESTRICT). Sin filas: `drop table public.promotion_history;`,
+--      `drop function private.record_promotion_change(), private.promotion_history_append_only(),
+--      private.purge_organization_promotion_history(uuid);` y volver a crear `public.admin_delete_organization` con el cuerpo de
+--      20261102100000_borrado_de_organizaciones.sql.
 
 begin;
 
@@ -385,7 +389,7 @@ revoke insert, update, delete, truncate, references, trigger on table public.pro
 -- ---------------------------------------------------------------------------
 -- Una fila por plato con precio efectivo. Con `p_product` nulo: solo los platos de la organización con una promoción vigente (la
 -- carta pone el resto con su precio de siempre). Con `p_product`: una fila para ese plato, con promoción o sin ella (los pedidos);
--- ninguna fila si el plato no es de la organización de la sucursal. Ninguna fila tampoco si la sucursal está desactivada o la
+-- ninguna fila si el plato no es de la organización de la sucursal o si el plato o su categoría están desactivados. Ninguna fila tampoco si la sucursal está desactivada o la
 -- organización no está publicada.
 
 create function public.effective_prices(p_branch uuid, p_product uuid default null, p_at timestamptz default null)
@@ -431,8 +435,11 @@ begin
   with prices as (
     select p.id as pid, p.category_id as cid, coalesce(pa.price_cents, p.price_cents) as base
     from public.products p
+    join public.categories c on c.id = p.category_id and c.organization_id = p.organization_id
     left join public.product_availability pa on pa.product_id = p.id and pa.branch_id = p_branch
-    where p.organization_id = v_org and (p_product is null or p.id = p_product)
+    -- Solo lo que la carta pública publica (la RLS de platos y categorías exige activos): un plato o una categoría desactivados
+    -- no se exponen por esta función aunque tengan una promoción.
+    where p.organization_id = v_org and p.is_active and c.is_active and (p_product is null or p.id = p_product)
   ),
   candidates as (
     select pr.pid, pm.id as promo_id, pm.name as promo_name, pm.discount_type as promo_type, pm.discount_value as promo_value,

@@ -41,7 +41,7 @@ const ctx = (user: TestUser): AdminContext => ({ session: user.db, admin: servic
 type Local = { id: string; slug: string; owner: TestUser; staff: TestUser };
 
 /** Un local al día con un Dueño y un Staff. */
-async function crearLocal(plan: PlanCode = "pro"): Promise<Local> {
+async function crearLocal(plan: PlanCode = "basic"): Promise<Local> {
   contador += 1;
   const slug = `tt-vp-${sufijo}-${contador}`;
   const id = await createOrg(service, slug, plan);
@@ -171,19 +171,20 @@ describe("habilitar una función", () => {
     ).toThrow(/check/i);
   });
 
-  it("si el plan ya incluye la función, la vista previa se rechaza (feature_in_plan)", async () => {
-    const local = await crearLocal();
-    // Ninguna clave del catálogo está todavía en un plan: se simula en una transacción que se revierte, sin que nadie más la vea.
-    const script = `
-      begin;
-      alter table public.plans drop constraint plans_features_check;
-      update public.plans set features = features || array['${FEATURE}'] where code = 'pro';
-      select private.plan_grants('${local.id}', '${FEATURE}');
-      select public.admin_set_feature_preview('${admin.id}', '${local.id}', '${FEATURE}', now() + interval '5 days', 'x');
-      rollback;`;
-    expect(() => sql(script)).toThrow(/feature_in_plan/);
-    expect(await filas(local.id)).toEqual([]);
-    expect(await auditoria(local.id)).toEqual([]);
+  it("si el plan ya incluye la función, la vista previa se rechaza (feature_in_plan): promotions está en Pro y Premium", async () => {
+    for (const plan of ["pro", "premium"] as const) {
+      const local = await crearLocal(plan);
+      expect(concede(local.id, "promotions")).toBe(true);
+      expect(() =>
+        sql(`select public.admin_set_feature_preview('${admin.id}', '${local.id}', 'promotions', now() + interval '5 days', 'x')`),
+      ).toThrow(/feature_in_plan/);
+      expect(await filas(local.id)).toEqual([]);
+      expect(await auditoria(local.id)).toEqual([]);
+    }
+    // En Básico sí se puede.
+    const basico = await crearLocal("basic");
+    expect(concede(basico.id, "promotions")).toBe(false);
+    expect((await habilitar(basico, enDias(5), "Piloto", "promotions")).ok).toBe(true);
   });
 });
 
