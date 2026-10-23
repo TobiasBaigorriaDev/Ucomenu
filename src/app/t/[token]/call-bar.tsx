@@ -23,7 +23,7 @@ function Icon({ children }: { children: ReactNode }) {
 const cellStacked = "min-h-16 flex-col gap-1 px-2 text-[0.9375rem] leading-tight text-center";
 
 /**
- * Celda terciaria del dock: el acceso al feed de videos. Es navegación, no un llamado: un enlace fuera del envío, que no
+ * Celda terciaria del dock, entre las dos acciones: el acceso a Menufeed, el feed de videos del local. Es navegación, no un llamado: un enlace fuera del envío, que no
  * se deshabilita mientras se envía y no depende del ticket de visita. Contorno en tinta y ▶ terracota, el lenguaje del
  * antiguo botón suelto de la carta; el color sólido queda para las acciones que avisan al personal.
  */
@@ -50,7 +50,7 @@ function Buttons({ lang, videosHref }: { lang: Lang; videosHref?: string }) {
   const t = TEXTOS[lang].call;
   const stacked = Boolean(videosHref);
   return (
-    <div className={`grid gap-2 ${stacked ? "grid-cols-[5fr_5fr_4fr]" : "grid-cols-2"}`}>
+    <div className={`grid gap-2 ${stacked ? "grid-cols-3" : "grid-cols-2"}`}>
       <button type="submit" name="kind" value="waiter" disabled={pending} className={`${cellBase} bg-[var(--carta-green)] text-[var(--on-accent)] ${stacked ? cellStacked : ""}`}>
         <Icon>
           <path d="M6 17V11a6 6 0 0 1 12 0v6" />
@@ -59,6 +59,7 @@ function Buttons({ lang, videosHref }: { lang: Lang; videosHref?: string }) {
         </Icon>
         {pending ? t.sending : t.waiter}
       </button>
+      {videosHref ? <VideosCell href={videosHref} lang={lang} stacked /> : null}
       <button type="submit" name="kind" value="bill" disabled={pending} className={`${cellBase} bg-[var(--carta-blush)] text-ink ${stacked ? cellStacked : ""}`}>
         <Icon>
           <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
@@ -66,7 +67,6 @@ function Buttons({ lang, videosHref }: { lang: Lang; videosHref?: string }) {
         </Icon>
         {pending ? t.sending : t.bill}
       </button>
-      {videosHref ? <VideosCell href={videosHref} lang={lang} stacked /> : null}
     </div>
   );
 }
