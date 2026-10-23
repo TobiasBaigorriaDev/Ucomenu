@@ -3,6 +3,8 @@
 - Estado: propuesta
 - Fecha: 2026-10-13
 
+> Enmienda (2026-10-23): el socio será el cliente de [ADR 0042](0042-clientes-recurrentes.md) (`customers`, por organización), en lugar de una tabla `loyalty_members` propia.
+>
 > La mecánica (sellos por visita, validados por el personal) y el uso de Apple/Google Wallet están **aceptados**. La implementación queda como propuesta hasta emitir un pase de prueba en cada plataforma al iniciar la fase 3, lo que además requiere abrir las cuentas de emisor.
 
 ## Contexto

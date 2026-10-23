@@ -36,7 +36,7 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
   - **Idiomas:** la carta pública se ofrece en español, inglés y portugués ([ADR 0023](decisiones/0023-carta-en-varios-idiomas.md)). El Dueño y el Staff escriben las traducciones de categorías, platos, variantes y opciones en `/panel/{slug}/carta/traducciones`; lo que falta se ve en español. El selector aparece en la carta al cargar el primer texto en un idioma, y el comensal entra en el idioma de su navegador si el local lo ofrece. Los textos legales siguen en español. No hay traducción automática.
   - **Presentación:** la carta pública se rediseñó como Bento + Editorial + Cards (índice de categorías en bento, banda de sección pegajosa con el color de su celda, platos como cards con o sin foto, dock de llamado en la carta de mesa). Contexto en [`PRODUCT.md`](../PRODUCT.md) y sistema de diseño en [`DESIGN.md`](../DESIGN.md).
   - **Implementado en local:** el Dueño elige una paleta de contraste comprobado (ocho claras y cuatro oscuras: Oliva, Azul, Vino, Cacao, Cítrico, Mar, Trattoria, Monocromo, Carbón, Medianoche, Bosque y Borgoña), con vista previa de la carta antes de guardar, elige entre tres estilos de carta y puede encender un tema de fecha especial (San Valentín, Navidad, Halloween y otros seis) con una ventana de fechas opcional, y sube o quita el logo desde `/panel/{slug}/apariencia`. Se aplica a la carta de todas las sucursales y a los QR; la configuración predeterminada conserva el diseño actual. Incluida en todos los planes; con la cuenta en solo lectura o suspendida se consulta pero no se edita.
-- Es **solo consulta**: no hay pedidos ni pago online desde el menú.
+- Es **solo consulta**: el comensal no hace pedidos ni paga desde el menú. Los pedidos los anota el mozo (módulo 7).
 
 ### 2. Llamado al camarero en tiempo real — MVP
 - Botón accesible desde el menú con dos acciones: **Llamar al mozo** y **Pedir la cuenta**.
@@ -63,6 +63,34 @@ Carta, mesas y QR (generar, imprimir, regenerar), sucursales, personal, aparienc
 ### 6. Plataforma SaaS (SuperAdmin) — MVP
 Alta de organizaciones, asignación manual de plan y add-ons, registro de pagos, suspensión/reactivación, auditoría.
 
+### Incremento «Salón y crecimiento» — aceptado el 2026-10-23, sin implementar
+Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases y tareas en `agile/tablero.md`. Los motivos, en los ADR enlazados.
+
+#### 7. Pedidos del mozo (Pro y Premium) — [ADR 0041](decisiones/0041-pedidos-del-mozo.md)
+- El **mozo** (Dueño o Staff con sesión) anota en la **Sala** lo que el cliente le dicta: mesa, platos, variantes, adicionales, cantidades y observaciones; después modifica, cancela y cambia estados. **El comensal no pide**: la carta sigue siendo solo consulta.
+- Pedido: abierto → cerrado | anulado. Ítem: anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). Solo por mesa en la primera entrega.
+- Cada línea copia nombre, precio (el efectivo al anotarla, con promoción si rige) y opciones; el precio lo calcula el servidor.
+- La Sala suma la vista «Mesas» (pedido abierto + llamados de cada mesa). «Pedir la cuenta» sigue siendo un llamado y muestra al mozo el total; atenderlo no cierra el pedido.
+- Sin punto de venta fiscal: el cierre muestra una precuenta «no válida como factura»; sin cobro, propinas, división de cuenta ni pantalla de cocina.
+- En solo lectura o suspendida no se abren pedidos ni se agregan ítems; cerrar y anular siempre se puede. Se conservan 2 años desde el cierre (*a confirmar con el contador*).
+
+#### 8. Promociones programadas / Happy Hour (Pro y Premium) — [ADR 0040](decisiones/0040-promociones-programadas.md)
+- El **Dueño** define descuentos (porcentaje, monto o precio fijo) sobre platos o categorías, por días de la semana, franja horaria (puede cruzar la medianoche) y fechas opcionales, para todas o algunas sucursales; el Staff las ve.
+- Cada sucursal tiene **zona horaria** (por defecto la de Buenos Aires) y las promociones se rigen por su hora.
+- No se acumulan: si dos aplican al mismo plato, **gana el precio más bajo**. Solo afectan el precio base (no variantes ni adicionales); el precio nunca baja de $ 0.
+- La carta muestra el precio anterior tachado, el promocional y hasta cuándo rige. Cada cambio de una promoción queda en su historial; el historial de precios de lista no cambia.
+
+#### 9. Invitación a reseñar en Google (todos los planes)
+- El Dueño carga por sucursal el **enlace de reseñas** de su perfil de Google (solo direcciones de Google).
+- La carta muestra un enlace discreto en el pie y, con plan Pro o superior, una invitación tras «Pedir la cuenta». Se puede cerrar y no se repite en el día.
+- Respeta la [política de Google](https://support.google.com/contributionpolicy/answer/7400114): el mismo mensaje para todos, **sin preguntar antes si le gustó**, sin estrellas ni incentivos y con textos fijos (es/en/pt) que el local no edita.
+
+#### 10. Clientes recurrentes (Premium) — [ADR 0042](decisiones/0042-clientes-recurrentes.md)
+- Bloqueado hasta la **revisión legal** del consentimiento.
+- El mozo identifica al cliente por **teléfono exacto**, lo da de alta con consentimiento y lo vincula al pedido; así se arma su historial y sus preferencias (sin datos de salud).
+- La identidad es **por organización** y se guarda en el pedido, **nunca en la mesa ni en el QR**. El Staff ve el teléfono enmascarado; el Dueño, completo. El cliente puede pedir la baja (se borran sus datos) o una copia.
+- Es la base del programa de fidelización (módulo 4).
+
 ## Modelo de suscripción
 Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y suspende planes y registra los pagos; el pago se acuerda por fuera (transferencia o link de pago). El cobro automático es posterior. **Precios y límites son parametrizables en la base de datos**, no están escritos en el código.
 
@@ -70,7 +98,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | --- | :---: | :---: | :---: |
 | **Precio mensual** | USD 20 | USD 40 | USD 70 |
 | **Precio anual** | USD 190 | USD 380 | USD 670 |
-| Sucursales | 1 | hasta 2 | sin límite |
+| Sucursales | 1 | hasta 2 (+ hasta 3 adicionales, *sin implementar*) | sin límite |
 | Mesas | hasta 20 | hasta 50 por sucursal | sin límite |
 | Platos activos | hasta 80 | hasta 200 | sin límite |
 | Menú digital + QR por mesa + identidad visual | ✔ | ✔ | ✔ |
@@ -78,8 +106,13 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Analítica básica (posterior al MVP) | — | ✔ | ✔ |
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
 | Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
+| Invitación a reseñar en Google (*sin implementar*) | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
+| Promociones programadas / Happy Hour (*sin implementar*) | — | ✔ | ✔ |
+| Pedidos que anota el mozo (*sin implementar*) | — | ✔ | ✔ |
+| Clientes recurrentes (*sin implementar*) | — | — | ✔ |
 
 - **Feed de videos cortos:** incluido en Premium, con un cupo de **10 videos publicados** (parametrizable en la base). Reemplaza al add-on WebAR (+USD 25/mes, cupo de 15 platos 3D y packs de +10), que se descartó el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); hoy no hay ningún add-on a la venta.
+- **Sucursal adicional** *(aceptada el 2026-10-23, sin implementar; [ADR 0039](decisiones/0039-sucursal-adicional-y-vistas-previas.md))*: solo plan Pro, **ARS 12.000/mes** por sucursal (precio en pesos, parametrizable en la base), hasta 3 adicionales. Se cobra junto con la suscripción y sigue su ciclo y su mora. Al cancelarla, el SuperAdmin desactiva con el Dueño las sucursales que excedan el tope (desactivar es reversible); no quedan sucursales activas sin pagar.
 - **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito. Toda organización nueva arranca con esta prueba a partir de su fecha de alta, sin intervención de nadie. *(Confirmado 2026-10-14.)*
 - **Límites:** son techos para *crear* y para *activar* (no se puede superar el tope). Los platos se cuentan solo si están activos (`is_active`): con el tope alcanzado se bloquea tanto crear un plato activo como pasar uno inactivo a activo; pasar un plato de activo a inactivo siempre se permite, para que el local pueda acomodarse a su cupo. Misma regla para sucursales y mesas. *(Confirmado 2026-10-14.)*
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.
@@ -109,7 +142,7 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 
 ## MVP
 - **Incluye:** menú digital completo (módulo 1), llamado al mozo con panel de sala (módulo 2), panel (módulo 5), SuperAdmin con gestión manual de planes, límites y mora (módulo 6), multi-sucursal, planes Básico y Pro con *feature flags*, prueba gratuita de 14 días.
-- **No incluye (fuera de alcance):** feed de videos cortos (fase 2), fidelización y Wallet (fase 3), cobro automático de la suscripción, pedidos y pago desde la mesa, reservas, delivery, integración con sistemas de punto de venta, app nativa, traducción automática de la carta (la carta en varios idiomas existe, pero las traducciones las escribe el local).
+- **No incluye (fuera de alcance):** feed de videos cortos (fase 2), fidelización y Wallet (fase 3), cobro automático de la suscripción, pedidos y pago **del comensal** desde la mesa (los pedidos que anota el mozo son el módulo 7), reservas, delivery, integración con sistemas de punto de venta, app nativa, traducción automática de la carta (la carta en varios idiomas existe, pero las traducciones las escribe el local).
 
 ## Reglas de negocio clave
 ### Organización, sucursales y permisos
@@ -126,6 +159,9 @@ Solo hay dos roles dentro de una organización; **no existe rol intermedio de en
 | Escanear pases Wallet y sumar sellos | ✔ | ✔ |
 | Gestionar platos, precios, stock (disponibilidad) y mesas | ✔ | ✔ |
 | Administrar sucursales, personal y apariencia | — | ✔ |
+| Anotar, modificar y cerrar pedidos en la Sala (*sin implementar*) | ✔ | ✔ |
+| Ver promociones / crearlas y editarlas (*sin implementar*) | ver | ✔ |
+| Identificar clientes recurrentes y vincularlos a un pedido (*sin implementar*; el Staff ve el teléfono enmascarado) | ✔ | ✔ |
 | Ver plan, facturación y el aviso de mora completo (días de atraso, fechas, cómo regularizar) | — | ✔ |
 | Ver el aviso operativo de mora (estado de la cuenta y «avisale al dueño», sin plan, fechas ni montos) | ✔ | ✔ |
 

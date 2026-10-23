@@ -6,7 +6,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
-Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las comprobaciones manuales pendientes se listan aparte. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
+Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las comprobaciones manuales pendientes se listan aparte. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
 
 ## En curso
 
@@ -14,7 +14,7 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 
 ## Seleccionado
 
-- (vacío)
+- [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las que exceden — primera tarea del incremento «Salón y crecimiento» → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
 ## Para verificar
 
@@ -44,6 +44,39 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 ### Fase 3 — Fidelización, Wallet y cercanía (plan Premium) — fuera de este incremento
 
 > Descartada de este incremento por decisión del usuario (2026-10-23): el sistema de fidelización va en otro incremento. Los ítems (programa de sellos, Apple Wallet, Google Wallet, recordatorio por cercanía y promociones por pase) se detallarán cuando ese incremento se abra; el contexto técnico sigue en el [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md).
+
+### Incremento «Salón y crecimiento» (diseño aprobado por el usuario el 2026-10-23)
+
+> Reglas en `docs/producto.md` (módulos 7 a 10 y sucursal adicional) y motivos en los ADR 0039 a 0042. Orden recomendado: S1 → S2 → S3 → S4. Promociones va antes que Pedidos porque los pedidos copian el precio efectivo; Clientes depende de Pedidos y de la revisión legal. Dentro de cada fase, el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
+
+**S1 — Ingresos y confianza**
+- [C] Sucursal adicional: ver «Seleccionado»
+- [M] Enlace de reseñas de Google por sucursal (columna validada con hosts de Google, solo el Dueño la edita)
+- [M] Invitación a reseñar en la carta: pie para todos los planes y tras «Pedir la cuenta» con Pro o superior; textos fijos es/en/pt, sin pregunta previa ni incentivos (bloqueado por: enlace de reseñas)
+- [C] Vistas previas de funciones por organización (SuperAdmin, auditadas, con fin; `plan_grants` = plan ∪ vistas previas)
+
+**S2 — Promociones programadas (Happy Hour)**
+- [M] Zona horaria por sucursal (por defecto Buenos Aires; facturación y mora no cambian)
+- [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, lectura pública de vigentes y paridad TS/SQL con casos de medianoche (bloqueado por: zona horaria)
+- [M] Panel de promociones del Dueño: crear, editar, pausar, duplicar, aviso de superposición y vista previa por día y hora (bloqueado por: función de precio)
+- [M] Carta con precio promocional en vivo (tachado + promoción + hasta cuándo), sin afectar el LCP (bloqueado por: función de precio)
+- [S] Pantalla del historial de promociones (Dueño)
+
+**S3 — Pedidos del mozo** (bloqueado por: función de precio efectivo)
+- [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base
+- [C] Variantes, adicionales y observaciones con validación de mínimos y máximos
+- [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora
+- [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta»
+- [C] Cierre con precuenta «no válida como factura», retención (2 años, a confirmar con el contador) y purga en el borrado de la organización
+- [M] Analítica de pedidos para el Dueño (opcional)
+
+**S4 — Clientes recurrentes** (bloqueado por: pedidos y revisión legal)
+- [S] Texto de consentimiento y privacidad revisado por un abogado (rol de encargado, inscripción ante la AAIP) — bloqueado por: abogado
+- [C] `customers` y alta por el personal con consentimiento; búsqueda por teléfono exacto, enmascarado para el Staff
+- [C] Vincular cliente a pedido e historial de visitas (nunca a la mesa)
+- [C] Baja, exportación y purga de datos del cliente
+- [M] Preferencias estructuradas, sin datos de salud
+- [C] Reconocimiento desde la carta por código de dispositivo (opcional, posterior)
 
 ### Fase 4 — Posterior al MVP
 
