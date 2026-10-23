@@ -13,6 +13,13 @@ import { parseReason } from "./validation";
  * (HTTP, fuera de la transacción), se libera la reserva y se audita.
  */
 
+/**
+ * Qué decirle a la persona cuando no se pudo confirmar si la cuenta se borró. Repetir es seguro (una cuenta intacta se borra y se
+ * audita; una ya borrada responde «no existe»); la lista NO prueba nada, porque también excluye cuentas con local o reservadas.
+ */
+export const ORPHAN_UNCERTAIN_MESSAGE =
+  "No pudimos confirmar si la cuenta se borró. Repetirlo es seguro: esperá un par de minutos, recargá la lista y, si la cuenta sigue ahí, volvé a borrarla; si dice que no existe, ya se borró (puede que no haya quedado en los movimientos).";
+
 export type OrphanAccount = { userId: string; email: string; createdAt: string; lastSignInAt: string | null };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);

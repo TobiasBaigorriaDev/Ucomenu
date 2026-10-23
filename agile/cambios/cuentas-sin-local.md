@@ -1,5 +1,5 @@
 # Cambio: Cuentas de Auth sin ningún local
-Estado: **implementado y verificado en local; ronda 1 de Codex con tres hallazgos corregidos (`1e27efb` + corrección); falta su verificación y subir a staging.**
+Estado: **implementado y verificado en local; aprobado por Codex en 3 rondas (2026-10-23); falta la aprobación humana para subir a `origin` y a staging.**
 Nivel: **C** — borra cuentas de Auth (eliminación irreversible) y toca la reserva de cuentas que protege contra la carrera con las membresías ([ADR 0032](../../docs/decisiones/0032-reserva-de-cuentas-globales.md)). Origen: [borrado de organizaciones](borrado-de-organizaciones.md) (fuera de alcance: «borrar las cuentas que queden sin local»).
 
 ## Objetivo
@@ -25,7 +25,8 @@ Al borrar una organización sus membresías se van en cascada y las cuentas de s
 - [x] Pantalla a 390 px sin desborde; quien no es SuperAdmin recibe 404.
 - [x] Borrado con respuesta de Auth perdida: cuenta ya borrada → se audita; cuenta intacta → fallo claro; sin poder averiguarlo → «no pudimos confirmar».
 - [x] Dos constancias simultáneas dejan un solo movimiento.
-- [ ] Verificación de Codex (ronda 2) y despliegue en staging (migración + Fly).
+- [x] Revisión independiente (C): Codex APROBAR en la ronda 3.
+- [ ] Despliegue en staging (migración + Fly).
 
 ## Evidencia
 Sobre el diff sin commitear de `main` (2026-10-23):
@@ -36,5 +37,6 @@ Sobre el diff sin commitear de `main` (2026-10-23):
 - Mutaciones (aplicadas a la base local y restauradas): sin el chequeo de membresías en `admin_begin_orphan_delete` fallan 2 pruebas; sin la reserva falla la de «mientras se borra, nadie le suma una membresía»; sin el lock de la constancia falla la de pedidos simultáneos.
 
 ## Revisión independiente
+- **Ronda 3** (verificación sobre `30f5337`, informe `output/revisiones/2026-10-23T07-27-26-commit-HEAD.md`): **aprobar**; su única sugerencia (probar el mensaje de recuperación) quedó atendida con una prueba unitaria de `ORPHAN_UNCERTAIN_MESSAGE`.
 - **Ronda 2** (verificación sobre `11ae0e3`, informe `output/revisiones/2026-10-23T07-23-40-commit-HEAD.md`): hallazgos 1 y 3 corregidos; el 2 quedaba parcial (el mensaje de recuperación usaba la lista como prueba de borrado) y se corrigió con el mensaje de «repetir es seguro» y su prueba.
 - **Ronda 1** (Codex, informe `output/revisiones/2026-10-23T06-55-02-commit-HEAD.md`, sobre `1e27efb`): aprobar con cambios, tres hallazgos importantes, todos **corregidos**: (1) un error de red de Auth se informaba como «no se cambió nada» aunque la cuenta pudiera estar borrada; (2) el mensaje de recuperación daba por borrada una cuenta que solo estaba oculta por la reserva; (3) la constancia podía duplicarse con pedidos simultáneos. RLS `cuentas-sin-local` pasó de 11 a 16 pruebas.
