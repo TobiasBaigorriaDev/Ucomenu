@@ -87,6 +87,26 @@ export type Textos = {
     unlike: string;
     likeCount: (n: number) => string;
     likeError: string;
+    /** Comentarios con aprobación previa (ficha comentarios-del-feed). */
+    comments: string;
+    commentsCount: (n: number) => string;
+    closeComments: string;
+    commentsEmpty: string;
+    commentsMore: string;
+    commentsLoading: string;
+    commentsLoadError: string;
+    anonymous: string;
+    commentAliasLabel: string;
+    commentBodyLabel: string;
+    commentPlaceholder: string;
+    commentCounter: (used: number, max: number) => string;
+    commentSend: string;
+    commentSending: string;
+    commentSent: string;
+    commentInvalid: string;
+    commentQueueFull: string;
+    commentRateLimited: (minutes: number) => string;
+    commentError: string;
   };
   unavailable: { suspendedTitle: string; suspendedBody: string; inactiveTitle: string; inactiveBody: string };
 };
@@ -171,6 +191,25 @@ const es: Textos = {
     unlike: "Quitar me gusta",
     likeCount: (n) => `${n} me gusta`,
     likeError: "No se pudo registrar tu me gusta. Probá de nuevo en un momento.",
+    comments: "Comentarios",
+    commentsCount: (n) => `${n} ${n === 1 ? "comentario" : "comentarios"}`,
+    closeComments: "Cerrar los comentarios",
+    commentsEmpty: "Todavía no hay comentarios.",
+    commentsMore: "Ver más comentarios",
+    commentsLoading: "Cargando…",
+    commentsLoadError: "No se pudieron cargar los comentarios. Probá de nuevo en un momento.",
+    anonymous: "Anónimo",
+    commentAliasLabel: "Tu nombre (opcional)",
+    commentBodyLabel: "Tu comentario",
+    commentPlaceholder: "Contanos qué te pareció",
+    commentCounter: (used, max) => `${used} de ${max}`,
+    commentSend: "Enviar comentario",
+    commentSending: "Enviando…",
+    commentSent: "Gracias. Tu comentario se publicará cuando el local lo apruebe.",
+    commentInvalid: "Escribí un comentario de hasta 280 caracteres y un nombre de hasta 30.",
+    commentQueueFull: "El local tiene muchos comentarios por revisar. Probá de nuevo más tarde.",
+    commentRateLimited: (m) => `Se enviaron demasiados comentarios desde tu conexión. Probá de nuevo en ${m} ${m === 1 ? "minuto" : "minutos"}.`,
+    commentError: "No se pudo enviar tu comentario. Probá de nuevo en un momento.",
   },
   unavailable: {
     suspendedTitle: "Carta temporalmente no disponible",
@@ -259,6 +298,25 @@ const en: Textos = {
     unlike: "Remove like",
     likeCount: (n) => `${n} ${n === 1 ? "like" : "likes"}`,
     likeError: "We couldn't save your like. Please try again in a moment.",
+    comments: "Comments",
+    commentsCount: (n) => `${n} ${n === 1 ? "comment" : "comments"}`,
+    closeComments: "Close comments",
+    commentsEmpty: "No comments yet.",
+    commentsMore: "Show more comments",
+    commentsLoading: "Loading…",
+    commentsLoadError: "We couldn't load the comments. Please try again in a moment.",
+    anonymous: "Anonymous",
+    commentAliasLabel: "Your name (optional)",
+    commentBodyLabel: "Your comment",
+    commentPlaceholder: "Tell us what you thought",
+    commentCounter: (used, max) => `${used} of ${max}`,
+    commentSend: "Send comment",
+    commentSending: "Sending…",
+    commentSent: "Thank you. Your comment will be published once the restaurant approves it.",
+    commentInvalid: "Write a comment of up to 280 characters and a name of up to 30.",
+    commentQueueFull: "The restaurant has many comments to review. Please try again later.",
+    commentRateLimited: (m) => `Too many comments were sent from your connection. Try again in ${m} ${m === 1 ? "minute" : "minutes"}.`,
+    commentError: "We couldn't send your comment. Please try again in a moment.",
   },
   unavailable: {
     suspendedTitle: "Menu temporarily unavailable",
@@ -347,6 +405,25 @@ const pt: Textos = {
     unlike: "Remover curtida",
     likeCount: (n) => `${n} ${n === 1 ? "curtida" : "curtidas"}`,
     likeError: "Não foi possível registrar sua curtida. Tente novamente em instantes.",
+    comments: "Comentários",
+    commentsCount: (n) => `${n} ${n === 1 ? "comentário" : "comentários"}`,
+    closeComments: "Fechar os comentários",
+    commentsEmpty: "Ainda não há comentários.",
+    commentsMore: "Ver mais comentários",
+    commentsLoading: "Carregando…",
+    commentsLoadError: "Não foi possível carregar os comentários. Tente novamente em instantes.",
+    anonymous: "Anônimo",
+    commentAliasLabel: "Seu nome (opcional)",
+    commentBodyLabel: "Seu comentário",
+    commentPlaceholder: "Conte o que você achou",
+    commentCounter: (used, max) => `${used} de ${max}`,
+    commentSend: "Enviar comentário",
+    commentSending: "Enviando…",
+    commentSent: "Obrigado. Seu comentário será publicado quando o restaurante aprovar.",
+    commentInvalid: "Escreva um comentário de até 280 caracteres e um nome de até 30.",
+    commentQueueFull: "O restaurante tem muitos comentários para revisar. Tente novamente mais tarde.",
+    commentRateLimited: (m) => `Muitos comentários foram enviados da sua conexão. Tente novamente em ${m} ${m === 1 ? "minuto" : "minutos"}.`,
+    commentError: "Não foi possível enviar seu comentário. Tente novamente em instantes.",
   },
   unavailable: {
     suspendedTitle: "Cardápio temporariamente indisponível",

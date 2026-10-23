@@ -1,24 +1,26 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-22 · agente saliente: Claude Code. Historia anterior en Git y fichas.
+Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Git y fichas.
 
 ## Punto de retomada
 
-Los **likes anónimos desde la mesa** están hechos, aprobados por Codex en dos rondas y **en staging** (migración `20261114100000` y Fly): [ficha](cambios/likes-del-feed.md). Un corazón con conteo en cada video; desde `/t/{token}/videos` es un botón (un like por dispositivo y video) y sin mesa solo se ve el conteo. La puerta de escritura es `set_video_like`; el navegador guarda, solo al primer toque, un código aleatorio (decisión del usuario), y `/privacidad` ya lo dice.
+Los **comentarios con aprobación previa** están implementados y verificados en local, **sin subir a staging y pendientes de la revisión independiente de Codex** (nivel C): [ficha](cambios/comentarios-del-feed.md). Desde la mesa, una hoja de comentarios en cada video del feed con alias opcional; lo enviado queda pendiente y se aprueba, rechaza o retira desde `/panel/{slug}/comentarios` (Dueño y Staff). La puerta de alta es `submit_video_comment`; la migración es `20261115100000`.
 
-No hay trabajo a medias y todo está en `origin/main`.
+Decisiones propias, ya en la ficha y en la enmienda del ADR 0031: los rechazados se borran a los 7 días y los pendientes a los 30 (`purge_video_comments`, **sin programar**: paso 4.b de `docs/produccion.md`); rechazar o retirar nunca se bloquea por mora; sin identificador por dispositivo ni nada guardado en el teléfono.
+
+Los likes (anteriores) están en `origin/main` y en staging.
 
 ## Bloqueos y límites
 
-- Falta probar los likes en un teléfono real (QR de «Mesa 1» de `cafe-de-ensayo`, feed y corazón). Sin probar en teléfono real, Firefox, Safari de escritorio ni Android (está en «Para verificar»); tampoco los likes con Mux real y varios videos.
-- Con `next dev` el indicador de Next bloquea clics en E2E; contra el build pasan. `next dev` y `next build` se detienen una vez con un aviso de actualización de Next y arrancan al reintentar. No se actualizó Next.
-- Fallas ajenas, intermitentes en corridas en paralelo: `owner-lectura.rls` (restricción de `audit_log`) y `videos-mux.spec:145` (contador del Mux de mentira); pasan solas.
+- **Habilitar comentarios en producción** exige los textos legales (ítem S del tablero) y programar la purga. Hoy `/privacidad` no menciona los comentarios.
+- Falta probar en un teléfono real (teclado en pantalla con la hoja abierta) y los likes, igual que antes; Firefox, Safari de escritorio y Android siguen en «Para verificar».
+- Con `next dev` el indicador de Next bloquea clics en E2E; contra el build pasan. `next dev` y `next build` se detienen una vez con un aviso de actualización de Next. No se actualizó Next.
+- Fallas ajenas, intermitentes: `sala.spec:327`, `videos-mux.spec:145` y a veces `owner-lectura.rls`; pasan solas. Una corrida completa de E2E perdió el servidor de pruebas a mitad.
 - `tools/escenarios-locales.mjs` es local, sin versionar y ajena.
 - La producción sigue bloqueada (dominio, etc.).
 
 ## Próximo paso
 
-Elegir del tablero, por valor y riesgo. Lo que sigue en la fase 2:
-
-1. **Comentarios con aprobación previa** (C): envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, retención de los rechazados. Reutiliza la entrada por la mesa que probaron los likes (`resolve_table_qr`, ticket de visita, función pública única). Antes de producción hacen falta los textos legales de comentarios (S).
-2. Rotar la `service_role` legacy de staging (salió impresa en una sesión); si Fly la usa como secreto, actualizarla con `fly secrets set`.
+1. Pedir la revisión de Codex (`ciclo-revision-codex`), corregir y verificar; luego, con aprobación del usuario, subir la migración y desplegar a staging.
+2. Elegir del tablero: textos legales (S) de comentarios.
+3. Rotar la `service_role` legacy de staging (salió impresa en una sesión); si Fly la usa como secreto, actualizarla con `fly secrets set`.

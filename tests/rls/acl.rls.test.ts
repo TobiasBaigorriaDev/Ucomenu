@@ -52,6 +52,9 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   enforce_video_transition: [false, false, false], // trigger de menu_videos: la organización no se mueve y «deleting» es terminal
   enforce_video_publish: [true, false, false], // trigger de menu_videos: feature y cupo del plan al publicar (ADR 0031)
   sync_video_like_count: [true, false, false], // trigger de video_likes: mantiene menu_videos.like_count (ADR 0031)
+  sync_video_comment_count: [true, false, false], // trigger de video_comments: mantiene menu_videos.comment_count (ADR 0031)
+  enforce_comment_moderation: [false, false, false], // trigger de video_comments: solo cambia el estado, nada vuelve a pendiente (ADR 0031)
+  video_is_public: [true, true, true], // usada por la política de lectura PÚBLICA de video_comments: ¿el video se ve hoy en el feed? Solo contesta sí o no
   video_feed_visible: [true, true, true], // usada por la política de lectura PÚBLICA de menu_videos (feed): solo contesta sí o no
   translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
 };
@@ -72,6 +75,8 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_set_suspension: [false, false], // SuperAdmin: suspende o reactiva a mano; solo service_role
   admin_void_payment: [false, false], // SuperAdmin (ficha anular-pagos): anula el último pago vigente y restaura la vigencia; solo service_role
   drop_push_subscriptions: [false, false], // aviso de llamados (ADR 0020): limpia suscripciones muertas; solo service_role
+  submit_video_comment: [true, true], // única puerta de alta de video_comments; público, valida adentro (ADR 0031)
+  purge_video_comments: [false, false], // retención de comentarios rechazados y pendientes viejos (ADR 0031): solo service_role
   set_video_like: [true, true], // única puerta de escritura de video_likes; público, valida adentro (ADR 0031)
   create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
   org_entitlements: [false, true],

@@ -20,7 +20,8 @@ type Db = SupabaseClient<Database>;
 export const DEVICE_CODE = /^[0-9a-f]{32}$/;
 export const isDeviceCode = (value: unknown): value is string => typeof value === "string" && DEVICE_CODE.test(value);
 
-const hmac = (secret: string, domain: string, value: string): string => createHmac("sha256", secret).update(`${domain}:${value}`).digest("hex").slice(0, 32);
+/** HMAC de 32 hex con un prefijo de dominio: el mismo valor da claves distintas en likes y comentarios. */
+export const hmac = (secret: string, domain: string, value: string): string => createHmac("sha256", secret).update(`${domain}:${value}`).digest("hex").slice(0, 32);
 
 /** El `device_key` del código del navegador, o `null` si no tiene la forma esperada. */
 export function deviceKeyFrom(code: unknown, secret: string = clientSecret()): string | null {

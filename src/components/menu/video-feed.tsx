@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
+import { CommentsButton, CommentsSheet, type CommentAccess } from "@/components/menu/comments-sheet";
 import { LikeControl, type LikeAccess } from "@/components/menu/like-button";
 import { formatArs } from "@/lib/money";
 import { hlsUrl, neighbor, posterUrl, slidesToPrepare } from "@/lib/videos/feed";
 
 /** El plato de un video, solo si sigue visible en esta sucursal (lo resuelve el servidor). */
 export type FeedDish = { name: string; price_cents: number; description: string | null };
-export type FeedVideo = { id: string; title: string; playbackId: string; likeCount: number; dish: FeedDish | null };
+export type FeedVideo = { id: string; title: string; playbackId: string; likeCount: number; commentCount: number; dish: FeedDish | null };
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 const subscribeReducedMotion = (onChange: () => void) => {
@@ -56,6 +57,8 @@ type SlideProps = {
   hasBar: boolean;
   /** Desde la mesa, con el ticket de visita: el corazón es un botón. Sin esto es solo el conteo. */
   likes: LikeAccess | null;
+  /** Desde la mesa con el comentario habilitado: la hoja de comentarios trae el formulario. Sin esto solo se leen los aprobados. */
+  comments: CommentAccess | null;
   onToggleMute: () => void;
 };
 
@@ -63,7 +66,7 @@ type SlideProps = {
  * Un video del feed. Muestra el póster de Mux y, solo si está «preparado» (es el visible o el siguiente), le asocia su stream:
  * Safari y iOS reproducen HLS nativo; si el navegador no puede (o lo rechaza), lo hace `hls.js`, que se baja recién acá y no antes.
  */
-function Slide({ video, index, total, prepared, active, muted, reduced, lang, hasBar, likes, onToggleMute }: SlideProps) {
+function Slide({ video, index, total, prepared, active, muted, reduced, lang, hasBar, likes, comments, onToggleMute }: SlideProps) {
   const t = TEXTOS[lang].feed;
   const ref = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
@@ -72,6 +75,8 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, ha
   const [started, setStarted] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [showDish, setShowDish] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const commentsButton = useRef<HTMLButtonElement>(null);
   // Solo «el navegador no deja arrancar solo» (NotAllowedError) deja el póster con el botón de reproducir. Otros rechazos (p. ej.
   // «sin fuente todavía», porque `hls.js` aún no conectó el video, o una carga interrumpida) no son un bloqueo.
   const onPlayRejected = (reason: unknown) => {
@@ -213,6 +218,7 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, ha
           <Icon name={muted ? "mute" : "sound"} />
         </button>
         <LikeControl videoId={video.id} initialCount={video.likeCount} access={likes} lang={lang} />
+        <CommentsButton count={video.commentCount} canWrite={comments !== null} open={showComments} onClick={() => setShowComments((value) => !value)} lang={lang} buttonRef={commentsButton} />
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pt-16 pb-6">
@@ -231,6 +237,19 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, ha
           </button>
         ) : null}
       </div>
+
+      {showComments ? (
+        <CommentsSheet
+          videoId={video.id}
+          access={comments}
+          lang={lang}
+          hasBar={hasBar}
+          onClose={() => {
+            setShowComments(false);
+            commentsButton.current?.focus();
+          }}
+        />
+      ) : null}
 
       {video.dish && showDish ? (
         <div
@@ -257,7 +276,7 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, ha
  * Feed vertical de videos (ficha feed-de-videos): un video a la vez con `scroll-snap`, mudo y en bucle. Solo el visible y el
  * siguiente piden su stream. Flechas, botones de siguiente/anterior y Escape (vuelve a la carta) para teclado y escritorio.
  */
-export function VideoFeed({ videos, lang, backHref, callBar, likes = null }: { videos: FeedVideo[]; lang: Lang; backHref: string; callBar?: ReactNode; likes?: LikeAccess | null }) {
+export function VideoFeed({ videos, lang, backHref, callBar, likes = null, comments = null }: { videos: FeedVideo[]; lang: Lang; backHref: string; callBar?: ReactNode; likes?: LikeAccess | null; comments?: CommentAccess | null }) {
   const t = TEXTOS[lang].feed;
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
@@ -347,6 +366,7 @@ export function VideoFeed({ videos, lang, backHref, callBar, likes = null }: { v
               lang={lang}
               hasBar={Boolean(callBar)}
               likes={likes}
+              comments={comments}
               onToggleMute={() => setMuted((value) => !value)}
             />
           ))}

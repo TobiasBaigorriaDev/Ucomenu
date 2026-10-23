@@ -226,6 +226,8 @@ export type ResolvedTable = {
   callsEnabled: boolean;
   /** La base informa que se pueden dar likes en el feed desde esta mesa (mesa y sucursal activas, plan con feed y cuenta que escribe). Si falta o no es `true`, no se ofrece. */
   likesEnabled: boolean;
+  /** Ídem para comentar (ficha comentarios-del-feed): mismas condiciones que los likes. Si falta o no es `true`, no se ofrece el formulario. */
+  commentsEnabled: boolean;
 };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
@@ -233,7 +235,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> => typeof va
 /** Lee la respuesta de `resolve_table_qr`. Cualquier forma inesperada es «no existe» (falla cerrado). */
 export function parseResolvedTable(raw: unknown): ResolvedTable | null {
   if (!isRecord(raw)) return null;
-  const { org_slug, org_name, branch_slug, table_label, table_active, status, calls_enabled, likes_enabled } = raw;
+  const { org_slug, org_name, branch_slug, table_label, table_active, status, calls_enabled, likes_enabled, comments_enabled } = raw;
   if (
     typeof org_slug !== "string" ||
     typeof org_name !== "string" ||
@@ -245,5 +247,5 @@ export function parseResolvedTable(raw: unknown): ResolvedTable | null {
   ) {
     return null;
   }
-  return { orgSlug: org_slug, orgName: org_name, branchSlug: branch_slug, tableLabel: table_label, tableActive: table_active, status, callsEnabled: calls_enabled, likesEnabled: likes_enabled === true };
+  return { orgSlug: org_slug, orgName: org_name, branchSlug: branch_slug, tableLabel: table_label, tableActive: table_active, status, callsEnabled: calls_enabled, likesEnabled: likes_enabled === true, commentsEnabled: comments_enabled === true };
 }

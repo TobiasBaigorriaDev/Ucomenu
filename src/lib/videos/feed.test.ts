@@ -54,7 +54,7 @@ describe("lectura pública", () => {
     await loadPublishedVideos(db, "org-1");
     expect(pasos).toEqual([
       "from:menu_videos",
-      "select:id, product_id, title, mux_playback_id, duration_seconds, like_count",
+      "select:id, product_id, title, mux_playback_id, duration_seconds, like_count, comment_count",
       "eq:organization_id,org-1",
       "order:sort_order",
       "order:created_at",
@@ -66,8 +66,8 @@ describe("lectura pública", () => {
   it("devuelve los videos y descarta una fila sin playback (no puede pasar con la política, pero no se confía)", async () => {
     const { db } = fakeDb({
       data: [
-        { id: "1", product_id: null, title: "uno", mux_playback_id: "pb1", duration_seconds: 5, like_count: 3 },
-        { id: "2", product_id: null, title: "sin playback", mux_playback_id: null, duration_seconds: null, like_count: 0 },
+        { id: "1", product_id: null, title: "uno", mux_playback_id: "pb1", duration_seconds: 5, like_count: 3, comment_count: 2 },
+        { id: "2", product_id: null, title: "sin playback", mux_playback_id: null, duration_seconds: null, like_count: 0, comment_count: 0 },
       ],
       error: null,
     });

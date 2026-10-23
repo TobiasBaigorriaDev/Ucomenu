@@ -17,9 +17,10 @@ export type PublicVideo = {
   mux_playback_id: string;
   duration_seconds: number | null;
   like_count: number;
+  comment_count: number;
 };
 
-const PUBLIC_COLUMNS = "id, product_id, title, mux_playback_id, duration_seconds, like_count";
+const PUBLIC_COLUMNS = "id, product_id, title, mux_playback_id, duration_seconds, like_count, comment_count";
 
 /** Hay a lo sumo 50 videos por organización (tope técnico), y publicados, 10 en Premium: una página alcanza. */
 const FEED_LIMIT = 50;

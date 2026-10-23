@@ -171,14 +171,14 @@ isOneToOne: false
                   ]
                 },"menu_videos": {
                   Row: {
-                    "created_at": string,"duration_seconds": number | null,"id": string,"like_count": number,"mux_asset_id": string | null,"mux_error": string | null,"mux_playback_id": string | null,"mux_status": string,"mux_upload_id": string | null,"organization_id": string,"product_id": string | null,"sort_order": number,"status": string,"title": string
+                    "comment_count": number,"created_at": string,"duration_seconds": number | null,"id": string,"like_count": number,"mux_asset_id": string | null,"mux_error": string | null,"mux_playback_id": string | null,"mux_status": string,"mux_upload_id": string | null,"organization_id": string,"product_id": string | null,"sort_order": number,"status": string,"title": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"duration_seconds"?: number | null,"id"?: string,"like_count"?: number,"mux_asset_id"?: string | null,"mux_error"?: string | null,"mux_playback_id"?: string | null,"mux_status"?: string,"mux_upload_id"?: string | null,"organization_id": string,"product_id"?: string | null,"sort_order"?: number,"status"?: string,"title": string
+                    "comment_count"?: number,"created_at"?: string,"duration_seconds"?: number | null,"id"?: string,"like_count"?: number,"mux_asset_id"?: string | null,"mux_error"?: string | null,"mux_playback_id"?: string | null,"mux_status"?: string,"mux_upload_id"?: string | null,"organization_id": string,"product_id"?: string | null,"sort_order"?: number,"status"?: string,"title": string
                   }
                   Update: {
-                    "created_at"?: string,"duration_seconds"?: number | null,"id"?: string,"like_count"?: number,"mux_asset_id"?: string | null,"mux_error"?: string | null,"mux_playback_id"?: string | null,"mux_status"?: string,"mux_upload_id"?: string | null,"organization_id"?: string,"product_id"?: string | null,"sort_order"?: number,"status"?: string,"title"?: string
+                    "comment_count"?: number,"created_at"?: string,"duration_seconds"?: number | null,"id"?: string,"like_count"?: number,"mux_asset_id"?: string | null,"mux_error"?: string | null,"mux_playback_id"?: string | null,"mux_status"?: string,"mux_upload_id"?: string | null,"organization_id"?: string,"product_id"?: string | null,"sort_order"?: number,"status"?: string,"title"?: string
                   }
                   Relationships: [
                     {
@@ -505,6 +505,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"video_comments": {
+                  Row: {
+                    "alias": string | null,"body": string,"created_at": string,"id": string,"moderated_at": string | null,"organization_id": string,"rate_key": string | null,"status": string,"video_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "alias"?: string | null,"body": string,"created_at"?: string,"id"?: string,"moderated_at"?: string | null,"organization_id": string,"rate_key"?: string | null,"status"?: string,"video_id": string
+                  }
+                  Update: {
+                    "alias"?: string | null,"body"?: string,"created_at"?: string,"id"?: string,"moderated_at"?: string | null,"organization_id"?: string,"rate_key"?: string | null,"status"?: string,"video_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "video_comments_video_id_organization_id_fkey"
+      columns: ["video_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "menu_videos"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
                 },"video_likes": {
                   Row: {
                     "created_at": string,"device_key": string,"organization_id": string,"rate_key": string | null,"video_id": string
@@ -634,6 +654,9 @@ isOneToOne: false
 "public_menu_status":
 { Args: { "p_branch_slug": string,"p_org_slug": string }; Returns: string
                            },
+"purge_video_comments":
+{ Args: { "p_batch"?: number,"p_pending_retention"?: string,"p_rejected_retention"?: string }; Returns: number
+                           },
 "purge_waiter_calls":
 { Args: { "p_batch"?: number,"p_retention"?: string }; Returns: number
                            },
@@ -666,6 +689,9 @@ isOneToOne: false
                            },
 "set_video_like":
 { Args: { "p_device": string,"p_liked": boolean,"p_rate"?: string,"p_token": string,"p_video": string,"p_visit_started_at"?: string }; Returns: Json
+                           },
+"submit_video_comment":
+{ Args: { "p_alias"?: string,"p_body": string,"p_rate"?: string,"p_token": string,"p_video": string,"p_visit_started_at"?: string }; Returns: Json
                            },
 "unregister_push_subscription":
 { Args: { "p_endpoint": string,"p_org"?: string }; Returns: undefined

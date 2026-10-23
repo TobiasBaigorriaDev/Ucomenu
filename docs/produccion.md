@@ -128,6 +128,27 @@ El bloque se probó a mano en la base local como `postgres` (la extensión no es
 
 **Comprobación obligatoria antes de publicar** (en staging y de nuevo en producción), después de al menos una ejecución real: `cron.job_run_details` con estado `succeeded` y `select count(*) from public.waiter_calls where created_at < now() - interval '14 days'` igual a 0. Para probar con datos ficticios en staging, insertar llamados con `created_at` viejo y ejecutar el bloque a mano.
 
+### 4.b Programar la purga de comentarios del feed (aprobación: infraestructura)
+La función `public.purge_video_comments` existe (ADR 0031, enmienda de comentarios; ficha `comentarios-del-feed`) pero nada la ejecuta: sin esto los rechazados (7 días) y los pendientes sin moderar (30 días) se acumulan. **Bloquea habilitar comentarios en producción**, junto con los textos legales. Con `pg_cron` ya activo (paso 4), una tarea diaria a las 03:10 de Argentina (06:10 UTC) que repite hasta que devuelve menos que el lote:
+```sql
+select cron.schedule(
+  'purge-video-comments',
+  '10 6 * * *',
+  $$
+  do $job$
+  declare n integer;
+  begin
+    loop
+      n := public.purge_video_comments(interval '7 days', interval '30 days', 5000);
+      exit when n < 5000;
+    end loop;
+  end
+  $job$;
+  $$
+);
+```
+Los plazos tienen que coincidir con `REJECTED_RETENTION_DAYS` y `PENDING_RETENTION_DAYS` (`src/lib/videos/moderacion.ts`, que la pantalla de moderación muestra) y con el texto de privacidad. Para dar de baja: `select cron.unschedule('purge-video-comments');`. Comprobación después de una ejecución real: `cron.job_run_details` en `succeeded`, `select count(*) from public.video_comments where status = 'rejected' and moderated_at < now() - interval '7 days'` igual a 0, y lo mismo para los pendientes de más de 30 días. El borrado es irreversible y sin respaldo (aceptado: es contenido de un tercero ya descartado).
+
 ## 5. Dominio (aprobación: compra y DNS)
 1. Con el dominio ya elegido y comprado (pospuesto), agregarlo a Fly (`fly certs add <dominio>`); apuntar el DNS como indique Fly. Esperar el certificado HTTPS (`fly certs show <dominio>`).
 2. Confirmar que `NEXT_PUBLIC_SITE_URL` coincide y volver a desplegar si se cambió.
@@ -148,10 +169,11 @@ Con la app publicada y sin datos reales todavía:
 - `/terminos`, `/privacidad` y `/alergenos` abren y el contacto es el real.
 - No hay cookies en la carta pública (`/m/...`).
 - La purga programada corrió y no quedan llamados de más de 14 días (paso 4).
+- La purga de comentarios corrió y no quedan rechazados de más de 7 días ni pendientes de más de 30 (paso 4.b).
 - Probar en un teléfono real lo pendiente del tablero: ticket de visita con la pantalla apagada y la pantalla «Llamados».
 
 ## Marcha atrás
 - **Aplicación:** volver a la versión anterior (`fly releases` y `fly deploy --image <imagen anterior>`).
 - **Base:** las migraciones traen su rollback en el encabezado. No se baja una migración en una base con datos reales sin aprobación; la purga de `waiter_calls` es irreversible y no tiene respaldo (aceptado, ADR 0014).
-- **Purga mal programada:** `cron.unschedule('purge-waiter-calls')`.
+- **Purga mal programada:** `cron.unschedule('purge-waiter-calls')` o `cron.unschedule('purge-video-comments')`.
 - **Datos perdidos o dañados:** restaurar desde el último respaldo propio (`docs/operacion.md`, sección 2).

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { cartaFontClass } from "@/components/menu/carta-fonts";
 import { MenuHeader } from "@/components/menu/menu-header";
+import type { CommentAccess } from "@/components/menu/comments-sheet";
 import type { LikeAccess } from "@/components/menu/like-button";
 import { VideoFeed, type FeedVideo } from "@/components/menu/video-feed";
 import { logoUrl } from "@/lib/identidad/logos";
@@ -16,9 +17,10 @@ import { loadPublishedVideos } from "@/lib/videos/feed";
  * La pantalla del feed, la misma desde el link directo de la carta (`/m/…/videos`) y desde la mesa (`/t/{token}/videos`). Lee los
  * videos EN VIVO con el cliente anónimo: la base solo entrega los publicados y listos de una organización con el feed vigente.
  * `callBar` es la barra de llamado del comensal (solo en la mesa): el feed le deja su lugar abajo y no la tapa. `likes` (token y ticket de
- * visita) convierte el corazón en un botón; sin él, el conteo se ve pero no se interactúa (ficha likes-del-feed).
+ * visita) convierte el corazón en un botón; sin él, el conteo se ve pero no se interactúa (ficha likes-del-feed). `comments` es lo mismo para el
+ * formulario de comentarios; sin él se leen los aprobados pero no se escribe (ficha comentarios-del-feed).
  */
-export async function FeedScreen({ menu, lang, backHref, callBar, likes }: { menu: PublicMenu; lang: Lang; backHref: string; callBar?: ReactNode; likes?: LikeAccess }) {
+export async function FeedScreen({ menu, lang, backHref, callBar, likes, comments }: { menu: PublicMenu; lang: Lang; backHref: string; callBar?: ReactNode; likes?: LikeAccess; comments?: CommentAccess }) {
   const t = TEXTOS[lang].feed;
   const rows = await loadPublishedVideos(createPublicClient(), menu.organization.id);
   const palette = paletteStyle(menu.organization.menu_palette);
@@ -50,13 +52,14 @@ export async function FeedScreen({ menu, lang, backHref, callBar, likes }: { men
       title: row.title,
       playbackId: row.mux_playback_id,
       likeCount: row.like_count,
+      commentCount: row.comment_count,
       dish: dish ? { name: dish.name, price_cents: dish.price_cents, description: dish.description } : null,
     };
   });
 
   return (
     <div lang={lang} className={`${cartaFontClass} carta`} style={palette}>
-      <VideoFeed videos={videos} lang={lang} backHref={backHref} callBar={callBar} likes={likes ?? null} />
+      <VideoFeed videos={videos} lang={lang} backHref={backHref} callBar={callBar} likes={likes ?? null} comments={comments ?? null} />
     </div>
   );
 }

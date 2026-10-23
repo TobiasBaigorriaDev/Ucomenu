@@ -41,8 +41,8 @@ export default async function TableVideosPage({ params, searchParams }: PageProp
   const { menu, lang } = await localizedMenu(result.menu, query);
   const backHref = `/t/${token}${typeof query.lang === "string" ? `?lang=${encodeURIComponent(query.lang)}` : ""}`;
   // Un solo ticket de visita por carga, para el llamado y para los likes. Los botones solo existen si la base informa que se puede
-  // (llamar: plan, cuenta al día, mesa activa y no silenciada; likes: plan con feed, cuenta que escribe, mesa y sucursal activas).
+  // (llamar: plan, cuenta al día, mesa activa y no silenciada; likes y comentarios: plan con feed, cuenta que escribe, mesa y sucursal activas).
   const ticket = issueVisitTicket(token);
   const callBar = table.callsEnabled ? <CallBar token={token} ticket={ticket} ttlMs={VISIT_TTL_MS} lang={lang} /> : undefined;
-  return <FeedScreen menu={menu} lang={lang} backHref={backHref} callBar={callBar} likes={table.likesEnabled ? { token, ticket } : undefined} />;
+  return <FeedScreen menu={menu} lang={lang} backHref={backHref} callBar={callBar} likes={table.likesEnabled ? { token, ticket } : undefined} comments={table.commentsEnabled ? { token, ticket } : undefined} />;
 }

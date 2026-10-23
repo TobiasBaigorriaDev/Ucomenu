@@ -161,6 +161,7 @@ describe("parseResolvedTable", () => {
     status: "available",
     calls_enabled: true,
     likes_enabled: true,
+    comments_enabled: true,
   };
 
   it("lee una respuesta válida", () => {
@@ -173,6 +174,7 @@ describe("parseResolvedTable", () => {
       status: "available",
       callsEnabled: true,
       likesEnabled: true,
+      commentsEnabled: true,
     });
     expect(parseResolvedTable({ ...valido, calls_enabled: false })?.callsEnabled).toBe(false);
     expect(parseResolvedTable({ ...valido, likes_enabled: false })?.likesEnabled).toBe(false);
@@ -181,6 +183,12 @@ describe("parseResolvedTable", () => {
     delete sinLikes.likes_enabled;
     expect(parseResolvedTable(sinLikes)?.likesEnabled).toBe(false);
     expect(parseResolvedTable({ ...valido, likes_enabled: "true" })?.likesEnabled).toBe(false);
+    // Los comentarios también: sin la clave o con otro tipo no se ofrece el formulario.
+    expect(parseResolvedTable({ ...valido, comments_enabled: false })?.commentsEnabled).toBe(false);
+    const sinComentarios: Record<string, unknown> = { ...valido };
+    delete sinComentarios.comments_enabled;
+    expect(parseResolvedTable(sinComentarios)?.commentsEnabled).toBe(false);
+    expect(parseResolvedTable({ ...valido, comments_enabled: "true" })?.commentsEnabled).toBe(false);
     expect(parseResolvedTable({ ...valido, status: "suspended" })?.status).toBe("suspended");
   });
 

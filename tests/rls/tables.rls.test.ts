@@ -297,6 +297,7 @@ describe("resolve_table_qr (entrada pública)", () => {
         status: "available",
         calls_enabled: false, // el local de la prueba es Básico: sin llamado al mozo
         likes_enabled: false, // ni feed de videos (Premium)
+        comments_enabled: false, // ni comentarios
       });
     }
   });
@@ -358,7 +359,7 @@ describe("resolve_table_qr (entrada pública)", () => {
 
   it("la respuesta nunca incluye ids ni el token", async () => {
     const { data } = await resolver(anonClient(), "c0ffee01000000000000000000000000");
-    expect(Object.keys(data as object).sort()).toEqual(["branch_slug", "calls_enabled", "likes_enabled", "org_name", "org_slug", "status", "table_active", "table_label"]);
+    expect(Object.keys(data as object).sort()).toEqual(["branch_slug", "calls_enabled", "comments_enabled", "likes_enabled", "org_name", "org_slug", "status", "table_active", "table_label"]);
     expect(JSON.stringify(data)).not.toContain("c0ffee01");
   });
 });
