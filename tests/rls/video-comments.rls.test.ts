@@ -17,6 +17,7 @@ const UNAVAILABLE = { status: "unavailable" };
 const NOT_FOUND = { status: "not_found" };
 const INVALID = { status: "invalid" };
 const OK = { status: "ok" };
+const haceUnaHora = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
 let service: Db;
 let anon: Db;
@@ -591,7 +592,7 @@ describe("límite por cliente, reenvío y tope de pendientes", () => {
     const otra = await crearLocal();
     const video = await sembrarVideo(local.id);
     const videoOtra = await sembrarVideo(otra.id);
-    const lote = Array.from({ length: 100 }, (_, i) => ({ video_id: video, organization_id: local.id, body: `p${i}` }));
+    const lote = Array.from({ length: 100 }, (_, i) => ({ video_id: video, organization_id: local.id, body: `p${i}`, created_at: haceUnaHora })); // viejos: no cuentan en el tope de 10 minutos
     expect((await service.from("video_comments").insert(lote)).error).toBeNull();
     expect(await enviar({ token: local.token, video, body: "uno más" })).toEqual({ status: "queue_full" });
     expect(await filas(video)).toHaveLength(100);
@@ -606,12 +607,57 @@ describe("límite por cliente, reenvío y tope de pendientes", () => {
   it("altas simultáneas con la cola en 99: entra una sola", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
-    const lote = Array.from({ length: 99 }, (_, i) => ({ video_id: video, organization_id: local.id, body: `p${i}` }));
+    const lote = Array.from({ length: 99 }, (_, i) => ({ video_id: video, organization_id: local.id, body: `p${i}`, created_at: haceUnaHora }));
     expect((await service.from("video_comments").insert(lote)).error).toBeNull();
     const respuestas = await Promise.all(Array.from({ length: 5 }, (_, i) => enviar({ token: local.token, video, body: `s${i}` })));
     expect(respuestas.filter((r) => r.status === "ok")).toHaveLength(1);
     expect(respuestas.filter((r) => r.status === "queue_full")).toHaveLength(4);
     expect(await filas(video)).toHaveLength(100);
+  }, 60_000);
+
+  it("30 comentarios por organización cada 10 minutos, aunque se omitan la conexión y el ticket (llamada directa a la función): el 31 se rechaza", async () => {
+    const local = await crearLocal();
+    const otra = await crearLocal();
+    const video = await sembrarVideo(local.id);
+    const videoOtra = await sembrarVideo(otra.id);
+    // Sin p_rate ni p_visit_started_at, y con textos distintos: ni el límite por conexión ni la deduplicación aplican.
+    for (let i = 0; i < 30; i += 1) expect(await enviar({ token: i % 2 ? local.token : local.token2, video, body: `directo ${i}`, rate: null }), `envío ${i}`).toEqual(OK);
+    const r = await enviar({ token: local.token, video, body: "directo 30", rate: null });
+    expect(r.status).toBe("rate_limited");
+    expect(r.retry_after_seconds).toBeGreaterThanOrEqual(1);
+    expect(r.retry_after_seconds).toBeLessThanOrEqual(600);
+    expect(await filas(video)).toHaveLength(30);
+    expect(await enviar({ token: otra.token, video: videoOtra, rate: null })).toEqual(OK); // otra organización no se afecta
+    sinTriggers(`update public.video_comments set created_at = now() - interval '11 minutes' where video_id = '${video}'`);
+    expect(await enviar({ token: local.token, video, body: "directo 30", rate: null })).toEqual(OK);
+  }, 60_000);
+
+  it("desactivar la mesa mientras un envío espera un lock no se cuela: la desactivación espera a que el envío termine (revisión de Codex, ronda 1)", async () => {
+    const local = await crearLocal();
+    const video = await sembrarVideo(local.id);
+    // Otra sesión retiene el lock de la cola de la organización: el envío llega, pasa las validaciones y queda esperando.
+    const retenedor = spawn("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `select pg_advisory_lock(hashtextextended('video_comment_queue:${local.id}', 0)), pg_sleep(3)`], { stdio: "ignore" });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      let envioTermino = 0;
+      let desactivacionTermino = 0;
+      const envio = enviar({ token: local.token, video }).then((r) => {
+        envioTermino = Date.now();
+        return r;
+      });
+      await new Promise((resolve) => setTimeout(resolve, 500)); // el envío ya tomó la mesa y espera
+      const desactivacion = Promise.resolve(service.from("tables").update({ is_active: false }).eq("id", local.table)).then((r) => {
+        desactivacionTermino = Date.now();
+        return r;
+      });
+      expect(await envio).toEqual(OK);
+      expect((await desactivacion).error).toBeNull();
+      // Sin el bloqueo de la mesa la desactivación termina enseguida, mientras el envío todavía espera: acá tiene que terminar DESPUÉS.
+      expect(desactivacionTermino).toBeGreaterThanOrEqual(envioTermino);
+      expect(await enviar({ token: local.token, video, body: "ya desactivada" })).toEqual(UNAVAILABLE);
+    } finally {
+      retenedor.kill();
+    }
   }, 60_000);
 
   it("el rate_key se borra pasada una hora (en el próximo envío); el comentario queda", async () => {

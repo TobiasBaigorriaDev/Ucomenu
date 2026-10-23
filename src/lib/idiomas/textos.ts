@@ -208,7 +208,7 @@ const es: Textos = {
     commentSent: "Gracias. Tu comentario se publicará cuando el local lo apruebe.",
     commentInvalid: "Escribí un comentario de hasta 280 caracteres y un nombre de hasta 30.",
     commentQueueFull: "El local tiene muchos comentarios por revisar. Probá de nuevo más tarde.",
-    commentRateLimited: (m) => `Se enviaron demasiados comentarios desde tu conexión. Probá de nuevo en ${m} ${m === 1 ? "minuto" : "minutos"}.`,
+    commentRateLimited: (m) => `Se enviaron demasiados comentarios en poco tiempo. Probá de nuevo en ${m} ${m === 1 ? "minuto" : "minutos"}.`,
     commentError: "No se pudo enviar tu comentario. Probá de nuevo en un momento.",
   },
   unavailable: {
@@ -315,7 +315,7 @@ const en: Textos = {
     commentSent: "Thank you. Your comment will be published once the restaurant approves it.",
     commentInvalid: "Write a comment of up to 280 characters and a name of up to 30.",
     commentQueueFull: "The restaurant has many comments to review. Please try again later.",
-    commentRateLimited: (m) => `Too many comments were sent from your connection. Try again in ${m} ${m === 1 ? "minute" : "minutes"}.`,
+    commentRateLimited: (m) => `Too many comments were sent in a short time. Try again in ${m} ${m === 1 ? "minute" : "minutes"}.`,
     commentError: "We couldn't send your comment. Please try again in a moment.",
   },
   unavailable: {
@@ -422,7 +422,7 @@ const pt: Textos = {
     commentSent: "Obrigado. Seu comentário será publicado quando o restaurante aprovar.",
     commentInvalid: "Escreva um comentário de até 280 caracteres e um nome de até 30.",
     commentQueueFull: "O restaurante tem muitos comentários para revisar. Tente novamente mais tarde.",
-    commentRateLimited: (m) => `Muitos comentários foram enviados da sua conexão. Tente novamente em ${m} ${m === 1 ? "minuto" : "minutos"}.`,
+    commentRateLimited: (m) => `Muitos comentários foram enviados em pouco tempo. Tente novamente em ${m} ${m === 1 ? "minuto" : "minutos"}.`,
     commentError: "Não foi possível enviar seu comentário. Tente novamente em instantes.",
   },
   unavailable: {

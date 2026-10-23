@@ -18,6 +18,8 @@
 --    nunca `rate_key`, nunca el estado de moderación. Dueño y Staff leen todos los de su organización (sin `rate_key`) y solo pueden
 --    cambiar `status`, entre `approved` y `rejected`. Aprobar exige `org_can_write`; rechazar o retirar no (sacar contenido ajeno
 --    de la carta no se bloquea por mora).
+--  * Topes que no dependen del cliente (la función es pública y `p_rate`/`p_visit_started_at` los arma el servidor): 30 comentarios por
+--    organización cada 10 minutos y 100 pendientes. Además, 10 por conexión cada 10 minutos cuando hay `p_rate`.
 --  * El texto, el alias y el video son inmutables (un trigger lo exige también para service_role). `pending` no se vuelve a alcanzar.
 --  * `comment_count` (público) = comentarios `approved` del video, mantenido por trigger; nadie lo escribe por la API.
 --  * `rate_key` (de la IP) se pone en NULL pasada 1 hora, de forma oportunista en cada envío.
@@ -223,13 +225,15 @@ begin
   from public.tables t
   join public.organizations o on o.id = t.organization_id
   where t.qr_token = p_token
-    and o.is_active;
+    and o.is_active
+  for share of t;
 
   if not found then
     return jsonb_build_object('status', 'not_found');
   end if;
 
-  -- La sucursal se lee con FOR SHARE: una desactivación en curso espera a que este pedido termine, o ya fue confirmada y se ve acá.
+  -- La mesa (arriba, `FOR SHARE OF t`) y la sucursal se leen con FOR SHARE: una desactivación en curso espera a que este pedido
+  -- termine, o ya fue confirmada y se ve acá. Sin esto, un envío que espera un lock insertaría con el estado de antes.
   select b.is_active into v_branch_active
   from public.branches b
   where b.id = v_table.branch_id
@@ -325,9 +329,22 @@ begin
     end if;
   end if;
 
-  -- Tope de pendientes por organización: lo que un tercero puede acumular en la base del local. El lock evita pasarse con dos altas
-  -- simultáneas (siempre se toma después del lock por conexión: mismo orden en todos los pedidos).
+  -- Topes por organización: no dependen de nada que mande el cliente. `p_rate` y `p_visit_started_at` los arma la acción de servidor
+  -- (la base no puede verificar la IP ni la firma del ticket): quien llama a la función directamente con la clave pública puede
+  -- omitirlos o inventarlos. Estos dos topes acotan ese caso: nada se publica sin aprobación, y lo que puede acumular son 30
+  -- comentarios cada 10 minutos y 100 pendientes. El lock evita pasarse con dos altas simultáneas (siempre se toma después del lock
+  -- por conexión: mismo orden en todos los pedidos).
   perform pg_advisory_xact_lock(hashtextextended('video_comment_queue:' || v_table.organization_id::text, 0));
+
+  select count(*), min(created_at) into v_count, v_oldest
+  from public.video_comments
+  where organization_id = v_table.organization_id
+    and created_at > now() - interval '10 minutes';
+  if v_count >= 30 then
+    v_retry := greatest(1, ceil(extract(epoch from (v_oldest + interval '10 minutes' - now())))::integer);
+    return jsonb_build_object('status', 'rate_limited', 'retry_after_seconds', v_retry);
+  end if;
+
   if (select count(*) from public.video_comments where organization_id = v_table.organization_id and status = 'pending') >= 100 then
     return jsonb_build_object('status', 'queue_full');
   end if;
