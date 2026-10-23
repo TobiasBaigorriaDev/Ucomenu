@@ -52,6 +52,18 @@ async function endOperation(ctx: AdminContext, userId: string, token: string) {
   if (error) console.error("[admin] no se pudo liberar la reserva de una cuenta (vence sola)", { userId });
 }
 
+/** ¿Sigue la cuenta en Auth? `unknown` si no se pudo averiguar. */
+async function accountState(ctx: AdminContext, userId: string): Promise<"exists" | "gone" | "unknown"> {
+  try {
+    const { data, error } = await ctx.admin.auth.admin.getUserById(userId);
+    if (data?.user) return "exists";
+    // Auth responde 404 `user_not_found` cuando no existe; cualquier otro error (red, 5xx) no prueba nada.
+    return error && error.status === 404 ? "gone" : error ? "unknown" : "gone";
+  } catch {
+    return "unknown";
+  }
+}
+
 /** Borra de Auth una cuenta sin local. Irreversible: el email queda libre y se cortan sus sesiones. */
 export async function deleteOrphanAccount(ctx: AdminContext, input: DeleteOrphanInput): Promise<Result> {
   if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
@@ -67,27 +79,27 @@ export async function deleteOrphanAccount(ctx: AdminContext, input: DeleteOrphan
     p_email: input.confirmEmail,
     p_reason: reason,
   });
-  if (begun.error) return dbFailure(begun.error);
+  if (begun.error) {
+    // Aún no se tocó Auth: aunque se haya perdido la respuesta, no se borró nada (a lo sumo queda la reserva, que vence sola).
+    const failure = dbFailure(begun.error);
+    return failure.ok || failure.error !== "uncertain_change" ? failure : fail("unexpected");
+  }
   if (!isRecord(begun.data)) return fail("unexpected");
   if (begun.data.status !== "ok") return fail(STATUS_ERROR[String(begun.data.status)] ?? "unexpected");
   const token = begun.data.token;
   if (typeof token !== "string") return fail("unexpected");
 
-  let deleted = false;
+  // Tras la llamada a Auth, la verdad es si la cuenta sigue o no: un error (también de red, con la respuesta perdida) no lo dice.
+  let state: "exists" | "gone" | "unknown";
   try {
     const result = await ctx.admin.auth.admin.deleteUser(userId);
-    if (result.error) {
-      console.error("[admin] no se pudo borrar una cuenta sin local", { userId });
-    } else {
-      deleted = true;
-    }
+    if (result.error) console.error("[admin] Auth devolvió un error al borrar una cuenta sin local", { userId });
+    state = result.error ? await accountState(ctx, userId) : "gone";
   } catch {
-    // Se perdió la respuesta: no se sabe si se borró. No se audita; se pide revisar.
-    await endOperation(ctx, userId, token);
-    return fail("uncertain_change");
+    state = await accountState(ctx, userId);
   }
   await endOperation(ctx, userId, token);
-  if (!deleted) return fail("unexpected");
+  if (state !== "gone") return fail(state === "unknown" ? "uncertain_change" : "unexpected");
 
   const recorded = await ctx.admin.rpc("admin_record_account_deleted", { p_actor: ctx.actorId, p_user: userId, p_reason: reason });
   // El borrado ya ocurrió: si la constancia falla, la cuenta no vuelve; queda el aviso en el registro del servidor.

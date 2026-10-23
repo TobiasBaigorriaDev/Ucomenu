@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { AdminContext } from "@/lib/admin/organizations";
 import { deleteOrphanAccount, listOrphanAccounts } from "@/lib/admin/orphan-accounts";
@@ -57,6 +58,57 @@ function conGancho(db: Db, antesDeBorrar: () => Promise<void>): Db {
       return typeof valor === "function" ? valor.bind(destino) : valor;
     },
   });
+}
+
+type AuthAdminOverrides = Partial<{ deleteUser: () => Promise<unknown>; getUserById: () => Promise<unknown> }>;
+
+/** El cliente de servicio con `auth.admin.deleteUser` / `getUserById` reemplazados (lo demás es el cliente real) y, si se pide, `rpc` por nombre. */
+function conAuth(db: Db, auth: AuthAdminOverrides, rpc: Record<string, () => Promise<unknown>> = {}): Db {
+  const authAdmin = new Proxy(db.auth.admin, {
+    get(destino, propiedad) {
+      const reemplazo = auth[propiedad as keyof AuthAdminOverrides];
+      if (reemplazo) return reemplazo;
+      const valor = Reflect.get(destino, propiedad, destino);
+      return typeof valor === "function" ? valor.bind(destino) : valor;
+    },
+  });
+  const authProxy = new Proxy(db.auth, { get: (destino, propiedad) => (propiedad === "admin" ? authAdmin : Reflect.get(destino, propiedad, destino)) });
+  return new Proxy(db, {
+    get(destino, propiedad) {
+      if (propiedad === "auth") return authProxy;
+      if (propiedad === "rpc") {
+        return (nombre: string, ...resto: unknown[]) => rpc[nombre]?.() ?? (destino.rpc as (...a: unknown[]) => unknown).call(destino, nombre, ...resto);
+      }
+      const valor = Reflect.get(destino, propiedad, destino);
+      return typeof valor === "function" ? valor.bind(destino) : valor;
+    },
+  });
+}
+
+const RED = { message: "fetch failed", name: "AuthRetryableFetchError", status: 0 };
+
+const CONTENEDOR = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+const NL = String.fromCharCode(10);
+
+/** Una transacción real de Postgres que se deja abierta hasta `confirmar()`. */
+function retener(sentencias: string) {
+  const proceso = spawn("docker", ["exec", "-i", CONTENEDOR, "psql", "-U", "postgres", "-q", "-v", "ON_ERROR_STOP=1"], { stdio: ["pipe", "ignore", "ignore"] });
+  const terminado = new Promise<number | null>((resolve) => proceso.on("close", resolve));
+  proceso.stdin.write(`begin; ${sentencias}${NL}`);
+  return {
+    confirmar: async () => {
+      proceso.stdin.end(`commit;${NL}`);
+      return terminado;
+    },
+  };
+}
+
+async function hasta(descripcion: string, consulta: string) {
+  for (let i = 0; i < 40; i++) {
+    if (sql(consulta)[0]?.[0] === "1") return;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error(`No se alcanzó: ${descripcion}`);
 }
 
 beforeAll(async () => {
@@ -213,5 +265,67 @@ describe("borrar una cuenta sin local", () => {
     const otra = await service.rpc("admin_record_account_deleted", { p_actor: superAdmin.id, p_user: borrada.id, p_reason: MOTIVO });
     expect(otra.data).toEqual({ status: "already_recorded" });
     expect(movimientos(borrada)).toBe("1");
+  });
+});
+
+describe("cuando Auth falla o la respuesta se pierde", () => {
+  it("un error de red con la cuenta ya borrada cuenta como borrada: se audita y no se invita a repetir", async () => {
+    const cuenta = await cuentaSinLocal();
+    const ctx = adminCtx(superAdmin, conAuth(service, {
+      deleteUser: async () => {
+        await service.auth.admin.deleteUser(cuenta.id); // Auth la borra, pero la respuesta no llega
+        return { data: { user: null }, error: RED };
+      },
+    }));
+    expect(await borrar(cuenta, {}, ctx)).toEqual({ ok: true, data: undefined });
+    expect(await existe(cuenta)).toBe(false);
+    expect(movimientos(cuenta)).toBe("1");
+    expect(reservas(cuenta)).toBe(0);
+  });
+
+  it("un error de Auth con la cuenta intacta es un fallo claro (no se cambió nada), sin constancia y sin reserva", async () => {
+    const cuenta = await cuentaSinLocal();
+    const ctx = adminCtx(superAdmin, conAuth(service, { deleteUser: async () => ({ data: { user: null }, error: { message: "boom", status: 500 } }) }));
+    expect(await borrar(cuenta, {}, ctx)).toEqual({ ok: false, error: "unexpected" });
+    expect(await existe(cuenta)).toBe(true);
+    expect(movimientos(cuenta)).toBe("0");
+    expect(reservas(cuenta)).toBe(0);
+  });
+
+  it("si ni siquiera se puede averiguar si la cuenta sigue, se avisa que no se sabe y no se audita", async () => {
+    const cuenta = await cuentaSinLocal();
+    const ctx = adminCtx(superAdmin, conAuth(service, {
+      deleteUser: async () => ({ data: { user: null }, error: RED }),
+      getUserById: async () => ({ data: { user: null }, error: RED }),
+    }));
+    expect(await borrar(cuenta, {}, ctx)).toEqual({ ok: false, error: "uncertain_change" });
+    expect(movimientos(cuenta)).toBe("0");
+    expect(reservas(cuenta)).toBe(0);
+  });
+
+  it("si se pierde la respuesta de la reserva no se tocó Auth: no se dice «incierto», se dice que no se cambió nada", async () => {
+    const cuenta = await cuentaSinLocal();
+    const ctx = adminCtx(superAdmin, conAuth(service, {}, { admin_begin_orphan_delete: async () => ({ data: null, error: { message: "fetch failed" } }) }));
+    expect(await borrar(cuenta, {}, ctx)).toEqual({ ok: false, error: "unexpected" });
+    expect(await existe(cuenta)).toBe(true);
+  });
+});
+
+describe("la constancia es una sola, también con pedidos simultáneos", () => {
+  it("un segundo pedido espera al primero y ve su fila: queda un solo movimiento", async () => {
+    const cuenta = await cuentaSinLocal();
+    await service.auth.admin.deleteUser(cuenta.id);
+    const actor = superAdmin.id;
+    const retenida = retener(`select public.admin_record_account_deleted('${actor}', '${cuenta.id}', '${MOTIVO}');`);
+    await hasta("la transacción retenida está abierta", `select (count(*) > 0)::int from pg_stat_activity where state = 'idle in transaction' and query ilike '%admin_record_account_deleted%${cuenta.id}%'`);
+    // El constructor de PostgREST es perezoso: sin la función async no se envía hasta que alguien lo espere.
+    const segundo = (async () => service.rpc("admin_record_account_deleted", { p_actor: actor, p_user: cuenta.id, p_reason: MOTIVO }))();
+    try {
+      await hasta("el segundo pedido espera el lock", `select (count(*) > 0)::int from pg_stat_activity where wait_event_type = 'Lock' and query ilike '%admin_record_account_deleted%' and pid <> pg_backend_pid()`);
+    } finally {
+      await retenida.confirmar();
+    }
+    expect((await segundo).data).toEqual({ status: "already_recorded" });
+    expect(movimientos(cuenta)).toBe("1");
   });
 });

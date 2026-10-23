@@ -316,7 +316,7 @@ export async function deleteOrphanAccountAction(_previous: FormState, formData: 
     return {
       error:
         result.error === "uncertain_change"
-          ? "No pudimos confirmar si la cuenta se borró. No lo repitas todavía: recargá la lista; si ya no aparece, se borró."
+          ? "No pudimos confirmar si la cuenta se borró. No lo repitas todavía: recargá la lista en un par de minutos; si ya no aparece, se borró."
           : ADMIN_ERROR_MESSAGE[result.error],
       values,
     };

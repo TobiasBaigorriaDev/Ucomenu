@@ -144,6 +144,8 @@ begin
   if p_user is null or p_reason is null or char_length(btrim(p_reason)) not between 1 and 200 then
     raise exception 'invalid_arguments' using errcode = '22023';
   end if;
+  -- Una constancia por cuenta, también con dos pedidos a la vez (el EXISTS de abajo y el INSERT no son atómicos sin este lock).
+  perform pg_advisory_xact_lock(hashtextextended('account-deleted:' || p_user::text, 0));
   -- Solo se audita un borrado que ya ocurrió.
   if exists (select 1 from auth.users u where u.id = p_user) then
     raise exception 'account_still_exists' using errcode = '55000';
