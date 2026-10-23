@@ -50,7 +50,7 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0036 | [Personalización de la carta: doce paletas cerradas (claras y oscuras) y tres estilos](0036-personalizacion-de-la-carta.md) | aceptada | 2026-10-21 |
 | 0037 | [Temas de fechas especiales en la carta (decoración opcional con ventana de fechas)](0037-temas-de-fechas-especiales.md) | aceptada | 2026-10-21 |
 | 0038 | [Las escrituras públicas de la mesa (llamado, likes, comentarios) las ejecuta solo el servidor con `service_role`](0038-escrituras-publicas-solo-servidor.md) | aceptada | 2026-10-23 |
-| 0039 | [La sucursal adicional es un add-on de cupo cobrado con la suscripción; las funciones nuevas se liberan por organización con vistas previas auditadas](0039-sucursal-adicional-y-vistas-previas.md) | aceptada (sin implementar) | 2026-10-23 |
+| 0039 | [La sucursal adicional es un add-on de cupo cobrado con la suscripción; las funciones nuevas se liberan por organización con vistas previas auditadas](0039-sucursal-adicional-y-vistas-previas.md) | aceptada (sucursal adicional en staging; vistas previas en local) | 2026-10-23 |
 | 0040 | [Promociones programadas por horario de cada sucursal, con una sola función de precio efectivo en la base](0040-promociones-programadas.md) | aceptada (sin implementar) | 2026-10-23 |
 | 0041 | [Pedidos que anota el mozo en la Sala, sin punto de venta fiscal; el comensal no pide](0041-pedidos-del-mozo.md) | aceptada (sin implementar) | 2026-10-23 |
 | 0042 | [La identidad del cliente es por organización, con consentimiento, y se vincula a la visita o al pedido, nunca a la mesa](0042-clientes-recurrentes.md) | aceptada (sin implementar; bloqueada por revisión legal) | 2026-10-23 |

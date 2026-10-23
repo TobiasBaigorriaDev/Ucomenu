@@ -76,6 +76,12 @@ export type AdminError =
   | "branches_selection_invalid"
   | "extra_branches_must_end"
   | "addon_has_own_action"
+  // Vistas previas de funciones (ficha vistas-previas-de-funciones)
+  | "invalid_preview_feature"
+  | "invalid_preview_end"
+  | "feature_in_plan"
+  | "preview_unchanged"
+  | "preview_not_active"
   // Borrado definitivo (ficha borrado-de-organizaciones, ADR 0028)
   | "slug_mismatch"
   | "organization_still_active"
@@ -156,6 +162,11 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   extra_branches_must_end:
     "El plan nuevo tiene tope de sucursales y no admite sucursales adicionales: finalizalas primero (poniendo 0) y elegí qué sucursales se desactivan. No se cambió nada.",
   addon_has_own_action: "Ese add-on se gestiona desde su propio formulario (sucursales adicionales), no desde este.",
+  invalid_preview_feature: "Elegí una función de la lista.",
+  invalid_preview_end: "«Termina el» es obligatorio: una fecha futura, de hasta 90 días.",
+  feature_in_plan: "El plan actual ya incluye esa función: no hace falta una vista previa.",
+  preview_unchanged: "La vista previa ya vence en esa fecha: no hay nada que cambiar.",
+  preview_not_active: "Esa vista previa no está vigente, así que no hay nada que finalizar. Recargá la página para ver su estado.",
   already_inactive: "La organización ya está dada de baja.",
   already_active: "La organización ya está activa: no hay nada que reactivar.",
   slug_mismatch: "El identificador que escribiste no coincide con el de la organización. No se borró nada.",

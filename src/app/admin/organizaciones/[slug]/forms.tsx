@@ -9,9 +9,11 @@ import {
   changePlanAction,
   deleteOrganizationAction,
   endAddonAction,
+  endFeaturePreviewAction,
   registerPaymentAction,
   setAddonAction,
   setExtraBranchesAction,
+  setFeaturePreviewAction,
   setOrganizationActiveAction,
   setSuspensionAction,
   voidPaymentAction,
@@ -476,6 +478,120 @@ export function ExtraBranchesForm({
         </>
       )}
     </ActionForm>
+  );
+}
+
+/**
+ * Habilitar una función a la organización, o cambiar el fin de su vista previa vigente (ficha vistas-previas-de-funciones,
+ * ADR 0039). El fin es obligatorio y de hasta 90 días; la base valida de nuevo.
+ */
+export function FeaturePreviewForm({
+  slug,
+  feature,
+  active,
+  endsOn,
+  minDate,
+  maxDate,
+}: {
+  slug: string;
+  feature: string;
+  active: boolean;
+  endsOn: string;
+  minDate: string;
+  maxDate: string;
+}) {
+  return (
+    <ActionForm action={setFeaturePreviewAction} className="mt-4 grid max-w-md gap-4">
+      {(state) => (
+        <>
+          <input type="hidden" name="slug" value={slug} />
+          <input type="hidden" name="feature" value={feature} />
+          <div>
+            <label htmlFor={`preview-fin-${feature}`} className={labelClass}>
+              Termina el
+            </label>
+            <input
+              id={`preview-fin-${feature}`}
+              name="endsOn"
+              type="date"
+              required
+              min={minDate}
+              max={maxDate}
+              aria-describedby={`preview-fin-hint-${feature}`}
+              defaultValue={state.values?.endsOn ?? endsOn}
+              className={`${inputClass} mt-1`}
+            />
+            <p id={`preview-fin-hint-${feature}`} className="mt-1 text-sm text-muted">
+              Vale hasta el final de ese día. Hasta 90 días desde hoy; después se apaga sola.
+            </p>
+          </div>
+          <div>
+            <label htmlFor={`preview-motivo-${feature}`} className={labelClass}>
+              {active ? "Motivo del cambio" : "Motivo de la habilitación"}
+            </label>
+            <input
+              id={`preview-motivo-${feature}`}
+              name="reason"
+              type="text"
+              required
+              maxLength={200}
+              autoComplete="off"
+              aria-describedby={`preview-motivo-hint-${feature}`}
+              defaultValue={state.values?.reason ?? ""}
+              className={`${inputClass} mt-1`}
+            />
+            <p id={`preview-motivo-hint-${feature}`} className="mt-1 text-sm text-muted">
+              {REASON_HINT}
+            </p>
+          </div>
+          <div>
+            <SubmitButton pendingLabel="Guardando…">{active ? "Cambiar el fin" : "Habilitar función"}</SubmitButton>
+          </div>
+        </>
+      )}
+    </ActionForm>
+  );
+}
+
+/** Finalizar una vista previa vigente. Plegado: no es de todos los días. */
+export function EndFeaturePreviewForm({ slug, feature, name }: { slug: string; feature: string; name: string }) {
+  return (
+    <details className="mt-4">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-base text-danger underline underline-offset-2">Terminar la vista previa de {name}</summary>
+      <ActionForm action={endFeaturePreviewAction} className="mt-2 grid max-w-md gap-4">
+        {(state) => (
+          <>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="feature" value={feature} />
+            <p className="max-w-prose text-base leading-relaxed">La función deja de estar habilitada en el acto. Se puede volver a habilitar después.</p>
+            <div>
+              <label htmlFor={`preview-fin-motivo-${feature}`} className={labelClass}>
+                Motivo
+              </label>
+              <input
+                id={`preview-fin-motivo-${feature}`}
+                name="reason"
+                type="text"
+                required
+                maxLength={200}
+                autoComplete="off"
+                aria-describedby={`preview-fin-motivo-hint-${feature}`}
+                defaultValue={state.values?.reason ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+              <p id={`preview-fin-motivo-hint-${feature}`} className="mt-1 text-sm text-muted">
+                {REASON_HINT}
+              </p>
+            </div>
+            <div>
+              <SubmitButton pendingLabel="Finalizando…" className={dangerButtonClass}>
+                Terminar vista previa
+              </SubmitButton>
+            </div>
+          </>
+        )}
+      </ActionForm>
+    </details>
   );
 }
 

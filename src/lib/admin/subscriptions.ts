@@ -16,6 +16,7 @@ import {
   isCurrency,
   isPaymentMethod,
   isPlanCode,
+  isPreviewFeature,
   parseAddonEnd,
   parseAmountToCents,
   parseBranchSelection,
@@ -23,9 +24,12 @@ import {
   parseExtraPacks,
   parsePaidOn,
   parsePeriodEnd,
+  parsePreviewEnd,
   parseReason,
   parseReference,
   parseSlug,
+  PREVIEW_FEATURES,
+  type PreviewFeature,
 } from "./validation";
 
 /**
@@ -74,6 +78,11 @@ const DB_ERRORS: Record<string, AdminError> = {
   branches_selection_invalid: "branches_selection_invalid",
   extra_branches_must_end: "extra_branches_must_end",
   addon_has_own_action: "addon_has_own_action",
+  invalid_feature: "invalid_preview_feature",
+  invalid_preview_end: "invalid_preview_end",
+  feature_in_plan: "feature_in_plan",
+  preview_unchanged: "preview_unchanged",
+  preview_not_active: "preview_not_active",
   already_inactive: "already_inactive",
   already_active: "already_active",
   slug_mismatch: "slug_mismatch",
@@ -327,6 +336,58 @@ export async function setExtraBranches(ctx: AdminContext, input: SetExtraBranche
   return error ? dbFailure(error) : ok(undefined);
 }
 
+export type SetFeaturePreviewInput = {
+  slug: unknown;
+  feature: unknown;
+  /** `AAAA-MM-DD`: la vista previa vale hasta el final de ese día (Argentina), hasta 90 días. */
+  endsOn: unknown;
+  reason: unknown;
+};
+
+/**
+ * Habilita una función a una organización por tiempo limitado, o cambia el fin de una vista previa vigente (ficha
+ * vistas-previas-de-funciones, ADR 0039). La base vuelve a validar y escribe la auditoría en la misma transacción.
+ */
+export async function setFeaturePreview(ctx: AdminContext, input: SetFeaturePreviewInput, now: Date = new Date()): Promise<Result> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  if (!isPreviewFeature(input.feature)) return fail("invalid_preview_feature");
+  const endsAt = parsePreviewEnd(input.endsOn, now);
+  if (endsAt === null) return fail("invalid_preview_end");
+  const reason = parseReason(input.reason);
+  if (!reason) return fail("invalid_reason");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const { error } = await ctx.admin.rpc("admin_set_feature_preview", {
+    p_actor: ctx.actorId,
+    p_org: org.data,
+    p_feature: input.feature,
+    p_ends_at: endsAt,
+    p_reason: reason,
+  });
+  return error ? dbFailure(error) : ok(undefined);
+}
+
+export type EndFeaturePreviewInput = { slug: unknown; feature: unknown; reason: unknown };
+
+/** Finaliza ahora una vista previa vigente. */
+export async function endFeaturePreview(ctx: AdminContext, input: EndFeaturePreviewInput): Promise<Result> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  if (!isPreviewFeature(input.feature)) return fail("invalid_preview_feature");
+  const reason = parseReason(input.reason);
+  if (!reason) return fail("invalid_reason");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const { error } = await ctx.admin.rpc("admin_end_feature_preview", {
+    p_actor: ctx.actorId,
+    p_org: org.data,
+    p_feature: input.feature,
+    p_reason: reason,
+  });
+  return error ? dbFailure(error) : ok(undefined);
+}
+
 // ---------------------------------------------------------------------------
 // Lectura: detalle de una organización
 // ---------------------------------------------------------------------------
@@ -362,6 +423,15 @@ export type ExtraBranchesRow = {
   planBranches: number | null;
   /** Sucursales activas, para elegir cuáles se desactivan. */
   activeBranches: { id: string; name: string; slug: string }[];
+};
+
+/** Una función que el SuperAdmin puede habilitar a la organización y su vista previa, si alguna vez tuvo una. */
+export type FeaturePreviewRow = {
+  feature: PreviewFeature;
+  /** ¿Ya la incluye el plan? Entonces no hace falta (ni se permite) una vista previa. */
+  inPlan: boolean;
+  /** `null` = nunca tuvo vista previa. */
+  preview: { endsAt: string; reason: string; active: boolean } | null;
 };
 
 export type PaymentRow = {
@@ -409,6 +479,7 @@ export type OrganizationDetail = {
   payments: PaymentRow[];
   addons: AddonRow[];
   extraBranches: ExtraBranchesRow | null;
+  featurePreviews: FeaturePreviewRow[];
   audit: AuditEntry[];
 };
 
@@ -435,7 +506,7 @@ export async function getOrganizationDetail(
   if (org.error) return fail("unexpected");
   if (!org.data) return fail("org_not_found");
 
-  const [sub, owners, payments, audit, catalog, contracted, lifecycle, activeBranches, plans] = await Promise.all([
+  const [sub, owners, payments, audit, catalog, contracted, lifecycle, activeBranches, plans, previews] = await Promise.all([
     ctx.admin
       .from("subscriptions")
       .select("plan_code, billing_cycle, trial_ends_at, current_period_end, suspended_at")
@@ -465,7 +536,8 @@ export async function getOrganizationDetail(
       .order("id", { ascending: false })
       .limit(1),
     ctx.admin.from("branches").select("id, name, slug").eq("organization_id", org.data.id).eq("is_active", true).order("name").order("id"),
-    ctx.admin.from("plans").select("code, max_branches"),
+    ctx.admin.from("plans").select("code, max_branches, features"),
+    ctx.admin.from("organization_feature_previews").select("feature, ends_at, reason").eq("organization_id", org.data.id),
   ]);
   if (
     sub.error ||
@@ -477,7 +549,8 @@ export async function getOrganizationDetail(
     contracted.error ||
     lifecycle.error ||
     activeBranches.error ||
-    plans.error
+    plans.error ||
+    previews.error
   ) {
     return fail("unexpected");
   }
@@ -520,6 +593,16 @@ export async function getOrganizationDetail(
           activeBranches: activeBranches.data,
         }
       : null;
+
+  const planFeatures = plans.data.find((p) => p.code === planCode)?.features ?? [];
+  const featurePreviews: FeaturePreviewRow[] = PREVIEW_FEATURES.map((feature) => {
+    const row = previews.data.find((p) => p.feature === feature);
+    return {
+      feature,
+      inPlan: planFeatures.includes(feature),
+      preview: row ? { endsAt: row.ends_at, reason: row.reason, active: isAddonActive(row.ends_at, now) } : null,
+    };
+  });
 
   // El pago que define la vigencia actual es el que se puede anular: tiene que estar en la lista aunque los últimos
   // PAYMENTS_LIMIT (vigentes y anulados) lo hayan dejado afuera (p. ej. tras muchas correcciones).
@@ -589,6 +672,7 @@ export async function getOrganizationDetail(
     })),
     addons,
     extraBranches,
+    featurePreviews,
     audit: audit.data,
   });
 }

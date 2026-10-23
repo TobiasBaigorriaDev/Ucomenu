@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AdminContext } from "./organizations";
-import { changePlan, endAddon, isAddonActive, isVoidable, registerPayment, setAddon, setExtraBranches, setOrganizationActive, setSuspension, voidPayment } from "./subscriptions";
+import { changePlan, endAddon, endFeaturePreview, isAddonActive, isVoidable, registerPayment, setAddon, setExtraBranches, setFeaturePreview, setOrganizationActive, setSuspension, voidPayment } from "./subscriptions";
 import { accountState, parseEntitlements, trialStatus, moraNotice } from "@/lib/entitlements";
 import { formatMoney } from "./format";
 import {
@@ -8,14 +8,17 @@ import {
   isAddonCode,
   isCurrency,
   isPaymentMethod,
+  isPreviewFeature,
   parseAddonEnd,
   parseAmountToCents,
   parseBranchSelection,
   parseExtraBranches,
   parseExtraPacks,
   parsePaidOn,
+  parsePreviewEnd,
   parseReason,
   parseReference,
+  PREVIEW_FEATURES,
   proposeCoversUntil,
   REASON_MAX_LENGTH,
   REFERENCE_MAX_LENGTH,
@@ -465,5 +468,53 @@ describe("sucursales adicionales (ficha sucursal-adicional)", () => {
     }
     const { ctx } = fakeContext({ data: null, error: { code: "55000", message: "extra_branches_must_end" } });
     expect(await changePlan(ctx, { slug: "local-1", plan: "basic", billingCycle: "monthly", reason: "x" })).toEqual({ ok: false, error: "extra_branches_must_end" });
+  });
+});
+
+describe("vistas previas de funciones (ficha vistas-previas-de-funciones)", () => {
+  it("isPreviewFeature: solo las cuatro claves del incremento", () => {
+    expect(PREVIEW_FEATURES).toEqual(["orders", "promotions", "review_invite", "customers"]);
+    for (const clave of PREVIEW_FEATURES) expect(isPreviewFeature(clave)).toBe(true);
+    for (const mala of ["menu", "video_feed", "loyalty", "", "ORDERS", null, 3]) expect(isPreviewFeature(mala), String(mala)).toBe(false);
+  });
+
+  it("parsePreviewEnd: obligatoria, futura (hoy vale hasta las 23:59 de Argentina) y de hasta 90 días", () => {
+    // NOW = 2026-10-14 12:00 en Argentina.
+    expect(parsePreviewEnd("2026-10-14", NOW)).toBe("2026-10-15T02:59:59.000Z");
+    expect(parsePreviewEnd("2027-01-11", NOW)).not.toBeNull(); // 89 días
+    expect(parsePreviewEnd("2027-01-12", NOW)).toBeNull(); // el final de ese día pasa de 90 días
+    for (const mala of ["", "2026-10-13", "2026-02-31", "mañana", "2026-10-14T10:00", null, undefined, 5]) {
+      expect(parsePreviewEnd(mala, NOW), String(mala)).toBeNull();
+    }
+  });
+
+  it("lo inválido se rechaza antes de llamar a la base y lo válido llega con el fin en ISO", async () => {
+    const entrada = { slug: "local-1", feature: "orders", endsOn: "2026-11-01", reason: "Piloto" };
+    const { ctx, llamadas } = fakeContext({ data: null });
+    expect(await setFeaturePreview(ctx, { ...entrada, feature: "video_feed" }, NOW)).toEqual({ ok: false, error: "invalid_preview_feature" });
+    expect(await setFeaturePreview(ctx, { ...entrada, endsOn: "" }, NOW)).toEqual({ ok: false, error: "invalid_preview_end" });
+    expect(await setFeaturePreview(ctx, { ...entrada, endsOn: "2027-06-01" }, NOW)).toEqual({ ok: false, error: "invalid_preview_end" });
+    expect(await setFeaturePreview(ctx, { ...entrada, reason: " " }, NOW)).toEqual({ ok: false, error: "invalid_reason" });
+    expect(await endFeaturePreview(ctx, { slug: "local-1", feature: "x", reason: "Fin" })).toEqual({ ok: false, error: "invalid_preview_feature" });
+    expect(await endFeaturePreview(ctx, { slug: "local-1", feature: "orders", reason: "" })).toEqual({ ok: false, error: "invalid_reason" });
+    expect(llamadas).toEqual([]);
+    expect(await setFeaturePreview(ctx, entrada, NOW)).toEqual({ ok: true, data: undefined });
+    expect(await endFeaturePreview(ctx, { slug: "local-1", feature: "orders", reason: "Fin" })).toEqual({ ok: true, data: undefined });
+    expect(llamadas).toEqual(["admin_set_feature_preview", "admin_end_feature_preview"]);
+  });
+
+  it("los errores de la base se traducen", async () => {
+    const casos = [
+      ["invalid_feature", "22023", "invalid_preview_feature"],
+      ["invalid_preview_end", "22023", "invalid_preview_end"],
+      ["feature_in_plan", "55000", "feature_in_plan"],
+      ["preview_unchanged", "55000", "preview_unchanged"],
+      ["preview_not_active", "55000", "preview_not_active"],
+    ] as const;
+    for (const [mensaje, code, esperado] of casos) {
+      const { ctx } = fakeContext({ data: null, error: { code, message: mensaje } });
+      const r = await setFeaturePreview(ctx, { slug: "local-1", feature: "orders", endsOn: "2026-11-01", reason: "x" }, NOW);
+      expect(r, mensaje).toEqual({ ok: false, error: esperado });
+    }
   });
 });

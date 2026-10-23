@@ -4,24 +4,25 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-Del incremento «Salón y crecimiento» (diseño aprobado el 2026-10-23) están hechas, aprobadas y en staging (Fly versión 33, migraciones `20261119100000` y `20261120100000`) las dos primeras piezas de S1:
+Del incremento «Salón y crecimiento» (diseño aprobado el 2026-10-23) están hechas y en staging (Fly versión 35) las tres primeras piezas de S1:
 
-- **Sucursal adicional (C)**, [ficha](cambios/sucursal-adicional.md): migración `20261119100000`, bloque en la ficha de SuperAdmin y cupo, precio y aviso para el Dueño. Revisada por Codex (sin hallazgos) y aprobada para staging.
-- **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000` y formulario en Sucursales. Verificado en local y en staging; la carta lo muestra desde la invitación.
+- **Sucursal adicional (C)**, [ficha](cambios/sucursal-adicional.md): migración `20261119100000`. Aprobada por Codex y por el usuario.
+- **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000`.
+- **Invitación a reseñar en la carta (M)**, [ficha](cambios/invitacion-a-resenar.md): en `origin/main` y en staging.
 
-- **Invitación a reseñar en la carta (M)**, [ficha](cambios/invitacion-a-resenar.md): enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» con Pro o superior (una vez al día por dispositivo), textos fijos es/en/pt. Verificada en local; en `origin/main` (`468988d`) y en staging (Fly versión 35).
-
-Las dos primeras están en `origin/main` (`eeec5f2`, subido el 2026-10-23) y en staging. El upgrade de Next (`34e17fa`) está en `origin/main` (`4dd6aeb`) y en staging.
+**Vistas previas de funciones por organización (C)**, [ficha](cambios/vistas-previas-de-funciones.md): implementada y verificada en **local**, migración `20261121100000` (tabla `organization_feature_previews`, `plan_grants` = plan ∪ vistas previas vigentes, dos funciones de SuperAdmin con auditoría y el bloque en la ficha de la organización). **No está subida** a `origin/main` ni a staging. Ninguna de las cuatro funciones (`orders`, `promotions`, `review_invite`, `customers`) la lee todavía: cada ficha de función cablea la suya.
 
 ## Bloqueos y límites
 
+- Falta la revisión independiente de Codex (una ronda, solo lectura) y la aprobación del usuario para subir la migración a staging.
 - Clientes recurrentes (S4) espera la revisión de un abogado; los pedidos (S3) esperan la función de precio efectivo de S2.
 - Siguen pendientes: el dominio, la revisión legal de los comentarios y programar las purgas (bloquean producción).
 - `pnpm test` tiene una falla ajena: `textos.test.ts` («Menufeed», commit `07facba`). Intermitentes: `sala.spec:323`, `videos-mux.spec:145` y `owner-lectura.rls` (pasa sola). `tools/escenarios-locales.mjs` es un archivo ajeno sin seguir: no se tocó.
-- Next.js está en **16.4.3** (`34e17fa`, aviso de seguridad; en staging, Fly versión 34). `pnpm-workspace.yaml` tiene una excepción `minimumReleaseAgeExclude` solo para `next@16.4.3` y sus `@next/*`: se puede quitar cuando cumpla la antigüedad mínima.
+- Next.js está en **16.4.3**; `pnpm-workspace.yaml` tiene una excepción `minimumReleaseAgeExclude` solo para `next@16.4.3` y sus `@next/*`: se puede quitar cuando cumpla la antigüedad mínima.
 
 ## Próximo paso
 
-1. Probar en staging, con sesión de SuperAdmin y de Dueño, vender y quitar una sucursal adicional y guardar un enlace de reseñas.
-2. Probar en staging la invitación a reseñar (enlace cargado, plan Pro, pedir la cuenta desde un teléfono); luego vistas previas por organización (C).
-3. Pendientes anteriores: probar en un teléfono real (llamado, likes, comentarios), `/admin/cuentas` y rotar la `service_role` legacy de staging.
+1. Pedir la revisión de Codex de las vistas previas (`ciclo-revision-codex`, nivel C) y, con su veredicto y el visto bueno del usuario, subir la migración a staging y probar el bloque con sesión de SuperAdmin.
+2. Probar en staging, con sesión de SuperAdmin y de Dueño, la sucursal adicional y el enlace de reseñas, y la invitación a reseñar desde un teléfono.
+3. Siguiente de S2: zona horaria por sucursal (M); luego promociones y función de precio efectivo (C).
+4. Pendientes anteriores: probar en un teléfono real (llamado, likes, comentarios), `/admin/cuentas` y rotar la `service_role` legacy de staging.

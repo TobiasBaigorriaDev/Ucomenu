@@ -1,5 +1,6 @@
 import type { AuditEntry } from "@/lib/admin/organizations";
 import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
+import { PREVIEW_FEATURE_LABEL, isPreviewFeature } from "@/lib/admin/validation";
 import { formatDateWithYear, PLAN_NAME } from "@/lib/entitlements";
 
 export const ACTION_LABEL: Record<string, string> = {
@@ -18,6 +19,9 @@ export const ACTION_LABEL: Record<string, string> = {
   "payments.purged": "Pagos antiguos purgados",
   "organization.deleted": "Organización borrada",
   "account.deleted": "Cuenta sin local borrada",
+  "feature_preview.started": "Vista previa de función iniciada",
+  "feature_preview.changed": "Vista previa de función modificada",
+  "feature_preview.ended": "Vista previa de función finalizada",
 };
 
 // WebAR ya no está en el catálogo (ADR 0031), pero sus movimientos siguen en la auditoría y se nombran.
@@ -95,6 +99,12 @@ function details(entry: AuditEntry): string[] {
         .filter((slug): slug is string => slug !== null);
       if (slugs.length > 0) out.push(`desactivadas: ${slugs.join(", ")}`);
     }
+  }
+  if (entry.action.startsWith("feature_preview.")) {
+    const feature = str(after.feature);
+    if (feature) out.push(isPreviewFeature(feature) ? PREVIEW_FEATURE_LABEL[feature] : feature);
+    const ends = str(after.ends_at);
+    if (ends) out.push(entry.action === "feature_preview.ended" ? `finalizada el ${formatDateWithYear(ends)}` : `hasta el ${formatDateWithYear(ends)}`);
   }
   const reason = str(after.reason);
   if (reason) out.push(`motivo: ${reason}`);

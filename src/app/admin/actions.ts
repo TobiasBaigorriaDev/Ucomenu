@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { deleteOrganization } from "@/lib/admin/delete-organization";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
-import { changePlan, endAddon, registerPayment, setAddon, setExtraBranches, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
+import { changePlan, endAddon, endFeaturePreview, registerPayment, setAddon, setExtraBranches, setFeaturePreview, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
 import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
@@ -212,6 +212,36 @@ export async function setExtraBranchesAction(_previous: FormState, formData: For
       ? "Listo: la cantidad de sucursales adicionales quedó registrada y se desactivaron las sucursales elegidas (conservan mesas, QR e historial). Todo figura en los movimientos."
       : "Listo: la cantidad de sucursales adicionales quedó registrada y figura en los movimientos.",
   };
+}
+
+// ---------------------------------------------------------------------------
+// Vistas previas de funciones (ficha vistas-previas-de-funciones, ADR 0039)
+// ---------------------------------------------------------------------------
+
+export async function setFeaturePreviewAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { feature: text(formData, "feature"), endsOn: text(formData, "endsOn"), reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await setFeaturePreview(prepared.ctx, { slug: prepared.slug, ...values });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  return { ok: true, message: "Listo: la función quedó habilitada hasta esa fecha y el cambio figura en los movimientos." };
+}
+
+export async function endFeaturePreviewAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { reason: text(formData, "reason") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await endFeaturePreview(prepared.ctx, { slug: prepared.slug, feature: text(formData, "feature"), reason: values.reason });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath(prepared.page);
+  revalidatePath(`/panel/${prepared.slug}`, "layout");
+  return { ok: true, message: "Listo: la vista previa terminó en el acto y figura en los movimientos." };
 }
 
 export async function setOrganizationActiveAction(_previous: FormState, formData: FormData): Promise<FormState> {

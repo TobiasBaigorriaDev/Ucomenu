@@ -7,17 +7,19 @@ import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
 import { AUDIT_LIMIT } from "@/lib/admin/organizations";
 import { listAdminBranches } from "@/lib/admin/branches";
 import { getOrganizationDetail, isVoidable, PAYMENTS_LIMIT, type PaymentRow } from "@/lib/admin/subscriptions";
-import { isBillingCycle, MAX_EXTRA_PACKS, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
+import { isBillingCycle, MAX_EXTRA_PACKS, MAX_PREVIEW_DAYS, PREVIEW_FEATURE_LABEL, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { accountState, BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { StatusPill } from "../../status-pill";
-import { AddOwnerForm, AddonForm, ChangePlanForm, DeleteOrganizationForm, EndAddonForm, ExtraBranchesForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
+import { AddOwnerForm, AddonForm, ChangePlanForm, DeleteOrganizationForm, EndAddonForm, EndFeaturePreviewForm, ExtraBranchesForm, FeaturePreviewForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 const dateTime = new Intl.DateTimeFormat("es-AR", {
   day: "numeric",
@@ -276,6 +278,45 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
                 </p>
               )}
               {!addon.allowedByPlan && addon.contract?.active ? <EndAddonForm slug={org.slug} addon={addon.code} name={addon.name} /> : null}
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-labelledby="seccion-vistas-previas" className="panel-cell mt-6" data-testid="vistas-previas">
+        <h2 id="seccion-vistas-previas" className="font-display text-2xl">
+          Vistas previas de funciones
+        </h2>
+        <p className="mt-2 max-w-prose leading-relaxed text-muted">
+          Habilitan una función nueva a este local, con fin obligatorio (hasta {MAX_PREVIEW_DAYS} días) y motivo. Se suman a las del plan; si la cuenta está en mora
+          o suspendida, la mora manda. El Dueño no ve la vista previa ni el motivo. Una función solo responde cuando ya está construida.
+        </p>
+        <ul className="mt-3 divide-y divide-ink/15">
+          {org.featurePreviews.map((item) => (
+            <li key={item.feature} data-testid="vista-previa" data-feature={item.feature} data-active={item.preview?.active ? "true" : "false"} className="py-5">
+              <h3 className="font-display text-xl">{PREVIEW_FEATURE_LABEL[item.feature]}</h3>
+              <p className="mt-1 text-base break-words" data-testid="vista-previa-estado">
+                {item.inPlan
+                  ? "Ya la incluye el plan."
+                  : item.preview === null
+                    ? "Sin vista previa."
+                    : item.preview.active
+                      ? `Vigente hasta el ${formatDateWithYear(item.preview.endsAt)} · motivo: ${item.preview.reason}`
+                      : `Terminó el ${formatDateWithYear(item.preview.endsAt)} · motivo: ${item.preview.reason}`}
+              </p>
+              {item.inPlan ? null : (
+                <>
+                  <FeaturePreviewForm
+                    slug={org.slug}
+                    feature={item.feature}
+                    active={item.preview?.active === true}
+                    endsOn={item.preview?.active ? todayInArgentina(new Date(item.preview.endsAt)) : ""}
+                    minDate={todayInArgentina(now)}
+                    maxDate={todayInArgentina(new Date(now.getTime() + (MAX_PREVIEW_DAYS - 1) * DAY_MS))}
+                  />
+                  {item.preview?.active ? <EndFeaturePreviewForm slug={org.slug} feature={item.feature} name={PREVIEW_FEATURE_LABEL[item.feature]} /> : null}
+                </>
+              )}
             </li>
           ))}
         </ul>

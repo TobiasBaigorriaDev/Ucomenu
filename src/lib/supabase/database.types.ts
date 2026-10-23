@@ -273,6 +273,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"organization_feature_previews": {
+                  Row: {
+                    "created_at": string,"ends_at": string,"feature": string,"organization_id": string,"reason": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"ends_at": string,"feature": string,"organization_id": string,"reason": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"ends_at"?: string,"feature"?: string,"organization_id"?: string,"reason"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "organization_feature_previews_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"organizations": {
                   Row: {
                     "created_at": string,"id": string,"is_active": boolean,"logo_path": string | null,"menu_layout": string,"menu_palette": string,"menu_theme": string,"menu_theme_from": string | null,"menu_theme_until": string | null,"name": string,"slug": string
@@ -621,6 +641,9 @@ isOneToOne: false
 "admin_end_addon":
 { Args: { "p_actor": string,"p_addon": string,"p_org": string,"p_reason": string }; Returns: undefined
                            },
+"admin_end_feature_preview":
+{ Args: { "p_actor": string,"p_feature": string,"p_org": string,"p_reason": string }; Returns: undefined
+                           },
 "admin_list_orphan_accounts":
 { Args: { "p_actor": string }; Returns: Json
                            },
@@ -635,6 +658,9 @@ isOneToOne: false
                            },
 "admin_set_extra_branches":
 { Args: { "p_actor": string,"p_deactivate": (string)[],"p_org": string,"p_quantity": number,"p_reason": string }; Returns: undefined
+                           },
+"admin_set_feature_preview":
+{ Args: { "p_actor": string,"p_ends_at": string,"p_feature": string,"p_org": string,"p_reason": string }; Returns: undefined
                            },
 "admin_set_organization_active":
 { Args: { "p_active": boolean,"p_actor": string,"p_org": string,"p_reason": string }; Returns: undefined

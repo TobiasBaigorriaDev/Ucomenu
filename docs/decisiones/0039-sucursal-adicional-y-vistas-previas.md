@@ -1,6 +1,6 @@
 # 0039 — La sucursal adicional es un add-on de cupo cobrado con la suscripción; las funciones nuevas se liberan por organización con vistas previas auditadas
 
-- Estado: aceptada (recomendaciones D1–D5 aprobadas por el usuario el 2026-10-23; implementación pendiente)
+- Estado: aceptada (recomendaciones D1–D5 aprobadas por el usuario el 2026-10-23); sucursal adicional implementada y en staging; vistas previas implementadas en local ([ficha](../../agile/cambios/vistas-previas-de-funciones.md)), pendientes de revisión y de subir
 - Fecha: 2026-10-23
 
 ## Contexto

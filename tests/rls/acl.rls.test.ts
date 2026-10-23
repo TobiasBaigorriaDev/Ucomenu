@@ -72,6 +72,8 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_delete_organization: [false, false], // SuperAdmin (ficha borrado-de-organizaciones, ADR 0028): borra definitivamente una organización dada de baja hace 30 días; solo service_role
   admin_end_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): finaliza un add-on vigente; solo service_role
   admin_set_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): activa un add-on o cambia packs y fin; solo service_role
+  admin_end_feature_preview: [false, false], // SuperAdmin (ficha vistas-previas-de-funciones, ADR 0039): termina una vista previa de función; solo service_role
+  admin_set_feature_preview: [false, false], // SuperAdmin (ficha vistas-previas-de-funciones, ADR 0039): habilita una función a una organización con fin y motivo; solo service_role
   admin_set_extra_branches: [false, false], // SuperAdmin (ficha sucursal-adicional, ADR 0039): cantidad de sucursales adicionales y sucursales a desactivar; solo service_role
   admin_set_organization_active: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones, ADR 0025): da de baja o reactiva una organización; solo service_role
   admin_change_plan: [false, false], // SuperAdmin (ficha superadmin-planes-pagos): solo service_role, desde la acción de servidor
@@ -256,15 +258,30 @@ describe("RLS y permisos de tablas", () => {
       ["admin_create_organization", "f", "f", "f", "t"],
       ["admin_delete_organization", "f", "f", "f", "t"],
       ["admin_end_addon", "f", "f", "f", "t"],
+      ["admin_end_feature_preview", "f", "f", "f", "t"],
       ["admin_list_orphan_accounts", "f", "f", "f", "t"],
       ["admin_record_account_deleted", "f", "f", "f", "t"],
       ["admin_register_payment", "f", "f", "f", "t"],
       ["admin_set_addon", "f", "f", "f", "t"],
       ["admin_set_extra_branches", "f", "f", "f", "t"],
+      ["admin_set_feature_preview", "f", "f", "f", "t"],
       ["admin_set_organization_active", "f", "f", "f", "t"],
       ["admin_set_suspension", "f", "f", "f", "t"],
       ["admin_void_payment", "f", "f", "f", "t"],
     ]);
+  });
+
+  it("organization_feature_previews: anon y authenticated sin ningún permiso; service_role solo lee (la escriben las funciones auditadas)", () => {
+    const permisos = (rol: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'public.organization_feature_previews', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    expect(permisos("anon")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    expect(permisos("authenticated")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    expect(permisos("service_role")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
   });
 
   it("platform_admins, audit_log, payments y payment_voids: anon sin permisos; authenticated solo lee; service_role solo lee (nada escribe por la API)", () => {
@@ -360,6 +377,7 @@ describe("RLS y permisos de tablas", () => {
         order by table_name, column_name`);
 
     expect(columnas("authenticated")).toEqual([
+      ["branches", "google_review_url"], // solo el Dueño con la cuenta al día, por la política de branches (ficha enlace-de-resenas-de-google)
       ["branches", "is_active"], // solo el Dueño y con la cuenta al día, por la política de branches (ficha desactivar-sucursales)
       ["branches", "name"],
       ["branches", "waiter_call_cooldown_seconds"], // solo el Dueño, por la política de branches

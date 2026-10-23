@@ -129,6 +129,36 @@ export function parseBranchSelection(raw: unknown): string[] | null {
   return ids;
 }
 
+// ---------------------------------------------------------------------------
+// Vistas previas de funciones (ficha vistas-previas-de-funciones, ADR 0039)
+// ---------------------------------------------------------------------------
+
+/** Funciones que se pueden habilitar por organización: las mismas que el `CHECK` de `organization_feature_previews`. */
+export const PREVIEW_FEATURES = ["orders", "promotions", "review_invite", "customers"] as const;
+export type PreviewFeature = (typeof PREVIEW_FEATURES)[number];
+
+export const PREVIEW_FEATURE_LABEL: Record<PreviewFeature, string> = {
+  orders: "Pedidos del mozo",
+  promotions: "Promociones programadas",
+  review_invite: "Invitación a reseñar",
+  customers: "Clientes recurrentes",
+};
+
+export const isPreviewFeature = (value: unknown): value is PreviewFeature => PREVIEW_FEATURES.some((f) => f === value);
+
+/** Vigencia máxima de una vista previa por vez; la base deja 1 día de margen. */
+export const MAX_PREVIEW_DAYS = 90;
+
+/**
+ * Fin de una vista previa: obligatorio. Una fecha `AAAA-MM-DD` que vale hasta el final de ese día en Argentina, futura y de
+ * hasta 90 días. `null` si no sirve.
+ */
+export function parsePreviewEnd(raw: unknown, now: Date): string | null {
+  const end = parsePeriodEnd(raw, now);
+  if (end === null) return null;
+  return new Date(end).getTime() <= now.getTime() + MAX_PREVIEW_DAYS * DAY_MS ? end : null;
+}
+
 /** Fin del add-on: opcional. `""` = sin fecha de fin; si no, la misma regla que «vigente hasta». `undefined` si no sirve. */
 export function parseAddonEnd(raw: unknown, now: Date): string | null | undefined {
   if (raw === undefined || raw === null) return null;
