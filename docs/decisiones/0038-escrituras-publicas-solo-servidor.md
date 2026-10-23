@@ -15,6 +15,6 @@ Las tres funciones se ejecutan **solo con `service_role`** (`revoke … from pub
 
 ## Consecuencias
 - Cierra el límite conocido de los ADR 0010 y 0031: ya no hay un camino público que omita el ticket ni la clave de conexión.
-- La escritura pública depende de `SUPABASE_SERVICE_ROLE_KEY` en el servidor (ya la usan el personal, el push y SuperAdmin). Sin ella, llamar, dar like y comentar responden «no disponible»; la lectura de la carta no se ve afectada.
+- La escritura pública depende de `SUPABASE_SERVICE_ROLE_KEY` en el servidor (ya la usan el personal, el push y SuperAdmin). Sin ella, llamar, dar like y comentar fallan con un error de la acción (no con el mensaje «no disponible»); la lectura de la carta no se ve afectada.
 - La clave de servicio ahora está en la ruta de una acción pública: las funciones siguen siendo la única puerta (`SECURITY DEFINER`, validan todo adentro) y el módulo `admin.ts` sigue siendo `server-only`. Una vulnerabilidad en la acción ya no tiene el tope de `anon`, solo el de lo que esas tres funciones permiten.
 - `record_dish_view` (analítica) es una función pública parecida y queda fuera: no escribe contenido, solo cuenta, y no depende de ticket ni de conexión.

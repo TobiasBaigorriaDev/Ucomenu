@@ -1,5 +1,5 @@
 # Cambio: Escrituras públicas de la mesa solo desde el servidor
-Estado: **implementado en local; evidencia abajo; pendiente de revisión independiente (nivel C) y de subir a staging.**
+Estado: **implementado y verificado en local (`c83885a`); aprobado por Codex en una ronda sin hallazgos bloqueantes (2026-10-23); falta la aprobación humana para subir a `origin` y a staging.**
 Nivel: **C** — cambia quién puede ejecutar las tres funciones que escriben en la base desde la mesa (autorización) y pone la clave de servicio en la ruta de una acción pública. Decisión: [ADR 0038](../../docs/decisiones/0038-escrituras-publicas-solo-servidor.md).
 
 ## Objetivo
@@ -20,7 +20,8 @@ Cerrar el límite conocido de [comentarios](comentarios-del-feed.md), [likes](li
 - [x] `anon`, Dueño y Staff no ejecutan `create_waiter_call` (prueba nueva en `waiter-calls.rls`), `set_video_like` (`video-likes.rls`) ni `submit_video_comment` (`video-comments.rls`); `acl.rls` registra las tres como `[false, false]`.
 - [x] El resto de las pruebas que llamaban a las funciones con `anon` ahora lo hacen con `service_role` y mantienen su cobertura.
 - [x] E2E de llamado, sala, aviso y analítica en verde contra el build.
-- [ ] Revisión independiente (C) y despliegue en staging (migración + Fly con `SUPABASE_SERVICE_ROLE_KEY`, que ya lo usa el push).
+- [x] Revisión independiente (C): Codex APROBAR (informe `output/revisiones/2026-10-23T06-23-24-commit-HEAD.md`); su única sugerencia (el ADR prometía «no disponible» sin la clave) quedó corregida.
+- [ ] Despliegue en staging (migración + Fly con `SUPABASE_SERVICE_ROLE_KEY`, que ya lo usa el push).
 
 ## Evidencia
 Sobre el diff sin commitear de la rama `main` (2026-10-23):
