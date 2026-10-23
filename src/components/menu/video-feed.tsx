@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent, type ReactNode } from "react";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
+import { LikeControl, type LikeAccess } from "@/components/menu/like-button";
 import { formatArs } from "@/lib/money";
 import { hlsUrl, neighbor, posterUrl, slidesToPrepare } from "@/lib/videos/feed";
 
 /** El plato de un video, solo si sigue visible en esta sucursal (lo resuelve el servidor). */
 export type FeedDish = { name: string; price_cents: number; description: string | null };
-export type FeedVideo = { id: string; title: string; playbackId: string; dish: FeedDish | null };
+export type FeedVideo = { id: string; title: string; playbackId: string; likeCount: number; dish: FeedDish | null };
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 const subscribeReducedMotion = (onChange: () => void) => {
@@ -53,6 +54,8 @@ type SlideProps = {
   lang: Lang;
   /** Hay una barra de llamado debajo del feed (en la mesa): ella ya cubre la zona segura del borde inferior. */
   hasBar: boolean;
+  /** Desde la mesa, con el ticket de visita: el corazón es un botón. Sin esto es solo el conteo. */
+  likes: LikeAccess | null;
   onToggleMute: () => void;
 };
 
@@ -60,7 +63,7 @@ type SlideProps = {
  * Un video del feed. Muestra el póster de Mux y, solo si está «preparado» (es el visible o el siguiente), le asocia su stream:
  * Safari y iOS reproducen HLS nativo; si el navegador no puede (o lo rechaza), lo hace `hls.js`, que se baja recién acá y no antes.
  */
-function Slide({ video, index, total, prepared, active, muted, reduced, lang, hasBar, onToggleMute }: SlideProps) {
+function Slide({ video, index, total, prepared, active, muted, reduced, lang, hasBar, likes, onToggleMute }: SlideProps) {
   const t = TEXTOS[lang].feed;
   const ref = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
@@ -205,9 +208,12 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, ha
         </p>
       ) : null}
 
-      <button type="button" onClick={onToggleMute} aria-pressed={!muted} aria-label={muted ? t.unmute : t.mute} className={`${roundButton} absolute top-16 right-3`} data-testid="feed-sonido">
-        <Icon name={muted ? "mute" : "sound"} />
-      </button>
+      <div className="absolute top-16 right-3 z-10 flex flex-col items-center gap-3">
+        <button type="button" onClick={onToggleMute} aria-pressed={!muted} aria-label={muted ? t.unmute : t.mute} className={roundButton} data-testid="feed-sonido">
+          <Icon name={muted ? "mute" : "sound"} />
+        </button>
+        <LikeControl videoId={video.id} initialCount={video.likeCount} access={likes} lang={lang} />
+      </div>
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-4 pt-16 pb-6">
         <h2 className="font-display text-2xl leading-tight text-white [overflow-wrap:anywhere]" data-testid="feed-titulo">
@@ -251,7 +257,7 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, ha
  * Feed vertical de videos (ficha feed-de-videos): un video a la vez con `scroll-snap`, mudo y en bucle. Solo el visible y el
  * siguiente piden su stream. Flechas, botones de siguiente/anterior y Escape (vuelve a la carta) para teclado y escritorio.
  */
-export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVideo[]; lang: Lang; backHref: string; callBar?: ReactNode }) {
+export function VideoFeed({ videos, lang, backHref, callBar, likes = null }: { videos: FeedVideo[]; lang: Lang; backHref: string; callBar?: ReactNode; likes?: LikeAccess | null }) {
   const t = TEXTOS[lang].feed;
   const router = useRouter();
   const scroller = useRef<HTMLDivElement>(null);
@@ -340,6 +346,7 @@ export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVid
               reduced={reduced}
               lang={lang}
               hasBar={Boolean(callBar)}
+              likes={likes}
               onToggleMute={() => setMuted((value) => !value)}
             />
           ))}

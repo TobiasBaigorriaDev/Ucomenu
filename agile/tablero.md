@@ -41,10 +41,9 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
-> Catálogo, elección de Mux, carga y publicación de videos y el feed están en «Hecho»; quedan likes, comentarios y textos legales.
+> Catálogo, elección de Mux, carga y publicación de videos, el feed y los likes están en «Hecho» (los likes, a falta de la revisión independiente); quedan comentarios y textos legales.
 
-- [C] Likes anónimos desde la mesa: función pública única con ticket de visita, uno por dispositivo y video, límite por cliente, sin datos del comensal (el feed y la entrada por la mesa ya existen; falta decidir la forma de la interfaz en el feed)
-- [C] Comentarios con aprobación previa: envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, publicación y retención de los rechazados (el feed ya existe; conviene hacerlo después de los likes, que prueban la función pública)
+- [C] Comentarios con aprobación previa: envío desde la mesa con alias opcional, cola de moderación para Dueño y Staff, publicación y retención de los rechazados (el feed y los likes ya existen: la entrada por la mesa y la función pública están probadas)
 - [S] Textos legales: contenido publicado por comensales (comentarios) en `/terminos` y `/privacidad`, antes de habilitar comentarios en producción
 
 ### Fase 3 — Fidelización, Wallet y cercanía (plan Premium)
@@ -64,6 +63,7 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [C] Likes anónimos desde la mesa: `set_video_like` (única puerta), un like por dispositivo y video con código aleatorio en el navegador, conteo público y límite por conexión; `/privacidad` actualizada (2026-10-22); sin subir ni desplegar → [ficha](cambios/likes-del-feed.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Feed vertical de videos en la carta, también desde la mesa (`/t/{token}/videos`, con la barra de llamado): lectura pública por política de base, `hls.js` con fallback; aprobado por Codex (5 rondas), en staging y probado por el usuario (2026-10-22); sin probar en Firefox, Safari de escritorio ni Android → [ficha](cambios/feed-de-videos.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Carga y publicación de videos desde el panel con Mux: hecho (partes A y B aprobadas por Codex, en staging, Fly v21; probado con un iPhone 16 y un `.mov` HEVC; Android sin probar) → [parte A](cambios/videos-del-panel-base.md) · [parte B](cambios/videos-mux-parte-b.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Catálogo del feed: WebAR y `models_3d` retirados, contratos resueltos y SuperAdmin adaptado; `video_feed` en Premium y cupo de 10 publicados — aprobado, en `origin/main`, migración y app en staging (2026-10-21) → [ficha](cambios/catalogo-video-feed.md) · ADR 0031

@@ -160,6 +160,7 @@ describe("parseResolvedTable", () => {
     table_active: true,
     status: "available",
     calls_enabled: true,
+    likes_enabled: true,
   };
 
   it("lee una respuesta válida", () => {
@@ -171,8 +172,15 @@ describe("parseResolvedTable", () => {
       tableActive: true,
       status: "available",
       callsEnabled: true,
+      likesEnabled: true,
     });
     expect(parseResolvedTable({ ...valido, calls_enabled: false })?.callsEnabled).toBe(false);
+    expect(parseResolvedTable({ ...valido, likes_enabled: false })?.likesEnabled).toBe(false);
+    // Los likes fallan cerrado: sin la clave o con otro tipo no se ofrecen, pero la mesa sigue resolviendo.
+    const sinLikes: Record<string, unknown> = { ...valido };
+    delete sinLikes.likes_enabled;
+    expect(parseResolvedTable(sinLikes)?.likesEnabled).toBe(false);
+    expect(parseResolvedTable({ ...valido, likes_enabled: "true" })?.likesEnabled).toBe(false);
     expect(parseResolvedTable({ ...valido, status: "suspended" })?.status).toBe("suspended");
   });
 

@@ -18,11 +18,20 @@ export default function PrivacyPage() {
       <LegalSection title="1. Si sos comensal">
         <p>
           Para ver la carta no tenés que crear una cuenta ni darnos ningún dato: alcanza con escanear el código QR de la mesa.
-          La carta no usa cookies ni guarda información en tu dispositivo.
+          La carta no usa cookies y, mientras la mirás, no guarda información en tu dispositivo. La única excepción es el «me gusta»
+          de los videos, que se explica más abajo.
         </p>
         <p>
           Para que el local sepa qué platos interesan más, contamos cuántas veces se abre el detalle de cada plato. Es solo un
           número por plato y por día: no registramos quién lo abrió ni tu dirección IP, y no guardamos nada en tu dispositivo.
+        </p>
+        <p>
+          Si el local tiene videos y escaneaste el QR de tu mesa, podés tocar «me gusta». <strong>Recién en ese momento</strong> tu
+          navegador guarda en tu dispositivo un código aleatorio y la lista de videos que marcaste, para que cada dispositivo dé un
+          solo «me gusta» por video y para mostrarte el corazón marcado cuando volvés. El servidor no guarda ese código sino un
+          resultado de un solo sentido calculado a partir de él, junto con el video y la fecha; no guarda la mesa ni quién sos. Para
+          evitar abusos, durante una hora el servidor asocia además a ese «me gusta» un valor derivado de tu dirección IP (no la
+          IP), que después se borra. Podés eliminar el código borrando los datos del sitio en tu navegador.
         </p>
         <p>
           Como en cualquier sitio web, el servidor que te entrega la página y su proveedor de alojamiento pueden registrar datos

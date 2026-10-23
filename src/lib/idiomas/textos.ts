@@ -82,6 +82,11 @@ export type Textos = {
     emptyHint: string;
     nextVideo: string;
     previousVideo: string;
+    /** Likes (ficha likes-del-feed). */
+    like: string;
+    unlike: string;
+    likeCount: (n: number) => string;
+    likeError: string;
   };
   unavailable: { suspendedTitle: string; suspendedBody: string; inactiveTitle: string; inactiveBody: string };
 };
@@ -162,6 +167,10 @@ const es: Textos = {
     emptyHint: "Cuando el local publique videos, los vas a ver acá. Mientras tanto, mirá la carta.",
     nextVideo: "Video siguiente",
     previousVideo: "Video anterior",
+    like: "Me gusta",
+    unlike: "Quitar me gusta",
+    likeCount: (n) => `${n} me gusta`,
+    likeError: "No se pudo registrar tu me gusta. Probá de nuevo en un momento.",
   },
   unavailable: {
     suspendedTitle: "Carta temporalmente no disponible",
@@ -246,6 +255,10 @@ const en: Textos = {
     emptyHint: "When the restaurant publishes videos, you will see them here. In the meantime, have a look at the menu.",
     nextVideo: "Next video",
     previousVideo: "Previous video",
+    like: "Like",
+    unlike: "Remove like",
+    likeCount: (n) => `${n} ${n === 1 ? "like" : "likes"}`,
+    likeError: "We couldn't save your like. Please try again in a moment.",
   },
   unavailable: {
     suspendedTitle: "Menu temporarily unavailable",
@@ -330,6 +343,10 @@ const pt: Textos = {
     emptyHint: "Quando o estabelecimento publicar vídeos, você os verá aqui. Enquanto isso, veja o cardápio.",
     nextVideo: "Próximo vídeo",
     previousVideo: "Vídeo anterior",
+    like: "Curtir",
+    unlike: "Remover curtida",
+    likeCount: (n) => `${n} ${n === 1 ? "curtida" : "curtidas"}`,
+    likeError: "Não foi possível registrar sua curtida. Tente novamente em instantes.",
   },
   unavailable: {
     suspendedTitle: "Cardápio temporariamente indisponível",
