@@ -8,6 +8,7 @@ import { changePlan, endAddon, registerPayment, setAddon, setOrganizationActive,
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
 import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
+import { deleteOrphanAccount } from "@/lib/admin/orphan-accounts";
 import { asUuid } from "@/lib/carta/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import type { FormState } from "@/lib/form-state";
@@ -289,4 +290,39 @@ export async function addExistingOwnerAction(_previous: FormState, formData: For
     ok: true,
     message: `Listo: ${values.email} ahora es Dueño de esta organización. Conserva su contraseña y sus otros locales; el movimiento quedó registrado.`,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Cuentas de Auth sin ningún local (ficha cuentas-sin-local)
+// ---------------------------------------------------------------------------
+
+/**
+ * Borra de Auth una cuenta que quedó sin local. Pide el email escrito y el motivo; la base vuelve a comprobar todo bajo la reserva
+ * de la cuenta. Al terminar vuelve a la lista con un aviso (la fila ya no existe y un mensaje en ella se perdería).
+ */
+export async function deleteOrphanAccountAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const user = await requirePlatformAdmin("/admin/cuentas");
+  const values = { confirmEmail: text(formData, "confirmEmail"), reason: text(formData, "reason") };
+
+  let ctx: AdminContext;
+  try {
+    ctx = { session: await createSessionClient(), admin: createAdminClient(), actorId: user.id };
+  } catch {
+    return { error: NOT_CONFIGURED, values };
+  }
+
+  const result = await deleteOrphanAccount(ctx, { userId: text(formData, "userId"), ...values });
+  if (!result.ok) {
+    return {
+      error:
+        result.error === "uncertain_change"
+          ? "No pudimos confirmar si la cuenta se borró. No lo repitas todavía: recargá la lista; si ya no aparece, se borró."
+          : ADMIN_ERROR_MESSAGE[result.error],
+      values,
+    };
+  }
+
+  revalidatePath("/admin/cuentas");
+  revalidatePath("/admin");
+  redirect("/admin/cuentas?borrada=1");
 }

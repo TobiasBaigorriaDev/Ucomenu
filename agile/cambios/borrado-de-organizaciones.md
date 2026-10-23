@@ -26,7 +26,7 @@ Las condiciones las eligió el usuario en los ADR 0025–0027 (SuperAdmin recomp
 - [x] Pantalla: no se ofrece activa ni con menos de 30 días; el identificador equivocado no borra y conserva el motivo; sin la casilla no se envía; borrar redirige a la lista con el aviso y el movimiento; sin desborde a 390 px (identificador de 64 caracteres y motivo de 200).
 
 ## Fuera de alcance
-- Borrar las cuentas de Auth que queden sin ningún local (ítem aparte, a decidir con el usuario).
+- Borrar las cuentas de Auth que queden sin ningún local (resuelto el 2026-10-23 como ítem aparte: se conservan y el SuperAdmin las lista y borra a mano → [cuentas-sin-local](cuentas-sin-local.md)).
 - Verificar el respaldo antes de borrar (la pantalla solo lo recuerda), reintentar solo la limpieza de Storage y mostrar pagos huérfanos en una pantalla.
 - Cambiar el plazo de 30 días o la retención de 10 años (ADR 0026 y 0027).
 

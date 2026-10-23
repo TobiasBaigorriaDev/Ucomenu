@@ -17,6 +17,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "addon.ended": "Add-on finalizado",
   "payments.purged": "Pagos antiguos purgados",
   "organization.deleted": "Organización borrada",
+  "account.deleted": "Cuenta sin local borrada",
 };
 
 // WebAR ya no está en el catálogo (ADR 0031), pero sus movimientos siguen en la auditoría y se nombran.
@@ -68,6 +69,11 @@ function details(entry: AuditEntry): string[] {
     if (entry.organizationId) out.push(`id ${entry.organizationId}`);
     if (typeof after.payments_kept === "number" && after.payments_kept > 0) out.push(`${after.payments_kept} pagos conservados`);
     if (typeof after.price_history_purged === "number") out.push(`${after.price_history_purged} cambios de precio purgados`);
+  }
+  if (entry.action === "account.deleted") {
+    // Solo el id: el email de la cuenta borrada no se guarda (convención de la auditoría).
+    const account = str(after.user_id);
+    if (account) out.push(`cuenta ${account}`);
   }
   if (entry.action.startsWith("addon.")) {
     const addon = str(after.addon);

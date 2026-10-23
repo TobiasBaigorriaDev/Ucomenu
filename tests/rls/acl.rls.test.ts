@@ -65,6 +65,9 @@ const INVOKER_FUNCTIONS = new Set(["create_product_in_branches", "reorder_siblin
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito (salvo INVOKER_FUNCTIONS); ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
   admin_add_owner: [false, false], // SuperAdmin (ficha dueno-existente): suma una cuenta existente como Dueño; solo service_role
+  admin_list_orphan_accounts: [false, false], // SuperAdmin (ficha cuentas-sin-local): lista las cuentas de Auth sin local; solo service_role
+  admin_begin_orphan_delete: [false, false], // SuperAdmin (ficha cuentas-sin-local): reserva una cuenta sin local para borrarla; solo service_role
+  admin_record_account_deleted: [false, false], // SuperAdmin (ficha cuentas-sin-local): audita el borrado de esa cuenta; solo service_role
   admin_delete_organization: [false, false], // SuperAdmin (ficha borrado-de-organizaciones, ADR 0028): borra definitivamente una organización dada de baja hace 30 días; solo service_role
   admin_end_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): finaliza un add-on vigente; solo service_role
   admin_set_addon: [false, false], // SuperAdmin (ficha addons-y-baja-de-organizaciones): activa un add-on o cambia packs y fin; solo service_role
@@ -244,10 +247,13 @@ describe("RLS y permisos de tablas", () => {
       where n.nspname = 'public' and p.proname like 'admin\_%' order by 1`);
     expect(filas).toEqual([
       ["admin_add_owner", "f", "f", "f", "t"],
+      ["admin_begin_orphan_delete", "f", "f", "f", "t"],
       ["admin_change_plan", "f", "f", "f", "t"],
       ["admin_create_organization", "f", "f", "f", "t"],
       ["admin_delete_organization", "f", "f", "f", "t"],
       ["admin_end_addon", "f", "f", "f", "t"],
+      ["admin_list_orphan_accounts", "f", "f", "f", "t"],
+      ["admin_record_account_deleted", "f", "f", "f", "t"],
       ["admin_register_payment", "f", "f", "f", "t"],
       ["admin_set_addon", "f", "f", "f", "t"],
       ["admin_set_organization_active", "f", "f", "f", "t"],

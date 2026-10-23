@@ -108,9 +108,12 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           ) : null}
         </div>
       ) : null}
-      <p className="mt-4">
+      <p className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
         <Link href="/admin/nueva" className={primaryButtonClass}>
           Nueva organización
+        </Link>
+        <Link href="/admin/cuentas" className="underline underline-offset-4">
+          Cuentas sin local
         </Link>
       </p>
 

@@ -33,7 +33,6 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 
 ### Mejoras y decisiones pendientes del MVP
 
-- [S] Decidir el tratamiento de cuentas Auth sin ningún local tras un borrado — hoy se conservan → [ficha de origen](cambios/borrado-de-organizaciones.md)
 - [S] Dominio: elegir nombre definitivo y autorizar la compra — pospuesto por el usuario; bloquea producción y QR definitivos → [procedimiento](../docs/produccion.md)
 - [S] Evaluar si la guía de primeros pasos debe poder descartarse y cómo resume varias sucursales — propuestas pendientes, sin cambio aceptado → [ficha](cambios/alta-guiada-del-dueno.md#decisiones-pendientes-para-quien-integra)
 
@@ -56,6 +55,7 @@ Actualizado: 2026-10-22. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [C] Cuentas de Auth sin ningún local: se conservan y SuperAdmin las lista en `/admin/cuentas` y borra una a mano (email escrito, motivo, reserva de la cuenta y constancia sin el email); verificado en local, pendiente de revisión independiente y de staging (2026-10-23) → [ficha](cambios/cuentas-sin-local.md) · [ADR 0032](../docs/decisiones/0032-reserva-de-cuentas-globales.md)
 - [C] Escrituras públicas de la mesa solo desde el servidor: `create_waiter_call`, `set_video_like` y `submit_video_comment` las ejecuta únicamente `service_role` y la acción de servidor verifica antes ticket y conexión; cierra el límite aceptado de llamado, likes y comentarios; verificado en local, pendiente de revisión independiente y de staging (2026-10-23) → [ficha](cambios/escrituras-publicas-solo-servidor.md) · [ADR 0038](../docs/decisiones/0038-escrituras-publicas-solo-servidor.md)
 - [S] Variantes y adicionales: las seis decisiones conservadoras quedan confirmadas por el usuario sin cambios de código (2026-10-23) → [ficha](cambios/variantes-y-adicionales.md#confirmadas-por-el-usuario-el-2026-10-23-decisiones-conservadoras-tomadas-sin-poder-preguntar)
 - [S] Textos legales de los comentarios: `/privacidad` y `/terminos` explican aprobación previa, qué se guarda, plazos de borrado (7 y 30 días), cómo pedir que se quite uno y las reglas para comensales y locales (2026-10-23); falta la revisión de un abogado → [ficha](cambios/textos-legales.md#ampliación--comentarios-del-feed-2026-10-23)

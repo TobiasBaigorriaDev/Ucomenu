@@ -580,6 +580,9 @@ isOneToOne: false
             "admin_add_owner":
 { Args: { "p_actor": string,"p_confirmed": boolean,"p_email": string,"p_expected_user"?: string,"p_org": string }; Returns: Json
                            },
+"admin_begin_orphan_delete":
+{ Args: { "p_actor": string,"p_email": string,"p_reason": string,"p_user": string }; Returns: Json
+                           },
 "admin_change_plan":
 { Args: { "p_actor": string,"p_billing_cycle": string,"p_org": string,"p_plan": string,"p_reason": string }; Returns: undefined
                            },
@@ -591,6 +594,12 @@ isOneToOne: false
                            },
 "admin_end_addon":
 { Args: { "p_actor": string,"p_addon": string,"p_org": string,"p_reason": string }; Returns: undefined
+                           },
+"admin_list_orphan_accounts":
+{ Args: { "p_actor": string }; Returns: Json
+                           },
+"admin_record_account_deleted":
+{ Args: { "p_actor": string,"p_reason": string,"p_user": string }; Returns: Json
                            },
 "admin_register_payment":
 { Args: { "p_actor": string,"p_amount_cents": number,"p_covers_until": string,"p_currency": string,"p_method": string,"p_org": string,"p_paid_on": string,"p_reference": string }; Returns: string

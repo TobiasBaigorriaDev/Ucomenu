@@ -76,6 +76,12 @@ export type AdminError =
   | "organization_still_active"
   | "deactivation_not_audited"
   | "deactivation_too_recent"
+  // Cuentas sin local (ficha cuentas-sin-local)
+  | "orphan_not_found"
+  | "orphan_email_mismatch"
+  | "orphan_not_orphan"
+  | "orphan_too_recent"
+  | "orphan_busy"
   | "uncertain_change"; // se perdió la respuesta de un cambio: pudo quedar hecho
 
 export type Result<T = void> = { ok: true; data: T } | { ok: false; error: AdminError };
@@ -146,6 +152,12 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   deactivation_not_audited:
     "La baja de esta organización no figura en los movimientos (o se reactivó después), así que no se puede borrar. Dala de baja desde esta pantalla y esperá 30 días. No se borró nada.",
   deactivation_too_recent: "La baja tiene menos de 30 días: todavía se puede revertir y no se puede borrar. No se borró nada.",
+  orphan_not_found: "No encontramos esa cuenta: puede que ya se haya borrado. Recargá la página.",
+  orphan_email_mismatch: "El email que escribiste no coincide con el de la cuenta. No se borró nada.",
+  orphan_not_orphan:
+    "Esa cuenta ya no está sin local (alguien la sumó a un local o es de un SuperAdmin), así que no se puede borrar desde acá. No se borró nada.",
+  orphan_too_recent: "Esa cuenta se creó hace menos de una hora: puede estar en medio de un alta. Esperá un rato. No se borró nada.",
+  orphan_busy: "Esa cuenta tiene otra operación en curso. Esperá unos segundos y probá de nuevo. No se borró nada.",
   uncertain_change:
     "No pudimos confirmar si el cambio quedó hecho. No lo repitas todavía: recargá esta página y mirá el estado y los últimos movimientos.",
 };
