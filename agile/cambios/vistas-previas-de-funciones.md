@@ -1,5 +1,5 @@
 # Cambio: Vistas previas de funciones por organización
-Estado: **implementado, verificado en local y aprobado por Codex (2026-10-23); falta la aprobación del usuario para subir la migración**.
+Estado: **implementado, verificado en local, aprobado por Codex y por el usuario; migración en staging (2026-10-23); la interfaz aún no está desplegada ahí**.
 Nivel: C (autorización: habilita funciones fuera del plan que paga la organización)
 
 ## Objetivo
@@ -32,7 +32,8 @@ Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 - Corrida completa de `pnpm test:rls` (54 archivos): 1193 de 1193 en verde.
 - Unitarias: validación, rechazos antes de la base y traducción de errores (`src/lib/admin`, 120 en verde).
 - E2E contra el build: `superadmin-vistas-previas` 2/2 (habilitar, cambiar el fin, terminar; el Dueño no ve nada; fin fuera de rango) más `superadmin-sucursal-adicional` y `superadmin-addons-baja` en verde.
-- Sin probar: staging (la migración no está subida) y la interfaz con sesión real de SuperAdmin.
+- Staging (2026-10-23): `supabase db push --dry-run` mostró solo `20261121100000` y `supabase db push` la aplicó a `ucomenu-staging`; un nuevo `--dry-run` confirma que la base está al día. No se desplegó la app en Fly ni se probó nada contra staging.
+- Sin probar: la interfaz con sesión real de SuperAdmin (hace falta desplegar la app a staging).
 
 ## (C) Invariantes
 - Solo `service_role`, desde una acción de SuperAdmin, escribe vistas previas, y siempre con `audit_log` en la misma transacción.
@@ -48,4 +49,4 @@ Sobre el diff de `main` (2026-10-23), migración `20261121100000`:
 - Diseño aprobado por el usuario el 2026-10-23 (ADR 0039, decisión 5).
 - Revisión independiente de Codex, ronda 1 sobre `196e5a6` (nivel C, solo lectura, estática): APROBAR CON CAMBIOS, un hallazgo. **Real:** la prueba de actor no SuperAdmin cubría solo `admin_end_feature_preview`; quitar la guarda de `admin_set_feature_preview` no se habría detectado. Corregido con una llamada directa de alta con `service_role` y actor Dueño (`42501`, sin fila ni movimiento); sin la guarda, esa prueba falla (comprobado).
 - Ronda de verificación sobre `eb5d1d4`: sin hallazgos, hallazgo previo corregido; veredicto **APROBAR**. No reemplaza la aprobación del usuario.
-- Aprobación del usuario para subir la migración a staging: pendiente.
+- Aprobación del usuario para subir la migración a staging: 2026-10-23 (solo la migración; el despliegue de la app queda aparte).
