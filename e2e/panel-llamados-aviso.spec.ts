@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { expect, test } from "@playwright/test";
 import { conDobles, pitidos } from "./audio-doble";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Tenant } from "./support";
@@ -30,10 +29,7 @@ test.afterAll(async () => {
 });
 
 async function llamar(token: string, kind: "waiter" | "bill" = "waiter") {
-  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
-    auth: { persistSession: false },
-  });
-  const { data, error } = await anon.rpc("create_waiter_call", { p_token: token, p_kind: kind });
+  const { data, error } = await service().rpc("create_waiter_call", { p_token: token, p_kind: kind });
   expect(error).toBeNull();
   expect(data).toEqual({ status: "created" });
 }

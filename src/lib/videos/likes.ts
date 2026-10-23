@@ -7,7 +7,7 @@ import type { Database } from "@/lib/supabase/database.types";
 
 /**
  * Likes anónimos del feed (ficha likes-del-feed, ADR 0031). La autoridad es `set_video_like` (la única puerta de escritura de
- * `video_likes`): este módulo arma las claves que la base espera, llama a la función con el cliente anónimo y lee su respuesta.
+ * `video_likes`): este módulo arma las claves que la base espera, llama a la función con el cliente de servicio (ADR 0038) y lee su respuesta.
  *
  * Nada que identifique al comensal llega a la base: el navegador guarda un código aleatorio (`DEVICE_CODE`) y el servidor manda
  * solo su HMAC (`device_key`); el límite por conexión usa el HMAC de la IP (`rate_key`), con un prefijo propio para que no se
@@ -66,7 +66,7 @@ export function parseLikeResult(raw: unknown): LikeResult {
 }
 
 /**
- * Pone (`liked = true`) o quita (`false`) el like de un dispositivo en un video. Entra con el cliente `anon`. Un token, un video
+ * Pone (`liked = true`) o quita (`false`) el like de un dispositivo en un video. Entra con el cliente de servicio (ADR 0038). Un token, un video
  * o una clave imposibles no llegan a la base. Cualquier error de red o de la base es «no disponible» para el comensal y se registra
  * SIN IP, token ni claves.
  */

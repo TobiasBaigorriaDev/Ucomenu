@@ -9,6 +9,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const rpc = vi.fn();
 const range = vi.fn();
 vi.mock("next/headers", () => ({ headers: async () => ({ get: (nombre: string) => ({ "x-forwarded-for": "203.0.113.9" })[nombre.toLowerCase()] ?? null }) }));
+// La alta la hace el cliente de servicio (ADR 0038); la lectura de aprobados sigue siendo pública.
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ rpc }) }));
 vi.mock("@/lib/supabase/public-client", () => ({
   createPublicClient: () => ({ rpc, from: () => ({ select: () => ({ eq: () => ({ order: () => ({ order: () => ({ range }) }) }) }) }) }),
 }));

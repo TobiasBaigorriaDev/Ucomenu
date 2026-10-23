@@ -77,7 +77,7 @@ const vista = async (db: Db, org: string) => ((await db.rpc("my_branch_view", { 
 const filasDeVista = (org: string) => Number(sql(`select count(*) from public.member_branch_views where organization_id = '${org}'`)[0][0]);
 
 async function llamar(token: string, kind: "waiter" | "bill" = "waiter") {
-  const { data, error } = await anonClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
+  const { data, error } = await serviceClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
   expect(error).toBeNull();
   expect(data).toEqual({ status: "created" });
 }

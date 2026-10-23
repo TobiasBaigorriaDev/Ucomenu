@@ -64,7 +64,7 @@ const cooldownDe = async (branchId: string) =>
   (await service.from("branches").select("waiter_call_cooldown_seconds").eq("id", branchId).single()).data?.waiter_call_cooldown_seconds;
 
 async function llamar(token: string, kind = "waiter"): Promise<Record<string, unknown>> {
-  const { data, error } = await anonClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
+  const { data, error } = await serviceClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
   expect(error).toBeNull();
   return data as Record<string, unknown>;
 }

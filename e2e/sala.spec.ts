@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
 import { conDobles, pitidos, wakeLocks } from "./audio-doble";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Estado, type Person, type Tenant } from "./support";
@@ -34,12 +33,9 @@ test.afterAll(async () => {
   for (const t of tenants) await t.cleanup();
 });
 
-/** El comensal llama por la puerta pública (rol anon), como en producción. */
+/** El comensal llama por la puerta pública (la acción de servidor, con la clave de servicio: ADR 0038). */
 async function llamar(token: string, kind: "waiter" | "bill" = "waiter") {
-  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, {
-    auth: { persistSession: false },
-  });
-  const { data, error } = await anon.rpc("create_waiter_call", { p_token: token, p_kind: kind });
+  const { data, error } = await service().rpc("create_waiter_call", { p_token: token, p_kind: kind });
   expect(error).toBeNull();
   expect(data).toEqual({ status: "created" });
 }

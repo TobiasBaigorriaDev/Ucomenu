@@ -49,3 +49,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0035 | [Carta central con precio, disponibilidad y visibilidad configurables por sucursal (nivel 2a), sobre `product_availability`](0035-carta-central-con-ajustes-por-sucursal.md) | aceptada | 2026-10-21 |
 | 0036 | [Personalización de la carta: doce paletas cerradas (claras y oscuras) y tres estilos](0036-personalizacion-de-la-carta.md) | aceptada | 2026-10-21 |
 | 0037 | [Temas de fechas especiales en la carta (decoración opcional con ventana de fechas)](0037-temas-de-fechas-especiales.md) | aceptada | 2026-10-21 |
+| 0038 | [Las escrituras públicas de la mesa (llamado, likes, comentarios) las ejecuta solo el servidor con `service_role`](0038-escrituras-publicas-solo-servidor.md) | aceptada | 2026-10-23 |

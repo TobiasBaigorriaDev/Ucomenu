@@ -10,14 +10,15 @@ import { callMessage, isCallKind, type CallKind, type CallTone } from "@/lib/lla
 import { verifyVisitTicket } from "@/lib/llamados/visit-ticket";
 import { isToken } from "@/lib/mesas/url";
 import { notifyCallPush } from "@/lib/push/notify-call";
-import { createPublicClient } from "@/lib/supabase/public-client";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * «Llamar al mozo» / «Pedir la cuenta» desde `/t/{token}`. Es una escritura PÚBLICA sin sesión: la autoridad es el
  * token de la mesa y la regla está toda en la función de base. Esta acción solo valida el formato, arma el
  * identificador de cliente (HMAC de la IP, nunca la IP), comprueba el ticket de visita (que la pestaña no sea vieja:
- * ficha ticket-de-visita) y traduce el resultado a un mensaje. La escritura no usa `service_role`; el aviso por Web Push
- * posterior (`after()`) sí, solo para dos funciones de base (ADR 0020).
+ * ficha ticket-de-visita) y traduce el resultado a un mensaje. La escritura llama a la base con `service_role`:
+ * `create_waiter_call` solo la ejecuta esa clave (ADR 0038), así que esta acción es la única puerta y nadie puede omitir el ticket
+ * ni la clave de cliente. El aviso por Web Push posterior (`after()`) también la usa, solo para dos funciones de base (ADR 0020).
  */
 
 export type CallState = {
@@ -41,7 +42,7 @@ export async function createWaiterCallAction(_previous: CallState, formData: For
   if (ticket && !ticket.ok) return { kind, tone: "error", message: TEXTOS[lang].call.expired, expired: true };
 
   const clientKey = clientKeyFrom(await headers());
-  const result = await placeCall(createPublicClient(), token, kind, clientKey, ticket?.issuedAt ?? null);
+  const result = await placeCall(createAdminClient(), token, kind, clientKey, ticket?.issuedAt ?? null);
   // Un llamado nuevo avisa por Web Push a los dispositivos del personal (con la pestaña cerrada). Va en `after()`: no
   // demora la respuesta del comensal y, si falla, solo queda el sondeo de la sala como siempre (ADR 0020).
   if (result.status === "created" && isToken(token)) after(() => notifyCallPush(token, kind));

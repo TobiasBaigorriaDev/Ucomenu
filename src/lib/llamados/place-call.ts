@@ -6,8 +6,8 @@ import { isCallKind, parseCallResult, type CallResult } from "./result";
 type Db = SupabaseClient<Database>;
 
 /**
- * Pide un llamado a la base (`create_waiter_call`, la única puerta de escritura). Entra con el cliente `anon`:
- * no hace falta (ni se usa) la clave de servicio. Un token o un tipo imposibles no llegan a la base. Cualquier
+ * Pide un llamado a la base (`create_waiter_call`, la única puerta de escritura). Solo la ejecuta `service_role` (ADR 0038):
+ * el cliente que llega es el de servicio, armado por la acción de servidor tras verificar el ticket. Un token o un tipo imposibles no llegan a la base. Cualquier
  * error de red o de la base es «no disponible» para el comensal y se registra SIN IP, token ni identificador.
  * `visitStartedAt` (cuándo abrió la carta, del ticket de visita) es solo informativo para la sala.
  */

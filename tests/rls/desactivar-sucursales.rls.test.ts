@@ -50,7 +50,7 @@ async function nuevoLocal(slug: string, plan: PlanCode = "pro"): Promise<Local> 
 const activa = async (branchId: string) => (await service.from("branches").select("is_active").eq("id", branchId).single()).data?.is_active;
 const estado = (local: Local, branch = "principal") =>
   anonClient().rpc("public_menu_status", { p_org_slug: local.slug, p_branch_slug: branch });
-const llamar = (token: string, kind = "waiter") => anonClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
+const llamar = (token: string, kind = "waiter") => serviceClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
 const uso = async (orgId: string) => {
   const { data } = await owner.db.rpc("org_entitlements", { p_org: orgId });
   return (data as { usage: { branches: number } }).usage.branches;

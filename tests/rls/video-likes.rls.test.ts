@@ -71,7 +71,7 @@ async function sembrarVideo(orgId: string, cambios: { status?: "draft" | "publis
 }
 
 type Pedido = { token: string; video: string; liked?: boolean; device?: string; rate?: string | null; visita?: string | null };
-const dar = async ({ token, video, liked = true, device = nuevaClave(), rate = nuevaClave(), visita = null }: Pedido, db: Db = anon) => {
+const dar = async ({ token, video, liked = true, device = nuevaClave(), rate = nuevaClave(), visita = null }: Pedido, db: Db = service) => {
   const r = await db.rpc("set_video_like", {
     p_token: token,
     p_video: video,
@@ -179,7 +179,7 @@ describe("validaciones de forma", () => {
   it("token, video, intención o dispositivo imposibles: «no existe», sin escribir", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
-    const llamar = async (args: Record<string, unknown>) => (await anon.rpc("set_video_like", args as never)).data;
+    const llamar = async (args: Record<string, unknown>) => (await service.rpc("set_video_like", args as never)).data;
     const base = { p_token: local.token, p_video: video, p_liked: true, p_device: nuevaClave() };
     expect(await llamar({ ...base, p_token: "no-es-un-token" })).toEqual(NOT_FOUND);
     expect(await llamar({ ...base, p_token: "A".repeat(32) })).toEqual(NOT_FOUND);
@@ -194,7 +194,7 @@ describe("validaciones de forma", () => {
   it("una conexión con otro formato no se cuenta ni se guarda", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
-    const r = await anon.rpc("set_video_like", { p_token: local.token, p_video: video, p_liked: true, p_device: nuevaClave(), p_rate: "no-es-hex" });
+    const r = await service.rpc("set_video_like", { p_token: local.token, p_video: video, p_liked: true, p_device: nuevaClave(), p_rate: "no-es-hex" });
     expect(r.data).toMatchObject({ status: "ok" });
     expect((await filas(video))[0].rate_key).toBeNull();
   });
@@ -417,6 +417,16 @@ describe("límite por cliente", () => {
 });
 
 describe("la API no tiene otro camino", () => {
+  it("set_video_like no la ejecuta anon ni authenticated: solo el servidor, que antes verifica ticket y conexión (ADR 0038)", async () => {
+    const local = await crearLocal();
+    const video = await sembrarVideo(local.id);
+    const args = { p_token: local.token, p_video: video, p_liked: true, p_device: nuevaClave() };
+    for (const [nombre, db] of [["anon", anon], ["Dueño", local.owner.db]] as const) {
+      expect((await db.rpc("set_video_like", args)).error?.code, nombre).toBe(INSUFFICIENT_PRIVILEGE);
+    }
+    expect(await filas(video)).toHaveLength(0);
+  });
+
   it("nadie lee ni escribe video_likes: ni anon, ni el Dueño de la organización", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);

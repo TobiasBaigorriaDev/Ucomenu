@@ -1,5 +1,5 @@
 # Cambio: Variantes y adicionales — grupos de opciones por plato, en el panel y en la carta pública
-Estado: integrado a `main` y publicado en `origin`; migración aplicada en staging (estado conciliado el 2026-10-21 con el despliegue registrado en [catálogo del feed](catalogo-video-feed.md)). Las decisiones «A confirmar» siguen abiertas en el tablero; las notas de integración posteriores conservan su contexto histórico.
+Estado: integrado a `main` y publicado en `origin`; migración aplicada en staging (estado conciliado el 2026-10-21 con el despliegue registrado en [catálogo del feed](catalogo-video-feed.md)). Las decisiones conservadoras fueron confirmadas por el usuario el 2026-10-23; las notas de integración posteriores conservan su contexto histórico.
 Nivel: M (esquema nuevo, pero sin dinero cobrado ni lectura anónima más allá de lo activo; ver «Nivel» abajo)
 
 ## Objetivo
@@ -15,7 +15,9 @@ Que el Dueño y el Staff carguen, por plato, **variantes** (se elige una: tamañ
 7. **Validación (módulo puro `options-rules.ts`):** mínimo y máximo enteros (0–999 de texto, máximo 1–50, mínimo ≤ máximo); diferencia con el parser de precios (es-AR, centavos, tope $ 10.000.000), vacío = 0, negativos rechazados. Errores con lo escrito conservado.
 8. **Seed:** Café Ejemplo (Espresso con «Tamaño» y «Extras», más un grupo inactivo, una opción inactiva y un grupo en un plato inactivo que no deben publicarse) y Parrilla Demo (Entraña con «Punto de cocción»).
 
-### A confirmar (decisiones conservadoras tomadas sin poder preguntar)
+### Confirmadas por el usuario el 2026-10-23 (decisiones conservadoras tomadas sin poder preguntar)
+> Las seis quedan como están, sin cambios de código. Auditar la diferencia de precio, permitir descuentos o borrar serían ítems nuevos.
+
 - **Sin historial de la diferencia de precio de opciones.** `arquitectura.md` anticipaba un *trigger* de `price_history` para opciones; no se hizo: la diferencia es informativa, no cambia `price_cents` ni hay cobro, y extender `price_history` (esquema, ADR 0012) es un cambio aparte. Si el producto quiere auditarla, es ítem propio y probablemente nivel C.
 - **Diferencia ≥ 0 (sin descuentos por opción).**
 - **Sin borrado** de grupos/opciones (solo desactivar); y tope técnico 20/60 incluyendo lo inactivo.

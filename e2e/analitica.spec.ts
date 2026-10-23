@@ -1,4 +1,3 @@
-import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Tenant } from "./support";
 import { sql } from "../tests/rls/helpers"; // después de ./support: este carga las variables de entorno
@@ -196,9 +195,8 @@ async function sembrarAnalitica(l: Local) {
   insertar(l.platos.Ensalada, l.branch, 2, 5);
   insertar(l.platos.Flan, l.branch, 30, 100); // fuera de los 14 días
 
-  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false } });
   const llamar = async (mesa: number, kind: "waiter" | "bill", horaAr: number, hace: number) => {
-    const { error } = await anon.rpc("create_waiter_call", { p_token: l.mesas[mesa].token, p_kind: kind });
+    const { error } = await service().rpc("create_waiter_call", { p_token: l.mesas[mesa].token, p_kind: kind });
     expect(error).toBeNull();
     sql(
       `update public.waiter_calls set created_at = (date_trunc('day', now() at time zone 'UTC') - interval '${hace} days' + interval '${horaAr + 3} hours' + interval '10 minutes') at time zone 'UTC', status = 'attended' ` +

@@ -272,7 +272,7 @@ describe("convive con los llamados en curso", () => {
     const local = await nuevoLocal("tt-purga-convive");
     await sembrar(local, 80 * DIA_MS);
     const cliente = randomBytes(16).toString("hex");
-    const db = anonClient();
+    const db = serviceClient();
     const llamar = async () =>
       (await db.rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter", p_client: cliente })).data;
     expect(await llamar()).toEqual({ status: "created" });
@@ -286,7 +286,7 @@ describe("convive con los llamados en curso", () => {
     const local = await nuevoLocal("tt-purga-concurrente");
     for (let i = 0; i < 20; i++) await sembrar(local, 0, { fecha: new Date(Date.UTC(2000, 1, 1, 0, i)), kind: i % 2 ? "bill" : "waiter" });
 
-    const db = anonClient();
+    const db = serviceClient();
     const llamadas = Array.from({ length: 12 }, () => db.rpc("create_waiter_call", { p_token: local.token, p_kind: "bill" }));
     const purgas = Array.from({ length: 4 }, () => purgar({ p_batch: 50 }));
     const resultados = await Promise.all([...llamadas, ...purgas]);

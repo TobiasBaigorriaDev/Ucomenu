@@ -47,7 +47,7 @@ async function nuevoLocal(slug: string, plan: "basic" | "pro" = "pro"): Promise<
 
 /** Un llamado pendiente, creado por la única puerta (la función pública). */
 async function llamado(local: Local, kind: "waiter" | "bill" = "waiter"): Promise<string> {
-  const { data, error } = await anonClient().rpc("create_waiter_call", { p_token: local.token, p_kind: kind });
+  const { data, error } = await serviceClient().rpc("create_waiter_call", { p_token: local.token, p_kind: kind });
   expect(error).toBeNull();
   expect(data).toEqual({ status: "created" });
   const fila = await service.from("waiter_calls").select("id").eq("table_id", local.table).eq("kind", kind).eq("status", "pending").single();
@@ -176,10 +176,10 @@ describe("atender un llamado", () => {
     const id = await llamado(local);
     await atender(owner.db, id);
     // El índice único parcial ya no cuenta ese llamado; el cooldown sí hasta que pase.
-    const { data } = await anonClient().rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter" });
+    const { data } = await serviceClient().rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter" });
     expect((data as { status: string }).status).toBe("cooldown");
     await service.from("waiter_calls").update({ created_at: new Date(Date.now() - 61_000).toISOString() }).eq("id", id);
-    const otra = await anonClient().rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter" });
+    const otra = await serviceClient().rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter" });
     expect(otra.data).toEqual({ status: "created" });
   });
 });
@@ -270,7 +270,7 @@ describe("el trigger solo actúa en pending → attended", () => {
     const id = await llamado(local);
     await service.from("waiter_calls").update({ created_at: new Date(Date.now() - 31 * MIN).toISOString() }).eq("id", id);
     // Otro llamado del mismo tipo: la función marca vencido el viejo.
-    const { data } = await anonClient().rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter" });
+    const { data } = await serviceClient().rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter" });
     expect(data).toEqual({ status: "created" });
     expect(await fila(id)).toMatchObject({ status: "expired", attended_at: null, attended_by: null });
   });

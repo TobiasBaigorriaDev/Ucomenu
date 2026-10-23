@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
   addMembership,
-  anonClient,
   createOrg,
   createUser,
   DIA_MS,
@@ -56,7 +55,7 @@ async function nuevoLocal(slug: string, opciones: { plan?: "basic" | "pro"; sucu
 }
 
 async function llamar(token: string, kind: "waiter" | "bill") {
-  const { data } = await anonClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
+  const { data } = await serviceClient().rpc("create_waiter_call", { p_token: token, p_kind: kind });
   expect(data).toEqual({ status: "created" });
 }
 
@@ -110,7 +109,7 @@ describe("loadSala", () => {
     const local = await nuevoLocal("tt-salamod-visita");
     const [a, b] = local.tables;
     const hace3h = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
-    expect((await anonClient().rpc("create_waiter_call", { p_token: a.token, p_kind: "waiter", p_visit_started_at: hace3h })).data).toEqual({ status: "created" });
+    expect((await serviceClient().rpc("create_waiter_call", { p_token: a.token, p_kind: "waiter", p_visit_started_at: hace3h })).data).toEqual({ status: "created" });
     await llamar(b.token, "waiter"); // sin dato (p. ej. un llamado hecho directo por la API)
     const sala = await loadSala(staff.db, local.id);
     const porMesa = Object.fromEntries(sala.calls.map((c) => [c.tableLabel, c.visitStartedAt]));

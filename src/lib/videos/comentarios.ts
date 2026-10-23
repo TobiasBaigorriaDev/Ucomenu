@@ -12,7 +12,7 @@ export type { ParsedComment, PublicComment };
 /**
  * Comentarios con aprobación previa del feed (ficha comentarios-del-feed, ADR 0031). La autoridad es `submit_video_comment` (la única
  * puerta de alta de `video_comments`) y la política de lectura pública (solo aprobados de videos públicos): este módulo normaliza el
- * texto, arma la clave de conexión que la base espera, llama a la función con el cliente anónimo y lee su respuesta.
+ * texto, arma la clave de conexión que la base espera, llama a la función con el cliente de servicio (ADR 0038) y lee su respuesta.
  *
  * Nada que identifique al comensal llega a la base: ni el dispositivo ni la IP cruda. Solo el HMAC de la IP (`rate_key`, con su propio
  * prefijo para no cruzarse con los likes), que la base borra a la hora.
@@ -65,7 +65,7 @@ export function parseCommentResult(raw: unknown): CommentResult {
 }
 
 /**
- * Deja un comentario pendiente de aprobación. Entra con el cliente `anon`. Un token o un video imposibles no llegan a la base. Cualquier
+ * Deja un comentario pendiente de aprobación. Entra con el cliente de servicio (ADR 0038). Un token o un video imposibles no llegan a la base. Cualquier
  * error de red o de la base es «no disponible» para el comensal y se registra SIN IP, token, claves ni texto.
  */
 export async function submitVideoComment(

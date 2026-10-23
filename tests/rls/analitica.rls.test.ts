@@ -309,7 +309,7 @@ describe("platos más vistos (solo el Dueño con el plan)", () => {
 describe("llamados por hora (solo el Dueño con el plan, últimos 14 días)", () => {
   /** Crea un llamado de verdad por la puerta pública y lo coloca en un instante concreto (como dueño de la tabla). */
   async function llamar(local: Local, mesa: number, kind: "waiter" | "bill", arHora: number, haceDiasN = 1) {
-    const { error } = await anonClient().rpc("create_waiter_call", { p_token: local.mesas[mesa].token, p_kind: kind });
+    const { error } = await serviceClient().rpc("create_waiter_call", { p_token: local.mesas[mesa].token, p_kind: kind });
     expect(error).toBeNull();
     // Hora local de Argentina = UTC-3: la hora pedida en AR es hora+3 en UTC.
     sql(

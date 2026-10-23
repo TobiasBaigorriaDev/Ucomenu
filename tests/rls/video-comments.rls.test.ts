@@ -76,7 +76,7 @@ async function sembrarVideo(orgId: string, cambios: { status?: "draft" | "publis
 }
 
 type Pedido = { token: string; video: string; body?: string; alias?: string | null; rate?: string | null; visita?: string | null };
-const enviar = async ({ token, video, body = "Qué rico se ve", alias = null, rate = nuevaClave(), visita = null }: Pedido, db: Db = anon) => {
+const enviar = async ({ token, video, body = "Qué rico se ve", alias = null, rate = nuevaClave(), visita = null }: Pedido, db: Db = service) => {
   const r = await db.rpc("submit_video_comment", {
     p_token: token,
     p_video: video,
@@ -360,7 +360,7 @@ describe("validaciones de forma", () => {
   it("token, video o texto imposibles: sin escribir", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
-    const llamar = async (args: Record<string, unknown>) => (await anon.rpc("submit_video_comment", args as never)).data;
+    const llamar = async (args: Record<string, unknown>) => (await service.rpc("submit_video_comment", args as never)).data;
     const base = { p_token: local.token, p_video: video, p_body: "hola" };
     expect(await llamar({ ...base, p_token: "no-es-un-token" })).toEqual(NOT_FOUND);
     expect(await llamar({ ...base, p_token: "A".repeat(32) })).toEqual(NOT_FOUND);
@@ -388,7 +388,7 @@ describe("validaciones de forma", () => {
   it("una conexión con otro formato no se cuenta ni se guarda", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
-    const r = await anon.rpc("submit_video_comment", { p_token: local.token, p_video: video, p_body: "hola", p_rate: "no-es-hex" });
+    const r = await service.rpc("submit_video_comment", { p_token: local.token, p_video: video, p_body: "hola", p_rate: "no-es-hex" });
     expect(r.data).toEqual(OK);
     expect((await unico(video)).rate_key).toBeNull();
   });
@@ -397,6 +397,18 @@ describe("validaciones de forma", () => {
     const argumentos = (nombre: string) => sql(`select pg_get_function_identity_arguments(oid) from pg_proc where proname = '${nombre}' and pronamespace = 'public'::regnamespace`);
     expect(argumentos("submit_video_comment")).toEqual([["p_token text, p_video uuid, p_body text, p_alias text, p_rate text, p_visit_started_at timestamp with time zone"]]);
     expect(argumentos("purge_video_comments")).toEqual([["p_rejected_retention interval, p_pending_retention interval, p_batch integer"]]);
+  });
+});
+
+describe("la puerta de alta es solo del servidor", () => {
+  it("submit_video_comment no la ejecuta anon ni authenticated: solo el servidor, que antes verifica ticket y conexión (ADR 0038)", async () => {
+    const local = await crearLocal();
+    const video = await sembrarVideo(local.id);
+    const args = { p_token: local.token, p_video: video, p_body: "hola" };
+    for (const [nombre, db] of [["anon", anon], ["Dueño", local.owner.db]] as const) {
+      expect((await db.rpc("submit_video_comment", args)).error?.code, nombre).toBe(INSUFFICIENT_PRIVILEGE);
+    }
+    expect(await filas(video)).toHaveLength(0);
   });
 });
 

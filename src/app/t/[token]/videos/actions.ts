@@ -5,6 +5,7 @@ import { BASE_LANG, isLang, type Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import { verifyVisitTicket } from "@/lib/llamados/visit-ticket";
 import { isToken } from "@/lib/mesas/url";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createPublicClient } from "@/lib/supabase/public-client";
 import { commentRateKeyFrom, loadApprovedComments, parseComment, submitVideoComment, type CommentsPage } from "@/lib/videos/comentarios";
 import { deviceKeyFrom, rateKeyFrom, setVideoLike } from "@/lib/videos/likes";
@@ -13,7 +14,8 @@ import { deviceKeyFrom, rateKeyFrom, setVideoLike } from "@/lib/videos/likes";
  * «Me gusta» desde `/t/{token}/videos` (ficha likes-del-feed). Es una escritura PÚBLICA sin sesión: la autoridad es el token de la
  * mesa y la regla está toda en `set_video_like`. Esta acción valida el formato, comprueba el ticket de visita (que la pestaña no
  * sea vieja: sin ticket vigente atado a ESTA mesa no se llega a la base), arma las claves (HMAC del código del navegador y de la IP:
- * nunca los valores crudos) y traduce el resultado a un mensaje. No usa `service_role`.
+ * nunca los valores crudos) y traduce el resultado a un mensaje. Llama a la base con `service_role`: la función solo la ejecuta
+ * esa clave (ADR 0038), así que esta acción es la única puerta y nadie puede omitir el ticket ni la clave de conexión.
  */
 
 export type LikeActionResult =
@@ -39,7 +41,7 @@ export async function setVideoLikeAction(input: {
   if (!ticket.ok) return { ok: false, message: t.call.expired, expired: true };
 
   const result = await setVideoLike(
-    createPublicClient(),
+    createAdminClient(),
     input.token,
     input.video,
     input.liked,
@@ -69,7 +71,8 @@ export type CommentActionResult =
  * Deja un comentario desde `/t/{token}/videos` (ficha comentarios-del-feed). Escritura PÚBLICA sin sesión: la autoridad es el token de
  * la mesa y la regla está toda en `submit_video_comment`. Esta acción comprueba el ticket de visita, normaliza el texto (un solo renglón,
  * sin invisibles), arma la clave de conexión (HMAC de la IP: nunca la IP) y traduce el resultado a un mensaje. El comentario NO se
- * publica: queda pendiente hasta que el Dueño o el Staff lo aprueben. No usa `service_role`.
+ * publica: queda pendiente hasta que el Dueño o el Staff lo aprueben. Llama a la base con `service_role`: la función solo la ejecuta esa
+ * clave (ADR 0038), así que esta acción es la única puerta y nadie puede omitir el ticket ni la clave de conexión.
  */
 export async function submitVideoCommentAction(input: {
   token: unknown;
@@ -91,7 +94,7 @@ export async function submitVideoCommentAction(input: {
   const comment = parseComment(input.body, input.alias);
   if (!comment.ok) return failure(t.feed.commentInvalid);
 
-  const result = await submitVideoComment(createPublicClient(), input.token, input.video, comment, commentRateKeyFrom(await headers()), ticket.issuedAt);
+  const result = await submitVideoComment(createAdminClient(), input.token, input.video, comment, commentRateKeyFrom(await headers()), ticket.issuedAt);
 
   switch (result.status) {
     case "ok":

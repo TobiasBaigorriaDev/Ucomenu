@@ -63,7 +63,7 @@ async function nuevoLocal(slug: string, plan: "basic" | "pro" = "pro", members =
   };
 }
 
-const llamar = async (token: unknown, kind: unknown, client?: unknown, db: Db = anonClient()) => {
+const llamar = async (token: unknown, kind: unknown, client?: unknown, db: Db = serviceClient()) => {
   const { data, error } = await db.rpc("create_waiter_call", { p_token: token as string, p_kind: kind as string, ...(client === undefined ? {} : { p_client: client as string }) });
   expect(error).toBeNull();
   return data as Record<string, unknown>;
@@ -405,6 +405,17 @@ describe("límite por cliente (30 cada 10 minutos)", () => {
 });
 
 describe("acceso directo a waiter_calls", () => {
+  it("create_waiter_call no la ejecuta anon ni authenticated: solo el servidor, que antes verifica ticket y conexión (ADR 0038)", async () => {
+    const local = await nuevoLocal("tt-llamado-solo-servidor");
+    for (const [nombre, db] of [["anon", anonClient()], ["Dueño", owner.db], ["Staff", staff.db]] as const) {
+      const r = await db.rpc("create_waiter_call", { p_token: local.token, p_kind: "waiter" });
+      expect(r.error?.code, nombre).toBe("42501");
+      expect(r.data, nombre).toBeNull();
+    }
+    expect(await filas(local.id)).toHaveLength(0);
+    expect(await llamar(local.token, "waiter")).toEqual({ status: "created" });
+  });
+
   it("anon no lee ni escribe; ningún rol de la API inserta, modifica ni borra", async () => {
     const local = await nuevoLocal("tt-llamado-directo");
     await llamar(local.token, "waiter");
@@ -481,7 +492,7 @@ describe("acceso directo a waiter_calls", () => {
 
 describe("cuándo abrió la carta el comensal (ticket de visita, informativo)", () => {
   const visita = async (local: Local, valor: string | undefined) => {
-    const r = await anonClient().rpc("create_waiter_call", {
+    const r = await serviceClient().rpc("create_waiter_call", {
       p_token: local.token,
       p_kind: "waiter",
       ...(valor === undefined ? {} : { p_visit_started_at: valor }),
@@ -515,7 +526,7 @@ describe("cuándo abrió la carta el comensal (ticket de visita, informativo)", 
   it("no cambia ninguna regla: con un dato falso igual rigen el cooldown, el pendiente único y la disponibilidad", async () => {
     const local = await nuevoLocal("tt-llamado-visita-reglas");
     const cuando = new Date(Date.now() - MIN).toISOString();
-    const pedir = (kind = "waiter") => anonClient().rpc("create_waiter_call", { p_token: local.token, p_kind: kind, p_visit_started_at: cuando });
+    const pedir = (kind = "waiter") => serviceClient().rpc("create_waiter_call", { p_token: local.token, p_kind: kind, p_visit_started_at: cuando });
     expect((await pedir()).data).toEqual({ status: "created" });
     expect((await pedir()).data).toEqual({ status: "already_pending" });
     await service.from("waiter_calls").update({ status: "attended" }).eq("table_id", local.table);
@@ -541,7 +552,7 @@ describe("cuándo abrió la carta el comensal (ticket de visita, informativo)", 
 
 describe("cerrar la sesión de la mesa al atender la cuenta (ficha cerrar-sesion-al-atender-la-cuenta)", () => {
   const pedir = (token: string, kind: string, visita: string | null) =>
-    anonClient().rpc("create_waiter_call", { p_token: token, p_kind: kind, ...(visita ? { p_visit_started_at: visita } : {}) });
+    serviceClient().rpc("create_waiter_call", { p_token: token, p_kind: kind, ...(visita ? { p_visit_started_at: visita } : {}) });
   /** Un ticket emitido hace `ms` (segundos enteros, como los tickets). */
   const ticketDeHace = (ms: number) => new Date(Math.floor((Date.now() - ms) / 1000) * 1000).toISOString();
 

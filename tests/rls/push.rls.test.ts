@@ -68,7 +68,7 @@ const filas = (org: string, endpoint?: string) =>
 
 /** Un llamado de verdad, por la única puerta pública. */
 async function llamar(local: Local, kind: "waiter" | "bill" = "waiter") {
-  const { data, error } = await anonClient().rpc("create_waiter_call", { p_token: local.token, p_kind: kind });
+  const { data, error } = await serviceClient().rpc("create_waiter_call", { p_token: local.token, p_kind: kind });
   if (error) throw new Error(error.message);
   expect(data).toEqual({ status: "created" });
 }

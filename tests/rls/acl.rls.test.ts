@@ -75,10 +75,10 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_set_suspension: [false, false], // SuperAdmin: suspende o reactiva a mano; solo service_role
   admin_void_payment: [false, false], // SuperAdmin (ficha anular-pagos): anula el último pago vigente y restaura la vigencia; solo service_role
   drop_push_subscriptions: [false, false], // aviso de llamados (ADR 0020): limpia suscripciones muertas; solo service_role
-  submit_video_comment: [true, true], // única puerta de alta de video_comments; público, valida adentro (ADR 0031)
+  submit_video_comment: [false, false], // única puerta de alta de video_comments; solo service_role, la llama la acción de servidor tras verificar ticket y conexión (ADR 0031, 0038)
   purge_video_comments: [false, false], // retención de comentarios rechazados y pendientes viejos (ADR 0031): solo service_role
-  set_video_like: [true, true], // única puerta de escritura de video_likes; público, valida adentro (ADR 0031)
-  create_waiter_call: [true, true], // única puerta de escritura de waiter_calls; público, valida adentro (ADR 0010)
+  set_video_like: [false, false], // única puerta de escritura de video_likes; solo service_role (ADR 0031, 0038)
+  create_waiter_call: [false, false], // única puerta de escritura de waiter_calls; solo service_role (ADR 0010, 0038)
   org_entitlements: [false, true],
   owner_calls_by_hour: [false, true], // analítica básica (ADR 0022): llamados por hora para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   owner_top_dishes: [false, true], // analítica básica (ADR 0022): platos más vistos para el Dueño con el plan; vuelve a comprobar todo; solo lectura

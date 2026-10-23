@@ -7,7 +7,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const rpc = vi.fn();
 vi.mock("next/headers", () => ({ headers: async () => ({ get: (nombre: string) => ({ "x-forwarded-for": "203.0.113.9" })[nombre.toLowerCase()] ?? null }) }));
-vi.mock("@/lib/supabase/public-client", () => ({ createPublicClient: () => ({ rpc }) }));
+// La escritura la hace el cliente de servicio (ADR 0038): la función solo la ejecuta esa clave.
+vi.mock("server-only", () => ({}));
+vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: () => ({ rpc }) }));
 
 const { setVideoLikeAction } = await import("@/app/t/[token]/videos/actions");
 const { issueVisitTicket, VISIT_TTL_MS } = await import("@/lib/llamados/visit-ticket");
