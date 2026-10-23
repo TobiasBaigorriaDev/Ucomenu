@@ -1,5 +1,5 @@
 # Cambio: Promociones y función de precio efectivo
-Estado: **implementado y verificado en local (2026-10-23); pendiente de la revisión independiente y de la aprobación humana.** Segunda pieza de S2 ([ADR 0040](../../docs/decisiones/0040-promociones-programadas.md), decisiones 2 a 7), desbloqueada por la [zona horaria por sucursal](zona-horaria-por-sucursal.md).
+Estado: **implementado, verificado en local y aprobado por Codex (3 rondas, 2026-10-23); pendiente de la aprobación del usuario y de subir la migración a staging.** Segunda pieza de S2 ([ADR 0040](../../docs/decisiones/0040-promociones-programadas.md), decisiones 2 a 7), desbloqueada por la [zona horaria por sucursal](zona-horaria-por-sucursal.md).
 Nivel: **C** — el precio que se exhibe al público (Ley 24.240, art. 7), el catálogo de planes (Pro y Premium ganan una función) y una purga irreversible (el borrado de organizaciones suma la del historial). Ninguna pantalla cambia todavía: el panel y la carta son las dos fichas siguientes.
 
 ## Objetivo
@@ -44,7 +44,10 @@ Que la base sepa qué promociones hay, quién las puede escribir, qué cambió y
 Migración `20261123100000`, sobre el diff de `main` (2026-10-23):
 - `pnpm db:reset` (migración aplicada a la primera) y `pnpm db:types`; `pnpm typecheck` en verde.
 - Unitarias de `src/lib/promociones` 30/30 (23 escenarios + piezas del cálculo).
-- RLS `promociones` + `borrado-de-organizaciones` 77/77 y `vistas-previas` 20/20 después de la ronda 1 de la revisión. La corrida completa de RLS, el lint, el build y el E2E: ver «Cierre» más abajo.
+- Corrida completa de RLS al final: 56 archivos, 1261 pruebas, **9 fallas, todas esperadas por este cambio y ya ajustadas** (`acl`: matriz de funciones con `can_manage_promotions`, `record_promotion_change`, `promotion_history_append_only`, `purge_organization_promotion_history` y `effective_prices`; `billing`: `promotions` en las features y el catálogo de Pro y Premium). Después: `acl` + `billing` + `borrado-de-organizaciones` 118/118, `promociones` + `borrado` 77/77 y `vistas-previas` 20/20 (la ronda 1 la tocó: `promotions` ya está en Pro y Premium). En la primera corrida completa, dos *workers* cayeron con `0xC0000409` (fallo ajeno ya conocido) y no se repitieron en la segunda.
+- `pnpm typecheck`, `pnpm lint` y `pnpm build` en verde; `pnpm test` 964/965 (la falla es `textos.test.ts`, ajena, ver `agile/ahora.md`).
+- E2E de los specs afectados (`sucursales`, `superadmin-planes-pagos`, `cuenta-pagos-historial`, `superadmin-vistas-previas`): 37/37 con 3 *workers*. Con los *workers* por defecto fallaron 26 por carga de la máquina («Cannot navigate to invalid URL», *timeouts*), sin relación con el cambio.
+- Rollback ensayado en una transacción que se deshace (pasos 1 a 3 de la cabecera de la migración): corre sin errores y deja solo `promotion_history`.
 - No probado: la función con volumen real (miles de platos por sucursal; el índice por plato y categoría de los objetivos está), una carta que la llame (todavía no existe) y staging (la migración no está subida).
 
 ## Riesgos aceptados y fuera de alcance
@@ -60,4 +63,6 @@ Migración `20261123100000`, sobre el diff de `main` (2026-10-23):
   3. La prueba de purga usaba el helper de limpieza y no la función real → pruebas contra `admin_delete_organization` (purga, auditoría, rechazo, transacción deshecha, EXECUTE y organización activa).
   4. Desempate con `Date.parse` (milisegundos) frente a los microsegundos de Postgres → `compareInstants` y pruebas (unitaria y contra la base, con ids al revés).
 - Efecto colateral de dar `promotions` a Pro: `vistas-previas.rls` suponía que ningún plan la incluía; se ajustó (ver Aceptación).
-- Pendiente: ronda de verificación de Codex y aprobación del usuario antes de subir la migración a staging (toca el catálogo de planes y el borrado de organizaciones).
+- **Ronda 2 (verificación, commit `c70da2b`): aprobar con cambios, 1 hallazgo nuevo, real.** La prueba de `EXECUTE` de la purga llamaba a `service.rpc("purge_…")`, que busca en `public` (la función es de `private`) y aceptaba cualquier error → ahora consulta `has_function_privilege` para `anon`, `authenticated`, `service_role` y `public` sobre las tres funciones privadas del historial. Los cuatro de la ronda 1, verificados como corregidos.
+- **Ronda 3 (commit `74562af`): APROBAR, sin hallazgos.** Informes en `output/revisiones/` (fuera de Git). Codex no ejecutó pruebas ni migraciones; la evidencia de arriba es mía.
+- El veredicto de Codex **no es** la aprobación del usuario. Pendiente su aprobación explícita antes de subir la migración a staging, porque toca el catálogo de planes (Pro y Premium ganan `promotions`) y el borrado definitivo de organizaciones (`admin_delete_organization`).

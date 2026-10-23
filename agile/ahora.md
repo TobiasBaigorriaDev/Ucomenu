@@ -4,24 +4,20 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-Del incremento «Salón y crecimiento» (diseño aprobado el 2026-10-23) están hechas y en staging (Fly versión 35) las tres primeras piezas de S1:
+Del incremento «Salón y crecimiento», S1 está hecha y en staging (Fly versión 37): sucursal adicional, enlace de reseñas, invitación a reseñar y vistas previas de funciones. De S2 (Promociones) hay dos piezas hechas **solo en local, sin subir a staging ni a `origin`**:
 
-- **Sucursal adicional (C)**, [ficha](cambios/sucursal-adicional.md): migración `20261119100000`. Aprobada por Codex y por el usuario.
-- **Enlace de reseñas de Google (M)**, [ficha](cambios/enlace-de-resenas-de-google.md): migración `20261120100000`.
-- **Invitación a reseñar en la carta (M)**, [ficha](cambios/invitacion-a-resenar.md): en `origin/main` y en staging.
-
-**Vistas previas de funciones por organización (C)**, [ficha](cambios/vistas-previas-de-funciones.md): implementada y verificada en **local**, migración `20261121100000` (tabla `organization_feature_previews`, `plan_grants` = plan ∪ vistas previas vigentes, dos funciones de SuperAdmin con auditoría y el bloque en la ficha de la organización). Hecha: aprobada por Codex y por el usuario. Migración y app en staging (Fly versión 37, con el bloque en filas plegables) y commits en `origin/main`. Ninguna de las cuatro funciones (`orders`, `promotions`, `review_invite`, `customers`) la lee todavía: cada ficha de función cablea la suya.
+- **Zona horaria por sucursal (M)**, [ficha](cambios/zona-horaria-por-sucursal.md), migración `20261122100000`, commit `4130912`. Lista cerrada de 22 zonas, la edita el Dueño. Facturación y mora siguen en hora de Argentina.
+- **Promociones y precio efectivo (C)**, [ficha](cambios/promociones-y-precio-efectivo.md), migración `20261123100000`, commits `12e3bb7`, `c70da2b` y `74562af`. Tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` y su réplica `src/lib/promociones/precio.ts`. **Codex aprobó en la ronda 3**; falta tu aprobación humana antes de subir la migración, porque toca planes y la función de borrado de organizaciones. Nada la llama todavía.
 
 ## Bloqueos y límites
 
-- Clientes recurrentes (S4) espera la revisión de un abogado; los pedidos (S3) esperan la función de precio efectivo de S2.
-- Siguen pendientes: el dominio, la revisión legal de los comentarios y programar las purgas (bloquean producción).
-- `pnpm test` tiene una falla ajena: `textos.test.ts` («Menufeed», commit `07facba`). Intermitentes: `sala.spec:323`, `videos-mux.spec:145` y `owner-lectura.rls` (pasa sola). `tools/escenarios-locales.mjs` es un archivo ajeno sin seguir: no se tocó.
-- Next.js está en **16.4.3**; `pnpm-workspace.yaml` tiene una excepción `minimumReleaseAgeExclude` solo para `next@16.4.3` y sus `@next/*`: se puede quitar cuando cumpla la antigüedad mínima.
+- Clientes recurrentes (S4) espera la revisión de un abogado. Siguen pendientes el dominio, la revisión legal de los comentarios y programar las purgas (bloquean producción).
+- `pnpm test` tiene una falla ajena: `textos.test.ts` («Menufeed», commit `07facba`). Intermitentes: `sala.spec:323`, `videos-mux.spec:145`, `owner-lectura.rls` y los *workers* con `0xC0000409`. Los E2E fallan por carga con los *workers* por defecto: usar `--workers=3`. `tools/escenarios-locales.mjs` es ajeno y sin seguir: no se tocó.
+- Next.js está en **16.4.3** con una excepción `minimumReleaseAgeExclude` en `pnpm-workspace.yaml`: se puede quitar cuando cumpla la antigüedad mínima.
 
 ## Próximo paso
 
-1. Probar en staging, con sesión de SuperAdmin, el bloque de vistas previas (habilitar, cambiar el fin, terminar).
-2. Probar en staging, con sesión de SuperAdmin y de Dueño, la sucursal adicional y el enlace de reseñas, y la invitación a reseñar desde un teléfono.
-3. Siguiente de S2: zona horaria por sucursal (M); luego promociones y función de precio efectivo (C).
-4. Pendientes anteriores: probar en un teléfono real (llamado, likes, comentarios), `/admin/cuentas` y rotar la `service_role` legacy de staging (urgente: se imprimió por error en el registro de una sesión del 2026-10-23).
+1. Aprobar (o no) la migración de promociones; si se aprueba, subirla a staging junto con la de zona horaria.
+2. Siguientes de S2, ya desbloqueados: panel de promociones del Dueño (M), carta con precio promocional en vivo (M) y pantalla del historial (S). Los pedidos (S3) usan `effective_prices`.
+3. Probar en staging con sesión real: vistas previas, sucursal adicional, enlace de reseñas y zona horaria.
+4. Pendientes anteriores: teléfono real (llamado, likes, comentarios), `/admin/cuentas` y **rotar la `service_role` legacy de staging** (urgente: se imprimió por error en el registro de una sesión del 2026-10-23).
