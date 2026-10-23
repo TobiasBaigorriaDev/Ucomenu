@@ -51,6 +51,8 @@ type SlideProps = {
   muted: boolean;
   reduced: boolean;
   lang: Lang;
+  /** Hay una barra de llamado debajo del feed (en la mesa): ella ya cubre la zona segura del borde inferior. */
+  hasBar: boolean;
   onToggleMute: () => void;
 };
 
@@ -58,7 +60,7 @@ type SlideProps = {
  * Un video del feed. Muestra el póster de Mux y, solo si está «preparado» (es el visible o el siguiente), le asocia su stream:
  * Safari y iOS reproducen HLS nativo; si el navegador no puede (o lo rechaza), lo hace `hls.js`, que se baja recién acá y no antes.
  */
-function Slide({ video, index, total, prepared, active, muted, reduced, lang, onToggleMute }: SlideProps) {
+function Slide({ video, index, total, prepared, active, muted, reduced, lang, hasBar, onToggleMute }: SlideProps) {
   const t = TEXTOS[lang].feed;
   const ref = useRef<HTMLVideoElement>(null);
   const [error, setError] = useState(false);
@@ -225,7 +227,12 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, on
       </div>
 
       {video.dish && showDish ? (
-        <div role="region" aria-label={video.dish.name} data-testid="feed-plato" className="absolute inset-x-0 bottom-0 z-30 rounded-t-3xl bg-white px-5 pt-5 pb-8 text-black shadow-2xl">
+        <div
+          role="region"
+          aria-label={video.dish.name}
+          data-testid="feed-plato"
+          className={`absolute inset-x-3 z-30 rounded-3xl bg-white p-5 text-black shadow-2xl ${hasBar ? "bottom-2" : "bottom-[max(0.75rem,env(safe-area-inset-bottom))]"}`}
+        >
           <div className="flex items-start justify-between gap-4">
             <h3 className="min-w-0 font-display text-2xl leading-tight [overflow-wrap:anywhere]">{video.dish.name}</h3>
             <button type="button" onClick={() => setShowDish(false)} aria-label={t.hideDish} className="grid size-11 shrink-0 place-items-center rounded-full bg-black/10 text-black hover:bg-black/15 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-black">
@@ -332,6 +339,7 @@ export function VideoFeed({ videos, lang, backHref, callBar }: { videos: FeedVid
               muted={muted}
               reduced={reduced}
               lang={lang}
+              hasBar={Boolean(callBar)}
               onToggleMute={() => setMuted((value) => !value)}
             />
           ))}
