@@ -60,4 +60,4 @@ Local (Supabase local + build de producción en :3100), sobre el árbol de traba
 - No probado: teléfono real (Safari/iOS, Android), Firefox; el feed con varios videos y likes con Mux real; staging (no se subió ni se desplegó nada).
 
 ## (C) Revisión y aprobación
-(a completar)
+- Ronda 1 (Codex, sobre `fb5a3ac`, informe `output/revisiones/2026-10-23T01-50-58-commit-HEAD.md`): aprobar con cambios; un hallazgo **importante**, reproducido leyendo la función: la comprobación «ya estaba» iba antes del lock por conexión, así que dos pedidos idénticos con el cupo en 59 pasaban ambos esa comprobación, el primero ponía el like 60 y el segundo, tras el lock, veía el cupo lleno y respondía `rate_limited` con el like ya guardado (la pantalla lo desmarcaba). Corregido: el lock se toma primero y el duplicado se mira dentro de la sección serializada. Regresión RLS (retiene el lock desde otra sesión y lanza los dos pedidos): **falla con la función anterior y pasa con la nueva**; `video-likes` 28/28, `acl`, `tables` y `videos-publico` en verde. La migración se editó en su lugar porque no estaba en ninguna base compartida.

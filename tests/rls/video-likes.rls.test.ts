@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { addMembership, anonClient, createOrg, createUser, deleteOrg, deleteUser, DIA_MS, serviceClient, setSubscription, sql, type Db, type PlanCode, type TestUser } from "./helpers";
@@ -378,6 +379,29 @@ describe("límite por cliente", () => {
     sql(`update public.video_likes set created_at = now() - interval '11 minutes' where video_id = '${video}'`);
     expect(await dar({ token: local.token, video, rate })).toMatchObject({ status: "ok" });
   });
+
+  it("dos pedidos idénticos que esperan el lock con el cupo en 59: el segundo responde «ya estaba», no «límite» (revisión de Codex, ronda 1)", async () => {
+    const local = await crearLocal();
+    const video = await sembrarVideo(local.id);
+    const rate = nuevaClave();
+    const device = nuevaClave();
+    const previos = Array.from({ length: 59 }, () => nuevaClave());
+    const insert = await service.from("video_likes").insert(previos.map((d) => ({ video_id: video, organization_id: local.id, device_key: d, rate_key: rate })));
+    expect(insert.error).toBeNull();
+
+    // Otra sesión retiene el lock de esa conexión 3 segundos: los dos pedidos llegan, pasan las validaciones y quedan esperando.
+    const retenedor = spawn("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `select pg_advisory_lock(hashtextextended('video_like_rate:${rate}', 0)), pg_sleep(3)`], { stdio: "ignore" });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const [a, b] = await Promise.all([dar({ token: local.token, video, device, rate }), dar({ token: local.token, video, device, rate })]);
+      expect(a).toMatchObject({ status: "ok", liked: true });
+      expect(b).toMatchObject({ status: "ok", liked: true });
+      expect(await filas(video)).toHaveLength(60);
+      expect(await conteo(video)).toBe(60);
+    } finally {
+      retenedor.kill();
+    }
+  }, 60_000);
 
   it("el rate_key se borra pasada una hora (en el próximo alta); el device_key y el like quedan", async () => {
     const local = await crearLocal();

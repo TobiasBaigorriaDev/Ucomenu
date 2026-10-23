@@ -170,7 +170,16 @@ begin
     return jsonb_build_object('status', 'ok', 'liked', false, 'count', coalesce(v_total, 0));
   end if;
 
-  -- Ya estaba: no consume el límite ni cambia nada.
+  -- El lock por conexión serializa las altas del mismo cliente: sin él, dos pedidos simultáneos leerían el mismo conteo y pasarían
+  -- ambos. Un valor ausente o con otro formato no se cuenta (no hay lock ni límite).
+  v_rate := case when p_rate ~ '^[0-9a-f]{32}$' then p_rate end;
+  if v_rate is not null then
+    perform pg_advisory_xact_lock(hashtextextended('video_like_rate:' || v_rate, 0));
+  end if;
+
+  -- Ya estaba: no consume el límite ni cambia nada. Se mira DESPUÉS del lock: dos pedidos idénticos que esperaban el lock no deben
+  -- tratar el like que acaba de poner el primero como un alta más (el segundo vería el cupo lleno y respondería «límite» con el
+  -- like ya guardado).
   if exists (select 1 from public.video_likes where video_id = p_video and device_key = p_device) then
     select like_count into v_total from public.menu_videos where id = p_video;
     return jsonb_build_object('status', 'ok', 'liked', true, 'count', coalesce(v_total, 0));
@@ -189,12 +198,7 @@ begin
     for update skip locked
   );
 
-  -- Límite por cliente. Un valor ausente o con otro formato no se cuenta. El lock serializa las altas del mismo cliente: sin él,
-  -- dos pedidos simultáneos leerían el mismo conteo y pasarían ambos.
-  v_rate := case when p_rate ~ '^[0-9a-f]{32}$' then p_rate end;
   if v_rate is not null then
-    perform pg_advisory_xact_lock(hashtextextended('video_like_rate:' || v_rate, 0));
-
     select count(*), min(created_at) into v_count, v_oldest
     from public.video_likes
     where rate_key = v_rate
