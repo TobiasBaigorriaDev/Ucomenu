@@ -46,9 +46,12 @@ export default async function TablePage({ params, searchParams }: PageProps<"/t/
   // Los botones solo existen si la base informa que se puede llamar (plan, cuenta al día, mesa activa y no silenciada);
   // aunque alguien fuerce la acción, la función de base responde «no disponible». El ticket de visita (que se emite en cada
   // carga de la página, nunca desde caché) lo valida la acción: una pestaña vieja deja de poder avisar (ticket-de-visita).
+  // El acceso a los videos vive en el dock cuando lo hay; sin dock (mesa sin llamados) queda el enlace suelto de la carta.
+  const videosPath = `/t/${token}/videos`;
+  const videosHref = menu.hasVideos ? `${videosPath}?lang=${lang}` : undefined;
   return table.callsEnabled ? (
-    <PublicMenuView menu={menu} lang={lang} videosPath={`/t/${token}/videos`} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} lang={lang} />} />
+    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} lang={lang} videosHref={videosHref} />} />
   ) : (
-    <PublicMenuView menu={menu} lang={lang} videosPath={`/t/${token}/videos`} tableLabel={table.tableActive ? table.tableLabel : null} />
+    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableActive ? table.tableLabel : null} />
   );
 }

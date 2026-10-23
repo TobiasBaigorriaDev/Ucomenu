@@ -323,7 +323,11 @@ test.describe("el feed desde la mesa conserva el llamado al mozo", () => {
       const token = await mesa(t.orgId);
       await interceptarMux(page);
       await page.goto(`/t/${token}`);
-      await expect(page.getByTestId("ver-videos")).toHaveAttribute("href", `/t/${token}/videos?lang=es`);
+      // En la mesa el acceso es la tercera celda del dock (no hay enlace suelto aparte) y no se pisa con los botones.
+      await expect(page.getByTestId("ver-videos")).toHaveCount(1);
+      await expect(page.getByTestId("barra-llamado").getByTestId("ver-videos")).toHaveAttribute("href", `/t/${token}/videos?lang=es`);
+      await expect(page.getByTestId("ver-videos")).toHaveText("Videos");
+      await expectNoHorizontalOverflow(page);
       await page.getByTestId("ver-videos").click();
       await expect(page).toHaveURL(new RegExp(`/t/${token}/videos`));
       await expect(page.getByTestId("feed-video")).toHaveCount(2);

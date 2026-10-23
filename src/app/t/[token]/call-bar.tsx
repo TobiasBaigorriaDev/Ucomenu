@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import type { Lang } from "@/lib/idiomas/idiomas";
@@ -18,12 +19,39 @@ function Icon({ children }: { children: ReactNode }) {
   );
 }
 
-function Buttons({ lang }: { lang: Lang }) {
+/** Con tres celdas el ancho no alcanza para icono y texto en una línea: se apilan, y el texto puede ocupar dos. */
+const cellStacked = "min-h-16 flex-col gap-1 px-2 text-[0.9375rem] leading-tight text-center";
+
+/**
+ * Celda terciaria del dock: el acceso al feed de videos. Es navegación, no un llamado: un enlace fuera del envío, que no
+ * se deshabilita mientras se envía y no depende del ticket de visita. Contorno en tinta y ▶ terracota, el lenguaje del
+ * antiguo botón suelto de la carta; el color sólido queda para las acciones que avisan al personal.
+ */
+function VideosCell({ href, lang, stacked }: { href: string; lang: Lang; stacked: boolean }) {
+  const t = TEXTOS[lang].feed;
+  return (
+    <Link
+      href={href}
+      prefetch={false}
+      data-testid="ver-videos"
+      aria-label={t.link}
+      className={`${cellBase} border-[1.5px] border-ink text-ink hover:bg-ink/5 ${stacked ? cellStacked : ""}`}
+    >
+      <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 shrink-0 text-[var(--carta-terra)]" fill="currentColor">
+        <path d="M7 4.5v15L19.5 12 7 4.5Z" />
+      </svg>
+      {t.dockLink}
+    </Link>
+  );
+}
+
+function Buttons({ lang, videosHref }: { lang: Lang; videosHref?: string }) {
   const { pending } = useFormStatus();
   const t = TEXTOS[lang].call;
+  const stacked = Boolean(videosHref);
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <button type="submit" name="kind" value="waiter" disabled={pending} className={`${cellBase} bg-[var(--carta-green)] text-[var(--on-accent)]`}>
+    <div className={`grid gap-2 ${stacked ? "grid-cols-[5fr_5fr_4fr]" : "grid-cols-2"}`}>
+      <button type="submit" name="kind" value="waiter" disabled={pending} className={`${cellBase} bg-[var(--carta-green)] text-[var(--on-accent)] ${stacked ? cellStacked : ""}`}>
         <Icon>
           <path d="M6 17V11a6 6 0 0 1 12 0v6" />
           <path d="M4 17h16" />
@@ -31,13 +59,14 @@ function Buttons({ lang }: { lang: Lang }) {
         </Icon>
         {pending ? t.sending : t.waiter}
       </button>
-      <button type="submit" name="kind" value="bill" disabled={pending} className={`${cellBase} bg-[var(--carta-blush)] text-ink`}>
+      <button type="submit" name="kind" value="bill" disabled={pending} className={`${cellBase} bg-[var(--carta-blush)] text-ink ${stacked ? cellStacked : ""}`}>
         <Icon>
           <path d="M6 3h12v18l-3-2-3 2-3-2-3 2z" />
           <path d="M9 8h6M9 12h6" />
         </Icon>
         {pending ? t.sending : t.bill}
       </button>
+      {videosHref ? <VideosCell href={videosHref} lang={lang} stacked /> : null}
     </div>
   );
 }
@@ -77,8 +106,10 @@ function useSessionExpired(ttlMs: number): boolean {
  * Dock fijo inferior de `/t/{token}`: dos celdas de acción y el resultado, siempre al alcance del pulgar. Solo se monta si la base informó que se puede
  * llamar desde esta mesa. La confirmación es la respuesta del envío (sin tiempo real para el comensal). Lleva el
  * ticket de visita emitido al abrir la página; vencido el plazo, en vez de los botones pide escanear el QR de nuevo.
+ * `videosHref` suma la tercera celda, el acceso al feed (solo en la carta y si el local tiene videos; en el feed no hace falta,
+ * ya tiene su propio «volver»). Es navegación: sigue disponible con el ticket vencido.
  */
-export function CallBar({ token, ticket, ttlMs, lang }: { token: string; ticket: string; ttlMs: number; lang: Lang }) {
+export function CallBar({ token, ticket, ttlMs, lang, videosHref }: { token: string; ticket: string; ttlMs: number; lang: Lang; videosHref?: string }) {
   const [state, formAction] = useActionState<CallState, FormData>(createWaiterCallAction, {});
   const sessionExpired = useSessionExpired(ttlMs) || state.expired === true;
 
@@ -108,7 +139,7 @@ export function CallBar({ token, ticket, ttlMs, lang }: { token: string; ticket:
             {state.message}
           </p>
         ) : null}
-        {sessionExpired ? null : <Buttons lang={lang} />}
+        {sessionExpired ? videosHref ? <VideosCell href={videosHref} lang={lang} stacked={false} /> : null : <Buttons lang={lang} videosHref={videosHref} />}
       </div>
     </form>
   );

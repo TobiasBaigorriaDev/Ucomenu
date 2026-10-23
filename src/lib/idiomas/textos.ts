@@ -67,6 +67,8 @@ export type Textos = {
   feed: {
     /** El acceso desde la carta. */
     link: string;
+    /** El mismo acceso, corto, para la celda del dock de la mesa (el nombre accesible sigue siendo `link`). */
+    dockLink: string;
     pageTitle: (organization: string) => string;
     heading: string;
     back: string;
@@ -174,6 +176,7 @@ const es: Textos = {
   },
   feed: {
     link: "Ver videos",
+    dockLink: "Videos",
     pageTitle: (organization) => `Videos de ${organization}`,
     heading: "Videos",
     back: "Volver a la carta",
@@ -283,6 +286,7 @@ const en: Textos = {
   },
   feed: {
     link: "Watch videos",
+    dockLink: "Videos",
     pageTitle: (organization) => `Videos from ${organization}`,
     heading: "Videos",
     back: "Back to the menu",
@@ -392,6 +396,7 @@ const pt: Textos = {
   },
   feed: {
     link: "Ver vídeos",
+    dockLink: "Vídeos",
     pageTitle: (organization) => `Vídeos de ${organization}`,
     heading: "Vídeos",
     back: "Voltar ao cardápio",
