@@ -2,8 +2,69 @@ import "./carta.css";
 import Image from "next/image";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
+import type { Layout } from "@/lib/identidad/layouts";
 import { THEMES, type Theme } from "@/lib/identidad/temas";
+import { posterFontSize } from "./poster";
 import { TemaIcono } from "./tema-icono";
+
+function PinIcon({ className }: { className: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
+      <circle cx="12" cy="9.5" r="2.5" />
+    </svg>
+  );
+}
+
+/**
+ * Cabecera del estilo «afiche»: un bloque lleno del color principal del local, a todo el ancho, con el logo sobre una placa del
+ * fondo de la carta (el logo se ve sobre el mismo color que en los otros estilos) y el nombre en la condensada, tan grande como
+ * entre. Debajo, una franja con la sucursal y la mesa cerrada por un filete grueso de tinta.
+ */
+function PosterHeader({ organizationName, branchName, tableLabel, logo, lang, theme }: { organizationName: string; branchName?: string; tableLabel?: string | null; logo?: string | null; lang: Lang; theme: Theme | null }) {
+  const t = TEXTOS[lang];
+  return (
+    <header className="mb-6 sm:mb-10">
+      <div className="bg-[var(--carta-green)] text-[var(--on-accent)]">
+        <div className="mx-auto max-w-3xl px-4 pt-6 pb-5 sm:px-6 sm:pt-10 sm:pb-8">
+          {theme ? (
+            <p data-testid="tema-saludo" className="mb-5 inline-flex max-w-full items-center gap-2 bg-[var(--carta-blush)] px-3 py-1.5 text-sm font-bold text-ink">
+              <TemaIcono name={THEMES[theme].motifs[0]} className="size-4 shrink-0 text-[var(--carta-terra)]" />
+              <span className="[overflow-wrap:anywhere]">{THEMES[theme].greeting[lang]}</span>
+            </p>
+          ) : null}
+          {logo ? (
+            <div className="mb-4 w-fit bg-porcelain p-2 sm:mb-5">
+              <Image src={logo} alt={t.logoAlt(organizationName)} width={192} height={192} className="size-16 object-contain sm:size-20" />
+            </div>
+          ) : null}
+          <div className="@container">
+            <h1 className="font-display leading-[0.85] text-balance [overflow-wrap:anywhere]" style={{ fontSize: posterFontSize(organizationName, { min: 3, max: 10 }) }}>
+              {organizationName}
+            </h1>
+          </div>
+        </div>
+      </div>
+      {branchName || tableLabel ? (
+        <div className="border-b-[3px] border-ink">
+          <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-x-5 gap-y-2 px-4 py-3 sm:px-6">
+            {branchName ? (
+              <p className="flex items-center gap-2 text-sm font-bold tracking-[0.1em] uppercase">
+                <PinIcon className="size-[1.125rem] shrink-0 text-[var(--carta-terra)]" />
+                <span className="[overflow-wrap:anywhere]">{t.branch(branchName)}</span>
+              </p>
+            ) : null}
+            {tableLabel ? (
+              <p data-testid="mesa" className="inline-block bg-ink px-3 py-1 text-base font-bold text-porcelain uppercase [overflow-wrap:anywhere]">
+                {tableLabel}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+    </header>
+  );
+}
 
 /**
  * Cabecera editorial: logo y nombre del local lado a lado, en display grande y alineados a la izquierda; debajo, un
@@ -16,6 +77,7 @@ export function MenuHeader({
   logo,
   lang = "es",
   theme = null,
+  layout,
 }: {
   organizationName: string;
   /** La pantalla de «carta no disponible» no muestra sucursal. */
@@ -26,8 +88,10 @@ export function MenuHeader({
   lang?: Lang;
   /** Tema de fecha especial vigente: suma un saludo corto arriba del nombre. */
   theme?: Theme | null;
+  layout?: Layout;
 }) {
   const t = TEXTOS[lang];
+  if (layout === "afiche") return <PosterHeader organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} logo={logo} lang={lang} theme={theme} />;
   return (
     <header>
       <div className="mx-auto max-w-3xl px-4 pt-10 pb-8 sm:px-6 sm:pt-16 sm:pb-12">
@@ -57,19 +121,7 @@ export function MenuHeader({
           <div className="mt-6 flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t-[1.5px] border-ink pt-3">
             {branchName ? (
               <p className="flex items-center gap-2 text-base text-muted">
-                <svg
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  className="size-[1.125rem] shrink-0 text-[var(--carta-terra)]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.75"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21Z" />
-                  <circle cx="12" cy="9.5" r="2.5" />
-                </svg>
+                <PinIcon className="size-[1.125rem] shrink-0 text-[var(--carta-terra)]" />
                 <span className="[overflow-wrap:anywhere]">{t.branch(branchName)}</span>
               </p>
             ) : null}

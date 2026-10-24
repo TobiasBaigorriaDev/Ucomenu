@@ -37,17 +37,18 @@ export function CartaPreview({ name, logo, palette, layout, theme = null, testId
         inert
         data-testid={testId}
         data-tema={theme ?? undefined}
-        className={`${cartaFontClass} carta max-h-[34rem] overflow-hidden pb-8 select-none`}
+        data-layout={layout}
+        className={`${cartaFontClass} carta carta-preview max-h-[34rem] overflow-hidden pb-8 select-none`}
         style={{ ...paletteStyle(palette), ...themeStyle(theme), minHeight: 0 }}
       >
-        <MenuHeader organizationName={name} branchName="Sucursal Centro" logo={logo} theme={theme} />
+        <MenuHeader organizationName={name} branchName="Centro" logo={logo} theme={theme} layout={layout} />
         {layout === "bento" ? (
           <CategoryMosaic sections={SECTIONS} lang="es" />
         ) : (
           // La barra real es fija; acá se dibuja la misma tira de categorías en el flujo.
-          <ul className="mx-auto flex max-w-3xl gap-2 overflow-hidden border-y border-ink/10 px-4 py-2.5 sm:px-6">
+          <ul className={`mx-auto flex max-w-3xl gap-2 overflow-hidden px-4 py-2.5 sm:px-6 ${layout === "afiche" ? "border-b-[3px] border-ink" : "border-y border-ink/10"}`}>
             {SECTIONS.map(({ category }, i) => (
-              <li key={category.id} className={`flex min-h-11 shrink-0 items-center rounded-full px-4 text-[0.75rem] font-semibold tracking-[0.08em] uppercase ${i === 1 ? "bg-[var(--carta-green)] text-[var(--on-accent)]" : "bg-[var(--carta-blush)] text-ink"}`}>
+              <li key={category.id} className={`carta-chip flex min-h-11 shrink-0 items-center rounded-full px-4 text-[0.75rem] font-semibold tracking-[0.08em] uppercase ${i === 1 ? "bg-[var(--carta-green)] text-[var(--on-accent)]" : "bg-[var(--carta-blush)] text-ink"}`}>
                 {category.name}
               </li>
             ))}

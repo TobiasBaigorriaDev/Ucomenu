@@ -62,7 +62,7 @@ export function LayoutForm({ orgSlug, canWrite, name, palette, logo, layout }: P
       <fieldset disabled={!canWrite} className="min-w-0">
         <legend className="sr-only">Estilo de la carta</legend>
         <input type="hidden" name="org" value={orgSlug} />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {LAYOUT_KEYS.map(key => (
             <label key={key} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
               <input type="radio" name="layout" value={key} checked={selected === key} onChange={() => setSelected(key)} className="mt-1 size-4 shrink-0 accent-cobalt" />

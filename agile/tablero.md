@@ -18,6 +18,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Para verificar
 
+- [M] Estilo de carta «Afiche» (Big Shoulders, bandas de color, platos numerados): implementado y verificado en local, sin commit; falta aprobación del usuario y migración en staging → [ficha](cambios/estilo-afiche.md)
 - [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada, aprobada por Codex (sin hallazgos) y por el usuario, y en staging con su migración (Fly versión 33, 2026-10-23); falta probarla con sesión de SuperAdmin y de Dueño en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
 - [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)

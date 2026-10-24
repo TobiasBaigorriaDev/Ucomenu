@@ -71,6 +71,22 @@ typography:
     fontSize: "0.75rem"
     fontWeight: 600
     letterSpacing: "0.08em"
+  afiche-title:
+    fontFamily: "Big Shoulders, sans-serif"
+    fontSize: "clamp(2.5rem, <ajuste al ancho>cqi, 13rem)"
+    fontWeight: 800
+    lineHeight: 0.85
+    textTransform: "uppercase"
+  afiche-dish-name:
+    fontFamily: "Big Shoulders, sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 800
+    lineHeight: 0.95
+    textTransform: "uppercase"
+  afiche-number:
+    fontFamily: "Big Shoulders, sans-serif"
+    fontSize: "1.75rem"
+    fontWeight: 700
   panel-page-title:
     fontFamily: "Gloock, Georgia, serif"
     fontSize: "clamp(2.25rem, 1.5rem + 3vw, 3.5rem)"
@@ -341,7 +357,7 @@ Escalones del panel (todos usados en el código, fuera de la rampa de la carta):
 - **Control** (500, 1rem): texto de botones y campos del panel; etiquetas de campo 0.875rem 500.
 
 ### Named Rules
-**The One Weight Rule.** `.carta .font-display` y `.panel .font-display` fuerzan peso 400 y Gloock no tiene otro: nunca negrita ni `font-semibold` sobre un título. El énfasis es tamaño y color.
+**The One Weight Rule.** `.carta .font-display` y `.panel .font-display` fuerzan peso 400 y Gloock no tiene otro: nunca negrita ni `font-semibold` sobre un título. El énfasis es tamaño y color. Excepción acotada: en el estilo «Afiche» los títulos son Big Shoulders 800 (ver «Estilo de carta Afiche»).
 
 **The Platform Voice Rule.** SuperAdmin (`.panel-platform`, solo `/admin`) no usa Gloock: es una herramienta interna y no debe sonar a carta de restaurante. Títulos y texto van en **Geist** (títulos a peso 600, h1 de `clamp(1.75rem, 1.3rem + 1.8vw, 2.375rem)`, h2 de 1.25rem) y los datos (identificadores, direcciones) en **Geist Mono**; se cargan solo en `/admin` desde `admin-fonts.ts`. Los roles de color, las celdas y los botones son los mismos del panel. La regla de un solo peso rige para Gloock, no para Geist.
 
@@ -406,6 +422,17 @@ Solo en `/t/{token}`. Contenedor flotante porcelana al 95 %, filete `ink/15`, ra
 
 ### Pie
 Tres rombos (terracota, verde, rosa), aviso de alérgenos, enlaces legales y «Hecho con UcoMenu» en gris cálido.
+
+### Estilo de carta «Afiche»
+
+Cuarto estilo elegible (`menu_layout = 'afiche'`, `data-layout="afiche"` en `.carta`), para bares, hamburgueserías, cervecerías y pizzerías: un cartel de bar sobre los mismos roles de la paleta. Es la única excepción a «Gloock para todo título»: dentro de `[data-layout="afiche"]`, `.font-display` pasa a **Big Shoulders** 800 en mayúsculas (cargada con `preload: false` desde `carta-fonts.ts`, así los otros estilos no la descargan; mientras llega se ve `AficheFallback`, la sans negrita del sistema angostada al 70 % para ocupar el mismo ancho); ingredientes, etiquetas y precios siguen en Schibsted Grotesk.
+
+- **Encabezado:** bloque lleno del acento (`--carta-green`, texto `--on-accent`) a todo el ancho; logo sobre una placa cuadrada de `--porcelain`; nombre del local ajustado al ancho (3 a 10 rem). Debajo, franja con la sucursal en mayúsculas y la mesa en bloque de tinta, cerrada por un filete de tinta de 3 px.
+- **Categorías:** banda llena con `toneFor(índice)` (el ciclo del bento) y el título ajustado al ancho de la banda (`posterFontSize`, en `cqi`, de 2,5 a 13 rem, con el ancho medido de cada letra y hasta tres líneas parejas); la cantidad de platos abajo a la derecha. No es pegajosa: la barra fija hace de índice.
+- **Platos:** filas abiertas, sin card. Número decorativo (`01`, `02`… por categoría, terracota, Big Shoulders 700, estable al filtrar), nombre en Big Shoulders y precio siempre arriba a la derecha en la línea del nombre (Schibsted 700, tabular). Debajo, promoción, «Agotado» (bloque de tinta), ingredientes, etiquetas y opciones a todo el ancho (sus «+ $» caen en la columna del precio). Filete de tinta de 3 px entre filas y de 6 px al cerrar la categoría. Con foto: recorte apaisado (3:2; 2:1 desde `sm`) que encabeza la fila, sin esquinas ni recorte de fondo.
+- **Esquinas rectas** en chips, buscador, barra, dock, detalle y foco (`carta-chip`, `carta-dock`, `carta-dock-cell`, `carta-dialog-photo`); chips con borde de tinta de 2 px. Las reglas de `carta.css` del afiche solo cambian forma y letra, nunca color: una regla sin capa le ganaría a los estados activos de Tailwind.
+
+**The Poster Rule.** En el afiche la fuerza gráfica va a títulos y nombres; el precio es legible y fijo, no compite. Nada redondeado, nada de sombra fuera del dock.
 
 ### Riel del panel
 Cabecera de 17 rem desde `lg`, fondo verde profundo, texto blanco, padding de 20 px. Arriba: logo opcional en cuadrado blanco y nombre del local en display (o la marca de dos rombos y «UcoMenu» cuando no hay local activo), insignia de rol (Dueño, Personal, SuperAdmin) en píldora blanca al 15 % y «Cambiar de local» si hay varios. Al pie: «Mi cuenta» y «Salir» de 44 px (0,9375rem, hover blanco al 10 %). El salto «Saltar al contenido» es una píldora verde que aparece con el foco. El foco dentro del riel es blanco y solo desde 64 rem; en celular la cabecera es papel y se conserva el aro verde global.

@@ -11,6 +11,7 @@ import { CategoryBar } from "./category-bar";
 import { CategoryMosaic } from "./category-mosaic";
 import { DishDetail } from "./dish-detail";
 import { MenuSection } from "./menu-section";
+import { dishNumbers } from "./poster";
 
 export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { sections: Section[]; branchId: string; lang: Lang; layout?: Layout }) {
   const t = TEXTOS[lang];
@@ -45,6 +46,8 @@ export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { se
       });
   }
   const visible = useMemo(() => filterMenu(sections, query, tags), [sections, query, tags]);
+  // Numeración del estilo afiche sobre la carta completa: un plato conserva su número al buscar o filtrar.
+  const numbers = useMemo(() => (layout === "afiche" ? dishNumbers(sections) : undefined), [layout, sections]);
   const selected = selectedId ? sections.flatMap((section) => section.products).find((product) => product.id === selectedId) ?? null : null;
   const count = visible.reduce((total, section) => total + section.products.length, 0);
   const filtering = Boolean(query.trim()) || tags.length > 0;
@@ -62,7 +65,7 @@ export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { se
           <div className="flex flex-wrap gap-2">
             {DIETARY_TAGS.map((tag) => <button key={tag} type="button" aria-pressed={tags.includes(tag)}
               onClick={() => setTags((current) => current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag])}
-              className="min-h-11 rounded-full border border-[var(--carta-green)] px-4 text-sm font-medium text-[var(--carta-green)] hover:bg-[var(--carta-sand)] aria-pressed:bg-[var(--carta-green)] aria-pressed:text-[var(--on-accent)]">
+              className="carta-chip min-h-11 rounded-full border border-[var(--carta-green)] px-4 text-sm font-medium text-[var(--carta-green)] hover:bg-[var(--carta-sand)] aria-pressed:bg-[var(--carta-green)] aria-pressed:text-[var(--on-accent)]">
               {t.dietary[tag]}
             </button>)}
           </div>
@@ -81,11 +84,11 @@ export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { se
         </div>
       </div>
       {visible.length ? <>
-        {/* Sin mosaico (clásica y minimal), la barra fija de categorías es siempre visible y hace de índice. */}
+        {/* Sin mosaico (clásica, minimal y afiche), la barra fija de categorías es siempre visible y hace de índice. */}
         {layout === "bento" ? <CategoryMosaic sections={visible} lang={lang} /> : null}
         <CategoryBar sections={visible} lang={lang} />
-        <main className={`mx-auto px-4 pb-12 sm:px-6 ${layout === "bento" ? "max-w-5xl" : layout === "clasica" ? "max-w-3xl" : "max-w-2xl"}`}>
-          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={select} lang={lang} layout={layout} />)}
+        <main className={`mx-auto px-4 pb-12 sm:px-6 ${layout === "bento" ? "max-w-5xl" : layout === "minimal" ? "max-w-2xl" : "max-w-3xl"}`}>
+          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={select} lang={lang} layout={layout} numbers={numbers} />)}
         </main>
       </> : <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
         <h2 className="font-display text-2xl">{t.search.emptyTitle}</h2>

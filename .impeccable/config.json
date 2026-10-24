@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "design-system-font",
+        "value": "afichefallback",
+        "createdAt": "2026-10-24T02:41:26.790Z",
+        "reason": "agent: AficheFallback is the metric-adjusted loading fallback for Big Shoulders (documented in DESIGN.md afiche section), not a display face"
+      }
+    ]
+  }
+}

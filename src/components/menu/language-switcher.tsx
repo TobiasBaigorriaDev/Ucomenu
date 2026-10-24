@@ -21,7 +21,7 @@ export function LanguageSwitcher({ languages, current }: { languages: Lang[]; cu
               lang={lang}
               hrefLang={lang}
               aria-current={lang === current ? "true" : undefined}
-              className="inline-flex min-h-11 items-center rounded-full border border-[var(--carta-green)] px-4 text-sm font-medium text-[var(--carta-green)] hover:bg-[var(--carta-sand)] aria-[current=true]:bg-[var(--carta-green)] aria-[current=true]:text-[var(--on-accent)]"
+              className="carta-chip inline-flex min-h-11 items-center rounded-full border border-[var(--carta-green)] px-4 text-sm font-medium text-[var(--carta-green)] hover:bg-[var(--carta-sand)] aria-[current=true]:bg-[var(--carta-green)] aria-[current=true]:text-[var(--on-accent)]"
             >
               {LANG_NAME[lang]}
             </Link>

@@ -9,7 +9,7 @@ import { createWaiterCallAction, type CallState } from "./actions";
 
 /** Celdas del dock: mismo lenguaje que el bento de categorías (radio grande y colores de la paleta del local). */
 const cellBase =
-  "inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-3xl px-3 py-2 text-base font-semibold disabled:opacity-60";
+  "carta-dock-cell inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-3xl px-3 py-2 text-base font-semibold disabled:opacity-60";
 
 function Icon({ children }: { children: ReactNode }) {
   return (
@@ -162,7 +162,7 @@ export function CallBar({
       <input type="hidden" name="token" value={token} />
       <input type="hidden" name="ticket" value={ticket} />
       <input type="hidden" name="lang" value={lang} />
-      <div className="pointer-events-auto mx-auto max-w-xl rounded-[1.75rem] bg-porcelain/95 p-2 shadow-[0_10px_28px_-10px_rgb(0_0_0/0.4)] ring-1 ring-ink/15 backdrop-blur">
+      <div className="carta-dock pointer-events-auto mx-auto max-w-xl rounded-[1.75rem] bg-porcelain/95 p-2 shadow-[0_10px_28px_-10px_rgb(0_0_0/0.4)] ring-1 ring-ink/15 backdrop-blur">
         {sessionExpired ? (
           <p role="status" data-testid="sesion-vencida" className="px-2 py-1 text-[0.9375rem] leading-snug font-medium text-ink">
             {TEXTOS[lang].call.expired}

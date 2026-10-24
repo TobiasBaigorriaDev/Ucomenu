@@ -78,6 +78,26 @@ test("el Dueño publica colores y logo; persisten en carta y QR sin mezclar loca
   await expect(page.getByRole("button", { name: "Guardar estilo" })).toBeEnabled(); // terminó: el aviso ya está en pantalla y no mueve el resto // el aviso de la vez anterior sigue en pantalla
   await publicPage.reload();
   await expect(publicPage.locator(".carta")).toHaveAttribute("data-layout", "minimal");
+  // Afiche: sin mosaico, título de categoría en la condensada, platos numerados y la fila entera abre el detalle.
+  await page.getByRole("radio", { name: "Afiche" }).check();
+  await expect(page.getByTestId("apariencia-preview-estilo")).toHaveAttribute("data-layout", "afiche");
+  await page.getByRole("button", { name: "Guardar estilo" }).click();
+  await expect.poll(async () => (await identity(t)).menu_layout).toBe("afiche");
+  await expect(page.getByRole("button", { name: "Guardar estilo" })).toBeEnabled();
+  expect((await identity(other)).menu_layout).toBe("bento");
+  await publicPage.reload();
+  await expect(publicPage.locator(".carta")).toHaveAttribute("data-layout", "afiche");
+  await expect(publicPage.getByRole("navigation", { name: "Categorías de la carta" })).toHaveCount(0);
+  await expect(publicPage.getByRole("navigation", { name: "Cambiar de categoría" })).toBeVisible();
+  const section = publicPage.getByRole("heading", { name: "De la casa", level: 2 });
+  await expect(section).toHaveCSS("text-transform", "uppercase");
+  await expect(section).toHaveCSS("font-family", /Big Shoulders/);
+  await expect(publicPage.locator(".afiche-row").first()).toContainText("01");
+  await publicPage.getByRole("button", { name: "Ver detalle de Plato del día" }).click();
+  await expect(publicPage.getByRole("dialog")).toContainText("Plato del día");
+  await publicPage.keyboard.press("Escape");
+  await publicPage.setViewportSize({ width: 390, height: 844 });
+  await expectNoHorizontalOverflow(publicPage);
   await page.getByRole("radio", { name: "Bento" }).check();
   await page.getByRole("button", { name: "Guardar estilo" }).click();
   await expect.poll(async () => (await identity(t)).menu_layout).toBe("bento");

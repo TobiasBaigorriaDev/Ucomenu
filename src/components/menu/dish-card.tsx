@@ -12,6 +12,8 @@ import { DishOptions } from "./dish-options";
 
 /** Cómo ocupa la grilla: destacada (2 columnas), cola impar (2 en el celular, 1 en escritorio), normal (1) o única (estilo minimal: una columna, foto grande). */
 export type CardSpan = "featured" | "tail" | "normal" | "single";
+/** Las formas de foto: las de las cards y la del estilo «afiche» (recorte apaisado a todo el ancho de la fila, sin esquinas). */
+type PhotoShape = CardSpan | "poster";
 
 const SPAN_CLASS: Record<CardSpan, string> = {
   // En escritorio ocupa dos filas y las dos cards siguientes se apilan a su lado (siempre hay al menos dos: ver `cardSpans`).
@@ -20,18 +22,20 @@ const SPAN_CLASS: Record<CardSpan, string> = {
   normal: "",
   single: "",
 };
-const PHOTO_RATIO: Record<CardSpan, string> = {
+const PHOTO_RATIO: Record<PhotoShape, string> = {
   featured: "aspect-[16/10] md:aspect-auto md:min-h-64 md:flex-1",
   tail: "aspect-[16/10] md:aspect-[4/3]",
   normal: "aspect-[4/3]",
   single: "aspect-[3/2]",
+  poster: "aspect-[3/2] sm:aspect-[2/1]",
 };
 /** El ancho que ocupa la foto en pantalla, para que `/_next/image` pida solo lo necesario (ver next.config.ts). */
-const PHOTO_SIZES: Record<CardSpan, string> = {
+const PHOTO_SIZES: Record<PhotoShape, string> = {
   featured: "(min-width: 768px) 66vw, 100vw",
   tail: "(min-width: 768px) 33vw, 100vw",
   normal: "(min-width: 768px) 33vw, 50vw",
   single: "(min-width: 672px) 42rem, 100vw",
+  poster: "(min-width: 768px) 45rem, 100vw",
 };
 
 /**
@@ -39,7 +43,7 @@ const PHOTO_SIZES: Record<CardSpan, string> = {
  * una foto. Solo se confía en `onError`: una imagen diferida (`lazy`) que aún no empezó a cargar figura como `complete` con
  * ancho 0, así que mirar ese estado al hidratar la marcaba como rota por error. El tamaño lo fija la proporción, así que la grilla no salta al cargar. Ver ficha rendimiento-carta-publica.
  */
-function CardPhoto({ src, name, span, lang }: { src: string; name: string; span: CardSpan; lang: Lang }) {
+export function CardPhoto({ src, name, span, lang }: { src: string; name: string; span: PhotoShape; lang: Lang }) {
   const [failed, setFailed] = useState(false);
   const frame = `relative w-full overflow-hidden bg-[var(--carta-sand)] ${PHOTO_RATIO[span]}`;
 
@@ -59,8 +63,8 @@ function CardPhoto({ src, name, span, lang }: { src: string; name: string; span:
       <Image
         src={src}
         alt={TEXTOS[lang].dish.photoAlt(name)}
-        width={span === "single" ? 768 : span === "featured" ? 640 : 384}
-        height={span === "single" ? 512 : span === "featured" ? 400 : 288}
+        width={span === "single" || span === "poster" ? 768 : span === "featured" ? 640 : 384}
+        height={span === "single" || span === "poster" ? 512 : span === "featured" ? 400 : 288}
         sizes={PHOTO_SIZES[span]}
         loading="lazy"
         onError={() => setFailed(true)}

@@ -34,9 +34,68 @@
   font-weight: 400;
 }
 
-/* Estilos sin mosaico: la barra de categorías es fija y siempre visible, así que se le reserva su alto (4rem) arriba de la página. */
-.carta:is([data-layout="clasica"], [data-layout="minimal"]) {
+/* Estilos sin mosaico: la barra de categorías es fija y siempre visible, así que se le reserva su alto (4rem) arriba de la página.
+   La vista previa del panel dibuja la tira en el flujo y no lo necesita. */
+.carta:is([data-layout="clasica"], [data-layout="minimal"], [data-layout="afiche"]):not(.carta-preview) {
   padding-top: 4rem;
+}
+
+/*
+ * Estilo «afiche»: títulos en Big Shoulders (condensada) en mayúsculas, esquinas rectas y filetes gruesos de tinta. Acá solo se
+ * cambia forma y letra de piezas compartidas (chips, buscador, barra, dock, detalle); los colores siguen saliendo de las clases
+ * de cada componente, porque una regla de este archivo (sin capa) le ganaría a los estados activos de Tailwind.
+ */
+/* Reemplazo de Big Shoulders mientras carga (no se precarga): la sans negrita del sistema escalada a su ancho medio (0,497 em por
+   mayúscula contra 0,705 de Roboto y Helvetica; Arial queda algo más angosta) y con su ascendente, medidos en el navegador. */
+@font-face {
+  font-family: "AficheFallback";
+  src: local("Roboto Bold"), local("Roboto-Bold"), local("Helvetica Neue Bold"), local("HelveticaNeue-Bold"), local("Arial Bold"), local("Arial-BoldMT"), local("Roboto"), local("Arial");
+  font-weight: 100 900;
+  size-adjust: 70%;
+  ascent-override: 141%;
+  descent-override: 30%;
+  line-gap-override: 0%;
+}
+
+.carta[data-layout="afiche"] .font-display {
+  font-family: var(--font-afiche), sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.carta .afiche-number {
+  font-family: var(--font-afiche), sans-serif;
+  font-weight: 700;
+}
+
+.carta[data-layout="afiche"] :is(.carta-chip, .carta-dock, .carta-dock-cell, .carta-dialog, .carta-dialog-photo, #menu-search) {
+  border-radius: 0;
+}
+
+.carta[data-layout="afiche"] .carta-chip {
+  border: 2px solid var(--ink);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.carta[data-layout="afiche"] #menu-search {
+  border: 2px solid var(--ink);
+}
+
+.carta[data-layout="afiche"] .carta-bar {
+  border-bottom: 3px solid var(--ink);
+}
+
+/* El foco también va en ángulo recto (el global es de 2 px y la barra lo redondea). */
+.carta[data-layout="afiche"] :focus-visible,
+.carta[data-layout="afiche"] .carta-bar a:focus-visible {
+  border-radius: 0;
+}
+
+/* Variantes y adicionales a todo el ancho de la fila: sus «+ $» quedan en la columna del precio del plato. */
+.carta[data-layout="afiche"] .afiche-options [data-testid="grupo-opciones"] {
+  max-width: none;
 }
 
 /* Puntos guía de la carta clásica (la clase global es del panel y tiene un color fijo). */

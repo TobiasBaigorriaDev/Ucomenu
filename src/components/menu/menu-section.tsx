@@ -4,7 +4,9 @@ import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct, MenuSection as Section } from "@/lib/menu";
 import { categoryAnchor } from "./anchors";
 import { DishCard, type CardSpan } from "./dish-card";
+import { DishPosterRow } from "./dish-poster-row";
 import { DishRow } from "./dish-row";
+import { posterFontSize } from "./poster";
 import { toneFor } from "./tones";
 
 /**
@@ -25,12 +27,50 @@ export function cardSpans(products: Pick<MenuProduct, "image_path">[]): CardSpan
 /**
  * Sección de una categoría según el estilo de carta del local. `bento` (el predeterminado) lleva la banda de color pegajosa y la
  * grilla de cards; `clasica` y `minimal` llevan un título simple (la barra de categorías es fija y siempre visible, así que el
- * título no necesita quedar pegado) y una lista con puntos guía o una columna de cards con foto grande.
+ * título no necesita quedar pegado) y una lista con puntos guía o una columna de cards con foto grande; `afiche`, una banda de
+ * color con el título enorme y filas numeradas separadas por filetes gruesos.
  */
-export function MenuSection({ section, index, onSelect, lang, layout = "bento" }: { section: Section; index: number; onSelect?: (product: MenuProduct) => void; lang: Lang; layout?: Layout }) {
+export function MenuSection({
+  section,
+  index,
+  onSelect,
+  lang,
+  layout = "bento",
+  numbers,
+}: {
+  section: Section;
+  index: number;
+  onSelect?: (product: MenuProduct) => void;
+  lang: Lang;
+  layout?: Layout;
+  /** Número de cada plato en su categoría sin filtrar (`dishNumbers`); sin él, se numera según lo que se muestra. */
+  numbers?: Map<string, number>;
+}) {
   const { category, products } = section;
   const headingId = `${categoryAnchor(category.id)}-title`;
   const spans = cardSpans(products);
+
+  if (layout === "afiche") {
+    // Banda llena con el tono de la categoría (el mismo ciclo que el bento) y el nombre en la condensada, del ancho de la banda.
+    // No es pegajosa: con títulos de este tamaño taparía los platos; la barra fija dice en qué categoría se está.
+    return (
+      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="mt-12 scroll-mt-20 first:mt-6 sm:mt-16">
+        <div className={`-mx-4 px-4 pt-4 pb-3 sm:mx-0 sm:px-6 sm:pt-5 ${toneFor(index)}`}>
+          <div className="@container">
+            <h2 id={headingId} className="font-display leading-[0.85] text-balance [overflow-wrap:anywhere]" style={{ fontSize: posterFontSize(category.name, { min: 2.5, max: 13 }) }}>
+              {category.name}
+            </h2>
+          </div>
+          <p className="mt-2 text-right text-sm font-bold tracking-[0.1em] uppercase">{TEXTOS[lang].count.dishes(products.length)}</p>
+        </div>
+        <ul>
+          {products.map((product, i) => (
+            <DishPosterRow key={product.id} product={product} number={numbers?.get(product.id) ?? i + 1} onSelect={onSelect} lang={lang} />
+          ))}
+        </ul>
+      </section>
+    );
+  }
 
   if (layout !== "bento") {
     return (
