@@ -82,6 +82,9 @@ create table public.order_items (
   status text not null default 'noted',
   -- Clave que genera el cliente por toque: repetir la llamada con la misma no duplica la línea.
   client_key uuid not null,
+  -- Huella de la petición original (mesa, plato y cantidad): el reintento se compara con ella y no con `product_id`, que se
+  -- anula si el plato se borra después.
+  request_hash text not null,
   created_by uuid references auth.users (id) on delete set null,
   created_at timestamptz not null default clock_timestamp(),
   constraint order_items_name_check check (char_length(btrim(product_name)) between 1 and 200),
@@ -161,6 +164,7 @@ declare
   v_promo uuid;
   v_promo_name text;
   v_count integer;
+  v_hash text;
   v_item public.order_items%rowtype;
 begin
   if v_uid is null then
@@ -187,11 +191,10 @@ begin
 
   -- Mismo toque repetido a la vez: se serializa por clave, así la segunda llamada ve la línea de la primera.
   perform pg_advisory_xact_lock(hashtextextended(v_org::text || p_client_key::text, 0));
+  v_hash := md5(format('%s|%s|%s', p_table, p_product, p_quantity));
   select i.* into v_item from public.order_items i where i.organization_id = v_org and i.client_key = p_client_key;
   if found then
-    if v_item.product_id is distinct from p_product
-       or v_item.quantity <> p_quantity
-       or not exists (select 1 from public.orders o where o.id = v_item.order_id and o.table_id is not distinct from p_table) then
+    if v_item.request_hash <> v_hash then
       raise exception 'client_key_reused' using errcode = '22023';
     end if;
     return jsonb_build_object(
@@ -247,6 +250,12 @@ begin
     end if;
   end if;
 
+  -- Después de esperar los candados (clave y pedido) se vuelve a comprobar quién anota: una membresía, un plan o una mora que
+  -- cambiaron mientras esta llamada esperaba no la dejan pasar con la autorización de antes.
+  if not private.can_take_orders(v_org) then
+    raise exception 'orders_not_allowed' using errcode = '42501';
+  end if;
+
   select count(*) into v_count from public.order_items i where i.order_id = v_order;
   if v_count >= 200 then
     raise exception 'order_full' using errcode = '53400';
@@ -254,9 +263,9 @@ begin
 
   insert into public.order_items (
     organization_id, order_id, product_id, product_name, quantity, base_price_cents, unit_price_cents,
-    promotion_id, promotion_name, client_key, created_by
+    promotion_id, promotion_name, client_key, request_hash, created_by
   )
-  values (v_org, v_order, p_product, v_name, p_quantity, v_base, v_price, v_promo, v_promo_name, p_client_key, v_uid)
+  values (v_org, v_order, p_product, v_name, p_quantity, v_base, v_price, v_promo, v_promo_name, p_client_key, v_hash, v_uid)
   returning * into v_item;
 
   return jsonb_build_object(

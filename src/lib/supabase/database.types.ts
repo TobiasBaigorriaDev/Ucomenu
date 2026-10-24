@@ -275,14 +275,14 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "base_price_cents": number,"client_key": string,"created_at": string,"created_by": string | null,"id": string,"order_id": string,"organization_id": string,"product_id": string | null,"product_name": string,"promotion_id": string | null,"promotion_name": string | null,"quantity": number,"status": string,"unit_price_cents": number
+                    "base_price_cents": number,"client_key": string,"created_at": string,"created_by": string | null,"id": string,"order_id": string,"organization_id": string,"product_id": string | null,"product_name": string,"promotion_id": string | null,"promotion_name": string | null,"quantity": number,"request_hash": string,"status": string,"unit_price_cents": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "base_price_cents": number,"client_key": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id": string,"organization_id": string,"product_id"?: string | null,"product_name": string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity": number,"status"?: string,"unit_price_cents": number
+                    "base_price_cents": number,"client_key": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id": string,"organization_id": string,"product_id"?: string | null,"product_name": string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity": number,"request_hash": string,"status"?: string,"unit_price_cents": number
                   }
                   Update: {
-                    "base_price_cents"?: number,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id"?: string,"organization_id"?: string,"product_id"?: string | null,"product_name"?: string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity"?: number,"status"?: string,"unit_price_cents"?: number
+                    "base_price_cents"?: number,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id"?: string,"organization_id"?: string,"product_id"?: string | null,"product_name"?: string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity"?: number,"request_hash"?: string,"status"?: string,"unit_price_cents"?: number
                   }
                   Relationships: [
                     {

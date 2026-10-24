@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -214,6 +215,18 @@ describe("el reintento con client_key", () => {
     expect(cuenta("order_items", l.id)).toBe(1);
   });
 
+  it("repetir exactamente la petición después de que se borró el plato o la mesa devuelve la línea (no client_key_reused)", async () => {
+    const l = await nuevoLocal();
+    const clave = randomUUID();
+    const a = linea(await anotar(owner.db, l, { p_client_key: clave }));
+    expect((await service.from("products").delete().eq("id", l.product)).error).toBeNull();
+    const dePlato = await anotar(owner.db, l, { p_client_key: clave });
+    expect(linea(dePlato)).toMatchObject({ replayed: true, item_id: a.item_id });
+    expect((await service.from("tables").delete().eq("id", l.table)).error).toBeNull();
+    expect(linea(await anotar(owner.db, l, { p_client_key: clave })).replayed).toBe(true);
+    expect(cuenta("order_items", l.id)).toBe(1);
+  });
+
   it("el mismo toque repetido a la vez deja una sola línea", async () => {
     for (let i = 0; i < 3; i++) {
       const l = await nuevoLocal();
@@ -275,6 +288,31 @@ describe("quién anota: plan y mora", () => {
     expect((await anotar(stranger.db, otro, { p_product: l.product })).error?.message).toBe("product_unavailable");
     expect(cuenta("orders", l.id)).toBe(0);
     expect(cuenta("orders", otro.id)).toBe(0);
+  });
+});
+
+describe("la autorización se revalida después de esperar", () => {
+  it("una membresía revocada mientras la llamada espera el candado del pedido no la deja anotar", async () => {
+    const l = await nuevoLocal();
+    const primera = linea(await anotar(staff.db, l));
+    // Otra sesión retiene el candado del pedido unos segundos; la llamada del Staff queda esperando.
+    const retiene = spawn(
+      "docker",
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.orders where id = '${primera.order_id}' for update; select pg_sleep(4); commit;`],
+      { stdio: "ignore" },
+    );
+    await new Promise((r) => setTimeout(r, 2000));
+    // `.then` fuerza el envío: el cliente no manda la llamada hasta que alguien la espera.
+    const espera = anotar(staff.db, l).then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    // La llamada tiene que estar de verdad bloqueada esperando el candado del pedido.
+    expect(Number(sql("select count(*) from pg_stat_activity where wait_event_type = 'Lock' and query like '%add_order_item%'")[0][0])).toBeGreaterThanOrEqual(1);
+    const baja = await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", staff.id);
+    expect(baja.error).toBeNull();
+    expect((await espera).error?.message).toBe("orders_not_allowed");
+    await new Promise((r) => retiene.on("exit", r));
+    expect(cuenta("order_items", l.id)).toBe(1);
+    await addMembership(service, staff, l.id, "staff");
   });
 });
 
@@ -343,8 +381,8 @@ describe("qué rechaza", () => {
     const l = await nuevoLocal();
     const primera = linea(await anotar(owner.db, l));
     sql(`
-      insert into public.order_items (organization_id, order_id, product_id, product_name, quantity, base_price_cents, unit_price_cents, client_key)
-      select '${l.id}', '${primera.order_id}', '${l.product}', 'Cerveza', 1, 1000, 1000, gen_random_uuid() from generate_series(1, 199)`);
+      insert into public.order_items (organization_id, order_id, product_id, product_name, quantity, base_price_cents, unit_price_cents, client_key, request_hash)
+      select '${l.id}', '${primera.order_id}', '${l.product}', 'Cerveza', 1, 1000, 1000, gen_random_uuid(), 'x' from generate_series(1, 199)`);
     expect(cuenta("order_items", l.id)).toBe(200);
     expect((await anotar(owner.db, l)).error?.message).toBe("order_full");
     expect(cuenta("order_items", l.id)).toBe(200);
@@ -352,11 +390,20 @@ describe("qué rechaza", () => {
     expect(linea(await anotar(owner.db, l, { p_table: l.table2 })).replayed).toBe(false);
   });
 
-  it("si la línea falla, el pedido recién abierto tampoco queda (una sola transacción)", async () => {
+  it("si la línea falla DESPUÉS de abrir el pedido, el pedido recién abierto tampoco queda (una sola transacción)", async () => {
     const l = await nuevoLocal();
-    await service.from("product_availability").insert({ organization_id: l.id, branch_id: l.branch, product_id: l.product, is_available: false });
-    await anotar(owner.db, l);
+    // Un disparador de prueba hace fallar el INSERT de la línea, cuando el pedido ya se abrió dentro de la misma llamada.
+    sql(`create function public.tt_falla_linea() returns trigger language plpgsql as $$ begin raise exception 'tt_falla'; end $$`);
+    sql(`create trigger tt_falla_linea before insert on public.order_items for each row when (new.organization_id = '${l.id}') execute function public.tt_falla_linea()`);
+    try {
+      expect((await anotar(owner.db, l)).error?.message).toContain("tt_falla");
+    } finally {
+      sql("drop trigger tt_falla_linea on public.order_items");
+      sql("drop function public.tt_falla_linea()");
+    }
     expect(cuenta("orders", l.id)).toBe(0);
+    expect(cuenta("order_items", l.id)).toBe(0);
+    expect(linea(await anotar(owner.db, l)).replayed).toBe(false);
   });
 });
 
@@ -380,7 +427,7 @@ describe("lectura y escritura por la API", () => {
     const l = await nuevoLocal();
     const a = linea(await anotar(owner.db, l));
     const pedido = { organization_id: l.id, branch_id: l.branch, table_id: l.table2, table_label: "Mesa 2" };
-    const item = { organization_id: l.id, order_id: a.order_id, product_name: "Cerveza", quantity: 1, base_price_cents: 1000, unit_price_cents: 1, client_key: randomUUID() };
+    const item = { organization_id: l.id, order_id: a.order_id, product_name: "Cerveza", quantity: 1, base_price_cents: 1000, unit_price_cents: 1, client_key: randomUUID(), request_hash: "x" };
     for (const [quien, db] of [["Dueño", owner.db], ["Staff", staff.db], ["anon", anonClient()], ["servicio", service]] as const) {
       expect((await db.from("orders").insert(pedido)).error?.code, `${quien}: insert orders`).toMatch(/42501|PGRST/);
       expect((await db.from("order_items").insert(item)).error?.code, `${quien}: insert order_items`).toMatch(/42501|PGRST/);
