@@ -16,11 +16,20 @@
 -- invalid_status / invalid_transition / invalid_reason / reason_required / invalid_quantity / invalid_note · 55000 order_not_open /
 -- item_not_editable. Repetir una transición ya aplicada devuelve `unchanged: true` sin escribir ni registrar.
 --
--- Rollback (local): git revert + `pnpm db:reset`. En una base con datos reales: `drop function` de las cuatro funciones; las columnas y
--- el `check` de estados se pueden dejar. Si `order_events` tiene filas se CONSERVA junto con `private.purge_organization_order_events`
--- y ESTA versión de `admin_delete_organization` (la anterior no lo purga y el borrado de esas organizaciones fallaría por el RESTRICT);
--- sin filas: `drop table public.order_events; drop function private.record_order_event(), private.order_events_append_only(),
--- private.purge_organization_order_events(uuid);` y volver a crear `admin_delete_organization` con el cuerpo de 20261123100000.
+-- Rollback (local): git revert + `pnpm db:reset`. En una base con datos reales, TODO en una sola transacción y en este orden:
+--   begin;
+--   drop function public.set_order_item_status(uuid, text, text), public.update_order_item(uuid, integer, text),
+--                 public.close_order(uuid), public.void_order(uuid, text);
+--   -- las columnas y el `check` de estados se pueden dejar. Si `order_events` tiene filas se CONSERVA junto con sus triggers, con
+--   -- `private.purge_organization_order_events` y con ESTA versión de `admin_delete_organization` (la anterior no lo purga y el
+--   -- borrado de esas organizaciones fallaría por el RESTRICT). Sin filas:
+--   drop trigger orders_record_insert on public.orders;           drop trigger orders_record_update on public.orders;
+--   drop trigger order_items_record_insert on public.order_items;  drop trigger order_items_record_update on public.order_items;
+--   drop table public.order_events;
+--   drop function private.record_order_event(), private.order_events_append_only(), private.purge_organization_order_events(uuid);
+--   -- y volver a crear `admin_delete_organization` con el cuerpo de 20261123100000.
+--   commit;
+-- Los triggers van primero: si se borra la tabla antes, `add_order_item` falla al intentar registrar.
 
 begin;
 
@@ -327,6 +336,10 @@ begin
   if not found then
     raise exception 'item_not_found' using errcode = 'P0002';
   end if;
+  -- El candado de la línea es OTRA espera (la retiene, por ejemplo, el borrado de un plato): se vuelve a comprobar quién llama.
+  if not private.can_take_orders(v_org) then
+    raise exception 'orders_not_allowed' using errcode = '42501';
+  end if;
 
   if v_item.status = p_status then
     return jsonb_build_object('order_id', v_order, 'item_id', p_item, 'status', v_item.status, 'unchanged', true);
@@ -394,6 +407,10 @@ begin
   select i.* into v_item from public.order_items i where i.id = p_item for update;
   if not found then
     raise exception 'item_not_found' using errcode = 'P0002';
+  end if;
+  -- El candado de la línea es OTRA espera: se vuelve a comprobar quién llama.
+  if not private.can_take_orders(v_org) then
+    raise exception 'orders_not_allowed' using errcode = '42501';
   end if;
   if v_order_status <> 'open' then
     raise exception 'order_not_open' using errcode = '55000';

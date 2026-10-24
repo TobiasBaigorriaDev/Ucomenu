@@ -332,6 +332,37 @@ describe("la autorización se revalida después de esperar el candado del pedido
   });
 });
 
+describe("la autorización se revalida también después de esperar el candado de la LÍNEA", () => {
+  /** Otra sesión retiene solo la fila de la línea (no el pedido): la llamada pasa el candado del pedido y queda esperando la línea. */
+  async function revocandoMientrasEsperaLaLinea(l: Local, item: string, llamada: () => PromiseLike<Resp>): Promise<Resp> {
+    const retiene = spawn(
+      "docker",
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.order_items where id = '${item}' for update; select pg_sleep(4); commit;`],
+      { stdio: "ignore" },
+    );
+    const termino = new Promise((r) => retiene.on("exit", r));
+    await new Promise((r) => setTimeout(r, 2000));
+    const espera = llamada().then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    expect(Number(sql("select count(*) from pg_stat_activity where wait_event_type = 'Lock' and (query like '%set_order_item_status%' or query like '%update_order_item%')")[0][0])).toBeGreaterThanOrEqual(1);
+    expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", staff.id)).error).toBeNull();
+    const r = await espera;
+    await termino;
+    await addMembership(service, staff, l.id, "staff");
+    return r;
+  }
+
+  it("estado y modificar: una membresía revocada mientras esperan la fila de la línea no las deja pasar", async () => {
+    const l = await nuevoLocal();
+    const { item } = await conLinea(l);
+    const e = await revocandoMientrasEsperaLaLinea(l, item, () => estado(staff.db, item, "cancelled", "x"));
+    expect(e.error?.message).toBe("orders_not_allowed");
+    const m = await revocandoMientrasEsperaLaLinea(l, item, () => editar(staff.db, item, 7));
+    expect(m.error?.message).toBe("orders_not_allowed");
+    expect(await fila(item)).toMatchObject({ status: "noted", quantity: 1, cancel_reason: null });
+  });
+});
+
 describe("dos mozos a la vez", () => {
   it("el mismo cambio dos veces: uno cambia y el otro recibe unchanged; transiciones contrarias: una gana", async () => {
     const l = await nuevoLocal();
