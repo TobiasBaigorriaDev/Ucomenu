@@ -71,7 +71,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora → [ficha](cambios/pedidos-estados-y-registro.md) (hecho, en staging)
 - [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta» → [ficha](cambios/sala-mesas-y-total.md) (hecho en local, 2026-10-24)
 - [M] Pantalla «Anotar» en la Sala: elegir plato con variantes, cantidad y observación → [ficha](cambios/sala-anotar-pedido.md) (hecho, en staging, 2026-10-24)
-- [M] Operar el pedido desde la Sala: cambiar estados, modificar y cancelar líneas, cerrar y anular (usa las funciones de base del ítem 3)
+- [M] Operar el pedido desde la Sala: cambiar estados, modificar y cancelar líneas, cerrar y anular → [ficha](cambios/sala-operar-pedido.md) (hecho en local, 2026-10-24; falta aprobación y staging)
 - [C] Cierre con precuenta «no válida como factura», retención (2 años, a confirmar con el contador) y purga en el borrado de la organización
 - [M] Analítica de pedidos para el Dueño (opcional)
 

@@ -54,6 +54,11 @@ async function abrirAnotar(page: Page, l: Awaited<ReturnType<typeof nuevoLocal>>
   await expect(page.getByTestId("anotar-mesa")).toHaveText("Mesa 1");
 }
 
+async function abrirCarta(page: Page) {
+  await page.getByTestId("abrir-carta").click();
+  await expect(page.getByTestId("hoja-carta")).toBeVisible();
+}
+
 const plato = (page: Page, nombre: string) => page.locator(`[data-testid="plato"][data-plato="${nombre}"]`);
 
 test.afterAll(async () => {
@@ -69,7 +74,8 @@ test.describe("anotar un pedido", () => {
     await expect(page.getByTestId("sin-lineas")).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    // La carta de la sucursal: lo oculto no está, lo agotado no se puede tocar.
+    // La carta de la sucursal (en su hoja): lo oculto no está, lo agotado no se puede tocar.
+    await abrirCarta(page);
     await expect(plato(page, "Plato oculto")).toHaveCount(0);
     await expect(plato(page, "Lomo agotado")).toBeDisabled();
     await expect(page.getByTestId("carta")).toContainText("Agotado en esta sucursal");
@@ -103,7 +109,6 @@ test.describe("anotar un pedido", () => {
     await confirmar.click();
 
     await expect(hoja).toHaveCount(0);
-    await expect(page.getByTestId("anotado")).toContainText("Anotado: 2 × Bife de chorizo");
     const linea = page.getByTestId("linea");
     await expect(linea).toHaveCount(1);
     await expect(linea).toContainText("2 × Bife de chorizo");
@@ -111,6 +116,9 @@ test.describe("anotar un pedido", () => {
     await expect(linea).toContainText("«sin sal»");
     await expect(linea).toContainText("Anotado");
     await expect(page.getByTestId("pedido-total")).toHaveAttribute("data-centavos", "25000");
+    // La hoja de la carta sigue abierta para anotar el próximo plato.
+    await expect(page.getByTestId("hoja-carta")).toBeVisible();
+    await expect(page.getByTestId("hoja-carta").getByTestId("anotado")).toContainText("Anotado: 2 × Bife de chorizo");
 
     // Lo que la base guardó: el precio lo puso ella, las opciones quedaron copiadas.
     const fila = await service()
@@ -125,6 +133,8 @@ test.describe("anotar un pedido", () => {
     await page.getByLabel("Buscar plato").fill("flan");
     await plato(page, "Flan casero").click();
     await page.getByTestId("anotar-confirmar").click();
+    await page.getByTestId("carta-listo").click();
+    await expect(page.getByTestId("hoja-carta")).toHaveCount(0);
     await expect(page.getByTestId("linea")).toHaveCount(2);
     await expect(page.getByTestId("pedido-total")).toHaveAttribute("data-centavos", "28000");
     await page.getByRole("link", { name: "← Mesas" }).click();
@@ -140,12 +150,17 @@ test.describe("anotar un pedido", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await abrirAnotar(page, l, "owner");
+    await abrirCarta(page);
     await plato(page, "Flan casero").click();
     await page.getByRole("button", { name: "Cerrar sin anotar" }).click();
     await expect(page.getByTestId("hoja-anotar")).toHaveCount(0);
+    await expect(page.getByTestId("hoja-carta")).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar la carta" }).click();
+    await expect(page.getByTestId("hoja-carta")).toHaveCount(0);
     await expect(page.getByTestId("sin-lineas")).toBeVisible();
     expect((await service().from("order_items").select("id").eq("organization_id", l.t.orgId)).data).toHaveLength(0);
 
+    await abrirCarta(page);
     await plato(page, "Flan casero").click();
     await expect(page.getByTestId("anotar-confirmar")).toBeEnabled();
     await page.getByTestId("anotar-confirmar").click();
@@ -159,6 +174,7 @@ test.describe("anotar un pedido", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await abrirAnotar(page, l);
+    await abrirCarta(page);
     await plato(page, "Flan casero").click();
 
     // La primera vez la acción llega al servidor y se anota, pero la respuesta nunca vuelve al navegador.
@@ -178,7 +194,7 @@ test.describe("anotar un pedido", () => {
 
     // Volver a tocar «Anotar» usa la misma clave: la base devuelve la línea ya anotada.
     await page.getByTestId("anotar-confirmar").click();
-    await expect(page.getByTestId("anotado")).toContainText("Ya estaba anotado");
+    await expect(page.getByTestId("hoja-carta").getByTestId("anotado")).toContainText("Ya estaba anotado");
     await expect(page.getByTestId("linea")).toHaveCount(1);
     expect((await service().from("order_items").select("id").eq("organization_id", l.t.orgId)).data).toHaveLength(1);
     await ctx.close();
@@ -189,6 +205,7 @@ test.describe("anotar un pedido", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await abrirAnotar(page, l);
+    await abrirCarta(page);
     await plato(page, "Flan casero").click();
     // Otra persona agota el plato en la sucursal después de que se cargó la pantalla.
     const r = await service().from("product_availability").insert({ organization_id: l.t.orgId, branch_id: l.branch, product_id: l.flan, is_available: false, is_visible: true, price_cents: null });

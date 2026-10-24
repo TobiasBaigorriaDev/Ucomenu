@@ -50,6 +50,8 @@ export type AnotarLine = {
   unitPriceCents: number;
   optionsCents: number;
   note: string | null;
+  /** Motivo con que se canceló la línea (solo si está cancelada y se dio uno). */
+  cancelReason: string | null;
   options: AnotarLineOption[];
 };
 
@@ -59,6 +61,8 @@ export type AnotarData = {
   table: { id: string; label: string; branchId: string; branchName: string };
   multiBranch: boolean;
   sections: AnotarSection[];
+  /** El pedido abierto de la mesa, o `null` si no hay (aunque esté abierto y sin líneas vivas, tiene id: se puede cerrar). */
+  orderId: string | null;
   /** Líneas del pedido abierto de la mesa (vacío = sin pedido), de la más antigua a la más nueva. */
   lines: AnotarLine[];
 };

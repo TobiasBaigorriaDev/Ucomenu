@@ -217,7 +217,7 @@ describe("las líneas del pedido abierto de la mesa", () => {
     const a = await anotar(owner.db, l.centro.branch, mesa.id, bife, { p_quantity: 2, p_options: [g.opciones[0].id, g.opciones[1].id], p_note: "  sin sal " });
     const b = await anotar(staff.db, l.centro.branch, mesa.id, bife);
     expect((await owner.db.rpc("set_order_item_status", { p_item: a.item_id, p_status: "delivered" })).error).toBeNull();
-    expect((await owner.db.rpc("set_order_item_status", { p_item: b.item_id, p_status: "cancelled" })).error).toBeNull();
+    expect((await owner.db.rpc("set_order_item_status", { p_item: b.item_id, p_status: "cancelled", p_reason: "Se equivocó" })).error).toBeNull();
 
     const lines = await loadTableLines(staff.db, l.id, mesa.id);
     expect(lines).toHaveLength(2);
@@ -226,13 +226,46 @@ describe("las líneas del pedido abierto de la mesa", () => {
       ["Extras", "Bacon", 1500],
       ["Extras", "Huevo", 1000],
     ]);
-    expect(lines[1]).toMatchObject({ status: "cancelled", note: null, options: [] });
+    expect(lines[0].cancelReason).toBeNull();
+    expect(lines[1]).toMatchObject({ status: "cancelled", note: null, options: [], cancelReason: "Se equivocó" });
 
     // También la ve la pantalla de la mesa completa.
     const data = await loadAnotar(owner.db, l.id, mesa.id);
     expect(data?.lines.map((x) => x.status)).toEqual(["delivered", "cancelled"]);
+    expect(data?.orderId).toBe(a.order_id);
     // Y la otra mesa, nada.
     expect(await loadTableLines(owner.db, l.id, l.centro.mesas[1].id)).toEqual([]);
+    expect((await loadAnotar(owner.db, l.id, l.centro.mesas[1].id))?.orderId).toBeNull();
+  });
+
+  it("un pedido abierto sin líneas vivas (todo cancelado) conserva su id: se puede cerrar", async () => {
+    const l = await nuevoLocal();
+    const cat = await l.categoria();
+    const bife = await l.plato(cat, "Bife", 10000);
+    const mesa = l.centro.mesas[0];
+    const a = await anotar(owner.db, l.centro.branch, mesa.id, bife);
+    expect((await owner.db.rpc("set_order_item_status", { p_item: a.item_id, p_status: "cancelled" })).error).toBeNull();
+    const data = await loadAnotar(staff.db, l.id, mesa.id);
+    expect(data?.orderId).toBe(a.order_id);
+    expect(data?.lines.map((x) => x.status)).toEqual(["cancelled"]);
+  });
+
+  it("si el plan se baja con un pedido abierto, la pantalla lo sigue trayendo (para cerrarlo o anularlo) pero sin carta", async () => {
+    const l = await nuevoLocal();
+    const cat = await l.categoria();
+    const bife = await l.plato(cat, "Bife", 10000);
+    const mesa = l.centro.mesas[0];
+    const a = await anotar(owner.db, l.centro.branch, mesa.id, bife, { p_quantity: 2 });
+    expect((await service.from("subscriptions").update({ plan_code: "basic" }).eq("organization_id", l.id)).error).toBeNull();
+    for (const quien of [owner, staff]) {
+      const data = await loadAnotar(quien.db, l.id, mesa.id);
+      expect(data).toMatchObject({ enabled: false, sections: [], orderId: a.order_id });
+      expect(data?.lines).toHaveLength(1);
+      // Cerrar sí se puede aunque el plan ya no lo incluya (ADR 0041, decisión 5)…
+    }
+    expect((await staff.db.rpc("close_order", { p_order: a.order_id })).error).toBeNull();
+    // …y después la mesa queda sin pedido.
+    expect(await loadAnotar(owner.db, l.id, mesa.id)).toMatchObject({ enabled: false, orderId: null, lines: [] });
   });
 
   it("un pedido cerrado o anulado no se lista: la mesa vuelve a estar libre y un pedido nuevo empieza de cero", async () => {

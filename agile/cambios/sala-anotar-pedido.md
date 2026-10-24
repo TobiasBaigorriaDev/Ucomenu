@@ -1,4 +1,6 @@
 # Cambio: Pantalla «Anotar» en la Sala (anotar un plato con sus opciones)
+> **Nota posterior:** la ficha [operar el pedido](sala-operar-pedido.md) movió la carta a una hoja que se abre desde «Anotar plato» (barra fija abajo). Las reglas de esta ficha siguen igual; la disposición de la decisión 1 es la anterior.
+
 Estado: **implementado, aprobado por el usuario (2026-10-24, tras probarlo en local) y desplegado en staging (Fly versión 47)**; falta probarlo con sesión real en staging. No hay migración. Quinta pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisiones 1 y 2), primera mitad del ítem «Anotar y operar pedidos desde la Sala»; la segunda (estados, cancelar, cerrar y anular) es la ficha siguiente.
 Nivel: **M** — solo agrega una pantalla sobre `add_order_item`, ya revisada (C) y en staging: el precio, las opciones, los mínimos y máximos y la autorización los decide la base. La pantalla no calcula nada que se cobre, no cambia esquema, permisos ni dinero. Sin revisión independiente por defecto.
 

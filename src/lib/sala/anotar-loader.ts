@@ -25,15 +25,20 @@ const byCreated = (a: { createdAt: string; id: string }, b: { createdAt: string;
  * que un estado inventado).
  */
 export async function loadTableLines(db: Db, orgId: string, tableId: string): Promise<AnotarLine[]> {
+  return (await loadTableOrder(db, orgId, tableId)).lines;
+}
+
+/** El pedido abierto de una mesa (su id, aunque no tenga líneas vivas) y sus líneas. Sin pedido abierto: `orderId: null` y sin líneas. */
+export async function loadTableOrder(db: Db, orgId: string, tableId: string): Promise<{ orderId: string | null; lines: AnotarLine[] }> {
   const order = await db.from("orders").select("id").eq("organization_id", orgId).eq("table_id", tableId).eq("status", "open").maybeSingle();
   if (order.error) throw new Error(`No se pudo leer el pedido de la mesa: ${order.error.message}`);
-  if (!order.data) return [];
+  if (!order.data) return { orderId: null, lines: [] };
   const orderId = order.data.id;
 
   const items = await readAllByKey((after, limit) => {
     const query = db
       .from("order_items")
-      .select("id, product_name, quantity, status, unit_price_cents, options_cents, note, created_at")
+      .select("id, product_name, quantity, status, unit_price_cents, options_cents, note, cancel_reason, created_at")
       .eq("organization_id", orgId)
       .eq("order_id", orderId);
     return (after ? query.gt("id", after) : query).order("id").limit(limit);
@@ -60,7 +65,7 @@ export async function loadTableLines(db: Db, orgId: string, tableId: string): Pr
     }
   }
 
-  return rows
+  const lines = rows
     .filter((row) => isLineStatus(row.status))
     .sort((a, b) => byCreated({ createdAt: a.created_at, id: a.id }, { createdAt: b.created_at, id: b.id }))
     .map((row) => ({
@@ -71,16 +76,18 @@ export async function loadTableLines(db: Db, orgId: string, tableId: string): Pr
       unitPriceCents: row.unit_price_cents,
       optionsCents: Number(row.options_cents),
       note: row.note,
+      cancelReason: row.cancel_reason,
       options: (optionsOf.get(row.id) ?? [])
         .sort(byCreated)
         .map(({ group, name, deltaCents }) => ({ group, name, deltaCents })),
     }));
+  return { orderId, lines };
 }
 
 /**
  * Lo que necesita la pantalla «Anotar» de una mesa: la carta de SU sucursal (solo lo activo, sin lo oculto en esa sucursal, con el
  * precio efectivo de ahora y lo agotado marcado) y el pedido abierto. `null` si la mesa no existe, no es del local o está inactiva (o
- * su sucursal). Si el plan o la cuenta no permiten pedidos, `enabled: false` y no se lee la carta. Cliente de la PERSONA (RLS). Lanza si la
+ * su sucursal). Si el plan o la cuenta no permiten pedidos, `enabled: false`, no se lee la carta y solo se trae el pedido abierto, si lo hay. Cliente de la PERSONA (RLS). Lanza si la
  * base falla. Lecturas paginadas por clave: PostgREST corta cada lectura en 1000 filas sin avisar.
  */
 export async function loadAnotar(db: Db, orgId: string, tableId: string): Promise<AnotarData | null> {
@@ -101,9 +108,14 @@ export async function loadAnotar(db: Db, orgId: string, tableId: string): Promis
 
   const ent = await db.rpc("org_entitlements", { p_org: orgId });
   if (ent.error) throw new Error(`No se pudo leer el estado de la cuenta: ${ent.error.message}`);
-  if (parseEntitlements(ent.data)?.features.includes("orders") !== true) return { ...base, enabled: false, sections: [], lines: [] };
+  if (parseEntitlements(ent.data)?.features.includes("orders") !== true) {
+    // Sin la función no se anota ni se cambia nada, pero un pedido que ya estaba abierto se sigue viendo: cerrarlo o anularlo nunca se
+    // bloquea por plan ni por mora (ADR 0041, decisión 5).
+    const open = await loadTableOrder(db, orgId, tableId);
+    return { ...base, enabled: false, sections: [], ...open };
+  }
 
-  const [categories, products, groups, options, settings, prices, lines] = await Promise.all([
+  const [categories, products, groups, options, settings, prices, order] = await Promise.all([
     readAllByKey((after, limit) => {
       const query = db.from("categories").select("id, name, sort_order").eq("organization_id", orgId).eq("is_active", true);
       return (after ? query.gt("id", after) : query).order("id").limit(limit);
@@ -124,7 +136,7 @@ export async function loadAnotar(db: Db, orgId: string, tableId: string): Promis
     // Las promociones en curso de la sucursal, de la misma función que usa la base al anotar: devuelve UNA FILA POR PLATO CON PROMOCIÓN
     // (los demás valen su precio de la sucursal o el base). Es la vista previa: el precio que se cobra lo calcula `add_order_item`.
     db.rpc("effective_prices", { p_branch: branch.id, p_product: undefined, p_at: undefined }),
-    loadTableLines(db, orgId, tableId),
+    loadTableOrder(db, orgId, tableId),
   ]);
   if (categories.error) throw new Error(`No se pudieron leer las categorías: ${categories.error.message}`);
   if (products.error) throw new Error(`No se pudieron leer los platos: ${products.error.message}`);
@@ -178,5 +190,5 @@ export async function loadAnotar(db: Db, orgId: string, tableId: string): Promis
     return list && list.length > 0 ? [{ categoryId: category.id, name: category.name, products: list }] : [];
   });
 
-  return { ...base, enabled: true, sections, lines };
+  return { ...base, enabled: true, sections, ...order };
 }

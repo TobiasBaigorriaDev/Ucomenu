@@ -4,9 +4,11 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-**S3 «Pedidos del mozo»:** los tres primeros ítems son solo base de datos, aprobados y **en staging**: [esquema](cambios/pedidos-esquema-y-alta-de-items.md), [opciones](cambios/pedidos-variantes-adicionales-observaciones.md) y [estados y registro](cambios/pedidos-estados-y-registro.md) (migración `20261128100000`). Siguiente migración libre: `20261129100000`. El cuarto, [vista «Mesas»](cambios/sala-mesas-y-total.md), está desplegado en staging (Fly versión 46).
+**S3 «Pedidos del mozo»:** base de datos en staging ([esquema](cambios/pedidos-esquema-y-alta-de-items.md), [opciones](cambios/pedidos-variantes-adicionales-observaciones.md), [estados](cambios/pedidos-estados-y-registro.md); migración `20261128100000`; siguiente libre: `20261129100000`) y [vista «Mesas»](cambios/sala-mesas-y-total.md) (Fly 46).
 
-**Quinto ítem hecho y desplegado en staging, Fly versión 47** (M): [pantalla «Anotar»](cambios/sala-anotar-pedido.md): `/sala/{slug}/mesas/{mesa}/anotar` con la carta de la sucursal, panel de plato (cantidad, variantes, adicionales, observación) y `addOrderItemAction` sobre `add_order_item`. Sin migración. Commit `1b217a4`; aprobado por el usuario tras probarlo en local. Falta probarlo con sesión real en staging.
+**Quinto ítem desplegado en staging, Fly versión 47** (M): [pantalla «Anotar»](cambios/sala-anotar-pedido.md) sobre `add_order_item` (commit `1b217a4`). Falta probarlo con sesión real en staging.
+
+**Sexto ítem hecho en local, sin commitear** (M): [operar el pedido](cambios/sala-operar-pedido.md): en la misma pantalla, acciones por línea (en cocina, entregado, modificar, cancelar con confirmación y motivo si ya se entregó), «Cerrar / anular», y la carta pasó a una hoja abierta desde la barra fija de abajo. Sin migración. Pruebas verdes. **Falta:** que el usuario lo pruebe y apruebe, commit y despliegue.
 
 Local: `cafe-ejemplo` quedó en plan Pro en la base local (`pnpm db:reset` lo restaura).
 
@@ -21,6 +23,5 @@ Demo en staging: `/m/la-bestia/centro` (Afiche) y `/m/aurelia/centro` (Minimal),
 
 ## Próximo paso
 
-1. Probar «Anotar» en staging con un local Pro con Dueño (los demos no tienen).
-2. **Ítem [M] «Operar el pedido desde la Sala»**: cambiar estados, modificar y cancelar líneas, cerrar y anular (las funciones ya existen). Ahí conviene repensar el orden de la pantalla (hoy el pedido va arriba y la carta debajo).
-3. Después, la ficha de cierre (C): precuenta «no válida como factura», retención de 2 años y su purga. Pendiente urgente: **rotar la `service_role` legacy de staging**.
+1. Probar «operar el pedido» en local, aprobarlo, commitear y desplegar a staging; probar «Anotar» y «Operar» en staging con un local Pro con Dueño (los demos no tienen).
+2. Después, la ficha de cierre (C): precuenta «no válida como factura», retención de 2 años y su purga. Falta que desde «Mesas» se llegue a una mesa con pedido abierto cuando el plan ya no incluye los pedidos (hoy solo por URL). Pendiente urgente: **rotar la `service_role` legacy de staging**.
