@@ -135,7 +135,9 @@ test.describe("vista Mesas", () => {
     const l = await nuevoLocal("mesas-ruta");
     const otro = await nuevoLocal("mesas-ruta-otro");
     const sinSesion = await request.get(`/sala/${l.t.slug}/mesas/estado`, { maxRedirects: 0 });
-    expect([401, 307, 308]).toContain(sinSesion.status());
+    expect(sinSesion.status()).toBe(401);
+    expect(await sinSesion.json()).toEqual({ error: "no_session" });
+    expect(sinSesion.headers()["cache-control"]).toContain("no-store");
 
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
