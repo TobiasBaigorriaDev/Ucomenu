@@ -2,6 +2,8 @@
 
 Estado: **Hecho** (2026-10-17; cargada en staging por pedido del usuario). Nivel **S/M**: herramienta de demostración, datos y fotos ficticios, sin cambios de esquema ni de la aplicación.
 
+> **Actualización (2026-10-24):** a pedido del usuario, `demo` («Café Demo») y `prueba-videos` salieron de staging y `tools/sembrar-demo-staging.mjs` carga ahora **dos locales nuevos** definidos en `tools/demo/locales-staging.mjs`: «La Bestia Burger & Bar» (`/m/la-bestia/centro`, Afiche + Carbón, 25 platos, 22 con foto) y «Aurelia Alta Cocina» (`/m/aurelia/centro`, Minimal + Borgoña, 25 platos, 23 con foto). `prueba-videos` se borró entera (con su asset de Mux); `demo` quedó **vacía y de baja** porque su historial de promociones solo se purga con el borrado oficial (30 días de baja): borrarla de `/admin` a partir del 2026-11-23. Se borraron además sus 2 assets de Mux. Sin Dueño asignado: sumarlo desde SuperAdmin. El resto de esta ficha describe la herramienta original.
+
 ## Qué es
 Una organización propia, `demo` («Café Demo», sucursal `centro`, `/m/demo/centro`), con 6 categorías, 26 platos (24 con foto), variantes y adicionales, etiquetas dietarias, un plato agotado, 4 mesas, logo y plan Pro vigente por unos 700 días (para que no caduque como la prueba de 14 días). No toca ninguna otra organización.
 

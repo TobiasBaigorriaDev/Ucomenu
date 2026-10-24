@@ -26,6 +26,22 @@ export const FOTO = {
   bondiola: "1432139555190-58524dae6a55", burger: "1551782450-a2132b4ba21d", ensaladaMixta: "1540189549336-e6e99c3679fe",
   ensaladaPasta: "1473093295043-cdd812d0e601", vino: "1510812431401-41d2bd2722f3", oldFashioned: "1470337458703-46ad1756a187",
   coctel: "1514362545857-3bc16c4c7d1b", coctelAutor: "1544145945-f90425340c7e", gaseosa: "1556679343-c7306c1976bc",
+  // La Bestia Burger & Bar (staging)
+  bestia: "1568901346375-23c9450c58cd", clasica: "1571091718767-18b5b1457add", dobleBacon: "1553979459-d2229ba7433b",
+  dobleCheddar: "1572802419224-296b0aeee0d9", smash: "1607013251379-e6eecfffe234", diabla: "1596662951482-0c4ba74a6df6",
+  sliders: "1550547660-d9450f859349", papasParmesano: "1573080496219-bb080dd4f877", papasCajun: "1541592106381-b31e9677c0e5",
+  aros: "1639024471283-03518883512d", alitas: "1527477396000-e27163b481c2", tiras: "1562967914-608f82629710",
+  perro: "1619740455993-9e612b1af08a", pinta: "1608270586620-248524c67de9", botellas: "1436076863939-06870fe779c2",
+  jarra: "1575037614876-c38a4d44f5b8", mojito: "1551538827-9c037cb4f32a", tragoBestia: "1536935338788-846bb9981813",
+  shakeOreo: "1572490122747-3968b75cc699", shakeFrutilla: "1579954115545-a95591f28bfc", cookieGigante: "1621236378699-8597faf6a176",
+  // Aurelia (staging)
+  langostinos: "1559737558-2f5a35f4523b", gambas: "1625943553852-781c6dd46faa", quesos: "1452195100486-9cc805987862",
+  platoAutor: "1514326640560-7d063ef2aed5", medallon: "1432139509613-5c4255815697", lomoEsparragos: "1546964124-0cce460f38ef",
+  ojoBife: "1529692236671-f1f6cf9683ba", salmonFino: "1467003909585-2f8a72700288", pesca: "1476224203421-9ac39bcb3327",
+  degustacion: "1414235077428-338989a2e8c0", arrozMariscos: "1515443961218-a51367888e4b", bisque: "1559847844-5315695dadae",
+  pannaCotta: "1488477181946-6428a0291777", tartaLimon: "1519915028121-7d3463d20b13", macarons: "1470124182917-cc6e71b22ecc",
+  tiramisu: "1571877227200-a0d98ea607e9", crepes: "1587314168485-3236d6710814", espumante: "1547595628-c61a29f496f0",
+  malbec: "1506377247377-2a5b3b417ebb", cabernet: "1553361371-9b22f78e8b1d", cocteles: "1551024709-8f23befc6f87",
 };
 
 export const GF = "gluten_free";
@@ -233,6 +249,8 @@ export async function descargar(fotoId) {
 const GLIFOS = {
   taza: `<path d="M40 52h40v20a20 20 0 0 1-40 0z"/><path d="M80 56h6a8 8 0 0 1 0 16h-7" fill="none"/><path d="M34 96h52" fill="none"/><path d="M52 40c-4-6 4-8 0-14M66 40c-4-6 4-8 0-14" fill="none"/>`,
   llama: `<path d="M60 22c7 14 22 22 22 42a22 22 0 0 1-44 0c0-9 4-15 9-19 2 8 6 10 9 10-3-13-1-24 4-33z" stroke="none"/>`,
+  hamburguesa: `<path d="M28 54a32 24 0 0 1 64 0z" stroke="none"/><rect x="26" y="60" width="68" height="10" rx="5" stroke="none"/><path d="M28 75h64v3a12 12 0 0 1-12 12H40a12 12 0 0 1-12-12z" stroke="none"/>`,
+  cloche: `<path d="M22 78a38 38 0 0 1 76 0z" stroke="none"/><circle cx="60" cy="34" r="6" stroke="none"/><rect x="16" y="83" width="88" height="7" rx="3.5" stroke="none"/>`,
 };
 
 export async function logo({ fondo, trazo, glifo }) {
