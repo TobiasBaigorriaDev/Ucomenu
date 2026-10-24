@@ -8,7 +8,7 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 **Quinto ítem desplegado en staging, Fly versión 47** (M): [pantalla «Anotar»](cambios/sala-anotar-pedido.md) sobre `add_order_item` (commit `1b217a4`). Falta probarlo con sesión real en staging.
 
-**Sexto ítem hecho en local, sin commitear** (M): [operar el pedido](cambios/sala-operar-pedido.md): en la misma pantalla, acciones por línea (en cocina, entregado, modificar, cancelar con confirmación y motivo si ya se entregó), «Cerrar / anular», y la carta pasó a una hoja abierta desde la barra fija de abajo. Sin migración. Pruebas verdes. **Falta:** que el usuario lo pruebe y apruebe, commit y despliegue.
+**Sexto ítem desplegado en staging, Fly versión 48** (M): [operar el pedido](cambios/sala-operar-pedido.md): acciones por línea, «Cerrar / anular» y carta en hoja con barra fija (commit `73badde`). Sin migración. Falta probar «Anotar» y «Operar» con sesión real en staging.
 
 Local: `cafe-ejemplo` quedó en plan Pro en la base local (`pnpm db:reset` lo restaura).
 
@@ -23,5 +23,5 @@ Demo en staging: `/m/la-bestia/centro` (Afiche) y `/m/aurelia/centro` (Minimal),
 
 ## Próximo paso
 
-1. Probar «operar el pedido» en local, aprobarlo, commitear y desplegar a staging; probar «Anotar» y «Operar» en staging con un local Pro con Dueño (los demos no tienen).
+1. Probar «Anotar» y «Operar» en staging con un local Pro con Dueño (los demos no tienen).
 2. Después, la ficha de cierre (C): precuenta «no válida como factura», retención de 2 años y su purga. Falta que desde «Mesas» se llegue a una mesa con pedido abierto cuando el plan ya no incluye los pedidos (hoy solo por URL). Pendiente urgente: **rotar la `service_role` legacy de staging**.

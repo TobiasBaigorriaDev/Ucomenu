@@ -1,5 +1,5 @@
 # Cambio: Operar el pedido desde la Sala (estados, modificar, cancelar, cerrar y anular)
-Estado: **implementado en local, sin commitear ni desplegar; falta que el usuario lo pruebe y lo apruebe.** No hay migración. Sexta pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisiones 3 y 5), segunda mitad del ítem «Anotar y operar pedidos desde la Sala»; la primera es [anotar](sala-anotar-pedido.md). Usa las cuatro funciones de [estados y registro](pedidos-estados-y-registro.md) (ya en staging).
+Estado: **implementado, aprobado por el usuario (2026-10-24, tras probarlo en local) y desplegado en staging (Fly versión 48)**; falta probarlo con sesión real en staging. No hay migración. Sexta pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisiones 3 y 5), segunda mitad del ítem «Anotar y operar pedidos desde la Sala»; la primera es [anotar](sala-anotar-pedido.md). Usa las cuatro funciones de [estados y registro](pedidos-estados-y-registro.md) (ya en staging).
 Nivel: **M** — solo pantalla sobre funciones ya revisadas (C): las transiciones, el motivo obligatorio y la autorización (plan, mora) los decide la base. Sin esquema, permisos ni dinero nuevos. Sin revisión independiente por defecto.
 
 ## Objetivo
@@ -38,3 +38,4 @@ Sin migración; base local, 2026-10-24, sobre `e5cb7c1` + el diff de este cambio
 - `pnpm typecheck` y `pnpm lint`: limpios. `pnpm test`: 1038 de 1039; la única falla es `textos.test.ts` («Menufeed»), ajena. `pnpm build` correcto.
 - **No corrido:** mutaciones (el cambio no toca dinero ni permisos: lo decide la base, ya mutada en su ficha), suite RLS y E2E completas, lector de pantalla, teléfono real, staging.
 - Un `next dev` abierto mientras se hacía `pnpm build` rompió el servidor de las E2E (`ERR_CONNECTION_REFUSED`): detener el de desarrollo antes de correr E2E.
+- **Despliegue (2026-10-24, aprobado por el usuario):** commit `73badde` en `origin/main`; `flyctl deploy -c fly.staging.toml --local-only --depot=false` con los cuatro argumentos públicos; **Fly v48** (`started`, control `1 passing`, máquina `78177dda131e38`). HTTP sin sesión: `/login` y `/m/la-bestia/centro` **200**; `/sala/…/mesas/{mesa}/anotar` **307** al login. Sin migración ni secretos tocados. No se probó con sesión real (los demos no tienen Dueño).
