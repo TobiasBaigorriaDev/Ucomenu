@@ -1,5 +1,5 @@
 # Cambio: Esquema de pedidos y alta de ítems sin opciones
-Estado: **implementado y verificado en local (2026-10-24); revisión de Codex rondas 1 y 2 corregidas, falta la verificación final, la aprobación humana y la migración en staging.** Decisiones confirmadas por el usuario el 2026-10-24 («implementalo con esas decisiones»). Primera pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md)), desbloqueada por [promociones y precio efectivo](promociones-y-precio-efectivo.md).
+Estado: **implementado, verificado en local y aprobado por Codex (3 rondas, commit `4ae43da`); falta la aprobación humana y aplicar la migración en staging.** Decisiones confirmadas por el usuario el 2026-10-24 («implementalo con esas decisiones»). Primera pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md)), desbloqueada por [promociones y precio efectivo](promociones-y-precio-efectivo.md).
 Nivel: **C** — autorización (quién anota pedidos, por plan y mora), exposición de información (los pedidos son de la organización: ni otra organización ni `anon` los leen) y dinero (el precio de cada línea lo fija la base, con promoción si rige). Sin eliminación irreversible nueva: ni se borra ni se modifica nada todavía.
 
 ## Objetivo
@@ -65,4 +65,6 @@ Migración `20261126100000_pedidos_esquema.sql` (aplicada con `pnpm db:reset` a 
   1. *Importante — el reintento devolvía la línea sin revalidar la autorización* tras esperar el candado de la clave. Corregido: la revalidación va justo después de tomar ese candado. Regresión: otra sesión retiene el candado de la clave, el reintento del Staff queda bloqueado (comprobado en `pg_stat_activity`), se le quita la membresía y rechaza con `orders_not_allowed` sin datos; sin la revalidación **falla** (mutación).
   2. *Sugerencia — carrera en la prueba:* el `exit` del proceso retenedor se escuchaba después de la respuesta. Corregido: la promesa se crea justo después de `spawn`.
   - Re-corridas: `pedidos` 28/28 y con `acl`, `vistas-previas` y `billing` 141/141; `typecheck` y `lint` limpios.
-- **Pendiente:** ronda de verificación de Codex sobre el commit de las correcciones y la **aprobación humana** antes de aplicar la migración en staging.
+- **Codex, ronda 3 (verificación, commit `4ae43da`): APROBAR**, sin hallazgos nuevos; confirmó cerrados los cuatro anteriores. Revisión estática: no ejecutó suites ni mutaciones.
+- **Verificación final del código aprobado (local, 2026-10-24):** `pnpm test:rls` completo en `4ae43da`: 1288 de 1305 en la primera corrida; la única falla (`owner-lectura`, intermitente conocida) y un *worker* caído con `0xC0000409` en `borrado-de-organizaciones` (las 16 pruebas que no corrieron) son ajenos al cambio; ambos archivos repetidos pasan (38/38). `pedidos` 28/28, `typecheck` y `lint` limpios.
+- **Pendiente:** la **aprobación humana** del usuario antes de `supabase db push` a staging (el veredicto de Codex no la reemplaza).
