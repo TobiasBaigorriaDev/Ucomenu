@@ -366,6 +366,14 @@ describe("el historial se lee con la RLS", () => {
     expect(await loadPromotionHistory(anonClient(), local.id, null)).toBeNull(); // anon no tiene acceso: error, no «sin cambios»
   });
 
+  it("una promoción renombrada figura con su nombre actual en todas sus constancias", async () => {
+    const local = await nuevoLocal();
+    const id = await crear(local, { name: "Nombre viejo" });
+    await guardar(local, { name: "Nombre nuevo" }, id);
+    expect((await loadPromotionNames(owner.db, local.id, [id]))?.get(id)).toBe("Nombre nuevo");
+    expect((await loadPromotionNames(staff.db, local.id, [id, crypto.randomUUID()]))?.get(id)).toBe("Nombre nuevo");
+  });
+
   it("una promoción borrada conserva su nombre en el historial", async () => {
     const local = await nuevoLocal();
     const id = await crear(local, { name: "Efímera" });

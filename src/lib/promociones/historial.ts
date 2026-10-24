@@ -55,26 +55,32 @@ export async function loadPromotionHistory(db: Db, orgId: string, cursor: Cursor
 }
 
 /**
- * El nombre con que se conoció cada promoción: el de su constancia más reciente de alta, cambio o baja. Las que ya no existen
- * conservan el nombre que tenían. Una promoción sin constancia de esas (no debería pasar) figura como «Promoción».
+ * El nombre de cada promoción: el actual si sigue existiendo y, si se borró, el de su última constancia (la de la baja). Una
+ * promoción sin constancia de esas (no debería pasar) figura como «Promoción».
  */
 export async function loadPromotionNames(db: Db, orgId: string, promotionIds: string[]): Promise<Map<string, string> | null> {
   const ids = [...new Set(promotionIds)];
   if (ids.length === 0) return new Map();
-  const { data, error } = await db
-    .from("promotion_history")
-    .select("promotion_id, snapshot")
-    .eq("organization_id", orgId)
-    .in("promotion_id", ids)
-    .in("event", ["created", "updated", "deleted"])
-    .order("changed_at", { ascending: false })
-    .order("id", { ascending: false });
-  if (error || !data) return null;
-  const names = new Map<string, string>();
-  for (const row of data) {
-    if (names.has(row.promotion_id)) continue;
-    const name = (row.snapshot as Record<string, unknown> | null)?.name;
-    if (typeof name === "string") names.set(row.promotion_id, name);
+  // Las que siguen existiendo: su nombre actual, de la tabla (a lo sumo 50 filas, una por promoción de la página).
+  const alive = await db.from("promotions").select("id, name").eq("organization_id", orgId).in("id", ids);
+  if (alive.error || !alive.data) return null;
+  const names = new Map(alive.data.map((p) => [p.id, p.name]));
+  const gone = ids.filter((id) => !names.has(id));
+  // Las borradas: el nombre de su constancia de baja (una por promoción; la baja deja una sola). Sin tocar las demás constancias, que
+  // pueden ser miles y PostgREST corta en 1000 filas.
+  for (const id of gone) {
+    const { data, error } = await db
+      .from("promotion_history")
+      .select("snapshot")
+      .eq("organization_id", orgId)
+      .eq("promotion_id", id)
+      .in("event", ["deleted", "updated", "created"])
+      .order("changed_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(1);
+    if (error || !data) return null;
+    const name = (data[0]?.snapshot as Record<string, unknown> | undefined)?.name;
+    if (typeof name === "string") names.set(id, name);
   }
   return names;
 }
