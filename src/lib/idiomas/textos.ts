@@ -52,6 +52,8 @@ export type Textos = {
     viewDetail: (name: string) => string;
     back: string;
   };
+  /** Precio promocional (ficha carta-con-precio-promocional): el precio anterior tachado y hasta cuándo rige. */
+  promo: { was: string; until: (time: string, day: "today" | "tomorrow" | "later", date: string) => string };
   options: { rule: (min: number, max: number) => string; more: (n: number) => string };
   call: {
     form: string;
@@ -156,6 +158,14 @@ const es: Textos = {
     photoAlt: (name) => `Foto de ${name}`,
     viewDetail: (name) => `Ver detalle de ${name}`,
     back: "Volver a la carta",
+  },
+  promo: {
+    was: "Precio anterior",
+    until: (time, day, date) => {
+      if (day === "today") return `Hasta las ${time}`;
+      if (day === "tomorrow") return time === "00:00" ? "Hasta la medianoche" : `Hasta las ${time} de mañana`;
+      return `Hasta el ${date} a las ${time}`;
+    },
   },
   options: {
     rule: (min, max) => {
@@ -268,6 +278,14 @@ const en: Textos = {
     viewDetail: (name) => `View details of ${name}`,
     back: "Back to the menu",
   },
+  promo: {
+    was: "Previous price",
+    until: (time, day, date) => {
+      if (day === "today") return `Until ${time}`;
+      if (day === "tomorrow") return time === "00:00" ? "Until midnight" : `Until ${time} tomorrow`;
+      return `Until ${date} at ${time}`;
+    },
+  },
   options: {
     rule: (min, max) => {
       if (min === 0) return `Optional · up to ${max}`;
@@ -378,6 +396,14 @@ const pt: Textos = {
     photoAlt: (name) => `Foto de ${name}`,
     viewDetail: (name) => `Ver detalhes de ${name}`,
     back: "Voltar ao cardápio",
+  },
+  promo: {
+    was: "Preço anterior",
+    until: (time, day, date) => {
+      if (day === "today") return `Até às ${time}`;
+      if (day === "tomorrow") return time === "00:00" ? "Até a meia-noite" : `Até às ${time} de amanhã`;
+      return `Até ${date} às ${time}`;
+    },
   },
   options: {
     rule: (min, max) => {

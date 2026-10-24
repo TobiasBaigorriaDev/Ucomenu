@@ -854,6 +854,9 @@ isOneToOne: false
 "resolve_table_qr":
 { Args: { "p_token": string }; Returns: Json
                            },
+"save_promotion":
+{ Args: { "p_all_branches": boolean,"p_branches": (string)[],"p_categories": (string)[],"p_discount_type": string,"p_discount_value": number,"p_end_minute": number,"p_ends_on": string,"p_id": string,"p_is_active": boolean,"p_name": string,"p_org": string,"p_products": (string)[],"p_start_minute": number,"p_starts_on": string,"p_weekdays_mask": number }; Returns: string
+                           },
 "set_my_branch_view":
 { Args: { "p_branches": (string)[],"p_org": string }; Returns: string
                            },

@@ -76,9 +76,9 @@ Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases 
 
 #### 8. Promociones programadas / Happy Hour (Pro y Premium) — [ADR 0040](decisiones/0040-promociones-programadas.md)
 - El **Dueño** define descuentos (porcentaje, monto o precio fijo) sobre platos o categorías, por días de la semana, franja horaria (puede cruzar la medianoche) y fechas opcionales, para todas o algunas sucursales; el Staff las ve.
-- Cada sucursal tiene **zona horaria** (por defecto la de Buenos Aires) y las promociones se rigen por su hora.
+- Cada sucursal tiene **zona horaria** (por defecto la de Buenos Aires) y las promociones se rigen por su hora. *Implementada: Sucursales → «Zona horaria», lista de 22 zonas; la facturación y la mora siguen en hora de Argentina.*
 - No se acumulan: si dos aplican al mismo plato, **gana el precio más bajo**. Solo afectan el precio base (no variantes ni adicionales); el precio nunca baja de $ 0.
-- La carta muestra el precio anterior tachado, el promocional y hasta cuándo rige. Cada cambio de una promoción queda en su historial; el historial de precios de lista no cambia.
+- La carta muestra el precio anterior tachado, el promocional y hasta cuándo rige. Cada cambio de una promoción queda en su historial; el historial de precios de lista no cambia. *Implementado en local el 2026-10-23: `/panel/{slug}/promociones` (crear, editar, pausar, duplicar y borrar; aviso de superposición; vista previa por día y hora; el Staff las ve), la carta y el feed con el precio tachado y «hasta cuándo» en es/en/pt, y `/promociones/historial`. Las promociones siguen aplicándose con la cuenta en solo lectura.*
 
 #### 9. Invitación a reseñar en Google (todos los planes)
 - El Dueño carga por sucursal el **enlace de reseñas** de su perfil de Google (solo direcciones de Google). *Implementado el 2026-10-23 (Sucursales → «Enlace de reseñas»).*
@@ -107,7 +107,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
 | Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
 | Invitación a reseñar en Google | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
-| Promociones programadas / Happy Hour (*base de datos y precio efectivo hechos; panel y carta pendientes*) | — | ✔ | ✔ |
+| Promociones programadas / Happy Hour *(implementadas el 2026-10-23)* | — | ✔ | ✔ |
 | Pedidos que anota el mozo (*sin implementar*) | — | ✔ | ✔ |
 | Clientes recurrentes (*sin implementar*) | — | — | ✔ |
 

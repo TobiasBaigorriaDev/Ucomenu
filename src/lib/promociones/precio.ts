@@ -171,3 +171,19 @@ export function splitInstant(iso: string): { seconds: number; micros: number } {
   const offset = zone === "Z" ? "Z" : zone.length === 3 ? `${zone}:00` : zone.length === 5 ? `${zone.slice(0, 3)}:${zone.slice(3)}` : zone;
   return { seconds: Date.parse(`${date}T${time}${offset}`) / 1000, micros: Number(`${fraction}000000`.slice(0, 6)) };
 }
+
+/**
+ * El instante en que el reloj de pared de `timeZone` marca `date` (`AAAA-MM-DD`) a `minute` (minuto del día). Para la vista previa por
+ * día y hora del panel. En el salto de horario de verano la hora que no existe se corre a la que sigue, y la repetida toma la primera.
+ */
+export function instantAt(date: string, minute: number, timeZone: string): Date {
+  const wanted = utcMs(date) + minute * 60_000;
+  let guess = wanted;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const clock = wallClock(new Date(guess), timeZone);
+    const shown = utcMs(clock.date) + clock.minute * 60_000;
+    if (shown === wanted) break;
+    guess += wanted - shown;
+  }
+  return new Date(guess);
+}

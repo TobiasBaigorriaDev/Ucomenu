@@ -11,6 +11,7 @@ import { readAllPages } from "@/lib/paginar";
 import { publicReviewUrl } from "@/lib/sucursales/rules";
 import { isValidSlug } from "@/lib/slug";
 import { applyBranchSettings, loadBranchSettings } from "@/lib/carta/availability";
+import { applyPromotions, loadBranchPromotions } from "@/lib/promociones/carta";
 import { createPublicClient } from "@/lib/supabase/public-client";
 import { hasPublishedVideos } from "@/lib/videos/feed";
 
@@ -167,7 +168,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .select("id, name, slug, menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, branches!inner(id, name, slug, google_review_url)")
+    .select("id, name, slug, menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, branches!inner(id, name, slug, google_review_url, timezone)")
     .eq("slug", orgSlug)
     .or(`slug.eq.${branchSlug},slug_aliases.cs.{${branchSlug}}`, { referencedTable: "branches" })
     .maybeSingle();
@@ -176,16 +177,18 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
   const branch = org?.branches[0];
   if (!org || !branch) return unavailableOrNull(supabase, orgSlug, branchSlug);
 
-  const [{ categories, products, optionGroups, options }, settings, hasVideos] = await Promise.all([
+  const [{ categories, products, optionGroups, options }, settings, promotions, hasVideos] = await Promise.all([
     readRows(org.id),
     // Ajustes de ESTA sucursal (oculto, agotado, precio propio), en vivo: el catálogo cacheado es de toda la organización.
     loadBranchSettings(supabase, org.id, branch.id),
+    // Promociones en curso de ESTA sucursal (ADR 0040), también en vivo: dependen de la hora y no entran en la caché.
+    loadBranchPromotions(supabase, branch.id, branch.timezone),
     // ¿Hay videos para el acceso de la carta? En vivo (sin caché) y en paralelo: no suma espera ni rompe la carta si falla.
     hasPublishedVideos(supabase, org.id),
   ]);
 
   // Un plato oculto no llega a la carta (listado, búsqueda ni detalle); una categoría sin platos visibles no se muestra (groupMenu).
-  const sections = groupMenu(categories, attachOptions(applyBranchSettings(products, settings), optionGroups, options));
+  const sections = groupMenu(categories, attachOptions(applyPromotions(applyBranchSettings(products, settings), promotions), optionGroups, options));
   return {
     kind: "menu",
     menu: {

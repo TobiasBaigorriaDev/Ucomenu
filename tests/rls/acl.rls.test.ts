@@ -65,7 +65,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
 };
 
 // Funciones de la API que NO son SECURITY DEFINER a propósito: corren con los permisos y la RLS de quien llama, así que no amplían nada.
-const INVOKER_FUNCTIONS = new Set(["create_product_in_branches", "reorder_siblings", "replace_organization_logo", "replace_product_image"]);
+const INVOKER_FUNCTIONS = new Set(["create_product_in_branches", "reorder_siblings", "replace_organization_logo", "replace_product_image", "save_promotion"]);
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito (salvo INVOKER_FUNCTIONS); ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
@@ -113,6 +113,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   replace_product_image: [false, true], // foto del plato: SECURITY INVOKER, devuelve la foto saliente; manda la RLS de quien llama
   register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
   set_my_branch_view: [false, true], // vista por sucursal: guarda la elección de quien llama; valida adentro (miembro, sucursales activas del local)
+  save_promotion: [false, true], // guarda una promoción con sus platos y sucursales en una transacción (ficha panel-de-promociones): SECURITY INVOKER, manda la RLS del Dueño
   effective_prices: [true, true], // precio efectivo de la carta y los pedidos (ADR 0040): SECURITY DEFINER, solo devuelve lo que la carta publica; el instante solo lo elige un miembro
   resolve_table_qr: [true, true], // entrada pública /t/{token} (ADR 0009): anon no lee public.tables
   unregister_push_subscription: [false, true], // aviso de llamados (ADR 0020): borra solo las suscripciones propias

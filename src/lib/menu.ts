@@ -1,4 +1,5 @@
 import type { Translations } from "@/lib/idiomas/traducciones";
+import type { ProductPromotion } from "@/lib/promociones/carta";
 
 export type MenuCategory = {
   id: string;
@@ -40,6 +41,8 @@ export type MenuProduct = {
   dietary_tags?: string[];
   /** Disponibilidad de ESTA sucursal; omitido equivale a disponible. */
   is_available?: boolean;
+  /** Promoción en curso en ESTA sucursal ahora (el precio de lista sigue en `price_cents`); omitida = sin promoción. */
+  promotion?: ProductPromotion;
   /** Variantes y adicionales activos del plato (con al menos una opción activa), en orden. */
   option_groups?: MenuOptionGroup[];
   translations?: Translations;

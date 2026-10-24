@@ -1,7 +1,7 @@
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct } from "@/lib/menu";
-import { formatArs } from "@/lib/money";
+import { DishPrice, PromoNote } from "./dish-price";
 import { DietaryLabels } from "./dietary-labels";
 import { DishOptions } from "./dish-options";
 
@@ -31,8 +31,9 @@ export function DishRow({ product, onSelect, lang }: { product: MenuProduct; onS
           )}
         </h3>
         <span aria-hidden="true" className="leader" />
-        <p className="shrink-0 text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums">{formatArs(product.price_cents)}</p>
+        <DishPrice product={product} lang={lang} className="shrink-0 text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums" />
       </div>
+      <PromoNote promotion={product.promotion} lang={lang} className="mt-1" />
       {soldOut ? <p className="mt-2 w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p> : null}
       {product.description ? <p className="mt-1.5 text-sm leading-relaxed text-muted [overflow-wrap:anywhere]">{product.description}</p> : null}
       <DietaryLabels tags={product.dietary_tags} lang={lang} />

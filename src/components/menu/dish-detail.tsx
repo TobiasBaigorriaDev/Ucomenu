@@ -6,7 +6,7 @@ import { imageUrl } from "@/lib/carta/images";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct } from "@/lib/menu";
-import { formatArs } from "@/lib/money";
+import { DishPrice, PromoNote } from "./dish-price";
 import { DietaryLabels } from "./dietary-labels";
 import { DishOptions } from "./dish-options";
 
@@ -37,7 +37,8 @@ export function DishDetail({ product, onClose, lang }: { product: MenuProduct; o
       <div className="p-5 pt-4 sm:p-8 sm:pt-5">
       {photo ? <div className="relative mb-6 aspect-[4/3] overflow-hidden rounded-lg"><Image src={photo} alt={product.name} fill sizes="(min-width: 640px) 512px, 90vw" className="object-cover" /></div> : null}
       <h2 id="dish-detail-title" className="font-display text-3xl [overflow-wrap:anywhere]">{product.name}</h2>
-      <p className="mt-2 text-xl font-semibold text-[var(--carta-terra)]">{formatArs(product.price_cents)}</p>
+      <DishPrice product={product} lang={lang} className="mt-2 text-xl font-semibold text-[var(--carta-terra)]" />
+      <PromoNote promotion={product.promotion} lang={lang} className="mt-1" />
       {product.description ? <p className="mt-4 leading-relaxed [overflow-wrap:anywhere]">{product.description}</p> : null}
       <DietaryLabels tags={product.dietary_tags} lang={lang} />
       {product.is_available === false ? <p className="mt-3 font-semibold text-[var(--carta-terra)]">{t.dish.soldOutBranch}</p> : null}

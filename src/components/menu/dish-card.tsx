@@ -6,7 +6,7 @@ import { imageUrl } from "@/lib/carta/images";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import type { MenuProduct } from "@/lib/menu";
-import { formatArs } from "@/lib/money";
+import { DishPrice, PromoNote } from "./dish-price";
 import { DietaryLabels } from "./dietary-labels";
 import { DishOptions } from "./dish-options";
 
@@ -117,7 +117,8 @@ export function DishCard({ product, span, onSelect, lang }: { product: MenuProdu
         <div className={`flex flex-col gap-2 p-4 ${featured ? "md:flex-none" : "flex-1"}`}>
           {!photo && soldOut ? <p className="w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p> : null}
           {name}
-          <p className="text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums">{formatArs(product.price_cents)}</p>
+          <DishPrice product={product} lang={lang} className="text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums" />
+          <PromoNote promotion={product.promotion} lang={lang} />
           {product.description ? (
             <p className={`text-sm leading-relaxed text-muted [overflow-wrap:anywhere] ${featured ? "sm:text-[0.9375rem]" : "line-clamp-3"}`}>
               {product.description}

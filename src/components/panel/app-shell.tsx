@@ -41,6 +41,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
       items.push({ href: `/panel/${org.slug}`, label: "Resumen", exact: true, icon: "resumen", group: "Tu local" });
       items.push({ href: `/panel/${org.slug}/carta`, label: "Carta", icon: "carta", group: "Tu local" });
       items.push({ href: `/panel/${org.slug}/mesas`, label: "Mesas", icon: "mesas", group: "Tu local" });
+      items.push({ href: `/panel/${org.slug}/promociones`, label: "Promociones", icon: "promociones", group: "Tu local" });
       items.push({ href: `/panel/${org.slug}/llamados`, label: "Llamados", icon: "llamados", group: "Tu local" });
       items.push({ href: `/panel/${org.slug}/videos`, label: "Videos", icon: "videos", group: "Tu local" });
       items.push({ href: `/panel/${org.slug}/comentarios`, label: "Comentarios", icon: "comentarios", group: "Tu local" });

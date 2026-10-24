@@ -53,7 +53,7 @@ export async function FeedScreen({ menu, lang, backHref, callBar, likes, comment
       playbackId: row.mux_playback_id,
       likeCount: row.like_count,
       commentCount: row.comment_count,
-      dish: dish ? { name: dish.name, price_cents: dish.price_cents, description: dish.description } : null,
+      dish: dish ? { name: dish.name, price_cents: dish.price_cents, description: dish.description, promotion: dish.promotion } : null,
     };
   });
 

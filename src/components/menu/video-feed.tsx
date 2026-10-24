@@ -7,11 +7,12 @@ import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import { CommentsButton, CommentsSheet, type CommentAccess } from "@/components/menu/comments-sheet";
 import { LikeControl, type LikeAccess } from "@/components/menu/like-button";
-import { formatArs } from "@/lib/money";
+import { DishPrice, PromoNote } from "@/components/menu/dish-price";
+import type { ProductPromotion } from "@/lib/promociones/carta";
 import { hlsUrl, neighbor, posterUrl, slidesToPrepare } from "@/lib/videos/feed";
 
 /** El plato de un video, solo si sigue visible en esta sucursal (lo resuelve el servidor). */
-export type FeedDish = { name: string; price_cents: number; description: string | null };
+export type FeedDish = { name: string; price_cents: number; description: string | null; promotion?: ProductPromotion };
 export type FeedVideo = { id: string; title: string; playbackId: string; likeCount: number; commentCount: number; dish: FeedDish | null };
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
@@ -264,7 +265,8 @@ function Slide({ video, index, total, prepared, active, muted, reduced, lang, ha
               <Icon name="close" />
             </button>
           </div>
-          <p className="mt-1 text-lg font-semibold tabular-nums">{formatArs(video.dish.price_cents)}</p>
+          <DishPrice product={video.dish} lang={lang} className="mt-1 text-lg font-semibold tabular-nums" />
+          <PromoNote promotion={video.dish.promotion} lang={lang} className="mt-1 !text-black/75" />
           {video.dish.description ? <p className="mt-2 text-base leading-relaxed text-black/75 [overflow-wrap:anywhere]">{video.dish.description}</p> : null}
         </div>
       ) : null}
