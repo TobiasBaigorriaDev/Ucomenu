@@ -1,0 +1,54 @@
+# Cambio: Esquema de pedidos y alta de ítems sin opciones
+Estado: **listo para implementar** (ficha escrita el 2026-10-24; sin código ni migración todavía; las decisiones 1 a 12 son propuestas a confirmar con el usuario antes de aplicar la migración). Primera pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md)), desbloqueada por [promociones y precio efectivo](promociones-y-precio-efectivo.md).
+Nivel: **C** — autorización (quién anota pedidos, por plan y mora), exposición de información (los pedidos son de la organización: ni otra organización ni `anon` los leen) y dinero (el precio de cada línea lo fija la base, con promoción si rige). Sin eliminación irreversible nueva: ni se borra ni se modifica nada todavía.
+
+## Objetivo
+Que el mozo (Dueño o Staff con sesión) abra el pedido de una mesa y le agregue platos **sin opciones**, con cantidad, y que la base calcule y copie el precio. Sin pantalla: la Sala llega en la ficha «Vista Mesas». Las variantes y adicionales, los estados y el cierre son las fichas siguientes.
+
+## Decisiones (particulares)
+1. **Función del plan `orders`** (ADR 0041, decisión 9): se suma a `plans_features_check` y a `plans.features` de Pro y Premium, como se hizo con `promotions`. `private.can_take_orders(org)` = `is_org_member` y `has_feature(org, 'orders')`; `has_feature` ya deja fuera solo lectura y suspendida, que es lo que pide el ADR para abrir pedidos y agregar ítems. Las vistas previas ([ficha](vistas-previas-de-funciones.md)) podrían conceder `orders` a un Básico: la prueba de `vistas-previas.rls` se ajusta como con `promotions`.
+2. **Tablas** (todas con clave foránea compuesta con la organización):
+   - `orders`: `id`, `organization_id`, `branch_id`, `table_id` (nulo si se borra la mesa), `table_label` (copia de la etiqueta), `status` (`open` | `closed` | `void`; en esta ficha solo se crea `open`), `opened_by`, `opened_at`, `closed_at`.
+   - `order_items`: `id`, `order_id`, `organization_id`, `product_id` (nulo si se borra el plato, `ON DELETE SET NULL (product_id)`), `product_name` (copia), `quantity` 1–99, `base_price_cents` y `unit_price_cents` (el efectivo al anotar), `promotion_id` y `promotion_name` (copias, sin clave foránea), `status` (`noted`; los demás estados son otra ficha), `client_key` (uuid), `created_by`, `created_at`.
+3. **Un solo pedido abierto por mesa**: índice único parcial sobre `table_id` donde `status = 'open'`. La primera línea de una mesa lo abre en la misma transacción con `INSERT ... ON CONFLICT`, así dos mozos que anotan a la vez en una mesa vacía terminan en el mismo pedido.
+4. **Solo por una función, no por la API de tablas.** `public.add_order_item(p_branch, p_table, p_product, p_quantity, p_client_key)`: `SECURITY DEFINER`, `search_path` vacío, `EXECUTE` solo para `authenticated`. Las tablas no tienen `INSERT`, `UPDATE` ni `DELETE` para ningún rol de la API; `SELECT` solo para miembros de la organización (política con `is_org_member`, sin `anon`). El precio **no es un parámetro**: la función lo lee de `effective_prices(p_branch, p_product)` con el instante actual.
+5. **Qué rechaza** (errores estables como las demás acciones): sin sesión o sin plan/mora al día → `orders_not_allowed`; sucursal inexistente, inactiva o de otra organización → `branch_not_found`; mesa inactiva o de otra sucursal → `table_not_found`; plato de otra organización, inactivo, con categoría inactiva (lo que no devuelve `effective_prices`) o **agotado en esa sucursal** → `product_unavailable`; plato con un grupo de opciones activo de mínimo 1 o más → `options_required` (falla cerrado hasta la ficha de variantes); cantidad fuera de 1–99 → `invalid_quantity`; pedido con 200 ítems → `order_full`.
+6. **Reintento seguro:** `client_key` es único por pedido (`unique (order_id, client_key)`). Repetir la llamada con la misma clave (doble toque, red inestable) devuelve la línea ya creada y no suma otra; la misma clave con otro plato o cantidad → `client_key_reused`.
+7. **Copia, no referencia.** Nombre del plato, etiqueta de la mesa, precio de lista, precio efectivo y promoción quedan copiados: un cambio posterior del catálogo no reescribe lo anotado (ADR 0041, decisión 2).
+8. **Sin total ni cuenta todavía.** El total del pedido es de la ficha «Vista Mesas / Pedir la cuenta»; acá solo se guardan líneas.
+9. **Sin tabla de eventos todavía.** Esta ficha no modifica ni borra nada, así que las propias filas (`opened_by`, `created_by`, fechas) son el registro. El registro de solo-agregado llega con los estados y las modificaciones (ficha 3 de S3), cuando haya algo que reescribir.
+10. **Borrado de organizaciones:** `orders` y `order_items` se borran por cascada con la organización (no hay retención todavía). La retención de 2 años y la purga explícita se resuelven en la ficha de cierre, que es la que fija qué se conserva.
+11. **Tipos y esquema:** migración nueva `20261126100000_pedidos_esquema.sql`, `supabase/seed.sql` sin cambios (no hay datos de pedidos) y `pnpm db:types`. La lista de funciones de `acl.rls.test.ts` suma `add_order_item`.
+12. **Lo que no se hace en la app:** ninguna pantalla ni acción de servidor. Tampoco se toca `producto.md` salvo marcar «pedidos» como «esquema listo»; el comportamiento visible llega con la Sala.
+
+## Aceptación
+- [ ] Un Dueño o Staff de un local Pro o Premium al día anota un plato sin opciones en una mesa de una sucursal: se crea el pedido `open` y la línea con nombre, cantidad, precio de lista y precio efectivo copiados.
+- [ ] Con una promoción en curso, `unit_price_cents` es el de `effective_prices` y la línea guarda la promoción; sin promoción es exactamente el de lista. No hay forma de pasar un precio.
+- [ ] Una segunda línea en la misma mesa entra al **mismo** pedido; otra mesa abre otro pedido. Dos primeras líneas simultáneas en una mesa vacía dejan **un** pedido.
+- [ ] Repetir la llamada con la misma `client_key` no duplica; con otro plato o cantidad rechaza.
+- [ ] Rechaza (con el error estable y sin dejar filas): Básico, solo lectura, suspendida, `anon`, miembro de otra organización, plato o mesa o sucursal de otra organización, plato inactivo o de categoría inactiva, plato agotado en la sucursal, plato con grupo obligatorio, cantidad 0 o 100, pedido con 200 ítems. En gracia sí se puede.
+- [ ] Un Staff lee los pedidos de su organización; otra organización y `anon` no leen nada; nadie escribe las tablas por la API (`INSERT`, `UPDATE`, `DELETE` fallan con `42501`).
+- [ ] Borrar un plato o una mesa conserva la línea o el pedido con su copia; borrar la organización se lleva los pedidos.
+- [ ] La migración es aditiva y aplica a la primera con `pnpm db:reset`; `pnpm db:types` regenerado; `acl.rls.test.ts` cubre la función nueva.
+
+## Fuera de alcance
+- Variantes, adicionales y observaciones (ficha 2); estados, modificar, cancelar, cerrar, anular y registro de solo-agregado (ficha 3); vista «Mesas» y total (ficha 4); precuenta, retención y purga (ficha 5); analítica (ficha 6). Cualquier pantalla.
+
+## Evidencia
+*(pendiente: se completa al implementar.)* Pruebas previstas: `tests/rls/pedidos.rls.test.ts` (roles, plan y mora, aislamiento entre organizaciones, precio igual a `effective_prices` con y sin promoción, `client_key`, concurrencia de la primera línea, escrituras directas rechazadas, cascadas), más `vistas-previas.rls` y `acl.rls` ajustadas. `pnpm test:rls pedidos`, `pnpm typecheck` y `pnpm lint`; al integrar, RLS completo. Una mutación por defensa clave: sin el índice único parcial, sin recomprobar el plan/mora, y con el precio tomado de la lista en vez de `effective_prices`.
+
+## (C) Invariantes
+- El precio de una línea sale siempre de `effective_prices` en el momento de anotarla; ningún cliente lo fija.
+- Nadie fuera de la organización (ni `anon`) lee ni escribe pedidos; ninguna línea apunta a platos, mesas o sucursales de otra organización (claves compuestas).
+- Una mesa tiene a lo sumo un pedido abierto.
+- Solo una cuenta al día con la función en el plan abre pedidos y agrega ítems.
+- Lo anotado no cambia aunque cambie el catálogo.
+
+## (C) Fallos y recuperación
+- La función es una sola transacción: si falla la línea, tampoco queda el pedido recién abierto.
+- Se pierde la respuesta: el cliente repite con la misma `client_key` y recibe la línea ya creada.
+- Un cambio de plan o una mora posterior no borra lo anotado: se puede leer; no se agregan ítems.
+- Rollback: `drop function public.add_order_item(...)`, `drop table public.order_items, public.orders`, quitar `orders` de `plans.features` y de `plans_features_check`. Si ya hay pedidos reales, conservarlos (exportar antes).
+
+## (C) Revisión y aprobación
+- Pendiente: una ronda de revisión independiente en solo lectura (`ciclo-revision-codex`) después de implementar y verificar, y la aprobación humana antes de aplicar la migración en staging.
