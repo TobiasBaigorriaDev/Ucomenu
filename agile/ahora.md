@@ -8,7 +8,9 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 **Quinto ítem desplegado en staging, Fly versión 47** (M): [pantalla «Anotar»](cambios/sala-anotar-pedido.md) sobre `add_order_item` (commit `1b217a4`). Falta probarlo con sesión real en staging.
 
-**Sexto ítem desplegado en staging, Fly versión 48** (M): [operar el pedido](cambios/sala-operar-pedido.md): acciones por línea, «Cerrar / anular» y carta en hoja con barra fija (commit `73badde`). Sin migración. Falta probar «Anotar» y «Operar» con sesión real en staging.
+**Sexto ítem desplegado en staging, Fly versión 48** (M): [operar el pedido](cambios/sala-operar-pedido.md) (commit `73badde`). Falta probar «Anotar» y «Operar» con sesión real en staging.
+
+**Ficha de cierre, hecha en local y sin subir** (commits locales `9fcc707`…): [precuenta](cambios/sala-precuenta.md) (M, sin migración: `/sala/{slug}/cuenta/{pedido}`, imprimible) y [retención de pedidos](cambios/retencion-de-pedidos.md) (C: migración `20261129100000`, `purge_expired_orders`, 2 años, por lotes, solo `service_role`, sin programar; [ADR 0043](../docs/decisiones/0043-retencion-de-pedidos.md)). Codex revisó la purga en 3 rondas (interbloqueo y lotes corregidos; la tercera fue un cambio de requisito que el usuario resolvió: sin registro de conteos). **Falta:** aprobación del usuario, subir a `origin`, aplicar la migración en staging (`supabase db push`, pide aprobación) y desplegar la precuenta.
 
 Local: `cafe-ejemplo` quedó en plan Pro en la base local (`pnpm db:reset` lo restaura).
 
@@ -23,5 +25,5 @@ Demo en staging: `/m/la-bestia/centro` (Afiche) y `/m/aurelia/centro` (Minimal),
 
 ## Próximo paso
 
-1. Probar «Anotar» y «Operar» en staging con un local Pro con Dueño (los demos no tienen).
-2. Después, la ficha de cierre (C): precuenta «no válida como factura», retención de 2 años y su purga. Falta que desde «Mesas» se llegue a una mesa con pedido abierto cuando el plan ya no incluye los pedidos (hoy solo por URL). Pendiente urgente: **rotar la `service_role` legacy de staging**.
+1. Aprobar y subir la ficha de cierre; migración en staging y despliegue; después probar «Anotar», «Operar» y la precuenta en staging con un local Pro con Dueño (los demos no tienen).
+2. Después: programar la purga (pg_cron, `docs/produccion.md` 4.c) en la salida a producción y confirmar el plazo con el contador; analítica de pedidos (opcional). Falta que desde «Mesas» se llegue a una mesa con pedido abierto cuando el plan ya no incluye los pedidos (hoy solo por URL). Pendiente urgente: **rotar la `service_role` legacy de staging**.
