@@ -1,6 +1,6 @@
 # Cambio: Estilo de carta «Afiche»
 
-Estado: **Implementado y verificado en local, sin commit.** Falta la aprobación del usuario, el commit y aplicar la migración en staging (requiere aprobación).
+Estado: **Aprobado por el usuario (2026-10-23), commit `a3bde86` en `origin/main` y en staging** (migración aplicada, Fly versión 44). Falta probarlo en staging con un local real en estilo Afiche.
 Nivel: **M** (amplía el conjunto cerrado de `menu_layout` y la presentación; sin cambios de permisos, datos de clientes ni dinero). Antecedente: [personalización de la carta](personalizacion-carta.md).
 
 ## Objetivo y decisiones
@@ -34,4 +34,6 @@ Cuarto estilo de carta para bares, hamburgueserías, cervecerías y pizzerías: 
 - Revisión de diseño (revisor de Impeccable, dos rondas sobre capturas del build de producción): corregidos el relleno de títulos en escritorio, el foco recto, la alineación de los adicionales, DESIGN.md y la carga de la fuente. Re-corridas tras las correcciones: unitarias de `menu` 20/20, `tsc` y lint limpios, E2E identidad, menu, llamados, buscador, detalle-plato y rendimiento-carta en verde.
 - **Abierto (decide el usuario):** a 390 px las etiquetas del dock de la mesa («Llamar al mozo», «Pedir la cuenta») parten en dos líneas. Viene de antes y es igual en los cuatro estilos (`call-bar.tsx`, compartido): no se tocó.
 - Datos de prueba: «La Birrería del Puerto» (`birra-demo`, mesa `afc0ffee000000000000000000000004`) queda en la base local; sus fotos sintéticas dicen «SINTÃ‰TICA» (texto mal codificado al generarlas). Se borra con `pnpm db:reset`.
-- No corrido: staging, revisión independiente de Codex (no exigida en M).
+- **Staging (2026-10-23):** `supabase db push --dry-run` sobre `ucomenu-staging` mostró solo `20261125100000`; `db push` la aplicó y un nuevo `--dry-run` confirma que está al día. App desplegada con `flyctl deploy -c fly.staging.toml --local-only --depot=false` y los cuatro argumentos públicos: **Fly v44** `complete`, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:deployment-01M5NWZ52GG137ESHCATBW681B`. `/m/demo/centro` 200, local inexistente 404, `/login` 200; el CSS servido incluye las reglas `[data-layout=afiche]` y `AficheFallback`.
+- Marcha atrás de la app: `fly deploy -c fly.staging.toml --image registry.fly.io/ucomenu-staging:deployment-01M5NP19HT7NMWZ8M6RKS8FA1P` (v43). La migración es aditiva; revertirla exige antes pasar a otro estilo a los locales que tengan `afiche`.
+- No corrido: prueba con sesión real en staging eligiendo Afiche, revisión independiente de Codex (no exigida en M).

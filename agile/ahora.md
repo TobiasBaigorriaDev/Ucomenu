@@ -4,10 +4,7 @@ Actualizado: 2026-10-23 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Punto de retomada
 
-**En curso, sin commit (sobre `8b7cca7`, rama `main`):** [estilo de carta «Afiche»](cambios/estilo-afiche.md) (M), un cuarto estilo con Big Shoulders, bandas de color y platos numerados. Implementado y verificado en local; la evidencia está en la ficha. Falta:
-1. Que el usuario lo apruebe (local de prueba sintético: `/m/birra-demo/centro` y `/t/afc0ffee000000000000000000000004`, solo en la base local).
-2. El commit.
-3. Aplicar `20261125100000_estilo_afiche.sql` en staging, con aprobación.
+**Último cambio:** [estilo de carta «Afiche»](cambios/estilo-afiche.md) (M): cuarto estilo con Big Shoulders, bandas de color y platos numerados. Aprobado por el usuario, commit `a3bde86` en `origin/main`, migración `20261125100000` en staging y app en **Fly versión 44**. Falta probarlo con sesión real eligiendo Afiche en staging. El local sintético `birra-demo` existe solo en la base local.
 
 Decisión abierta del usuario: el dock de la mesa parte sus etiquetas en dos líneas a 390 px en todos los estilos (viene de antes).
 
@@ -23,7 +20,6 @@ Antes: S1 y S2 de «Salón y crecimiento» hechas y en staging (Fly versión 40,
 
 ## Próximo paso
 
-1. Aprobación y commit del afiche; luego staging.
-2. Probar en staging con sesión real SuperAdmin, personal, llamados, promociones y zona horaria.
-3. Cambiar la clave secreta de `.env.local` si usaba la legacy y **rotar la `service_role` legacy de staging** (urgente).
-4. S3 «Pedidos del mozo» (C), sobre `effective_prices`.
+1. Probar en staging con sesión real: Afiche en Apariencia, SuperAdmin, personal, llamados, promociones y zona horaria.
+2. Cambiar la clave secreta de `.env.local` si usaba la legacy y **rotar la `service_role` legacy de staging** (urgente).
+3. S3 «Pedidos del mozo» (C), sobre `effective_prices`.
