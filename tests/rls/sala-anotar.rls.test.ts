@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { loadAnotar, loadTableLines } from "@/lib/sala/anotar-loader";
+import { loadPrecuenta } from "@/lib/sala/precuenta-loader";
 import {
   addMembership,
   createCategory,
@@ -9,6 +10,7 @@ import {
   DIA_MS,
   deleteOrg,
   deleteUser,
+  anonClient,
   serviceClient,
   setSubscription,
   type Db,
@@ -291,6 +293,66 @@ describe("las líneas del pedido abierto de la mesa", () => {
     await anotar(owner.db, a.centro.branch, a.centro.mesas[0].id, bife);
     // La dueña y el Staff son miembros de AMBOS locales de prueba, así que se pide la mesa de A como si fuera de B: no hay pedido.
     expect(await loadTableLines(owner.db, b.id, a.centro.mesas[0].id)).toEqual([]);
+  });
+});
+
+describe("la precuenta de un pedido", () => {
+  it("trae el pedido con sus líneas, la sucursal y su zona horaria; lo ven el Dueño y el Staff", async () => {
+    const l = await nuevoLocal();
+    const cat = await l.categoria();
+    const bife = await l.plato(cat, "Bife", 10000);
+    const g = await l.grupo(bife, "Extras", 0, 2, [{ name: "Bacon", delta: 1500 }]);
+    const mesa = l.centro.mesas[0];
+    const a = await anotar(owner.db, l.centro.branch, mesa.id, bife, { p_quantity: 2, p_options: [g.opciones[0].id], p_note: "sin sal" });
+    const b = await anotar(owner.db, l.centro.branch, mesa.id, bife);
+    expect((await owner.db.rpc("set_order_item_status", { p_item: b.item_id, p_status: "cancelled" })).error).toBeNull();
+
+    for (const quien of [owner, staff]) {
+      const data = await loadPrecuenta(quien.db, l.id, a.order_id);
+      expect(data).toMatchObject({ orderId: a.order_id, status: "open", tableId: mesa.id, tableLabel: "Mesa 1", branchName: "Centro", multiBranch: true, closedAt: null });
+      expect(data?.timeZone).toMatch(/\//);
+      expect(data?.lines.map((x) => [x.quantity, x.status, x.unitPriceCents, x.optionsCents])).toEqual([[2, "noted", 10000, 1500], [1, "cancelled", 10000, 0]]);
+      expect(data?.lines[0].options.map((o) => o.name)).toEqual(["Bacon"]);
+    }
+  });
+
+  it("un pedido cerrado o anulado también se puede ver, con su estado y la hora de cierre", async () => {
+    const l = await nuevoLocal();
+    const cat = await l.categoria();
+    const bife = await l.plato(cat, "Bife", 10000);
+    const a = await anotar(owner.db, l.centro.branch, l.centro.mesas[0].id, bife);
+    const b = await anotar(owner.db, l.centro.branch, l.centro.mesas[1].id, bife);
+    expect((await owner.db.rpc("close_order", { p_order: a.order_id })).error).toBeNull();
+    expect((await owner.db.rpc("void_order", { p_order: b.order_id, p_reason: "Se fueron" })).error).toBeNull();
+    const cerrado = await loadPrecuenta(staff.db, l.id, a.order_id);
+    const anulado = await loadPrecuenta(staff.db, l.id, b.order_id);
+    expect(cerrado?.status).toBe("closed");
+    expect(cerrado?.closedAt).not.toBeNull();
+    expect(anulado?.status).toBe("void");
+    expect(cerrado?.lines).toHaveLength(1);
+  });
+
+  it("si se borra la mesa, el pedido conserva su etiqueta y la precuenta se sigue pudiendo armar", async () => {
+    const l = await nuevoLocal();
+    const cat = await l.categoria();
+    const bife = await l.plato(cat, "Bife", 10000);
+    const mesa = l.centro.mesas[1];
+    const a = await anotar(owner.db, l.centro.branch, mesa.id, bife);
+    expect((await owner.db.rpc("close_order", { p_order: a.order_id })).error).toBeNull();
+    expect((await service.from("tables").delete().eq("id", mesa.id)).error).toBeNull();
+    expect(await loadPrecuenta(owner.db, l.id, a.order_id)).toMatchObject({ tableId: null, tableLabel: "Mesa 2", status: "closed" });
+  });
+
+  it("es solo del local: un pedido de otra organización o inexistente no existe", async () => {
+    const a = await nuevoLocal();
+    const b = await nuevoLocal();
+    const cat = await a.categoria();
+    const bife = await a.plato(cat, "Bife", 10000);
+    const pedido = await anotar(owner.db, a.centro.branch, a.centro.mesas[0].id, bife);
+    expect(await loadPrecuenta(owner.db, b.id, pedido.order_id)).toBeNull();
+    expect(await loadPrecuenta(owner.db, a.id, randomUUID())).toBeNull();
+    // Y el anónimo no tiene ni permiso de lectura sobre los pedidos.
+    await expect(loadPrecuenta(anonClient(), a.id, pedido.order_id)).rejects.toThrow(/permission denied/);
   });
 });
 

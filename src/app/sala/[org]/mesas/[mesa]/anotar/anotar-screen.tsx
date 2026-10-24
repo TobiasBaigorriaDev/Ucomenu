@@ -95,6 +95,11 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
                   <LineCard key={line.id} slug={slug} line={line} canOperate={data.enabled} onStale={refresh} />
                 ))}
               </ul>
+              {data.orderId ? (
+                <Link href={`/sala/${slug}/cuenta/${data.orderId}`} data-testid="ver-precuenta" className={`${buttonClass} mt-3`}>
+                  Ver precuenta
+                </Link>
+              ) : null}
             </>
           )}
         </section>

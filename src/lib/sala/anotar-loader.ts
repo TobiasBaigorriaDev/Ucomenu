@@ -33,8 +33,14 @@ export async function loadTableOrder(db: Db, orgId: string, tableId: string): Pr
   const order = await db.from("orders").select("id").eq("organization_id", orgId).eq("table_id", tableId).eq("status", "open").maybeSingle();
   if (order.error) throw new Error(`No se pudo leer el pedido de la mesa: ${order.error.message}`);
   if (!order.data) return { orderId: null, lines: [] };
-  const orderId = order.data.id;
+  return { orderId: order.data.id, lines: await loadOrderLines(db, orgId, order.data.id) };
+}
 
+/**
+ * Las líneas de UN pedido (con sus opciones copiadas), de la más antigua a la más nueva, incluidas las canceladas. Con el cliente de la
+ * PERSONA (RLS). Lanza si la base falla. Un estado desconocido se omite (mejor menos que un estado inventado).
+ */
+export async function loadOrderLines(db: Db, orgId: string, orderId: string): Promise<AnotarLine[]> {
   const items = await readAllByKey((after, limit) => {
     const query = db
       .from("order_items")
@@ -81,7 +87,7 @@ export async function loadTableOrder(db: Db, orgId: string, tableId: string): Pr
         .sort(byCreated)
         .map(({ group, name, deltaCents }) => ({ group, name, deltaCents })),
     }));
-  return { orderId, lines };
+  return lines;
 }
 
 /**

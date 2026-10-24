@@ -72,7 +72,8 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta» → [ficha](cambios/sala-mesas-y-total.md) (hecho en local, 2026-10-24)
 - [M] Pantalla «Anotar» en la Sala: elegir plato con variantes, cantidad y observación → [ficha](cambios/sala-anotar-pedido.md) (hecho, en staging, 2026-10-24)
 - [M] Operar el pedido desde la Sala: cambiar estados, modificar y cancelar líneas, cerrar y anular → [ficha](cambios/sala-operar-pedido.md) (hecho, en staging, 2026-10-24)
-- [C] Cierre con precuenta «no válida como factura», retención (2 años, a confirmar con el contador) y purga en el borrado de la organización
+- [M] Precuenta «no válida como factura», imprimible y sin observaciones → [ficha](cambios/sala-precuenta.md) (hecho en local, 2026-10-24; falta aprobación y staging)
+- [C] Retención de pedidos (2 años desde el cierre, a confirmar con el contador) y su purga por lotes (`service_role`) → [ficha](cambios/retencion-de-pedidos.md) (en curso; la purga con la organización ya está hecha)
 - [M] Analítica de pedidos para el Dueño (opcional)
 
 **S4 — Clientes recurrentes** (bloqueado por: pedidos y revisión legal)
