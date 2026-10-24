@@ -191,6 +191,10 @@ begin
 
   -- Mismo toque repetido a la vez: se serializa por clave, así la segunda llamada ve la línea de la primera.
   perform pg_advisory_xact_lock(hashtextextended(v_org::text || p_client_key::text, 0));
+  -- Esperar el candado puede llevar tiempo: también el reintento (que devuelve la línea) revalida quién llama.
+  if not private.can_take_orders(v_org) then
+    raise exception 'orders_not_allowed' using errcode = '42501';
+  end if;
   v_hash := md5(format('%s|%s|%s', p_table, p_product, p_quantity));
   select i.* into v_item from public.order_items i where i.organization_id = v_org and i.client_key = p_client_key;
   if found then

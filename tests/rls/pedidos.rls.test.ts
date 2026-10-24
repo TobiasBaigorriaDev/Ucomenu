@@ -301,6 +301,7 @@ describe("la autorización se revalida después de esperar", () => {
       ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.orders where id = '${primera.order_id}' for update; select pg_sleep(4); commit;`],
       { stdio: "ignore" },
     );
+    const termino = new Promise((r) => retiene.on("exit", r));
     await new Promise((r) => setTimeout(r, 2000));
     // `.then` fuerza el envío: el cliente no manda la llamada hasta que alguien la espera.
     const espera = anotar(staff.db, l).then((r) => r);
@@ -310,8 +311,31 @@ describe("la autorización se revalida después de esperar", () => {
     const baja = await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", staff.id);
     expect(baja.error).toBeNull();
     expect((await espera).error?.message).toBe("orders_not_allowed");
-    await new Promise((r) => retiene.on("exit", r));
+    await termino;
     expect(cuenta("order_items", l.id)).toBe(1);
+    await addMembership(service, staff, l.id, "staff");
+  });
+
+  it("también el reintento (que devuelve la línea ya creada) se revalida tras esperar el candado de la clave", async () => {
+    const l = await nuevoLocal();
+    const clave = randomUUID();
+    linea(await anotar(staff.db, l, { p_client_key: clave }));
+    // Otra sesión retiene el candado de ESA clave; el reintento del Staff queda esperando.
+    const retiene = spawn(
+      "docker",
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select pg_advisory_xact_lock(hashtextextended('${l.id}' || '${clave}', 0)); select pg_sleep(4); commit;`],
+      { stdio: "ignore" },
+    );
+    const termino = new Promise((r) => retiene.on("exit", r));
+    await new Promise((r) => setTimeout(r, 2000));
+    const espera = anotar(staff.db, l, { p_client_key: clave }).then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    expect(Number(sql("select count(*) from pg_stat_activity where wait_event_type = 'Lock' and query like '%add_order_item%'")[0][0])).toBeGreaterThanOrEqual(1);
+    expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", staff.id)).error).toBeNull();
+    const r = await espera;
+    expect(r.error?.message).toBe("orders_not_allowed");
+    expect(r.data).toBeNull();
+    await termino;
     await addMembership(service, staff, l.id, "staff");
   });
 });
