@@ -8,7 +8,9 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 **S3, primer ítem hecho, aprobado y en staging** (C; commit `4ae43da`): [esquema y alta de ítems](cambios/pedidos-esquema-y-alta-de-items.md).
 
-**S3, segundo ítem hecho, aprobado por Codex (2 rondas) y por el usuario, y migrado a staging** (C; `c00e838`): [variantes, adicionales y observaciones](cambios/pedidos-variantes-adicionales-observaciones.md). Migración `20261127100000` (reemplaza `add_order_item` por una de siete parámetros, tabla `order_item_options`, `note` y `options_cents`). Verificado: RLS completo salvo un *worker* caído ajeno, repetido en verde; sin pantalla. Siguiente migración libre: `20261128100000`.
+**S3, segundo ítem hecho, aprobado y en staging** (C; `c00e838`): [variantes, adicionales y observaciones](cambios/pedidos-variantes-adicionales-observaciones.md).
+
+**S3, tercer ítem hecho en local y aprobado por Codex (2 rondas, `367ca22`); falta la aprobación del usuario del código final y staging** (C): [estados, modificar, cancelar, cerrar y anular, con registro](cambios/pedidos-estados-y-registro.md). Migración `20261128100000` (cuatro funciones, tabla `order_events` de solo-agregado con su purga en `admin_delete_organization`). Un `db push` fue bloqueado por permisos y no se repitió. Siguiente migración libre: `20261129100000`.
 
 ## Bloqueos y límites
 
@@ -20,5 +22,6 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Próximo paso
 
-1. Tercer ítem de S3 (C): estados de pedido e ítem, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora.
-2. Pendiente urgente: **rotar la `service_role` legacy de staging**. Probar en staging con sesión real: Afiche, SuperAdmin, personal, llamados, promociones y zona horaria.
+1. Con la aprobación del usuario sobre el código final: `pnpm exec supabase db push --dry-run` y `db push` de `20261128100000` a staging (la app no cambia; sin despliegue).
+2. Cuarto ítem de S3 (M): vista «Mesas» en la Sala (pedido abierto + llamados por mesa) y total en «Pedir la cuenta».
+3. Pendiente urgente: **rotar la `service_role` legacy de staging**. Probar en staging con sesión real: Afiche, SuperAdmin, personal, llamados, promociones y zona horaria.
