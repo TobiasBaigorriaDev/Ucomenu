@@ -67,7 +67,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 **S3 — Pedidos del mozo** (desbloqueado: la función de precio efectivo está hecha)
 - [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base → [ficha](cambios/pedidos-esquema-y-alta-de-items.md) (implementado en local, falta revisión independiente)
-- [C] Variantes, adicionales y observaciones con validación de mínimos y máximos
+- [C] Variantes, adicionales y observaciones con validación de mínimos y máximos → [ficha](cambios/pedidos-variantes-adicionales-observaciones.md) (implementado en local, falta revisión independiente)
 - [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora
 - [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta»
 - [C] Cierre con precuenta «no válida como factura», retención (2 años, a confirmar con el contador) y purga en el borrado de la organización

@@ -273,16 +273,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"order_items": {
+                },"order_item_options": {
                   Row: {
-                    "base_price_cents": number,"client_key": string,"created_at": string,"created_by": string | null,"id": string,"order_id": string,"organization_id": string,"product_id": string | null,"product_name": string,"promotion_id": string | null,"promotion_name": string | null,"quantity": number,"request_hash": string,"status": string,"unit_price_cents": number
+                    "created_at": string,"group_id": string | null,"group_name": string,"id": string,"option_id": string | null,"option_name": string,"order_item_id": string,"organization_id": string,"price_delta_cents": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "base_price_cents": number,"client_key": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id": string,"organization_id": string,"product_id"?: string | null,"product_name": string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity": number,"request_hash": string,"status"?: string,"unit_price_cents": number
+                    "created_at"?: string,"group_id"?: string | null,"group_name": string,"id"?: string,"option_id"?: string | null,"option_name": string,"order_item_id": string,"organization_id": string,"price_delta_cents": number
                   }
                   Update: {
-                    "base_price_cents"?: number,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id"?: string,"organization_id"?: string,"product_id"?: string | null,"product_name"?: string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity"?: number,"request_hash"?: string,"status"?: string,"unit_price_cents"?: number
+                    "created_at"?: string,"group_id"?: string | null,"group_name"?: string,"id"?: string,"option_id"?: string | null,"option_name"?: string,"order_item_id"?: string,"organization_id"?: string,"price_delta_cents"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_item_options_option_id_organization_id_fkey"
+      columns: ["option_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "options"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "order_item_options_order_item_id_organization_id_fkey"
+      columns: ["order_item_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "order_items"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
+                },"order_items": {
+                  Row: {
+                    "base_price_cents": number,"client_key": string,"created_at": string,"created_by": string | null,"id": string,"note": string | null,"options_cents": number,"order_id": string,"organization_id": string,"product_id": string | null,"product_name": string,"promotion_id": string | null,"promotion_name": string | null,"quantity": number,"request_hash": string,"status": string,"unit_price_cents": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "base_price_cents": number,"client_key": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"note"?: string | null,"options_cents"?: number,"order_id": string,"organization_id": string,"product_id"?: string | null,"product_name": string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity": number,"request_hash": string,"status"?: string,"unit_price_cents": number
+                  }
+                  Update: {
+                    "base_price_cents"?: number,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"note"?: string | null,"options_cents"?: number,"order_id"?: string,"organization_id"?: string,"product_id"?: string | null,"product_name"?: string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity"?: number,"request_hash"?: string,"status"?: string,"unit_price_cents"?: number
                   }
                   Relationships: [
                     {
@@ -780,7 +806,7 @@ isOneToOne: false
           }
           Functions: {
             "add_order_item":
-{ Args: { "p_branch": string,"p_client_key": string,"p_product": string,"p_quantity": number,"p_table": string }; Returns: Json
+{ Args: { "p_branch": string,"p_client_key": string,"p_note"?: string,"p_options"?: (string)[],"p_product": string,"p_quantity": number,"p_table": string }; Returns: Json
                            },
 "admin_add_owner":
 { Args: { "p_actor": string,"p_confirmed": boolean,"p_email": string,"p_expected_user"?: string,"p_org": string }; Returns: Json
