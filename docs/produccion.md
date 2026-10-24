@@ -150,26 +150,17 @@ select cron.schedule(
 Los plazos tienen que coincidir con `REJECTED_RETENTION_DAYS` y `PENDING_RETENTION_DAYS` (`src/lib/videos/moderacion.ts`, que la pantalla de moderación muestra) y con el texto de privacidad. Para dar de baja: `select cron.unschedule('purge-video-comments');`. Comprobación después de una ejecución real: `cron.job_run_details` en `succeeded`, `select count(*) from public.video_comments where status = 'rejected' and moderated_at < now() - interval '7 days'` igual a 0, y lo mismo para los pendientes de más de 30 días. El borrado es irreversible y sin respaldo (aceptado: es contenido de un tercero ya descartado).
 
 ### 4.c Programar la purga de pedidos (aprobación: infraestructura)
-La función `public.purge_expired_orders` existe (ADR 0043; ficha `retencion-de-pedidos`) pero nada la ejecuta: sin esto los pedidos cerrados o anulados se acumulan para siempre. Borra, por lotes, los pedidos **cerrados o anulados hace más de 2 años** con sus líneas, opciones y eventos (nunca uno abierto) y devuelve cuántos borró. **El plazo de 2 años está por confirmar con el contador antes de producción.** Con `pg_cron` activo (paso 4), una tarea diaria a las 03:20 de Argentina (06:20 UTC) que repite hasta que `orders` es menor que el lote:
+La función `public.purge_expired_orders` existe (ADR 0043; ficha `retencion-de-pedidos`) pero nada la ejecuta: sin esto los pedidos cerrados o anulados se acumulan para siempre. Borra, por lotes, los pedidos **cerrados o anulados hace más de 2 años** con sus líneas, opciones y eventos (nunca uno abierto) y devuelve cuántos borró. **El plazo de 2 años está por confirmar con el contador antes de producción.**
+
+**Un lote por ejecución, no un bucle.** Cada lote apaga un instante la protección de solo-agregado del registro de pedidos y la vuelve a encender, pero el bloqueo de tabla que eso toma dura hasta que termina la transacción: un `DO` con `loop` (una sola transacción) lo mantendría durante TODOS los lotes y haría esperar a quien anota o cambia un pedido, y un error tardío desharía los lotes anteriores. Por eso la tarea corre la función una vez cada pocos minutos, de madrugada: cada ejecución es su propia transacción, de duración corta. Con `pg_cron` activo (paso 4), cada 2 minutos entre las 03:00 y las 05:58 de Argentina (06:00 a 08:58 UTC): 90 lotes de 500 por día, hasta 45 000 pedidos diarios.
 ```sql
 select cron.schedule(
   'purge-expired-orders',
-  '20 6 * * *',
-  $$
-  do $job$
-  declare r jsonb;
-  begin
-    loop
-      r := public.purge_expired_orders(interval '2 years', 500);
-      raise notice 'purge_expired_orders %', r;
-      exit when (r->>'orders')::integer < 500;
-    end loop;
-  end
-  $job$;
-  $$
+  '*/2 6-8 * * *',
+  $$ select public.purge_expired_orders(interval '2 years', 500) $$
 );
 ```
-Cada lote apaga un instante la protección de solo-agregado del registro de pedidos y lo vuelve a encender en la misma transacción; mientras dura, quien anota o cambia un pedido espera ese instante (por eso lotes de 500 y de madrugada). Para dar de baja: `select cron.unschedule('purge-expired-orders');`. Comprobación después de una ejecución real: `cron.job_run_details` en `succeeded`, `select count(*) from public.orders where status <> 'open' and closed_at < now() - interval '2 years'` igual a 0 y `select tgenabled from pg_trigger where tgname = 'order_events_no_update_delete'` igual a `O` (encendido). Para probar con datos ficticios en staging, crear un pedido, cerrarlo y envejecer su `closed_at` como `postgres` (con `set session_replication_role = replica`) y ejecutar el bloque a mano. **El borrado es irreversible** (solo el respaldo, paso 6).
+Si el atraso creciera (más de 45 000 pedidos vencidos por día), subir el lote (hasta 5000) o la frecuencia; no convertirlo en un bucle. Para dar de baja: `select cron.unschedule('purge-expired-orders');`. El resultado de cada ejecución (cuántos borró de cada cosa) queda en `cron.job_run_details.return_message`. Comprobación después de una ejecución real: estado `succeeded`, `select count(*) from public.orders where status <> 'open' and closed_at < now() - interval '2 years'` igual a 0 y `select tgenabled from pg_trigger where tgname = 'order_events_no_update_delete'` igual a `O` (encendido). Para probar con datos ficticios en staging: crear un pedido, cerrarlo, envejecer su `closed_at` como `postgres` (con `set session_replication_role = replica`) y ejecutar `select public.purge_expired_orders(interval '2 years', 500)` a mano. **El borrado es irreversible** (solo el respaldo, paso 6).
 
 ## 5. Dominio (aprobación: compra y DNS)
 1. Con el dominio ya elegido y comprado (pospuesto), agregarlo a Fly (`fly certs add <dominio>`); apuntar el DNS como indique Fly. Esperar el certificado HTTPS (`fly certs show <dominio>`).

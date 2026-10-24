@@ -340,6 +340,42 @@ describe("atomicidad y concurrencia", () => {
     }
   });
 
+  it("no se interbloquea con un borrado que toma el registro y después los pedidos (el orden de admin_delete_organization)", async () => {
+    const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+    const l = await nuevoLocal();
+    const viejo = await pedido(l, "closed", "3 years");
+
+    // A hace lo que el borrado de una organización: primero el registro (bloqueo de tabla) y, más tarde, borra los pedidos.
+    const titular = spawn(
+      "docker",
+      [
+        "exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c",
+        `begin; lock table public.order_events in share row exclusive mode; select pg_sleep(3); delete from public.orders where id = '${viejo.order}'; commit;`,
+      ],
+      { stdio: "ignore" },
+    );
+    const salida = new Promise<number | null>((resolve) => titular.once("close", (code) => resolve(code)));
+    let retenida = false;
+    for (let i = 0; i < 50 && !retenida; i++) {
+      try {
+        sql(`begin; lock table public.order_events in share row exclusive mode nowait; commit`);
+        await new Promise((r) => setTimeout(r, 100));
+      } catch (error) {
+        if (!String(error).includes("could not obtain lock")) throw error;
+        retenida = true;
+      }
+    }
+    expect(retenida, "el titular no llegó a bloquear el registro").toBe(true);
+
+    // B (la purga) llega mientras A tiene el registro y todavía no tocó los pedidos. Con el orden inverso (filas primero, registro
+    // después) cada una esperaría a la otra y PostgreSQL abortaría una por interbloqueo.
+    const r = await purgar();
+    expect(r.error, "la purga no debe fallar por interbloqueo").toBeNull();
+    expect(await salida, "el borrado no debe fallar por interbloqueo").toBe(0);
+    expect(cuenta("orders", "id", viejo.order)).toBe(0);
+    expect(triggerEncendido()).toBe(true);
+  });
+
   it("convive con pedidos que se anotan, cambian y cierran a la vez: sin errores ni interbloqueos", async () => {
     const l = await nuevoLocal();
     for (let i = 0; i < 6; i++) await pedido(l, i % 2 ? "void" : "closed", `${3 + i} years`);

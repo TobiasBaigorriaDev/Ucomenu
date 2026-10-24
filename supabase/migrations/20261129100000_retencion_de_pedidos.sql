@@ -8,7 +8,11 @@
 --  * Piso de 1 año sobre el corte EFECTIVO (`now() - retención`), no comparando intervalos (ver la ficha de la purga de llamados).
 --  * Para borrar el registro apaga `order_events_no_update_delete` DENTRO de la transacción y lo vuelve a encender antes de terminar
 --    (el mismo recurso de `private.purge_organization_order_events`): si algo falla o se revierte, el trigger queda encendido. Solo lo
---    apaga si hay algo que borrar. Costo: el registro toma un bloqueo de tabla mientras dura el lote.
+--    apaga si hay algo que borrar. Costo: el registro toma un bloqueo de tabla mientras dura el lote (hasta que termina la transacción).
+--  * ORDEN DE BLOQUEOS: primero el del registro (`order_events`), después el de las filas de `orders`: el mismo orden que
+--    `admin_delete_organization` (apaga el trigger y después borra los pedidos por cascada). El orden inverso permitía un interbloqueo
+--    entre la purga y el borrado de una organización (hallazgo de la revisión, ronda 1). Las filas se toman con `skip locked`, así que la
+--    purga nunca espera por ellas. Sin nada vencido no toma ningún bloqueo.
 --  * Nada la programa ni la llama la aplicación: la dispara quien despliega (pg_cron; `docs/produccion.md`, paso 4.c).
 --
 -- Rollback (lo ya purgado no vuelve):
@@ -54,6 +58,16 @@ begin
     raise exception 'invalid_batch' using errcode = '22023';
   end if;
 
+  -- Sin nada vencido no se toma ningún bloqueo (ni se espera a nadie). Es una mirada sin candados: si algo vence o se libera después, lo
+  -- toma la corrida siguiente.
+  if not exists (select 1 from public.orders o where o.status in ('closed', 'void') and o.closed_at < v_cutoff) then
+    return jsonb_build_object('orders', 0, 'items', 0, 'options', 0, 'events', 0, 'cutoff', v_cutoff);
+  end if;
+
+  -- El registro de solo-agregado PRIMERO: se apaga su protección solo mientras dura este borrado, dentro de la transacción. Tomar este
+  -- bloqueo antes que el de las filas es lo que evita el interbloqueo con `admin_delete_organization`.
+  alter table public.order_events disable trigger order_events_no_update_delete;
+
   -- Los vencidos más viejos, sin esperar a los que otra transacción tiene bloqueados. Solo cerrados o anulados: un pedido abierto no
   -- tiene `closed_at` (orders_closed_check) y además se excluye por estado.
   select coalesce(array_agg(v.id), '{}'::uuid[]) into v_ids
@@ -67,11 +81,11 @@ begin
   ) v;
 
   if cardinality(v_ids) = 0 then
+    -- Se los llevó otra corrida, se borraron con su organización o están bloqueados: se devuelve la protección y no se borra nada.
+    alter table public.order_events enable trigger order_events_no_update_delete;
     return jsonb_build_object('orders', 0, 'items', 0, 'options', 0, 'events', 0, 'cutoff', v_cutoff);
   end if;
 
-  -- El registro de solo-agregado: se apaga su protección solo mientras dura este borrado, dentro de la transacción.
-  alter table public.order_events disable trigger order_events_no_update_delete;
   delete from public.order_events where order_id = any (v_ids);
   get diagnostics v_events = row_count;
   alter table public.order_events enable trigger order_events_no_update_delete;
