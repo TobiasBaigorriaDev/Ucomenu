@@ -1,5 +1,5 @@
 # Cambio: Precuenta «no válida como factura» en la Sala
-Estado: **implementado en local; falta aprobación del usuario y despliegue.** No hay migración. Séptima pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisión 6), primera mitad de la «ficha de cierre» (la segunda es la [retención y purga de pedidos](retencion-de-pedidos.md)). Decisiones de alcance confirmadas por el usuario el 2026-10-24 («Imprimible, sin observaciones»; ficha partida en dos).
+Estado: **implementado, aprobado por el usuario (2026-10-24) y desplegado en staging (Fly versión 49)**; falta probarlo con sesión real en staging. No hay migración. Séptima pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisión 6), primera mitad de la «ficha de cierre» (la segunda es la [retención y purga de pedidos](retencion-de-pedidos.md)). Decisiones de alcance confirmadas por el usuario el 2026-10-24 («Imprimible, sin observaciones»; ficha partida en dos).
 Nivel: **M** — solo lectura de lo que ya existe, sin esquema, permisos ni dinero nuevos: *muestra* un total que el mozo no cobra desde la app. Sin revisión independiente por defecto.
 
 ## Objetivo
@@ -32,3 +32,4 @@ Sin migración; base local, 2026-10-24, sobre `73badde`/`a070163` + el diff de e
 - `e2e/sala-precuenta.spec.ts` (nueva) **4/4** a 390 px: la precuenta desde la mesa (importes, sin cancelado ni nota, leyenda, sin desborde, volver), emulación de impresión, cerrado/anulado/vacío y accesos (404, login). Con `sala-operar` y `sala-anotar`: 25/25 (la corrida con 4 trabajadores a la vez tuvo 5 *timeouts* por carga de la máquina; con 3, 13/13).
 - `pnpm typecheck` y `pnpm lint`: limpios. `pnpm build` correcto con la ruta nueva.
 - **No corrido:** mutaciones (solo lectura, sin dinero ni permisos nuevos), suite RLS y E2E completas, impresora real, lector de pantalla, teléfono real, staging.
+- **Despliegue (2026-10-24, aprobado por el usuario):** commits `9fcc707`…`7355e54` en `origin/main`; `flyctl deploy -c fly.staging.toml --local-only --depot=false` con los cuatro argumentos públicos; **Fly v49** (`started`, control `1 passing`). HTTP sin sesión: `/login` y `/m/la-bestia/centro` **200**; `/sala/…/cuenta/{pedido}` **307** al login. Sin migración propia ni secretos tocados. No se probó con sesión real (los demos no tienen Dueño).
