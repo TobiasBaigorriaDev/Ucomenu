@@ -8,11 +8,9 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 **Quinto ítem desplegado en staging, Fly versión 47** (M): [pantalla «Anotar»](cambios/sala-anotar-pedido.md) sobre `add_order_item` (commit `1b217a4`). Falta probarlo con sesión real en staging.
 
-**Sexto ítem desplegado en staging, Fly versión 48** (M): [operar el pedido](cambios/sala-operar-pedido.md) (commit `73badde`). Falta probar «Anotar» y «Operar» con sesión real en staging.
+**En staging (Fly 48):** [anotar](cambios/sala-anotar-pedido.md) y [operar el pedido](cambios/sala-operar-pedido.md); faltan probarlos con sesión real.
 
-**Ficha de cierre, hecha en local y sin subir** (commits locales `9fcc707`…): [precuenta](cambios/sala-precuenta.md) (M, sin migración: `/sala/{slug}/cuenta/{pedido}`, imprimible) y [retención de pedidos](cambios/retencion-de-pedidos.md) (C: migración `20261129100000`, `purge_expired_orders`, 2 años, por lotes, solo `service_role`, sin programar; [ADR 0043](../docs/decisiones/0043-retencion-de-pedidos.md)). Codex revisó la purga en 3 rondas (interbloqueo y lotes corregidos; la tercera fue un cambio de requisito que el usuario resolvió: sin registro de conteos). **Falta:** aprobación del usuario, subir a `origin`, aplicar la migración en staging (`supabase db push`, pide aprobación) y desplegar la precuenta.
-
-Local: `cafe-ejemplo` quedó en plan Pro en la base local (`pnpm db:reset` lo restaura).
+**Ficha de cierre, hecha en local y sin subir** (commits locales `9fcc707`…): [precuenta](cambios/sala-precuenta.md) (M, sin migración: `/sala/{slug}/cuenta/{pedido}`, imprimible) y [retención de pedidos](cambios/retencion-de-pedidos.md) (C: migración `20261129100000`, `purge_expired_orders`, 2 años, por lotes, solo `service_role`, sin programar; [ADR 0043](../docs/decisiones/0043-retencion-de-pedidos.md)). Codex la revisó en 3 rondas (corregidos interbloqueo y lotes; el usuario decidió no registrar conteos). **Falta:** aprobación, subir a `origin`, `supabase db push` en staging y desplegar la precuenta.
 
 Demo en staging: `/m/la-bestia/centro` (Afiche) y `/m/aurelia/centro` (Minimal), sin Dueño asignado ([ficha](cambios/demo-en-staging.md)). `demo` quedó vacía y de baja: borrarla desde `/admin` desde el 2026-11-23.
 
