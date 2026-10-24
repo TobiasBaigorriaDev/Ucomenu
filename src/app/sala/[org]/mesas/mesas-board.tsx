@@ -225,6 +225,17 @@ export function MesasBoard({ slug, initial, isOwner }: { slug: string; initial: 
                       Sin pedido abierto.
                     </p>
                   )}
+
+                  <div className="mt-auto pt-4">
+                    <Link
+                      href={`/sala/${slug}/mesas/${card.tableId}/anotar`}
+                      data-testid="anotar"
+                      aria-label={`${card.order ? "Ver pedido y anotar" : "Anotar pedido"}: ${card.tableLabel}`}
+                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-ink/50 px-5 py-2 text-base font-medium text-ink hover:bg-ink/5"
+                    >
+                      {card.order ? "Ver pedido y anotar" : "Anotar pedido"}
+                    </Link>
+                  </div>
                 </div>
               </li>
             );
