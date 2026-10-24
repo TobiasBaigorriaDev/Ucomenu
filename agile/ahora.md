@@ -15,7 +15,7 @@ Verificado: RLS 1276/1276, E2E 440 de 441 (un *worker* caído, ajeno). M y S sin
 
 ## Bloqueos y límites
 
-- **Claves de Supabase de staging**: las claves *legacy* están desactivadas. La app se compila con la `sb_publishable_…` y el secreto `SUPABASE_SERVICE_ROLE_KEY` de Fly es ahora la clave secreta `default` (lo puso el usuario, 2026-10-23). Falta comprobar con sesión real SuperAdmin, personal y llamados desde la mesa.
+- **Claves de Supabase de staging**: las claves *legacy* están desactivadas. La app se compila con la `sb_publishable_…` y el secreto `SUPABASE_SERVICE_ROLE_KEY` de Fly es ahora la clave secreta `default` (la puso el usuario, 2026-10-23, con `supabase projects api-keys --reveal`: **sin `--reveal` el CLI devuelve la clave enmascarada** y queda inválida). Falta comprobar con sesión real SuperAdmin, personal y llamados desde la mesa.
 - Clientes recurrentes (S4) espera a un abogado. Siguen pendientes el dominio, la revisión legal de los comentarios y programar las purgas (bloquean producción).
 - `pnpm test` tiene una falla ajena: `textos.test.ts` («Menufeed»). Intermitentes: `sala.spec:323`, `videos-mux.spec:145`, `owner-lectura.rls` y *workers* con `0xC0000409`. E2E: usar `--workers=3`. Si `pnpm build` da `EPERM` en `.next/server`, borrar esa carpeta y repetir. `tools/escenarios-locales.mjs` es ajeno y sin seguir.
 - Despliegue desde Windows: `flyctl deploy -c fly.staging.toml` con las cuatro `NEXT_PUBLIC_*` como `--build-arg` (la `publishable`, nunca una secreta); ver `docs/produccion.md`.
