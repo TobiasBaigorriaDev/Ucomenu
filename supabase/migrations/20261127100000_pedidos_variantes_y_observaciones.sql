@@ -104,7 +104,7 @@ declare
   v_hash text;
   v_options uuid[];
   v_note text;
-  v_delta bigint;
+  v_ins integer;
   v_opts jsonb;
   v_item public.order_items%rowtype;
 begin
@@ -147,10 +147,13 @@ begin
   if not private.can_take_orders(v_org) then
     raise exception 'orders_not_allowed' using errcode = '42501';
   end if;
-  v_hash := md5(format(
-    '%s|%s|%s|%s|%s', p_table, p_product, p_quantity,
-    (select string_agg(s.id::text, ',' order by s.id) from unnest(v_options) as s(id)), v_note
-  ));
+  -- Sin opciones ni nota, la huella es la de la migración anterior (mesa|plato|cantidad): un reintento de una línea creada antes
+  -- sigue valiendo. Con ellas, también cubre las opciones (ordenadas) y la nota normalizada.
+  v_hash := md5(case
+    when cardinality(v_options) = 0 and v_note is null then format('%s|%s|%s', p_table, p_product, p_quantity)
+    else format('%s|%s|%s|%s|%s', p_table, p_product, p_quantity,
+                (select string_agg(s.id::text, ',' order by s.id) from unnest(v_options) as s(id)), v_note)
+  end);
   select i.* into v_item from public.order_items i where i.organization_id = v_org and i.client_key = p_client_key;
   if found then
     if v_item.request_hash <> v_hash then
@@ -241,7 +244,6 @@ begin
   ) then
     raise exception 'options_exceeded' using errcode = '22023';
   end if;
-  select coalesce(sum(o.price_delta_cents), 0)::bigint into v_delta from public.options o where o.id = any (v_options);
 
   select count(*) into v_count from public.order_items i where i.order_id = v_order;
   if v_count >= 200 then
@@ -249,19 +251,30 @@ begin
   end if;
 
   insert into public.order_items (
-    organization_id, order_id, product_id, product_name, quantity, base_price_cents, unit_price_cents, options_cents, note,
+    organization_id, order_id, product_id, product_name, quantity, base_price_cents, unit_price_cents, note,
     promotion_id, promotion_name, client_key, request_hash, created_by
   )
-  values (v_org, v_order, p_product, v_name, p_quantity, v_base, v_price, v_delta, v_note, v_promo, v_promo_name, p_client_key, v_hash, v_uid)
+  values (v_org, v_order, p_product, v_name, p_quantity, v_base, v_price, v_note, v_promo, v_promo_name, p_client_key, v_hash, v_uid)
   returning * into v_item;
 
   insert into public.order_item_options (organization_id, order_item_id, option_id, group_id, group_name, option_name, price_delta_cents)
   select v_org, v_item.id, o.id, g.id, g.name, o.name, o.price_delta_cents
   from unnest(v_options) as s(id)
-  join public.options o on o.id = s.id
-  join public.option_groups g on g.id = o.group_id
+  join public.options o on o.id = s.id and o.organization_id = v_org and o.is_active
+  join public.option_groups g on g.id = o.group_id and g.organization_id = v_org and g.is_active and g.product_id = p_product
   -- Orden de la carta (grupo y opción); si empatan, el más antiguo primero: el resultado no depende de los ids.
   order by g.sort_order, g.created_at, g.id, o.sort_order, o.created_at, o.id;
+  -- Lo copiado es la fuente de verdad: si una opción dejó de estar activa (o su grupo) entre la validación y la copia, faltan filas y
+  -- se rechaza (todo se deshace); y el total de la línea se calcula SOBRE lo copiado, así que nunca contradice las diferencias que
+  -- quedaron guardadas aunque el catálogo cambie a mitad de la llamada.
+  get diagnostics v_ins = row_count;
+  if v_ins <> cardinality(v_options) then
+    raise exception 'invalid_options' using errcode = '22023';
+  end if;
+  update public.order_items i
+  set options_cents = (select coalesce(sum(x.price_delta_cents), 0) from public.order_item_options x where x.order_item_id = i.id)
+  where i.id = v_item.id
+  returning * into v_item;
 
   select coalesce(jsonb_agg(jsonb_build_object(
     'option_id', x.option_id, 'group_name', x.group_name, 'option_name', x.option_name, 'price_delta_cents', x.price_delta_cents

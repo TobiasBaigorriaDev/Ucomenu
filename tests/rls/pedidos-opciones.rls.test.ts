@@ -304,6 +304,67 @@ describe("la copia", () => {
   });
 });
 
+describe("el catálogo cambia a mitad de la llamada", () => {
+  /** Un disparador de prueba pausa el INSERT de la línea: ahí otra sesión cambia el catálogo. */
+  async function conPausa<T>(l: Local, cambio: () => Promise<unknown>, llamada: () => PromiseLike<T>): Promise<T> {
+    sql(`create function public.tt_pausa() returns trigger language plpgsql as $$ begin perform pg_sleep(2.5); return new; end $$`);
+    sql(`create trigger tt_pausa before insert on public.order_items for each row when (new.organization_id = '${l.id}') execute function public.tt_pausa()`);
+    try {
+      const espera = llamada();
+      await new Promise((r) => setTimeout(r, 1000));
+      await cambio();
+      return await espera;
+    } finally {
+      sql("drop trigger tt_pausa on public.order_items");
+      sql("drop function public.tt_pausa()");
+    }
+  }
+
+  it("si la diferencia de una opción cambia durante la llamada, el total de la línea coincide con las diferencias copiadas", async () => {
+    const l = await nuevoLocal();
+    const g = await grupo(l, "Extras", 0, 2, [["Bacon", 100]]);
+    const r = linea(
+      await conPausa(
+        l,
+        async () => service.from("options").update({ price_delta_cents: 500 }).eq("id", g.opciones[0]),
+        () => anotar(owner.db, l, { p_options: g.opciones }).then((x) => x),
+      ),
+    );
+    const copia = await service.from("order_item_options").select("price_delta_cents").eq("order_item_id", r.item_id);
+    const suma = (copia.data ?? []).reduce((s, x) => s + x.price_delta_cents, 0);
+    const fila = await service.from("order_items").select("options_cents").eq("id", r.item_id).single();
+    expect(fila.data?.options_cents).toBe(suma);
+    expect(r.options_cents).toBe(suma);
+  });
+
+  it("si una opción se desactiva durante la llamada, se rechaza y no queda nada", async () => {
+    const l = await nuevoLocal();
+    const g = await grupo(l, "Extras", 0, 2, [["Bacon", 100]]);
+    const r = await conPausa(
+      l,
+      async () => service.from("options").update({ is_active: false }).eq("id", g.opciones[0]),
+      () => anotar(owner.db, l, { p_options: g.opciones }).then((x) => x),
+    );
+    expect(r.error?.message).toBe("invalid_options");
+    expect(cuenta("orders", l.id)).toBe(0);
+    expect(cuenta("order_items", l.id)).toBe(0);
+    expect(cuenta("order_item_options", l.id)).toBe(0);
+  });
+});
+
+describe("compatibilidad con líneas creadas antes de esta migración", () => {
+  it("un reintento idéntico de una línea sin opciones ni nota (huella de la función anterior) devuelve la línea", async () => {
+    const l = await nuevoLocal();
+    const clave = randomUUID();
+    const primera = linea(await anotar(owner.db, l, { p_client_key: clave, p_quantity: 2 }));
+    // La huella de la migración anterior era md5(mesa|plato|cantidad): se reproduce a mano en la fila.
+    sql(`update public.order_items set request_hash = md5('${l.table}|${l.product}|2') where id = '${primera.item_id}'`);
+    const otra = linea(await anotar(owner.db, l, { p_client_key: clave, p_quantity: 2 }));
+    expect(otra).toMatchObject({ replayed: true, item_id: primera.item_id });
+    expect(cuenta("order_items", l.id)).toBe(1);
+  });
+});
+
 describe("la tabla de opciones copiadas", () => {
   it("la leen los miembros de la organización y nadie más; nadie la escribe por la API", async () => {
     const l = await nuevoLocal();
