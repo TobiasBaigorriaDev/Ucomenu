@@ -267,26 +267,26 @@ describe("features por plan y estado (feed de videos, ADR 0031)", () => {
 
   const casosFeatures: Caso[] = [
     { etiqueta: "Básico al día", plan: "basic", finEnMs: 3 * DIA_MS, features: ["menu"], videosPublished: 0 },
-    { etiqueta: "Pro al día", plan: "pro", finEnMs: 3 * DIA_MS, features: ["analytics", "menu", "promotions", "waiter_call"], videosPublished: 0 },
+    { etiqueta: "Pro al día", plan: "pro", finEnMs: 3 * DIA_MS, features: ["analytics", "menu", "orders", "promotions", "waiter_call"], videosPublished: 0 },
     {
       etiqueta: "Premium al día",
       plan: "premium",
       finEnMs: 3 * DIA_MS,
-      features: ["analytics", "loyalty", "menu", "promotions", "video_feed", "waiter_call"],
+      features: ["analytics", "loyalty", "menu", "orders", "promotions", "video_feed", "waiter_call"],
       videosPublished: 10,
     },
     {
       etiqueta: "Pro en gracia: todo lo suyo sigue, sin video",
       plan: "pro",
       finEnMs: -2 * DIA_MS,
-      features: ["analytics", "menu", "promotions", "waiter_call"],
+      features: ["analytics", "menu", "orders", "promotions", "waiter_call"],
       videosPublished: 0,
     },
     {
       etiqueta: "Premium en gracia: todo sigue",
       plan: "premium",
       finEnMs: -2 * DIA_MS,
-      features: ["analytics", "loyalty", "menu", "promotions", "video_feed", "waiter_call"],
+      features: ["analytics", "loyalty", "menu", "orders", "promotions", "video_feed", "waiter_call"],
       videosPublished: 10,
     },
     {
@@ -322,12 +322,12 @@ describe("features por plan y estado (feed de videos, ADR 0031)", () => {
     expect(staff.data).toMatchObject({ features });
   });
 
-  it("el catálogo: video_feed y 10 videos publicados solo en Premium, promotions en Pro y Premium; Básico y Pro, sin cupo de videos", async () => {
+  it("el catálogo: video_feed y 10 videos publicados solo en Premium, promotions y orders en Pro y Premium; Básico y Pro, sin cupo de videos", async () => {
     const planes = await service.from("plans").select("code, features, max_videos_published").order("code");
     expect(planes.data).toEqual([
       { code: "basic", features: ["menu"], max_videos_published: 0 },
-      { code: "premium", features: ["menu", "waiter_call", "analytics", "loyalty", "video_feed", "promotions"], max_videos_published: 10 },
-      { code: "pro", features: ["menu", "waiter_call", "analytics", "promotions"], max_videos_published: 0 },
+      { code: "premium", features: ["menu", "waiter_call", "analytics", "loyalty", "video_feed", "promotions", "orders"], max_videos_published: 10 },
+      { code: "pro", features: ["menu", "waiter_call", "analytics", "promotions", "orders"], max_videos_published: 0 },
     ]);
   });
 

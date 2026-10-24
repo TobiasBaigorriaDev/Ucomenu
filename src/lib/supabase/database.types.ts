@@ -273,6 +273,64 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"order_items": {
+                  Row: {
+                    "base_price_cents": number,"client_key": string,"created_at": string,"created_by": string | null,"id": string,"order_id": string,"organization_id": string,"product_id": string | null,"product_name": string,"promotion_id": string | null,"promotion_name": string | null,"quantity": number,"status": string,"unit_price_cents": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "base_price_cents": number,"client_key": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id": string,"organization_id": string,"product_id"?: string | null,"product_name": string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity": number,"status"?: string,"unit_price_cents": number
+                  }
+                  Update: {
+                    "base_price_cents"?: number,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"order_id"?: string,"organization_id"?: string,"product_id"?: string | null,"product_name"?: string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity"?: number,"status"?: string,"unit_price_cents"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_items_order_id_organization_id_fkey"
+      columns: ["order_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "orders"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "order_items_product_id_organization_id_fkey"
+      columns: ["product_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "products"
+      referencedColumns: ["id","organization_id"]
+    }
+                  ]
+                },"orders": {
+                  Row: {
+                    "branch_id": string,"closed_at": string | null,"id": string,"opened_at": string,"opened_by": string | null,"organization_id": string,"status": string,"table_id": string | null,"table_label": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"closed_at"?: string | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"organization_id": string,"status"?: string,"table_id"?: string | null,"table_label": string
+                  }
+                  Update: {
+                    "branch_id"?: string,"closed_at"?: string | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"organization_id"?: string,"status"?: string,"table_id"?: string | null,"table_label"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "orders_branch_id_organization_id_fkey"
+      columns: ["branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "orders_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "orders_table_id_branch_id_organization_id_fkey"
+      columns: ["table_id","branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "tables"
+      referencedColumns: ["id","branch_id","organization_id"]
+    }
+                  ]
                 },"organization_feature_previews": {
                   Row: {
                     "created_at": string,"ends_at": string,"feature": string,"organization_id": string,"reason": string,"updated_at": string
@@ -721,7 +779,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "admin_add_owner":
+            "add_order_item":
+{ Args: { "p_branch": string,"p_client_key": string,"p_product": string,"p_quantity": number,"p_table": string }; Returns: Json
+                           },
+"admin_add_owner":
 { Args: { "p_actor": string,"p_confirmed": boolean,"p_email": string,"p_expected_user"?: string,"p_org": string }; Returns: Json
                            },
 "admin_begin_orphan_delete":

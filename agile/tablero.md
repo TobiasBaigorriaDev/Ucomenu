@@ -66,7 +66,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [S] Pantalla del historial de promociones: hecho en local (2026-10-23), ver «Hecho»
 
 **S3 — Pedidos del mozo** (desbloqueado: la función de precio efectivo está hecha)
-- [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base → [ficha](cambios/pedidos-esquema-y-alta-de-items.md) (lista para implementar)
+- [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base → [ficha](cambios/pedidos-esquema-y-alta-de-items.md) (implementado en local, falta revisión independiente)
 - [C] Variantes, adicionales y observaciones con validación de mínimos y máximos
 - [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora
 - [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta»

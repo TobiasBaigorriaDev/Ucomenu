@@ -67,6 +67,7 @@ Alta de organizaciones, asignación manual de plan y add-ons, registro de pagos,
 Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases y tareas en `agile/tablero.md`. Los motivos, en los ADR enlazados.
 
 #### 7. Pedidos del mozo (Pro y Premium) — [ADR 0041](decisiones/0041-pedidos-del-mozo.md)
+*Avance: esquema y alta de ítems sin opciones en la base (`add_order_item`, ficha [pedidos-esquema-y-alta-de-items](../agile/cambios/pedidos-esquema-y-alta-de-items.md)); todavía sin pantalla, variantes, estados ni cierre.*
 - El **mozo** (Dueño o Staff con sesión) anota en la **Sala** lo que el cliente le dicta: mesa, platos, variantes, adicionales, cantidades y observaciones; después modifica, cancela y cambia estados. **El comensal no pide**: la carta sigue siendo solo consulta.
 - Pedido: abierto → cerrado | anulado. Ítem: anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). Solo por mesa en la primera entrega.
 - Cada línea copia nombre, precio (el efectivo al anotarla, con promoción si rige) y opciones; el precio lo calcula el servidor.

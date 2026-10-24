@@ -171,13 +171,15 @@ describe("habilitar una función", () => {
     ).toThrow(/check/i);
   });
 
-  it("si el plan ya incluye la función, la vista previa se rechaza (feature_in_plan): promotions está en Pro y Premium", async () => {
+  it("si el plan ya incluye la función, la vista previa se rechaza (feature_in_plan): promotions y orders están en Pro y Premium", async () => {
     for (const plan of ["pro", "premium"] as const) {
       const local = await crearLocal(plan);
-      expect(concede(local.id, "promotions")).toBe(true);
-      expect(() =>
-        sql(`select public.admin_set_feature_preview('${admin.id}', '${local.id}', 'promotions', now() + interval '5 days', 'x')`),
-      ).toThrow(/feature_in_plan/);
+      for (const feature of ["promotions", "orders"]) {
+        expect(concede(local.id, feature)).toBe(true);
+        expect(() =>
+          sql(`select public.admin_set_feature_preview('${admin.id}', '${local.id}', '${feature}', now() + interval '5 days', 'x')`),
+        ).toThrow(/feature_in_plan/);
+      }
       expect(await filas(local.id)).toEqual([]);
       expect(await auditoria(local.id)).toEqual([]);
     }
@@ -379,14 +381,15 @@ describe("concurrencia", () => {
   });
 
   it("cambiar de plan mientras se habilita no pierde ni duplica nada", async () => {
+    // Con una función que ningún plan incluye: `orders` ya está en Premium y la vista previa se rechazaría (feature_in_plan).
     const local = await crearLocal();
     const [vp] = await Promise.all([
-      habilitar(local),
+      habilitar(local, enDias(30), "Piloto con el local", "customers"),
       service.rpc("admin_change_plan", { p_actor: admin.id, p_org: local.id, p_plan: "premium", p_billing_cycle: "monthly", p_reason: "Sube" }),
     ]);
     expect(vp.ok).toBe(true);
     expect(await filas(local.id)).toHaveLength(1);
-    expect(tiene(local.id)).toBe(true);
+    expect(tiene(local.id, "customers")).toBe(true);
   });
 });
 
