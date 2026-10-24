@@ -6,7 +6,7 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 **S3 «Pedidos del mozo»:** los tres primeros ítems son solo base de datos, aprobados por Codex y por el usuario y **ya en staging**: [esquema](cambios/pedidos-esquema-y-alta-de-items.md), [opciones](cambios/pedidos-variantes-adicionales-observaciones.md) y [estados y registro](cambios/pedidos-estados-y-registro.md) (migración `20261128100000`). Siguiente migración libre: `20261129100000`.
 
-**Cuarto ítem hecho en local, sin desplegar** (M): [vista «Mesas» y total en «Pide la cuenta»](cambios/sala-mesas-y-total.md): `/sala/{slug}/mesas` con su sondeo, y el total del pedido en la tarjeta del llamado. Sin migración: falta la aprobación del usuario y desplegar la app (`flyctl deploy -c fly.staging.toml`, ver `docs/produccion.md`).
+**Cuarto ítem hecho y desplegado en staging, Fly versión 46** (M): [vista «Mesas» y total en «Pide la cuenta»](cambios/sala-mesas-y-total.md): `/sala/{slug}/mesas` con su sondeo, y el total del pedido en la tarjeta del llamado. Sin migración; aprobado por el usuario. Falta probarlo con sesión real.
 
 Demo en staging: `/m/la-bestia/centro` (Afiche) y `/m/aurelia/centro` (Minimal), sin Dueño asignado ([ficha](cambios/demo-en-staging.md)). `demo` quedó vacía y de baja: borrarla desde `/admin` desde el 2026-11-23.
 
@@ -19,6 +19,6 @@ Demo en staging: `/m/la-bestia/centro` (Afiche) y `/m/aurelia/centro` (Minimal),
 
 ## Próximo paso
 
-1. Aprobación del usuario de la vista «Mesas», despliegue a staging y prueba con sesión real y un pedido anotado.
+1. Probar «Mesas» en staging con sesión real (hoy no hay forma de anotar un pedido desde la app: ver el punto 2).
 2. **Hueco del tablero:** ítem [M] «Anotar y operar pedidos desde la Sala» (plato con variantes y observación, estados, cancelar, cerrar y anular). Hoy ninguna pantalla crea pedidos; solo existen las funciones de base.
 3. Después, la ficha de cierre (C): precuenta «no válida como factura», retención de 2 años y su purga. Pendiente urgente: **rotar la `service_role` legacy de staging**.
