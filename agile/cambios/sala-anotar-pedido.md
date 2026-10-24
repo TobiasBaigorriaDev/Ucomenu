@@ -1,5 +1,5 @@
 # Cambio: Pantalla «Anotar» en la Sala (anotar un plato con sus opciones)
-Estado: **implementado en local, sin commitear; falta aprobación del usuario y probarlo en staging.** No hay migración. Quinta pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisiones 1 y 2), primera mitad del ítem «Anotar y operar pedidos desde la Sala»; la segunda (estados, cancelar, cerrar y anular) es la ficha siguiente.
+Estado: **implementado, aprobado por el usuario (2026-10-24, tras probarlo en local) y desplegado en staging (Fly versión 47)**; falta probarlo con sesión real en staging. No hay migración. Quinta pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisiones 1 y 2), primera mitad del ítem «Anotar y operar pedidos desde la Sala»; la segunda (estados, cancelar, cerrar y anular) es la ficha siguiente.
 Nivel: **M** — solo agrega una pantalla sobre `add_order_item`, ya revisada (C) y en staging: el precio, las opciones, los mínimos y máximos y la autorización los decide la base. La pantalla no calcula nada que se cobre, no cambia esquema, permisos ni dinero. Sin revisión independiente por defecto.
 
 ## Objetivo
@@ -36,6 +36,8 @@ Sin migración; base local con las migraciones existentes, 2026-10-24, sobre `be
 - Capturas a 390 px revisadas (carta, panel con opciones, pedido anotado).
 - `pnpm typecheck` y `pnpm lint`: limpios. `pnpm test`: 1029 de 1030; la única falla es `textos.test.ts` («Menufeed»), ajena. `pnpm build` correcto con la ruta nueva. `sala.spec`: 26 de 27; falla `sala.spec:323` (intermitente conocida, «Route is already handled»); corrida junto con otros tres archivos fallaron 11 de `sala.spec` por carga, y sola pasan salvo esa.
 - **No corrido:** mutaciones (el cambio no toca dinero ni permisos: lo decide la base, ya mutada en la ficha de opciones), suite RLS y E2E completas, lector de pantalla, teléfono real, staging.
+
+- **Despliegue (2026-10-24, aprobado por el usuario):** commit `1b217a4` en `origin/main`; `flyctl deploy -c fly.staging.toml --local-only --depot=false` con los cuatro argumentos públicos; **Fly v47** (`started`, control `1 passing`, máquina `78177dda131e38`). HTTP sin sesión: `/login` y `/m/la-bestia/centro` **200**; `/sala/…/mesas/{mesa}/anotar` **307** al login. Sin migración ni secretos tocados. No se probó con sesión real (los demos no tienen Dueño).
 
 ## Notas de diseño
 - La pantalla pone el pedido arriba y la carta debajo: con muchas líneas hay que desplazarse hasta la carta. Se puede mejorar en la ficha siguiente (acceso rápido «Anotar un plato», o carta fija) cuando se sepa cómo opera el mozo.
