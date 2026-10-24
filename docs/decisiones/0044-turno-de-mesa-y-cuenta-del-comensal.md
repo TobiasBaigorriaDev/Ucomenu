@@ -1,0 +1,30 @@
+# 0044 — Turno de mesa y cuenta del comensal: el QR no cambia, lo que resuelve sí
+
+- Estado: aceptada (aprobada por el usuario el 2026-10-24; implementación pendiente)
+- Fecha: 2026-10-24
+
+## Contexto
+El ADR 0041 (decisiones 1 y 7) dejó los pedidos fuera del alcance del anónimo: solo el personal los lee y «Pedir la cuenta» es un llamado que muestra el total **al mozo**. El usuario quiere además que el **comensal vea su precuenta** en el celular cuando pide la cuenta, y que el QR «se renueve» al cobrar la mesa **sin cambiar el diseño impreso**. Un QR impreso codifica una URL fija: no puede cambiar solo. Regenerar el `qr_token` (ADR 0009) lo invalida y obliga a reimprimir.
+
+La base ya tiene dos piezas: el **ticket de visita** (HMAC sin estado emitido en cada carga de `/t/{token}`, 3 h; ficha `ticket-de-visita`) y el **cierre de sesión 10 minutos después de atender «Pedir la cuenta»** (ficha `cerrar-sesion-al-atender-la-cuenta`), que compara la emisión del ticket con la atención del llamado.
+
+## Decisión
+1. **Turno de mesa.** `tables.turn_started_at` (timestamptz) marca el inicio del turno vigente. El QR y su token no cambian nunca por esto. Un ticket de visita **solo vale para ver la cuenta si se emitió después** del inicio del turno (comparación estricta, en segundos enteros; ante la duda, cierra y pide escanear de nuevo).
+2. **Cuándo rota (`turn_started_at = clock_timestamp()`):** al cerrar o anular un pedido con mesa (`close_order`, `void_order`) y con el botón manual «Reiniciar QR de la mesa» de la Sala (`reset_table_turn`, cualquier miembro). Además vence el ticket a las 3 h (ya existente). **No rota al tocar «Pedir la cuenta»:** pedirla no termina la visita (siguen el postre y el café) y el botón lo toca cualquiera que escanee, así que un anónimo podría sacar a la mesa de su propia cuenta.
+3. **Cuenta del comensal (solo lectura).** Una acción de servidor valida el ticket (HMAC) y llama con `service_role` a `get_table_account(p_token, p_ticket_at)`. Devuelve platos vigentes (nombre, opciones, cantidad, importe), total y cantidad, **solo si** hay un «Pedir la cuenta» de la mesa creado dentro del turno y el ticket es del turno. Nunca observaciones, motivos, personas, ids ni líneas canceladas. Sin pedido abierto: «todavía no hay platos anotados», sin revelar más. El anónimo **sigue sin permiso** sobre `orders` y `order_items`.
+4. **Misma leyenda y mismos importes** que la precuenta del mozo (copia de lo anotado, «No válida como factura»).
+5. **No se rota al «Pedir la cuenta» y no hay credencial por dispositivo:** pulsar el botón es trivial, así que atar la vista al aparato no agregaba protección y sí complejidad.
+
+## Alternativas consideradas
+- **Regenerar el `qr_token` al cobrar** — invalida el QR impreso (404): obliga a reimprimir en cada cobro.
+- **Redirigir `/t/{token}` a `/t/{token}/{turno}`** — da una «dirección distinta» visible, pero el ticket ya cumple ese papel (se emite en cada carga, no se cachea) sin una ruta nueva ni enlaces compartibles de más.
+- **Rotar al pedir la cuenta** — descartada (decisión 2).
+- **Código que da el mozo, o geolocalización** — más fricción o no fiable; se acepta el riesgo de abajo.
+- **Política de lectura para `anon` sobre pedidos** — expondría todo; se usa una función de solo servidor (patrón del ADR 0038).
+
+## Consecuencias
+- **Riesgo aceptado por el usuario:** quien escanee el QR durante el turno, estando o no en el local, puede ver el consumo de esa mesa (platos y total, sin datos personales) **después de que se pidió la cuenta**. El turno limita cuánto dura, no quién. Se mitiga con el ticket, el cierre del turno y que el mozo ve cuándo escaneó.
+- La función `get_table_account` y `reset_table_turn` son nuevas superficies; la primera solo `service_role`.
+- `close_order` y `void_order` siguen sin bloquearse por mora o plan; la rotación va dentro de la misma transacción.
+- Se actualiza `docs/producto.md` y las decisiones 1 y 7 del ADR 0041 quedan **matizadas** por este ADR (el anónimo lee únicamente la cuenta de su turno, por esta vía).
+- Falta probar en teléfono real: escaneo, pedir la cuenta, ver la cuenta, cobro y re-escaneo.

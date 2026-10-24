@@ -14,7 +14,8 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Seleccionado
 
-- (vacío)
+- [C] Turno de mesa que rota al cobrar (el QR impreso no cambia) → [ficha](cambios/turno-de-mesa.md) · [ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)
+- [C] El comensal ve su precuenta al pedir la cuenta (depende del turno de mesa) → [ficha](cambios/cuenta-del-comensal.md)
 
 ## Para verificar
 
