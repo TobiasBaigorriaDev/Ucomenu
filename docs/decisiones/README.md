@@ -54,3 +54,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0040 | [Promociones programadas por horario de cada sucursal, con una sola función de precio efectivo en la base](0040-promociones-programadas.md) | aceptada (sin implementar) | 2026-10-23 |
 | 0041 | [Pedidos que anota el mozo en la Sala, sin punto de venta fiscal; el comensal no pide](0041-pedidos-del-mozo.md) | aceptada (sin implementar) | 2026-10-23 |
 | 0042 | [La identidad del cliente es por organización, con consentimiento, y se vincula a la visita o al pedido, nunca a la mesa](0042-clientes-recurrentes.md) | aceptada (sin implementar; bloqueada por revisión legal) | 2026-10-23 |
+| 0043 | [Los pedidos se conservan 2 años desde el cierre y después se purgan completos, por lotes](0043-retencion-de-pedidos.md) | aceptada (plazo por confirmar con el contador) | 2026-10-24 |

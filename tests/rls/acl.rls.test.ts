@@ -116,6 +116,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   set_my_guide_dismissed: [false, true], // guía de primeros pasos: oculta o muestra la guía de quien llama; valida adentro (miembro)
   my_branch_view: [false, true], // vista por sucursal (ficha vista-por-sucursal, ADR 0034): la vista efectiva de quien llama; solo lo propio
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
+  purge_expired_orders: [false, false], // purga de pedidos de más de 2 años (ADR 0043): SECURITY DEFINER, solo service_role
   create_product_in_branches: [false, true], // alta del plato con sucursales donde se oculta (ADR 0035): SECURITY INVOKER, manda la RLS de quien llama
   reorder_siblings: [false, true], // orden de la carta (ficha orden-e-imagenes-atomicos): SECURITY INVOKER, manda la RLS de quien llama
   replace_organization_logo: [false, true], // logo del local: SECURITY INVOKER, devuelve el logo saliente; manda la RLS del Dueño

@@ -149,6 +149,28 @@ select cron.schedule(
 ```
 Los plazos tienen que coincidir con `REJECTED_RETENTION_DAYS` y `PENDING_RETENTION_DAYS` (`src/lib/videos/moderacion.ts`, que la pantalla de moderación muestra) y con el texto de privacidad. Para dar de baja: `select cron.unschedule('purge-video-comments');`. Comprobación después de una ejecución real: `cron.job_run_details` en `succeeded`, `select count(*) from public.video_comments where status = 'rejected' and moderated_at < now() - interval '7 days'` igual a 0, y lo mismo para los pendientes de más de 30 días. El borrado es irreversible y sin respaldo (aceptado: es contenido de un tercero ya descartado).
 
+### 4.c Programar la purga de pedidos (aprobación: infraestructura)
+La función `public.purge_expired_orders` existe (ADR 0043; ficha `retencion-de-pedidos`) pero nada la ejecuta: sin esto los pedidos cerrados o anulados se acumulan para siempre. Borra, por lotes, los pedidos **cerrados o anulados hace más de 2 años** con sus líneas, opciones y eventos (nunca uno abierto) y devuelve cuántos borró. **El plazo de 2 años está por confirmar con el contador antes de producción.** Con `pg_cron` activo (paso 4), una tarea diaria a las 03:20 de Argentina (06:20 UTC) que repite hasta que `orders` es menor que el lote:
+```sql
+select cron.schedule(
+  'purge-expired-orders',
+  '20 6 * * *',
+  $$
+  do $job$
+  declare r jsonb;
+  begin
+    loop
+      r := public.purge_expired_orders(interval '2 years', 500);
+      raise notice 'purge_expired_orders %', r;
+      exit when (r->>'orders')::integer < 500;
+    end loop;
+  end
+  $job$;
+  $$
+);
+```
+Cada lote apaga un instante la protección de solo-agregado del registro de pedidos y lo vuelve a encender en la misma transacción; mientras dura, quien anota o cambia un pedido espera ese instante (por eso lotes de 500 y de madrugada). Para dar de baja: `select cron.unschedule('purge-expired-orders');`. Comprobación después de una ejecución real: `cron.job_run_details` en `succeeded`, `select count(*) from public.orders where status <> 'open' and closed_at < now() - interval '2 years'` igual a 0 y `select tgenabled from pg_trigger where tgname = 'order_events_no_update_delete'` igual a `O` (encendido). Para probar con datos ficticios en staging, crear un pedido, cerrarlo y envejecer su `closed_at` como `postgres` (con `set session_replication_role = replica`) y ejecutar el bloque a mano. **El borrado es irreversible** (solo el respaldo, paso 6).
+
 ## 5. Dominio (aprobación: compra y DNS)
 1. Con el dominio ya elegido y comprado (pospuesto), agregarlo a Fly (`fly certs add <dominio>`); apuntar el DNS como indique Fly. Esperar el certificado HTTPS (`fly certs show <dominio>`).
 2. Confirmar que `NEXT_PUBLIC_SITE_URL` coincide y volver a desplegar si se cambió.
@@ -170,10 +192,11 @@ Con la app publicada y sin datos reales todavía:
 - No hay cookies en la carta pública (`/m/...`).
 - La purga programada corrió y no quedan llamados de más de 14 días (paso 4).
 - La purga de comentarios corrió y no quedan rechazados de más de 7 días ni pendientes de más de 30 (paso 4.b).
+- La purga de pedidos corrió y no quedan pedidos cerrados o anulados de más de 2 años, con el registro de solo-agregado encendido (paso 4.c).
 - Probar en un teléfono real lo pendiente del tablero: ticket de visita con la pantalla apagada y la pantalla «Llamados».
 
 ## Marcha atrás
 - **Aplicación:** volver a la versión anterior (`fly releases` y `fly deploy --image <imagen anterior>`).
 - **Base:** las migraciones traen su rollback en el encabezado. No se baja una migración en una base con datos reales sin aprobación; la purga de `waiter_calls` es irreversible y no tiene respaldo (aceptado, ADR 0014).
-- **Purga mal programada:** `cron.unschedule('purge-waiter-calls')` o `cron.unschedule('purge-video-comments')`.
+- **Purga mal programada:** `cron.unschedule('purge-waiter-calls')`, `cron.unschedule('purge-video-comments')` o `cron.unschedule('purge-expired-orders')`.
 - **Datos perdidos o dañados:** restaurar desde el último respaldo propio (`docs/operacion.md`, sección 2).

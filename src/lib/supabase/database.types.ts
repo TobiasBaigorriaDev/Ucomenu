@@ -934,6 +934,9 @@ isOneToOne: false
 "public_menu_status":
 { Args: { "p_branch_slug": string,"p_org_slug": string }; Returns: string
                            },
+"purge_expired_orders":
+{ Args: { "p_batch"?: number,"p_retention"?: string }; Returns: Json
+                           },
 "purge_video_comments":
 { Args: { "p_batch"?: number,"p_pending_retention"?: string,"p_rejected_retention"?: string }; Returns: number
                            },
