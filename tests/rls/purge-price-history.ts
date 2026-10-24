@@ -115,7 +115,7 @@ export function purgePaymentsWhere(condicion: string): void {
 
 /**
  * Limpia de una vez lo que bloquea el borrado de una organización de prueba: historial de precios, pagos del
- * SuperAdmin y sus anulaciones, e historial de promociones (todos RESTRICT y solo-agregado) de las organizaciones que cumplan `condicionOrg` (SQL sobre
+ * SuperAdmin y sus anulaciones, e historial de promociones y registro de pedidos (todos RESTRICT y solo-agregado) de las organizaciones que cumplan `condicionOrg` (SQL sobre
  * `public.organizations o`). Una sola transacción y un solo `docker exec`, con los triggers apagados un momento.
  * La auditoría NO se toca acá: no bloquea el borrado (sin clave foránea) y hay pruebas que comprueban que sobrevive.
  */
@@ -129,13 +129,16 @@ export function purgeOrgRecordsWhere(condicionOrg: string): void {
     `alter table public.payments disable trigger payments_no_update_delete; ` +
     `alter table public.payment_voids disable trigger payment_voids_no_update_delete; ` +
     `alter table public.promotion_history disable trigger promotion_history_no_update_delete; ` +
+    `alter table public.order_events disable trigger order_events_no_update_delete; ` +
     `delete from public.price_history where organization_id in ${orgs}; ` +
     `delete from public.promotion_history where organization_id in ${orgs}; ` +
+    `delete from public.order_events where organization_id in ${orgs}; ` +
     `delete from public.payment_voids where organization_id in ${orgs}; ` +
     `delete from public.payments where organization_id in ${orgs}; ` +
     `alter table public.price_history enable trigger price_history_no_update_delete; ` +
     `alter table public.payments enable trigger payments_no_update_delete; ` +
     `alter table public.promotion_history enable trigger promotion_history_no_update_delete; ` +
+    `alter table public.order_events enable trigger order_events_no_update_delete; ` +
     `alter table public.payment_voids enable trigger payment_voids_no_update_delete; commit`;
   try {
     execFileSync("docker", ["exec", contenedor, "psql", "-U", "postgres", "-v", "ON_ERROR_STOP=1", "-At", "-c", consulta], {

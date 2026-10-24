@@ -273,6 +273,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"order_events": {
+                  Row: {
+                    "actor_id": string | null,"detail": NonNullable<Json>,"event": string,"id": string,"item_id": string | null,"occurred_at": string,"order_id": string,"organization_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_id"?: string | null,"detail"?: NonNullable<Json>,"event": string,"id"?: string,"item_id"?: string | null,"occurred_at"?: string,"order_id": string,"organization_id": string
+                  }
+                  Update: {
+                    "actor_id"?: string | null,"detail"?: NonNullable<Json>,"event"?: string,"id"?: string,"item_id"?: string | null,"occurred_at"?: string,"order_id"?: string,"organization_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "order_events_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"order_item_options": {
                   Row: {
                     "created_at": string,"group_id": string | null,"group_name": string,"id": string,"option_id": string | null,"option_name": string,"order_item_id": string,"organization_id": string,"price_delta_cents": number
@@ -301,14 +321,14 @@ isOneToOne: false
                   ]
                 },"order_items": {
                   Row: {
-                    "base_price_cents": number,"client_key": string,"created_at": string,"created_by": string | null,"id": string,"note": string | null,"options_cents": number,"order_id": string,"organization_id": string,"product_id": string | null,"product_name": string,"promotion_id": string | null,"promotion_name": string | null,"quantity": number,"request_hash": string,"status": string,"unit_price_cents": number
+                    "base_price_cents": number,"cancel_reason": string | null,"client_key": string,"created_at": string,"created_by": string | null,"id": string,"note": string | null,"options_cents": number,"order_id": string,"organization_id": string,"product_id": string | null,"product_name": string,"promotion_id": string | null,"promotion_name": string | null,"quantity": number,"request_hash": string,"status": string,"unit_price_cents": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "base_price_cents": number,"client_key": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"note"?: string | null,"options_cents"?: number,"order_id": string,"organization_id": string,"product_id"?: string | null,"product_name": string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity": number,"request_hash": string,"status"?: string,"unit_price_cents": number
+                    "base_price_cents": number,"cancel_reason"?: string | null,"client_key": string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"note"?: string | null,"options_cents"?: number,"order_id": string,"organization_id": string,"product_id"?: string | null,"product_name": string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity": number,"request_hash": string,"status"?: string,"unit_price_cents": number
                   }
                   Update: {
-                    "base_price_cents"?: number,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"note"?: string | null,"options_cents"?: number,"order_id"?: string,"organization_id"?: string,"product_id"?: string | null,"product_name"?: string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity"?: number,"request_hash"?: string,"status"?: string,"unit_price_cents"?: number
+                    "base_price_cents"?: number,"cancel_reason"?: string | null,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"id"?: string,"note"?: string | null,"options_cents"?: number,"order_id"?: string,"organization_id"?: string,"product_id"?: string | null,"product_name"?: string,"promotion_id"?: string | null,"promotion_name"?: string | null,"quantity"?: number,"request_hash"?: string,"status"?: string,"unit_price_cents"?: number
                   }
                   Relationships: [
                     {
@@ -327,14 +347,14 @@ isOneToOne: false
                   ]
                 },"orders": {
                   Row: {
-                    "branch_id": string,"closed_at": string | null,"id": string,"opened_at": string,"opened_by": string | null,"organization_id": string,"status": string,"table_id": string | null,"table_label": string
+                    "branch_id": string,"closed_at": string | null,"closed_by": string | null,"id": string,"opened_at": string,"opened_by": string | null,"organization_id": string,"status": string,"table_id": string | null,"table_label": string,"void_reason": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "branch_id": string,"closed_at"?: string | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"organization_id": string,"status"?: string,"table_id"?: string | null,"table_label": string
+                    "branch_id": string,"closed_at"?: string | null,"closed_by"?: string | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"organization_id": string,"status"?: string,"table_id"?: string | null,"table_label": string,"void_reason"?: string | null
                   }
                   Update: {
-                    "branch_id"?: string,"closed_at"?: string | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"organization_id"?: string,"status"?: string,"table_id"?: string | null,"table_label"?: string
+                    "branch_id"?: string,"closed_at"?: string | null,"closed_by"?: string | null,"id"?: string,"opened_at"?: string,"opened_by"?: string | null,"organization_id"?: string,"status"?: string,"table_id"?: string | null,"table_label"?: string,"void_reason"?: string | null
                   }
                   Relationships: [
                     {
@@ -856,6 +876,9 @@ isOneToOne: false
 "admin_void_payment":
 { Args: { "p_actor": string,"p_org": string,"p_payment": string,"p_reason": string }; Returns: string
                            },
+"close_order":
+{ Args: { "p_order": string }; Returns: Json
+                           },
 "create_product_in_branches":
 { Args: { "p_category": string,"p_description": string,"p_dietary_tags": (string)[],"p_hidden_branches": (string)[],"p_is_active": boolean,"p_name": string,"p_org": string,"p_price_cents": number,"p_sort_order": number }; Returns: string
                            },
@@ -950,6 +973,9 @@ isOneToOne: false
 "set_my_guide_dismissed":
 { Args: { "p_dismissed": boolean,"p_org": string }; Returns: string
                            },
+"set_order_item_status":
+{ Args: { "p_item": string,"p_reason"?: string,"p_status": string }; Returns: Json
+                           },
 "set_video_like":
 { Args: { "p_device": string,"p_liked": boolean,"p_rate"?: string,"p_token": string,"p_video": string,"p_visit_started_at"?: string }; Returns: Json
                            },
@@ -958,6 +984,12 @@ isOneToOne: false
                            },
 "unregister_push_subscription":
 { Args: { "p_endpoint": string,"p_org"?: string }; Returns: undefined
+                           },
+"update_order_item":
+{ Args: { "p_item": string,"p_note"?: string,"p_quantity": number }; Returns: Json
+                           },
+"void_order":
+{ Args: { "p_order": string,"p_reason"?: string }; Returns: Json
                            }
           }
           Enums: {

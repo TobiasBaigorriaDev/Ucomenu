@@ -111,6 +111,7 @@ const triggersEncendidos = () =>
     "payment_voids_no_update_delete",
     "audit_log_no_update_delete",
     "promotion_history_no_update_delete",
+    "order_events_no_update_delete",
   ].every(triggerEncendido);
 
 const baja = (local: Pick<Local, "slug">, active: boolean, quien: TestUser = admin) =>
@@ -295,6 +296,81 @@ describe("el historial de promociones (ficha promociones-y-precio-efectivo)", ()
     }
     expect(() => sql(`select private.purge_organization_promotion_history('${local.id}')`)).toThrow(/organization_still_active/);
     expect(cuenta("promotion_history", local.id)).toBe(3);
+  });
+});
+
+describe("el registro de pedidos (ficha pedidos-estados-y-registro)", () => {
+  /** Un pedido con una línea entregada y cerrado, anotado por el Dueño: deja 5 eventos (opened, added, in_kitchen, delivered, closed). */
+  async function conPedidos(local: Local) {
+    const mesa = await service.from("tables").insert({ organization_id: local.id, branch_id: (await service.from("branches").select("id").eq("organization_id", local.id).single()).data!.id, label: "Mesa 1" }).select("id, branch_id").single();
+    if (mesa.error) throw new Error(`mesa: ${mesa.error.message}`);
+    const r = await local.owner.db.rpc("add_order_item", { p_branch: mesa.data.branch_id, p_table: mesa.data.id, p_product: local.productId, p_quantity: 1, p_client_key: randomUUID() });
+    if (r.error) throw new Error(`pedido: ${r.error.message}`);
+    const { order_id: order, item_id: item } = r.data as { order_id: string; item_id: string };
+    for (const estado of ["in_kitchen", "delivered"]) {
+      const e = await local.owner.db.rpc("set_order_item_status", { p_item: item, p_status: estado });
+      if (e.error) throw new Error(`estado: ${e.error.message}`);
+    }
+    const c = await local.owner.db.rpc("close_order", { p_order: order });
+    if (c.error) throw new Error(`cierre: ${c.error.message}`);
+  }
+
+  it("la función real de borrado lo purga en la misma transacción, lo cuenta en la auditoría y el resumen, y se lleva los pedidos", async () => {
+    const local = await crearLocal(1);
+    const vecina = await crearLocal(1);
+    await conPedidos(local);
+    await conPedidos(vecina);
+    expect(cuenta("order_events", local.id)).toBe(5);
+    await darDeBaja(local, "31 days");
+
+    const r = await directa(local.id, local.slug, "Cerró hace meses");
+    expect(r.error).toBeNull();
+    expect(r.data).toMatchObject({ order_events_purged: 5, price_history_purged: 1 });
+
+    expect(existe(local.id)).toBe(false);
+    for (const tabla of ["orders", "order_items", "order_events"]) expect(cuenta(tabla, local.id), tabla).toBe(0);
+    const hechos = await borrados(local.id);
+    expect(hechos).toHaveLength(1);
+    expect(hechos[0].after).toMatchObject({ order_events_purged: 5 });
+    expect(triggersEncendidos()).toBe(true);
+
+    // La vecina conserva sus pedidos y su registro.
+    expect(cuenta("orders", vecina.id)).toBe(1);
+    expect(cuenta("order_events", vecina.id)).toBe(5);
+  });
+
+  it("si el borrado se rechaza (baja de menos de 30 días) o la transacción se deshace, el registro queda entero y el trigger encendido", async () => {
+    const reciente = await crearLocal(1);
+    await conPedidos(reciente);
+    await darDeBaja(reciente, "5 days");
+    expect(await borrar(reciente)).toEqual({ ok: false, error: "deactivation_too_recent" });
+    expect(cuenta("order_events", reciente.id)).toBe(5);
+
+    const local = await crearLocal(1);
+    await conPedidos(local);
+    await darDeBaja(local);
+    expect(() =>
+      sql(`begin; select public.admin_delete_organization('${admin.id}', '${local.id}', '${local.slug}', 'x'); select 1/0; commit`),
+    ).toThrow(/division by zero/);
+    expect(existe(local.id)).toBe(true);
+    expect(cuenta("order_events", local.id)).toBe(5);
+    expect(cuenta("orders", local.id)).toBe(1);
+    expect(triggersEncendidos()).toBe(true);
+  });
+
+  it("sin la purga el RESTRICT frena el borrado, y la función de purga no la ejecuta nadie de la API y rechaza una organización activa", async () => {
+    const local = await crearLocal(1);
+    await conPedidos(local);
+    const directo = await service.from("organizations").delete().eq("id", local.id);
+    expect(directo.error?.message).toMatch(/order_events|foreign key|restrict/i);
+    expect(existe(local.id)).toBe(true);
+    for (const funcion of ["private.purge_organization_order_events(uuid)", "private.record_order_event()", "private.order_events_append_only()"]) {
+      for (const rol of ["anon", "authenticated", "service_role", "public"]) {
+        expect(sql(`select has_function_privilege('${rol}', '${funcion}', 'execute')`)[0][0], `${rol} ${funcion}`).toBe("f");
+      }
+    }
+    expect(() => sql(`select private.purge_organization_order_events('${local.id}')`)).toThrow(/organization_still_active/);
+    expect(cuenta("order_events", local.id)).toBe(5);
   });
 });
 

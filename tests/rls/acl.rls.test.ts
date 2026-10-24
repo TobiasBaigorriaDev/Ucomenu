@@ -57,6 +57,9 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   enforce_comment_moderation: [false, false, false], // trigger de video_comments: solo cambia el estado, nada vuelve a pendiente (ADR 0031)
   video_is_public: [true, true, true], // usada por la política de lectura PÚBLICA de video_comments: ¿el video se ve hoy en el feed? Solo contesta sí o no
   video_feed_visible: [true, true, true], // usada por la política de lectura PÚBLICA de menu_videos (feed): solo contesta sí o no
+  record_order_event: [true, false, false], // trigger de orders y order_items: escribe order_events (la API no tiene INSERT)
+  order_events_append_only: [false, false, false], // trigger de order_events: rechaza UPDATE, DELETE y TRUNCATE
+  purge_organization_order_events: [true, false, false], // purga del registro de pedidos al borrar una organización (ADR 0041): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
   can_take_orders: [true, false, false], // la usa add_order_item (ficha pedidos-esquema-y-alta-de-items): miembro + función `orders` en el plan + cuenta al día; sin EXECUTE para la API
   can_manage_promotions: [true, false, true], // usada por las políticas de escritura de promotions y sus tablas (ficha promociones-y-precio-efectivo): Dueño + función en el plan + cuenta al día
   record_promotion_change: [true, false, false], // trigger de promotions, promotion_targets y promotion_branches: escribe promotion_history (la API no tiene INSERT)
@@ -91,6 +94,10 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   purge_video_comments: [false, false], // retención de comentarios rechazados y pendientes viejos (ADR 0031): solo service_role
   set_video_like: [false, false], // única puerta de escritura de video_likes; solo service_role (ADR 0031, 0038)
   create_waiter_call: [false, false], // única puerta de escritura de waiter_calls; solo service_role (ADR 0010, 0038)
+  set_order_item_status: [false, true], // pedidos del mozo (ficha pedidos-estados-y-registro): estados de una línea; valida adentro (miembro, plan, mora)
+  update_order_item: [false, true], // pedidos del mozo: cantidad y observación de una línea anotada; valida adentro
+  close_order: [false, true], // pedidos del mozo: cierra un pedido; solo exige ser miembro (nunca se bloquea por mora)
+  void_order: [false, true], // pedidos del mozo: anula un pedido con motivo; solo exige ser miembro (nunca se bloquea por mora)
   add_order_item: [false, true], // pedidos del mozo (ficha pedidos-esquema-y-alta-de-items, ADR 0041): única puerta de escritura de orders y order_items; valida adentro (miembro, plan, mora)
   org_entitlements: [false, true],
   owner_calls_by_hour: [false, true], // analítica básica (ADR 0022): llamados por hora para el Dueño con el plan; vuelve a comprobar todo; solo lectura

@@ -67,7 +67,7 @@ Alta de organizaciones, asignación manual de plan y add-ons, registro de pagos,
 Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases y tareas en `agile/tablero.md`. Los motivos, en los ADR enlazados.
 
 #### 7. Pedidos del mozo (Pro y Premium) — [ADR 0041](decisiones/0041-pedidos-del-mozo.md)
-*Avance: en la base, alta de líneas con variantes, adicionales y observación (`add_order_item`, fichas [esquema](../agile/cambios/pedidos-esquema-y-alta-de-items.md) y [opciones](../agile/cambios/pedidos-variantes-adicionales-observaciones.md)); todavía sin pantalla, estados ni cierre.*
+*Avance: en la base, alta de líneas con variantes, adicionales y observación (`add_order_item`, fichas [esquema](../agile/cambios/pedidos-esquema-y-alta-de-items.md) y [opciones](../agile/cambios/pedidos-variantes-adicionales-observaciones.md)); y, en la ficha [estados y registro](../agile/cambios/pedidos-estados-y-registro.md), estados, modificar, cancelar, cerrar y anular con su registro; todavía sin pantalla, total ni precuenta.*
 - El **mozo** (Dueño o Staff con sesión) anota en la **Sala** lo que el cliente le dicta: mesa, platos, variantes, adicionales, cantidades y observaciones; después modifica, cancela y cambia estados. **El comensal no pide**: la carta sigue siendo solo consulta.
 - Pedido: abierto → cerrado | anulado. Ítem: anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). Solo por mesa en la primera entrega.
 - Cada línea copia nombre, precio (el efectivo al anotarla, con promoción si rige) y opciones; el precio lo calcula el servidor.

@@ -1,0 +1,57 @@
+# Cambio: Estados, modificar y cancelar líneas, cerrar y anular pedidos, con registro de solo-agregado
+Estado: **implementado y verificado en local (2026-10-24); falta la revisión independiente, la aprobación humana y la migración en staging.** Tercera pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisiones 3 y 5), sobre [esquema](pedidos-esquema-y-alta-de-items.md) y [opciones](pedidos-variantes-adicionales-observaciones.md) (ya en staging).
+Nivel: **C** — autorización (quién cambia qué, y qué nunca se bloquea por mora), dinero (cancelar o anular cambia lo que se le cobra a la mesa) y eliminación irreversible (nace un registro de solo-agregado que se purga con el borrado de la organización: se toca `admin_delete_organization`).
+
+## Objetivo
+Que el mozo (Dueño o Staff) lleve el pedido: marque las líneas **en cocina** y **entregadas**, **modifique** cantidad y observación, **cancele** una línea, y **cierre** o **anule** el pedido; y que toda acción quede en un registro que nadie puede reescribir. Cerrar y anular funcionan siempre, aunque la cuenta esté en mora o el plan ya no incluya la función.
+
+## Decisiones (particulares)
+1. **Estados de la línea:** `noted` → `in_kitchen` → `delivered`, y `cancelled` desde cualquiera. «En cocina» es opcional (se puede pasar de `noted` a `delivered`: no hay pantalla de cocina). Sin marcha atrás (no se vuelve de `delivered` a `in_kitchen`). **Cancelar una línea ya entregada exige un motivo** (1 a 200 caracteres); las demás cancelaciones pueden llevarlo. El motivo se guarda en `order_items.cancel_reason`.
+2. **Estados del pedido:** `open` → `closed` | `void`, solo desde `open`. **Anular exige motivo** (1 a 200 caracteres, `orders.void_reason`). Cerrar puede hacerse con líneas sin entregar (decide el mozo; la precuenta de la ficha de cierre no cuenta las canceladas). Al cerrar o anular la mesa queda libre (el índice de «un pedido abierto por mesa» ya lo contempla).
+3. **Quién y cuándo.** Dueño y Staff (miembros). Cambiar estados, modificar y cancelar líneas exigen la función `orders` en el plan y la cuenta al día (`private.can_take_orders`, como agregar). **Cerrar y anular solo exigen ser miembro**: nunca se bloquean por mora, suspensión ni baja de plan (ADR 0041, decisión 5). Todo se vuelve a comprobar después de tomar el candado del pedido.
+4. **Modificar = cantidad y observación, solo de líneas `noted`.** Para cambiar el plato o las opciones se cancela la línea y se anota otra: así el precio efectivo y las opciones nunca se recalculan sobre algo ya anotado. Cantidad 1 a 99 y observación como en el alta.
+5. **Funciones** (`SECURITY DEFINER`, `search_path` vacío, solo `authenticated`; las tablas siguen sin escritura por la API): `set_order_item_status(p_item, p_status, p_reason)`, `update_order_item(p_item, p_quantity, p_note)`, `close_order(p_order)`, `void_order(p_order, p_reason)`. Cada una toma el candado del **pedido** primero (el mismo orden que `add_order_item`) y después el de la línea.
+6. **Reintento seguro:** repetir una transición ya aplicada (misma línea, mismo estado; pedido ya cerrado o anulado del mismo modo) devuelve `unchanged: true` y no escribe ni registra nada; una transición incompatible → `invalid_transition` / `order_not_open`.
+7. **Registro `order_events`** (solo-agregado, como `price_history` y `promotion_history`): lo escriben **triggers** de `orders` y `order_items` (no hay camino que lo evite), con la persona (`auth.uid()`, nulo para el servicio técnico), la hora y un detalle: `order.opened`, `item.added`, `item.status_changed` (de, a, motivo), `item.edited` (cantidad y nota, de y a), `order.closed`, `order.voided` (motivo). Solo registra lo que cambia (`is distinct from`); los cambios internos (el total de opciones, un plato o mesa borrados) no generan eventos. Sin claves foráneas al pedido, a la línea ni a la persona (sobrevive a ellos); **clave `RESTRICT` a la organización**; leen los miembros; nadie lo escribe, cambia ni borra (ni `service_role`; `UPDATE`, `DELETE` y `TRUNCATE` fallan incluso con privilegios del dueño de la tabla).
+8. **Borrado de organizaciones:** `private.purge_organization_order_events` (sin `EXECUTE` para nadie; rechaza una organización activa) la llama `admin_delete_organization` justo después de la purga del historial de promociones, que es la que ya exige la baja auditada de 30 días. Cambia en esa función solo la llamada y la cifra (`order_events_purged`, en la auditoría y en el resumen). La cascada del borrado no escribe en el registro (los triggers no corren en `DELETE`). Esto adelanta de la ficha de cierre solo lo imprescindible para no romper el borrado; la **retención de 2 años desde el cierre** sigue siendo de esa ficha.
+9. **Sin pantalla.** La Sala llega en la ficha «Vista Mesas».
+
+## Aceptación
+- [x] Una línea pasa `noted` → `in_kitchen` → `delivered`, o `noted` → `delivered`; no vuelve atrás ni sale de `cancelled`; repetir devuelve `unchanged` sin registrar.
+- [x] Cancelar una línea `noted` o `in_kitchen` funciona con o sin motivo; cancelar una `delivered` sin motivo → `reason_required`; con motivo funciona. Motivo de más de 200 caracteres o con caracteres de control → `invalid_reason`.
+- [x] Modificar cantidad y observación de una línea `noted`; de una `in_kitchen`, `delivered` o `cancelled` → `item_not_editable`; cantidad fuera de 1 a 99 o nota inválida se rechazan como en el alta; sin cambios → `unchanged`.
+- [x] Cerrar y anular solo desde `open`; anular sin motivo → `reason_required`; después la mesa admite un pedido nuevo; agregar al pedido cerrado o anulado no es posible (se abre otro) y cambiar sus líneas → `order_not_open`.
+- [x] Cambiar estados, modificar y cancelar: no con Básico sin vista previa, solo lectura ni suspendida, ni siendo de otra organización ni `anon`; **cerrar y anular sí** en solo lectura, suspendida y con el plan sin la función; no con otra organización ni `anon`.
+- [x] La autorización se vuelve a comprobar tras esperar el candado del pedido (una membresía revocada mientras espera no pasa).
+- [x] El registro tiene un evento por cada acción real (siete clases), con la persona, la hora y el detalle; nada para los reintentos ni los cambios internos; nadie lo escribe, cambia ni borra por la API ni con privilegios del dueño de la tabla; lo leen los miembros y nadie más.
+- [x] Borrar una organización con pedidos y registro funciona con la función real (purga el registro en la misma transacción y lo cuenta en la auditoría y el resumen); un rechazo (baja de menos de 30 días) lo deja entero; sin la purga el `RESTRICT` lo frena; la función de purga no la ejecuta nadie de la API.
+- [x] Todo lo aprobado en las fichas anteriores sigue en verde (28 + 18 pruebas de pedidos, `acl`, `borrado-de-organizaciones`).
+
+## Fuera de alcance
+- Vista «Mesas», total y «Pedir la cuenta» (ficha 4); precuenta, retención de 2 años desde el cierre y su purga programada (ficha 5); analítica (ficha 6); reabrir un pedido cerrado; mover líneas entre mesas; cualquier pantalla.
+
+## Evidencia
+Migración `20261128100000_pedidos_estados_y_registro.sql` (aplicada con `pnpm db:reset` a la primera; `pnpm db:types` regenerado); base local, 2026-10-24, sobre `6a78883` + el diff de este cambio:
+- `tests/rls/pedidos-estados.rls.test.ts` **21/21**: transiciones (con y sin cocina, sin marcha atrás, cancelada terminal, `unchanged`), cancelar con y sin motivo, modificar (solo anotadas, validaciones, sin recalcular precios), cerrar y anular (solo desde abierto, motivo, mesa libre), la matriz de plan y mora (solo lectura, suspendida, Básico sin la función: estados, modificar y cancelar **no**; cerrar y anular **sí**; gracia y vista previa vigente y vencida), otra organización, `anon` e ids inexistentes, la revalidación tras esperar el candado del pedido (las cuatro funciones, con la espera comprobada en `pg_stat_activity`), dos mozos a la vez, y el registro (recorrido completo con persona, hora y detalle de las siete clases, sin eventos para reintentos, rechazos ni cambios internos, inmutable por la API, por el servicio técnico y con privilegios del dueño de la tabla, lectura solo de miembros, atomicidad).
+- `tests/rls/borrado-de-organizaciones.rls.test.ts` **28/28** (3 nuevas): la función real de borrado purga el registro en la misma transacción y lo cuenta en la auditoría y el resumen, la vecina conserva el suyo, un rechazo o una transacción deshecha lo dejan entero, sin la purga el `RESTRICT` frena el borrado, y la purga no la ejecuta nadie de la API. `acl.rls` suma las tres funciones privadas y las cuatro públicas.
+- Archivos RLS afectados (`pedidos*`, `acl`, `vistas-previas`, `billing`, `borrado-de-organizaciones`): **208/208**. No se corrió el RLS completo antes de la revisión; se corre al integrar. El *worker* cae a veces con `0xC0000409` en `borrado-de-organizaciones` (ajeno, conocido): repetido, pasa.
+- **Mutaciones** (de a una, con `create or replace`, restauradas): 16 probadas, **16 detectadas**: estado sin revalidar tras esperar, delivered→in_kitchen permitido, cancelar entregada sin motivo, sin chequeo de pedido abierto, sin retorno `unchanged`, cerrar y anular exigiendo plan y mora, cerrar y modificar sin revalidar, anular sin motivo, modificar sin límite a anotadas, registro sin eventos de estado ni de edición, borrado sin purgar el registro, sin el trigger de cierre y sin el trigger de solo-agregado (esta última, de forma indirecta: sin el trigger la limpieza global de las pruebas ya falla).
+- Defecto de API corregido durante la prueba: omitir `p_reason` en `void_order` daba «función no encontrada»; ahora tiene valor por defecto `null` y responde `reason_required`.
+- `src/app/admin/audit.tsx` muestra «N eventos de pedidos purgados» en la auditoría del borrado. `pnpm typecheck` y `pnpm lint`: limpios. `pnpm test`: 1001 de 1002; la única falla es `textos.test.ts` («Menufeed»), ajena.
+- **No corrido:** E2E (sin pantalla), staging, prueba de carga con muchos eventos.
+
+## (C) Invariantes
+- Toda acción real sobre un pedido o una línea deja un evento con la persona y la hora; el registro no se reescribe ni se borra salvo por la purga del borrado de la organización.
+- Cerrar y anular nunca dependen del plan ni de la mora.
+- Un pedido cerrado o anulado no cambia más; una línea cancelada no vuelve; una entregada no retrocede.
+- Lo anotado (precio, opciones) no se recalcula al modificar.
+- Nadie fuera de la organización lee ni escribe; nadie escribe por la API.
+
+## (C) Fallos y recuperación
+- Una sola transacción por llamada: si falla el cambio o el registro, no queda ninguno de los dos.
+- Se pierde la respuesta: repetir devuelve `unchanged` (sin duplicar eventos).
+- Dos mozos a la vez sobre el mismo pedido o línea: el candado del pedido los serializa; el segundo ve el estado ya cambiado y recibe `unchanged` o `invalid_transition`.
+- Rollback: `drop function` de las cuatro funciones; las columnas nuevas (`cancel_reason`, `void_reason`, `closed_by`) y el `check` de estados se pueden dejar. Si `order_events` tiene filas se **conserva** junto con la purga y esta versión de `admin_delete_organization` (la anterior no la purga y el borrado de esas organizaciones fallaría por el `RESTRICT`); sin filas se puede borrar la tabla y volver a crear `admin_delete_organization` con el cuerpo de `20261123100000`.
+
+## (C) Revisión y aprobación
+- Pendiente: revisión independiente (Codex, hasta tres rondas) y aprobación humana antes de la migración en staging.
