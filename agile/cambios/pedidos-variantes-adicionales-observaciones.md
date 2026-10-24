@@ -1,5 +1,5 @@
 # Cambio: Variantes, adicionales y observaciones en las líneas del pedido
-Estado: **implementado, verificado en local y aprobado por Codex (2 rondas, commit `c00e838`); falta la aprobación humana y aplicar la migración en staging.** Segunda pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md)), sobre [esquema y alta de ítems](pedidos-esquema-y-alta-de-items.md) (ya en staging).
+Estado: **implementado, aprobado por Codex (2 rondas, `c00e838`) y por el usuario (2026-10-24); migración `20261127100000` aplicada en staging.** La app no cambia (sin pantalla). Segunda pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md)), sobre [esquema y alta de ítems](pedidos-esquema-y-alta-de-items.md) (ya en staging).
 Nivel: **C** — dinero (el precio de la línea suma las diferencias de las opciones y lo calcula la base), autorización (misma puerta que la ficha anterior) y exposición (los pedidos siguen siendo solo de la organización). Sin eliminación irreversible.
 
 ## Objetivo
@@ -56,4 +56,5 @@ Migración `20261127100000_pedidos_variantes_y_observaciones.sql` (aplicada con 
   - Re-corridas: `pedidos-opciones` 18/18; con `pedidos`, `acl`, `vistas-previas`, `billing` y `borrado-de-organizaciones` 184/184; `typecheck` y `lint` limpios.
 - **Codex, ronda 2 (verificación, commit `c00e838`): APROBAR**, sin hallazgos nuevos; confirmó cerrados los dos anteriores y que las regresiones detectan las defensas retiradas. Revisión estática: no ejecutó pruebas ni mutaciones.
 - **Verificación final del código aprobado (local, 2026-10-24):** `pnpm test:rls` completo en `c00e838`: 1317 de 1323 en la primera corrida; las 6 pruebas que no corrieron son las de `pedidos-opciones` por un *worker* caído con `0xC0000409` (el fallo ajeno conocido); repetido ese archivo junto con `pedidos` pasa **46/46**. `typecheck` y `lint` limpios.
-- **Pendiente:** la **aprobación humana** del usuario antes de `supabase db push` a staging (el veredicto de Codex no la reemplaza).
+- **Aprobación humana:** el usuario aprobó aplicar la migración en staging el 2026-10-24, tras la revisión de Codex.
+- **Staging (2026-10-24):** `supabase db push --dry-run` sobre `ucomenu-staging` listó solo `20261127100000`; `db push` la aplicó y un nuevo dry-run confirma que está al día. Comprobado de solo lectura: `order_item_options` existe y está vacía, `order_items` tiene `note`, `options_cents` y `request_hash`, un `INSERT` directo con la clave de servicio da `42501` y `add_order_item` no la puede llamar `service_role` (`permission denied`). No se probó con una sesión real en staging. Producción no se tocó.
