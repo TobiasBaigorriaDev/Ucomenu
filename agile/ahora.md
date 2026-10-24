@@ -6,7 +6,7 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 **Rama `main`, sin trabajo a medias.** Último commit de código: [estilo «Afiche»](cambios/estilo-afiche.md), en staging (Fly versión 44, migración `20261125100000`). Después, solo herramientas de demostración (`d453c7a`): `tools/sembrar-demo-staging.mjs` carga en staging «La Bestia Burger & Bar» (`/m/la-bestia/centro`, Afiche) y «Aurelia Alta Cocina» (`/m/aurelia/centro`, Minimal), sin Dueño asignado ([ficha](cambios/demo-en-staging.md)). `demo` quedó vacía y de baja: borrarla desde `/admin` a partir del 2026-11-23. `prueba-videos` se borró.
 
-**S3, primer ítem hecho en local y aprobado por Codex en 3 rondas** (C, falta tu aprobación y staging; commit `4ae43da`): [esquema de pedidos y alta de ítems sin opciones](cambios/pedidos-esquema-y-alta-de-items.md). Migración `20261126100000` (`orders`, `order_items`, `add_order_item`, función de plan `orders` en Pro y Premium). Verificado: RLS completo 1302/1302, 25 pruebas nuevas, 7 mutaciones detectadas, typecheck y lint limpios; falla ajena de siempre en `textos.test.ts`. Sin pantalla. Siguiente migración libre: `20261127100000`.
+**S3, primer ítem hecho, aprobado por Codex (3 rondas) y por el usuario, y migrado a staging** (C; commit `4ae43da`): [esquema de pedidos y alta de ítems sin opciones](cambios/pedidos-esquema-y-alta-de-items.md). Migración `20261126100000` (`orders`, `order_items`, `add_order_item`, función de plan `orders` en Pro y Premium). Verificado: RLS completo 1302/1302, 25 pruebas nuevas, 7 mutaciones detectadas, typecheck y lint limpios; falla ajena de siempre en `textos.test.ts`. Sin pantalla. Siguiente migración libre: `20261127100000`.
 
 ## Bloqueos y límites
 
@@ -18,6 +18,5 @@ Actualizado: 2026-10-24 · agente saliente: Claude Code. Historia anterior en Gi
 
 ## Próximo paso
 
-1. Con la aprobación del usuario: `pnpm exec supabase db push --dry-run` y `db push` de `20261126100000` a staging (la app no cambia; no hace falta desplegar).
-2. Segundo ítem de S3 (C): variantes, adicionales y observaciones con validación de mínimos y máximos (levanta `options_required`).
-3. Pendiente urgente: **rotar la `service_role` legacy de staging**. Probar en staging con sesión real: Afiche, SuperAdmin, personal, llamados, promociones y zona horaria.
+1. Segundo ítem de S3 (C): variantes, adicionales y observaciones con validación de mínimos y máximos (levanta `options_required`).
+2. Pendiente urgente: **rotar la `service_role` legacy de staging**. Probar en staging con sesión real: Afiche, SuperAdmin, personal, llamados, promociones y zona horaria.
