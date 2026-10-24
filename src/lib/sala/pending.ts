@@ -4,9 +4,13 @@ import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { asUuid } from "@/lib/carta/validation";
 import { readBranchView, splitByView } from "@/lib/sucursales/vista";
+import type { MesaOrder } from "./mesas";
+import { loadOpenOrders } from "./mesas-loader";
 import { EXPIRY_MS, sortOldestFirst, type SalaCall, type SalaState } from "./types";
 
 type Db = SupabaseClient<Database>;
+
+const accountEntry = (order: MesaOrder | undefined) => (order ? { account: { totalCents: order.totalCents, dishes: order.dishes } } : {});
 
 /** Ids por pedido al buscar las mesas de los llamados (la lista viaja en la URL). */
 const TABLE_CHUNK = 100;
@@ -69,6 +73,11 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
     for (const table of chunk.data) tableLabel.set(table.id, table.label);
   }
 
+  // «Pide la cuenta» muestra al mozo el total del pedido abierto de esa mesa (ADR 0041). Si esa lectura falla, el llamado se muestra igual,
+  // sin total: lo que importa de la sala es que el aviso llegue.
+  const billTables = [...new Set(inView.filter(({ call }) => call.kind === "bill").map(({ call }) => call.table_id))];
+  const accounts = await loadOpenOrders(db, orgId, { tableIds: billTables }).catch(() => new Map<string, MesaOrder>());
+
   const calls: SalaCall[] = inView.flatMap(({ call }) => {
     if (call.kind !== "waiter" && call.kind !== "bill") return [];
     return [
@@ -79,6 +88,8 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
         branchName: branchName.get(call.branch_id) ?? "",
         createdAt: call.created_at,
         visitStartedAt: call.visit_started_at,
+        // Solo viaja en un «Pide la cuenta» con pedido: el resto de los llamados conserva exactamente su forma de siempre.
+        ...(call.kind === "bill" ? accountEntry(accounts.get(call.table_id)) : {}),
       },
     ];
   });

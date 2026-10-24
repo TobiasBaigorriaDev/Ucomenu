@@ -1,0 +1,40 @@
+# Cambio: Vista «Mesas» en la Sala y total en «Pedir la cuenta»
+Estado: **implementado y verificado en local (2026-10-24); falta la aprobación del usuario y el despliegue de la app en staging** (no hay migración). Cuarta pieza de S3 «Pedidos del mozo» ([ADR 0041](../../docs/decisiones/0041-pedidos-del-mozo.md), decisiones 1 y 7), sobre el [esquema](pedidos-esquema-y-alta-de-items.md), las [opciones](pedidos-variantes-adicionales-observaciones.md) y los [estados](pedidos-estados-y-registro.md) (los tres ya en staging).
+Nivel: **M** — solo lectura de lo que ya existe: sin esquema, permisos ni dinero nuevos (se *muestra* un total que el mozo no cobra desde acá). Sin revisión independiente por defecto.
+
+## Objetivo
+Que el mozo vea, en la Sala, **qué pasa en cada mesa**: si tiene un pedido abierto (cuántos platos, en qué estado, cuánto va), si llamó o pidió la cuenta, y que cuando una mesa **pide la cuenta** la tarjeta del llamado muestre el **total** de su pedido. Es la parte de lectura del módulo; anotar y operar es la ficha siguiente.
+
+## Decisiones (particulares)
+1. **Una página nueva `/sala/{slug}/mesas`**, con su enlace «Mesas» en la navegación de la Sala. La pantalla de llamados no cambia de lugar ni de ritmo. Si el local no tiene la función `orders` (Básico sin vista previa, solo lectura o suspendida), la página lo dice con el mismo tono del aviso del llamado, sin lista ni sondeo.
+2. **Sondeo aparte, solo en esta vista** (ADR 0041, consecuencias): `/sala/{slug}/mesas/estado`, cada ~3 s visible (el mismo ritmo y retroceso de la Sala). Misma autoridad que `/estado` (sesión y membresía en cada pedido; 401, 404 y 503 con los mismos significados) y la RLS de quien llama: nunca `service_role`. La comprobación de acceso se extrae de la ruta existente a un ayudante compartido (sin cambiar su comportamiento).
+3. **Qué mesas:** las mesas **activas** de las sucursales **que la persona mira** (la vista por sucursal ya existente; vacío = todas). Cada tarjeta: etiqueta (y sucursal si el local tiene varias), llamados pendientes de menos de 30 minutos (los mismos que la Sala: «Llama al mozo», «Pide la cuenta»), y el pedido abierto, si hay: cantidad de platos, estado de las líneas (anotadas, en cocina, entregadas), total y desde cuándo está abierto. Orden: primero las que piden la cuenta, después las que llaman, después las que tienen pedido (el más antiguo primero) y al final las libres por etiqueta.
+4. **Total = suma de las líneas no canceladas** de ESE pedido: `cantidad × (precio efectivo + opciones)`, con el precio efectivo y las opciones **copiados al anotar** (nunca se recalculan). Función pura `orderCents` con pruebas; los importes viajan en centavos enteros y se formatean con `formatArs`. No es una factura: la leyenda «no válida como factura» y la precuenta son de la ficha de cierre.
+5. **«Pedir la cuenta» con total:** la tarjeta del llamado `bill` en la Sala de llamados suma una línea «Cuenta: $ X · N platos» si la mesa tiene un pedido abierto con líneas no canceladas. Atender el llamado **no** cierra el pedido (ADR 0041). Sin pedido, la tarjeta queda como estaba. El campo nuevo de `SalaCall` es opcional en el parser (una respuesta sin él sigue siendo válida).
+6. **Lectura bajo la RLS de la persona:** `orders` y `order_items` ya se leen por miembros de la organización. Las lecturas van paginadas por clave y las listas de ids en `in (...)` de a 100, como el resto de la Sala (PostgREST corta en 1000 filas sin avisar).
+7. **Sin escrituras:** esta ficha no agrega funciones, tablas, columnas ni migraciones.
+8. **Hueco del tablero, anotado:** ningún ítem de S3 cubre la **pantalla para anotar platos (con variantes y observación) y operar las líneas y el cierre desde la Sala**; los ítems 1 a 3 dejaron las funciones de base y el ADR dice que el mozo anota en la Sala. Se agrega al tablero como ítem propio, después de este.
+
+## Aceptación
+- [x] La Sala suma el enlace «Mesas»; la página lista las mesas activas de las sucursales que la persona mira, con su pedido abierto y sus llamados, y se actualiza sola.
+- [x] Una mesa con pedido muestra cantidad de platos y total = suma de las líneas no canceladas (con opciones y cantidades); una línea cancelada no suma y no cuenta; una mesa libre dice que está libre; un pedido cerrado o anulado no aparece.
+- [x] Una mesa que pide la cuenta sube primero; su tarjeta en «Mesas» y la del llamado en la Sala de llamados muestran el total del pedido abierto; sin pedido, nada nuevo. Atender el llamado no cambia el pedido.
+- [x] Respeta la vista por sucursal (no muestra mesas de las que no se miran) y separa locales (un miembro no ve mesas ni pedidos de otra organización).
+- [x] Sin la función `orders` el local ve el aviso y no hay lista ni sondeo; con la cuenta en solo lectura o suspendida, igual.
+- [x] Sin sesión, sesión vencida o fuera del local: las mismas respuestas que `/estado` (401, 404, 503).
+- [x] A 390 px, sin desborde horizontal y con los textos de estado legibles (no solo color).
+- [x] La Sala de llamados sigue como estaba (E2E `sala`, `sala-push` y las pruebas de `lib/sala` en verde).
+
+## Fuera de alcance
+- Anotar platos, cambiar estados, cancelar, cerrar o anular **desde la pantalla** (ficha siguiente); precuenta y retención (ficha de cierre); analítica; sonido o aviso por pedidos; Realtime (sigue el sondeo, ADR 0011).
+
+## Evidencia
+Sin migración ni cambios de esquema; base local con `pnpm db:reset`, 2026-10-24, sobre `6a78883`…`5b045d1` + el diff de este cambio:
+- `src/lib/sala/mesas.test.ts` (nuevo) + `sala.test.ts`: **32/32**: total (cantidad por precio efectivo más opciones, sin cancelados, sin desbordar con 99 unidades de 50 opciones máximas), resumen de estados en unidades, orden de las mesas (cuenta, llamado, pedido más antiguo, libres; etiqueta numérica), parser de la respuesta y del total opcional de «Pide la cuenta».
+- `tests/rls/sala-mesas.rls.test.ts` (nuevo) **12/12** con las **sesiones** de Dueño y Staff (RLS real): mesas activas con su pedido y total, el total con opciones, promoción y estados, pedido cerrado o anulado que no aparece, pedido con 1100 líneas leído entero (PostgREST corta en 1000), llamados por mesa y su vencimiento, atender no cierra el pedido, vista por sucursal (por persona), plan/mora/vista previa, aislamiento entre organizaciones y el total en `loadSala`.
+- `e2e/sala-mesas.spec.ts` (nueva) **4/4** a 390 px (sin desborde): lista, enlace, actualización sola, subir primero a la mesa que pide la cuenta, total en la tarjeta del llamado y atender sin cerrar el pedido, aviso de plan Básico para Staff y Dueño, y la ruta (401 / 404 / 200 sin caché). Con `sala.spec` y `sala-push.spec` (que fijan la forma exacta de la respuesta de la Sala): **41/41**.
+- **Mutaciones** (de a una, sobre el código, restauradas): 7 probadas, **7 detectadas**: el total suma lo cancelado (la unitaria), pedidos sin filtrar por abiertos, vista por sucursal ignorada, función `orders` sin comprobar, mesas inactivas incluidas, opciones que no suman y lectura de líneas sin paginar a 1000.
+- **Defecto encontrado por una E2E existente:** agregar `account: null` a todos los llamados rompía el contrato «sin datos sobrantes» de `/estado`; ahora la clave viaja **solo** en un «Pide la cuenta» con pedido y el resto conserva exactamente su forma.
+- Revisión visual con capturas a 390 y 1280 px: la banda de «Con pedido» tenía el mismo rosa que «Pide la cuenta»; pasó a neutra (el estado igual se lee en el texto).
+- `pnpm typecheck` y `pnpm lint`: sin errores. `pnpm test`: 1013 de 1014; la única falla es `textos.test.ts` («Menufeed»), ajena. `pnpm build` correcto con las rutas nuevas.
+- **No corrido:** suite RLS completa y E2E completa (el cambio no toca base ni permisos; se corrieron los archivos de la Sala), prueba con cientos de mesas, lector de pantalla y teléfono real, y la app en staging.

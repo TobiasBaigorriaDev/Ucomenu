@@ -66,10 +66,11 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [S] Pantalla del historial de promociones: hecho en local (2026-10-23), ver «Hecho»
 
 **S3 — Pedidos del mozo** (desbloqueado: la función de precio efectivo está hecha)
-- [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base → [ficha](cambios/pedidos-esquema-y-alta-de-items.md) (implementado en local, falta revisión independiente)
-- [C] Variantes, adicionales y observaciones con validación de mínimos y máximos → [ficha](cambios/pedidos-variantes-adicionales-observaciones.md) (implementado en local, falta revisión independiente)
-- [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora → [ficha](cambios/pedidos-estados-y-registro.md) (implementado en local, falta revisión independiente)
-- [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta»
+- [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base → [ficha](cambios/pedidos-esquema-y-alta-de-items.md) (hecho, en staging)
+- [C] Variantes, adicionales y observaciones con validación de mínimos y máximos → [ficha](cambios/pedidos-variantes-adicionales-observaciones.md) (hecho, en staging)
+- [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora → [ficha](cambios/pedidos-estados-y-registro.md) (hecho, en staging)
+- [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta» → [ficha](cambios/sala-mesas-y-total.md) (hecho en local, 2026-10-24)
+- [M] Anotar y operar pedidos desde la Sala: elegir plato con variantes y observación, cambiar estados, cancelar y cerrar/anular (usa las funciones de base de los ítems 1 a 3; **hueco detectado al escribir la ficha anterior**)
 - [C] Cierre con precuenta «no válida como factura», retención (2 años, a confirmar con el contador) y purga en el borrado de la organización
 - [M] Analítica de pedidos para el Dueño (opcional)
 

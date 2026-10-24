@@ -15,6 +15,11 @@ export type SalaCall = {
   createdAt: string;
   /** ISO 8601: cuándo abrió el comensal la carta (ticket de visita). `null` si no se sabe (informativo). */
   visitStartedAt: string | null;
+  /**
+   * Solo en «Pide la cuenta»: el pedido abierto de esa mesa (ficha sala-mesas-y-total, ADR 0041): cuántos platos y cuánto suma, en
+   * centavos. `null`/ausente = no hay pedido (o no se pudo leer): la tarjeta queda como siempre. Atender el llamado no cierra el pedido.
+   */
+  account?: { totalCents: number; dishes: number } | null;
 };
 
 export type SalaState = {
@@ -55,7 +60,15 @@ function parseCall(raw: unknown): SalaCall | null {
   if (typeof createdAt !== "string" || Number.isNaN(Date.parse(createdAt))) return null;
   // Opcional: sin la clave, nula o ilegible es «no se sabe» (la tarjeta no muestra nada).
   const visit = typeof visitStartedAt === "string" && !Number.isNaN(Date.parse(visitStartedAt)) ? visitStartedAt : null;
-  return { id, kind, tableLabel, branchName, createdAt, visitStartedAt: visit };
+  // Opcional también: una forma ilegible es «sin pedido», nunca un total inventado.
+  const account = isRecord(raw.account) ? raw.account : null;
+  const total = account?.totalCents;
+  const dishes = account?.dishes;
+  const parsedAccount =
+    typeof total === "number" && Number.isSafeInteger(total) && total >= 0 && typeof dishes === "number" && Number.isSafeInteger(dishes) && dishes >= 0
+      ? { totalCents: total, dishes }
+      : null;
+  return { id, kind, tableLabel, branchName, createdAt, visitStartedAt: visit, ...(parsedAccount ? { account: parsedAccount } : {}) };
 }
 
 /** Lee la respuesta de la ruta de consulta. Cualquier forma inesperada es `null` (la pantalla lo trata como error). */

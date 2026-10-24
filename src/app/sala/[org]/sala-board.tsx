@@ -20,6 +20,7 @@ import {
   type SalaCall,
   type SalaState,
 } from "@/lib/sala/types";
+import { formatArs } from "@/lib/money";
 import { AvisoPush } from "@/components/push/aviso-push";
 import { activateSound, beepIfOn, rememberedAlerts, silenceSound, useSoundState } from "@/components/panel/sonido-llamados";
 import { attendCallAction, setBranchViewAction } from "./actions";
@@ -447,6 +448,12 @@ export function SalaBoard({
                 <div className="flex flex-1 flex-col p-5">
                   <p className="font-display text-[2.75rem] leading-none break-words">{call.tableLabel}</p>
                   {state.multiBranch ? <p className="mt-2 text-sm text-muted">Sucursal {call.branchName}</p> : null}
+                  {call.account ? (
+                    // «Pide la cuenta»: el total del pedido abierto de la mesa (ADR 0041). Atender el llamado no cierra el pedido.
+                    <p className="mt-3 text-xl" data-testid="cuenta" data-centavos={call.account.totalCents}>
+                      Cuenta: <strong>{formatArs(call.account.totalCents)}</strong> · {call.account.dishes === 1 ? "1 plato" : `${call.account.dishes} platos`}
+                    </p>
+                  ) : null}
                   <p className="mt-3 text-xl" data-testid="espera">
                     {isNew ? <strong>Nuevo · </strong> : null}
                     {elapsedLabel(waited)}
