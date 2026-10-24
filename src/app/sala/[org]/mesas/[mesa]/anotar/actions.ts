@@ -12,6 +12,7 @@ import {
   type OperateFailure,
   type OperateResult,
 } from "@/lib/sala/operar";
+import { parseResetInput, resetFailureFromDb, type ResetResult } from "@/lib/sala/turno";
 import { createSessionClient } from "@/lib/supabase/server";
 
 const failed = (reason: Extract<AddResult, { status: "failed" }>["reason"]): AddResult => ({ status: "failed", reason });
@@ -140,4 +141,28 @@ export async function voidOrderAction(slug: string, raw: unknown): Promise<Opera
   const input = parseVoidInput(raw);
   if (input === "invalid") return opFailed("invalid");
   return operate(slug, ownsOrder(input.orderId), (db) => db.rpc("void_order", { p_order: input.orderId, p_reason: input.reason as string }), "order_gone");
+}
+
+/**
+ * «Reiniciar QR de la mesa» (ficha turno-de-mesa, ADR 0044): los celulares que escanearon antes dejan de ver la cuenta; el QR impreso
+ * y su token no cambian. Vuelve a exigir sesión y membresía del local pedido y llama a `reset_table_turn` con el cliente de la PERSONA:
+ * la base comprueba que la mesa sea de su organización. No depende del plan ni de la mora. Repetirlo es seguro (solo mueve la hora).
+ */
+export async function resetTableTurnAction(slug: string, raw: unknown): Promise<ResetResult> {
+  const { membership } = await requireMembership(slug, `/sala/${slug}/mesas`);
+  const input = parseResetInput(raw);
+  if (input === "invalid") return { status: "failed", reason: "invalid" };
+  try {
+    const db = await createSessionClient();
+    const table = await db.from("tables").select("id").eq("id", input.tableId).eq("organization_id", membership.org.id).maybeSingle();
+    if (table.error) return { status: "failed", reason: "unexpected" };
+    if (!table.data) return { status: "failed", reason: "table_gone" };
+
+    const { error } = await db.rpc("reset_table_turn", { p_table: input.tableId });
+    if (error) return { status: "failed", reason: resetFailureFromDb(error.message) };
+    revalidatePath("/sala/[org]/mesas/[mesa]/anotar", "page");
+    return { status: "done" };
+  } catch {
+    return { status: "failed", reason: "unexpected" };
+  }
 }

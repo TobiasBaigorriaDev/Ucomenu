@@ -1,5 +1,5 @@
 # Cambio: Turno de mesa que rota al cobrar (primera mitad de la cuenta del comensal)
-Estado: **ficha escrita, sin implementar** (aprobada por el usuario el 2026-10-24). Decisiones en el [ADR 0044](../../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md). Segunda mitad: [cuenta del comensal](cuenta-del-comensal.md).
+Estado: **implementado en local, falta la revisión independiente y la aprobación para staging** (aprobada por el usuario el 2026-10-24; evidencia al final). Decisiones en el [ADR 0044](../../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md). Segunda mitad: [cuenta del comensal](cuenta-del-comensal.md).
 Nivel: **C** — toca `close_order`/`void_order` (el camino del cobro) y es la defensa de la que depende la exposición de información de la mitad siguiente. Revisión independiente (Codex) y aprobación del usuario antes de aplicar la migración en staging.
 
 ## Objetivo
@@ -25,16 +25,26 @@ Que cobrar la mesa «renueve» el QR **sin cambiar el QR impreso**: al cerrar o 
 - Rollback: `git revert` + `pnpm db:reset`; con datos, volver a crear `close_order`/`void_order` de `20261128100000`, borrar `reset_table_turn` y `drop column turn_started_at`.
 
 ## Aceptación
-- [ ] Cerrar un pedido de una mesa mueve `turn_started_at`; cerrarlo otra vez no lo mueve.
-- [ ] Anular un pedido lo mueve; un pedido sin mesa (mesa borrada) no falla ni rota nada.
-- [ ] `reset_table_turn`: Dueño y Staff pueden; otra organización, anónimo y mesa inexistente no (mismo error); no depende de mora ni plan.
-- [ ] Ningún rol de la API puede escribir `turn_started_at` directo (ni `anon` ni `authenticated`).
-- [ ] `ticket_in_turn`: ticket anterior = falso; igual a la rotación = falso; posterior = verdadero.
-- [ ] En la Sala, «Reiniciar QR de la mesa» pide confirmación, rota y avisa; a 390 px sin desborde.
-- [ ] El `qr_token` y la ruta `/t/{token}` no cambian.
+- [x] Cerrar un pedido de una mesa mueve `turn_started_at`; cerrarlo otra vez no lo mueve.
+- [x] Anular un pedido lo mueve; un pedido sin mesa (mesa borrada) no falla ni rota nada.
+- [x] `reset_table_turn`: Dueño y Staff pueden; otra organización, anónimo y mesa inexistente no (mismo error); no depende de mora ni plan.
+- [x] Ningún rol de la API puede escribir `turn_started_at` directo (ni `anon` ni `authenticated`).
+- [x] `ticket_in_turn`: ticket anterior = falso; igual a la rotación = falso; posterior = verdadero.
+- [x] En la Sala, «Reiniciar QR de la mesa» pide confirmación, rota y avisa; a 390 px sin desborde.
+- [x] El `qr_token` y la ruta `/t/{token}` no cambian.
 
 ## Pruebas previstas
 RLS (con `docker exec` donde haga falta): rotación por cierre/anulación/reinicio, idempotencia, permisos y ajeno. Unitarias del cliente de la acción. E2E de la pantalla de la mesa a 390 px. Mutaciones sobre: rotar al repetir el cierre, `ticket_in_turn` no estricto, reinicio sin comprobar la organización.
 
 ## Fuera de alcance
 Cambiar el diseño del QR, regenerar el token, mostrar la cuenta al comensal (mitad siguiente), reinicio masivo de todas las mesas.
+
+## Evidencia
+Base local reseteada con la migración nueva, 2026-10-24, sobre `9168c30` + el diff de este cambio (commit indicado en Git):
+- `tests/rls/turno-de-mesa.rls.test.ts` (nuevo) **13/13**: cerrar y anular mueven solo el turno de esa mesa y repetir no; un cierre fallido no lo mueve; mesa borrada; plan dado de baja y cuenta vencida; reinicio de Dueño y Staff sin tocar el `qr_token`; otra organización, inexistente, no uuid y `anon`; nadie de la API escribe `turn_started_at`; `ticket_in_turn` (anterior, igual, posterior, nulo, mesa inexistente, y un ticket que valía deja de valer al cerrar).
+- `tests/rls/acl.rls.test.ts`: suma `reset_table_turn` y `private.ticket_in_turn` a la lista de permisos.
+- **`pnpm test:rls` completo: 64/64 archivos, 1399/1399 pruebas** (1833 s).
+- `src/lib/sala/turno.test.ts` (nuevo) **4/4**. `pnpm test`: 1051/1052; falla solo `textos.test.ts` («Menufeed»), la falla ajena ya registrada.
+- `e2e/sala-turno.spec.ts` (nuevo) **2/2** a 390 px (confirmación, cerrar sin reiniciar no cambia nada, el reinicio mueve solo esa mesa y deja el token, mesa de otro local = 404), con `sala-operar` y `sala-anotar`: 14/14 con 3 trabajadores. `pnpm typecheck` y `pnpm lint`: limpios; `pnpm build` correcto.
+- **Mutaciones** (función cambiada en la base local; restaurada con `pnpm db:reset`): `ticket_in_turn` con `>=` → falla 1 prueba; `reset_table_turn` sin comprobar la organización → falla 1. Ambas detectadas.
+- **No corrido:** revisión independiente, aplicar en staging, teléfono real, mutación de «repetir el cierre mueve el turno» (la defensa es un `return` anterior al UPDATE y la prueba lo cubre con dos cierres seguidos).

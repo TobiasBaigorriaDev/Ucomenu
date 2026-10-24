@@ -11,6 +11,7 @@ import { CartaSheet } from "./carta-sheet";
 import { CloseSheet } from "./close-sheet";
 import { DishSheet } from "./dish-sheet";
 import { LineCard } from "./line-card";
+import { ResetSheet } from "./reset-sheet";
 import { buttonClass, primaryClass } from "./ui";
 
 /** Al volver a la pestaña se recarga el pedido y la carta; no más seguido que esto. */
@@ -25,6 +26,7 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
   const [cartaOpen, setCartaOpen] = useState(false);
   const [dish, setDish] = useState<string | null>(null);
   const [closeOpen, setCloseOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const lastRefresh = useRef(0);
 
@@ -61,6 +63,9 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
         {data.table.label}
       </h1>
       {data.multiBranch ? <p className="mt-1 text-base text-muted">Sucursal {data.table.branchName}</p> : null}
+      <button type="button" data-testid="abrir-reinicio" onClick={() => setResetOpen(true)} className={`${buttonClass} mt-3`}>
+        Reiniciar QR de la mesa
+      </button>
 
       {!data.enabled ? (
         <section aria-labelledby="anotar-aviso" data-testid="anotar-deshabilitada" className="panel-cell mt-6 max-w-prose">
@@ -174,6 +179,8 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
           onDone={() => router.push(`/sala/${slug}/mesas`)}
         />
       ) : null}
+
+      {resetOpen ? <ResetSheet slug={slug} tableId={data.table.id} label={data.table.label} onClose={() => setResetOpen(false)} /> : null}
     </>
   );
 }

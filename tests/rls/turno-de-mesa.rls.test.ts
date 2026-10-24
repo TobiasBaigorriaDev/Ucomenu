@@ -1,0 +1,245 @@
+import { randomUUID } from "node:crypto";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+  addMembership,
+  anonClient,
+  createCategory,
+  createOrg,
+  createUser,
+  DIA_MS,
+  deleteOrg,
+  deleteUser,
+  serviceClient,
+  setSubscription,
+  sql,
+  type Db,
+  type TestUser,
+} from "./helpers";
+
+/**
+ * Turno de mesa (nivel C, ficha turno-de-mesa, ADR 0044) contra el Supabase local: cerrar o anular un pedido y el reinicio manual
+ * mueven el turno de la mesa; repetir no; nadie de la API escribe la columna; cerrar nunca depende del plan ni de la mora; y un ticket
+ * de visita anterior (o igual) al turno ya no vale.
+ */
+
+let service: Db;
+let owner: TestUser;
+let staff: TestUser;
+let stranger: TestUser;
+const orgs: string[] = [];
+let contador = 0;
+const sufijo = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+type Local = { id: string; branch: string; table: string; table2: string; product: string };
+
+async function nuevoLocal(): Promise<Local> {
+  contador += 1;
+  const id = await createOrg(service, `tt-turno-${sufijo}-${contador}`, "pro");
+  orgs.push(id);
+  await setSubscription(service, id, { finEnMs: 30 * DIA_MS });
+  const b = await service.from("branches").insert({ organization_id: id, slug: "principal", name: "Principal" }).select("id").single();
+  if (b.error) throw new Error(`sucursal: ${b.error.message}`);
+  const mesas = await service
+    .from("tables")
+    .insert([
+      { organization_id: id, branch_id: b.data.id, label: "Mesa 1" },
+      { organization_id: id, branch_id: b.data.id, label: "Mesa 2" },
+    ])
+    .select("id, label")
+    .order("label");
+  if (mesas.error) throw new Error(`mesas: ${mesas.error.message}`);
+  const category = await createCategory(service, id, "Platos");
+  const p = await service.from("products").insert({ organization_id: id, category_id: category, name: "Bife", price_cents: 10000 }).select("id").single();
+  if (p.error) throw new Error(`plato: ${p.error.message}`);
+  await addMembership(service, owner, id, "owner");
+  await addMembership(service, staff, id, "staff");
+  return { id, branch: b.data.id, table: mesas.data[0].id, table2: mesas.data[1].id, product: p.data.id };
+}
+
+type Resp = { data: unknown; error: { message: string } | null };
+const ok = <T,>(r: Resp): T => {
+  if (r.error) throw new Error(r.error.message);
+  return r.data as T;
+};
+
+const anotar = async (db: Db, l: Local, table = l.table) =>
+  ok<{ order_id: string }>(
+    await db.rpc("add_order_item", { p_branch: l.branch, p_table: table, p_product: l.product, p_quantity: 1, p_client_key: randomUUID() } as never),
+  ).order_id;
+const cerrar = (db: Db, order: string) => db.rpc("close_order", { p_order: order } as never);
+const anular = (db: Db, order: string, reason: string | null = "se fueron") => db.rpc("void_order", { p_order: order, p_reason: reason } as never);
+const reiniciar = (db: Db, table: string) => db.rpc("reset_table_turn", { p_table: table } as never);
+
+/** El inicio del turno, en texto con microsegundos (para comparar sin perder precisión). */
+const turno = (table: string) => sql(`select turn_started_at::text from public.tables where id = '${table}'`)[0][0];
+/** Espera una pizca para que dos `clock_timestamp()` no coincidan. */
+const pausa = () => new Promise((r) => setTimeout(r, 15));
+const enTurno = (table: string, ticketSql: string) => sql(`select private.ticket_in_turn('${table}', ${ticketSql})`)[0][0] === "t";
+
+beforeAll(async () => {
+  service = serviceClient();
+  [owner, staff, stranger] = await Promise.all([
+    createUser(service, "turno-owner"),
+    createUser(service, "turno-staff"),
+    createUser(service, "turno-ajeno"),
+  ]);
+});
+
+afterAll(async () => {
+  await Promise.all(orgs.map((id) => deleteOrg(service, id)));
+  await Promise.all([owner, staff, stranger].map((u) => deleteUser(service, u)));
+});
+
+describe("el turno rota al cerrar o anular un pedido", () => {
+  it("cerrar mueve el turno de ESA mesa y repetir el cierre no lo mueve", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    const otra = turno(l.table2);
+    const antes = turno(l.table);
+    await pausa();
+    expect(ok(await cerrar(staff.db, order))).toMatchObject({ status: "closed", unchanged: false });
+    const despues = turno(l.table);
+    expect(despues > antes).toBe(true);
+    expect(turno(l.table2)).toBe(otra);
+
+    await pausa();
+    expect(ok(await cerrar(owner.db, order))).toMatchObject({ unchanged: true });
+    expect(turno(l.table)).toBe(despues);
+  });
+
+  it("anular mueve el turno y repetir la anulación no", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    const antes = turno(l.table);
+    await pausa();
+    expect(ok(await anular(owner.db, order))).toMatchObject({ status: "void", unchanged: false });
+    const despues = turno(l.table);
+    expect(despues > antes).toBe(true);
+    await pausa();
+    expect(ok(await anular(owner.db, order))).toMatchObject({ unchanged: true });
+    expect(turno(l.table)).toBe(despues);
+  });
+
+  it("un cierre que falla (anular uno ya cerrado, anular sin motivo, ajeno) no mueve el turno", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    const antes = turno(l.table);
+    expect((await anular(owner.db, order, null)).error?.message).toBe("reason_required");
+    expect((await cerrar(stranger.db, order)).error?.message).toBe("orders_not_allowed");
+    expect(turno(l.table)).toBe(antes);
+    ok(await cerrar(owner.db, order));
+    const cerrado = turno(l.table);
+    expect((await anular(owner.db, order)).error?.message).toBe("order_not_open");
+    expect(turno(l.table)).toBe(cerrado);
+  });
+
+  it("un pedido cuya mesa se borró se cierra igual, sin error ni turno que mover", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l, l.table2);
+    const borrada = await service.from("tables").delete().eq("id", l.table2);
+    expect(borrada.error).toBeNull();
+    expect(ok(await cerrar(owner.db, order))).toMatchObject({ status: "closed", unchanged: false });
+  });
+
+  it("cerrar y anular siguen funcionando con el plan dado de baja o la cuenta vencida, y mueven el turno", async () => {
+    const l = await nuevoLocal();
+    const a = await anotar(owner.db, l);
+    const b = await anotar(owner.db, l, l.table2);
+    await setSubscription(service, l.id, { plan: "basic", finEnMs: -60 * DIA_MS });
+    const antesA = turno(l.table);
+    const antesB = turno(l.table2);
+    await pausa();
+    expect(ok(await cerrar(owner.db, a))).toMatchObject({ status: "closed" });
+    expect(ok(await anular(staff.db, b))).toMatchObject({ status: "void" });
+    expect(turno(l.table) > antesA).toBe(true);
+    expect(turno(l.table2) > antesB).toBe(true);
+  });
+});
+
+describe("reinicio manual del turno", () => {
+  it("el Dueño y el Staff lo reinician; el QR (token) no cambia", async () => {
+    const l = await nuevoLocal();
+    const token = () => sql(`select qr_token from public.tables where id = '${l.table}'`)[0][0];
+    const qr = token();
+    const antes = turno(l.table);
+    await pausa();
+    const r = ok<{ table_id: string; turn_started_at: string }>(await reiniciar(staff.db, l.table));
+    expect(r.table_id).toBe(l.table);
+    const medio = turno(l.table);
+    expect(medio > antes).toBe(true);
+    await pausa();
+    ok(await reiniciar(owner.db, l.table));
+    expect(turno(l.table) > medio).toBe(true);
+    expect(token()).toBe(qr);
+  });
+
+  it("otra organización, mesa inexistente y no uuid dan el mismo error; anon no puede ejecutarla", async () => {
+    const l = await nuevoLocal();
+    const antes = turno(l.table);
+    expect((await reiniciar(stranger.db, l.table)).error?.message).toBe("table_not_found");
+    expect((await reiniciar(owner.db, randomUUID())).error?.message).toBe("table_not_found");
+    expect((await reiniciar(owner.db, "no-es-uuid")).error).not.toBeNull();
+    const anon = await anonClient().rpc("reset_table_turn", { p_table: l.table } as never);
+    expect(anon.error).not.toBeNull();
+    expect(turno(l.table)).toBe(antes);
+  });
+
+  it("funciona aunque el plan ya no incluya los pedidos ni la Sala", async () => {
+    const l = await nuevoLocal();
+    await setSubscription(service, l.id, { plan: "basic", finEnMs: -60 * DIA_MS });
+    const antes = turno(l.table);
+    await pausa();
+    ok(await reiniciar(owner.db, l.table));
+    expect(turno(l.table) > antes).toBe(true);
+  });
+});
+
+describe("la columna no se escribe desde la API", () => {
+  it("ni el Dueño ni el Staff ni anon pueden actualizar turn_started_at", async () => {
+    const l = await nuevoLocal();
+    const antes = turno(l.table);
+    for (const db of [owner.db, staff.db]) {
+      const r = await db.from("tables").update({ turn_started_at: "2099-01-01T00:00:00Z" } as never).eq("id", l.table).select("id");
+      expect(r.error).not.toBeNull();
+    }
+    const anon = await anonClient().from("tables").update({ turn_started_at: "2099-01-01T00:00:00Z" } as never).eq("id", l.table).select("id");
+    expect(anon.error !== null || (anon.data ?? []).length === 0).toBe(true);
+    expect(turno(l.table)).toBe(antes);
+  });
+
+  it("el Dueño sigue pudiendo cambiar la etiqueta y regenerar el QR (permisos de antes)", async () => {
+    const l = await nuevoLocal();
+    const r = await owner.db.from("tables").update({ label: "Terraza" }).eq("id", l.table).select("label").single();
+    expect(r.error).toBeNull();
+    expect(r.data?.label).toBe("Terraza");
+  });
+});
+
+describe("ticket_in_turn", () => {
+  it("un ticket anterior o igual al inicio del turno no vale; uno posterior sí; sin ticket no", async () => {
+    const l = await nuevoLocal();
+    ok(await reiniciar(owner.db, l.table));
+    const t = `'${turno(l.table)}'::timestamptz`;
+    expect(enTurno(l.table, `${t} - interval '1 second'`)).toBe(false);
+    expect(enTurno(l.table, t)).toBe(false);
+    expect(enTurno(l.table, `${t} + interval '1 millisecond'`)).toBe(true);
+    expect(enTurno(l.table, `${t} + interval '1 hour'`)).toBe(true);
+    expect(enTurno(l.table, "null")).toBe(false);
+  });
+
+  it("una mesa inexistente nunca está en turno", () => {
+    expect(enTurno(randomUUID(), "now()")).toBe(false);
+  });
+
+  it("un ticket que valía deja de valer al cerrar el pedido de la mesa", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    await pausa();
+    const emitido = "clock_timestamp()";
+    expect(enTurno(l.table, emitido)).toBe(true);
+    const ticket = sql(`select clock_timestamp()::text`)[0][0];
+    await pausa();
+    ok(await cerrar(owner.db, order));
+    expect(enTurno(l.table, `'${ticket}'::timestamptz`)).toBe(false);
+  });
+});

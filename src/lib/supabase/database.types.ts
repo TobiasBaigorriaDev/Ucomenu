@@ -729,14 +729,14 @@ isOneToOne: false
                   ]
                 },"tables": {
                   Row: {
-                    "branch_id": string,"created_at": string,"id": string,"is_active": boolean,"label": string,"muted_until": string | null,"organization_id": string,"qr_token": string
+                    "branch_id": string,"created_at": string,"id": string,"is_active": boolean,"label": string,"muted_until": string | null,"organization_id": string,"qr_token": string,"turn_started_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "branch_id": string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label": string,"muted_until"?: string | null,"organization_id": string,"qr_token"?: string
+                    "branch_id": string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label": string,"muted_until"?: string | null,"organization_id": string,"qr_token"?: string,"turn_started_at"?: string
                   }
                   Update: {
-                    "branch_id"?: string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label"?: string,"muted_until"?: string | null,"organization_id"?: string,"qr_token"?: string
+                    "branch_id"?: string,"created_at"?: string,"id"?: string,"is_active"?: boolean,"label"?: string,"muted_until"?: string | null,"organization_id"?: string,"qr_token"?: string,"turn_started_at"?: string
                   }
                   Relationships: [
                     {
@@ -963,6 +963,9 @@ isOneToOne: false
                            },
 "replace_product_image":
 { Args: { "p_org": string,"p_path": string,"p_product": string }; Returns: Json
+                           },
+"reset_table_turn":
+{ Args: { "p_table": string }; Returns: Json
                            },
 "resolve_table_qr":
 { Args: { "p_token": string }; Returns: Json
