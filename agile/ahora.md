@@ -1,24 +1,22 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-25 · agente saliente: Claude Code. Historia anterior en Git y fichas.
+Actualizado: 2026-10-25 · agente saliente: Codex. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**S3 «Pedidos del mozo»** completa salvo la analítica. **En staging (Fly v51, migraciones hasta `20261202100000`):** anotar, operar, precuenta, la retención ([ADR 0043](../docs/decisiones/0043-retencion-de-pedidos.md), sin ejecutar ni programar), el [turno de mesa](cambios/turno-de-mesa.md) y la [cuenta del comensal](cambios/cuenta-del-comensal.md) ([ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)). Cerrar, anular o «Reiniciar QR de la mesa» abre un turno nuevo (el QR impreso no cambia) y el celular anterior pierde la cuenta y los llamados hasta escanear de nuevo.
+**Reinicios de QR programados y masivos: implementados en local y aprobados por Claude**, nivel C. Rama `main`; implementación `1f82cce`, correcciones `e46a942`. La [ficha](cambios/reinicio-programado-qr.md) concentra aceptación, evidencia, informes y recuperación. El Dueño configura horarios diarios por sucursal en su zona horaria, con 05:00 por defecto; una lista vacía desactiva. Sala → Mesas ofrece a Dueño y Staff reiniciar todas las mesas del local, en todas sus sucursales, con confirmación. El QR impreso y los pedidos se conservan.
 
-**Hecho en local, sin desplegar** (feedback del usuario: «al recargar volvían los botones»), commit `faf6c8a`: la visita vive en la URL. Escanear `/t/{token}` redirige a `/t/{token}?v={ticket}` y **recargar reutiliza ese ticket**; con el turno terminado la barra pide escanear de nuevo. Migración **`20261203100000`** (`visit_in_turn`, solo `service_role`), nivel M, sin revisión de Codex. E2E de `/t/`: 174/174. Falta la **aprobación del usuario** para `db push` + `flyctl deploy` (Fly v52). Siguiente migración libre: `20261204100000`. Límite que queda: quien escribe la URL a mano sin `v` recibe una visita nueva.
+La migración nueva `20261204100000` agrega configuración, marcador de servidor, RPC de lectura exclusiva del Dueño, reinicio masivo y trabajo de PostgreSQL cada minuto. Los horarios internos no son públicos. Cambiar horarios, zona o reactivar empieza a contar desde ese momento; tras una interrupción del servicio se recupera el último reinicio pendiente. Los setups de RLS/E2E pausan y restauran el cron solo en Docker local, para aislar las fechas simuladas.
 
-Los 15 commits locales no se subieron a `origin/main`. Demo en staging: `/m/la-bestia/centro` y `/m/aurelia/centro`, sin Dueño; `demo` de baja: borrarla desde `/admin` desde el 2026-11-23.
+**Staging sigue en Fly v52**, hasta `20261203100000`. La visita en URL ya estaba desplegada: ver la [verificación remota](cambios/turno-de-mesa.md#verificación-remota-de-la-visita-en-la-url-2026-10-25). El nuevo dry-run lista únicamente la migración de este incremento. No se aplicó ni desplegó el cambio nuevo; los commits siguen locales.
 
-## Bloqueos y límites
+## Límites y bloqueos
 
-- Faltan los textos de la cuenta en inglés y portugués en pantalla (sin E2E) y que el usuario pruebe en el teléfono tras cada despliegue.
-- Clientes recurrentes (S4) espera a un abogado. Dominio, revisión legal y purgas programadas bloquean producción.
-- `pnpm test`: falla ajena `textos.test.ts`. RLS: `owner-lectura` es intermitente y *workers* con `0xC0000409` se repiten una vez. Con muchos E2E a la vez, `sala.spec`, `llamado-config` y `comentarios-feed` fallan por carga. `tools/escenarios-locales.mjs` es ajeno.
-- Decisión abierta: el dock de la mesa parte sus etiquetas en dos líneas a 390 px.
+- Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimiento.
+- La falla conocida de traducciones, las sugerencias no bloqueantes de Claude y los límites de verificación están en la ficha; no equivalen a defectos del reinicio.
+- Si se mata la suite sin teardown, el cron local puede quedar pausado: comprobar `cron.job` o resetear la base local antes del ensayo manual.
+- Producción sigue bloqueada por dominio, revisión legal y purgas. Rotar la clave legacy de staging sigue pendiente y fuera del pedido.
 
 ## Próximo paso
 
-1. Con la aprobación: desplegar y probar en el teléfono (escanear, recargar, reiniciar el QR, recargar de nuevo).
-2. Decidir si se suben los commits a `origin/main`.
-3. Después: programar la purga (`docs/produccion.md` 4.c) y confirmar el plazo con el contador. Urgente: **rotar la `service_role` legacy de staging**.
+Con autorización para esta migración nueva y su despliegue, ampliar RLS antes de actualizar staging; aplicar solo el archivo pendiente, desplegar y probar en teléfono real. Las siguientes sugerencias de pruebas no requieren reabrir la implementación aprobada salvo que revelen un defecto.

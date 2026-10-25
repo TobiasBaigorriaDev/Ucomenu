@@ -82,3 +82,15 @@ Con los llamados cortados por el turno, el usuario preguntó si se podía evitar
 - Decisiones: la página falla **abierta** si `visit_in_turn` falla (la acción vuelve a comprobar); una `v` forjada, de otra mesa, del futuro o vencida **no** emite un ticket nuevo (pide escanear de nuevo); sin `v` es un escaneo; `lang` se conserva en la redirección.
 - **Límite que queda:** quien escribe la URL a mano sin `v` recibe una visita nueva (no se puede distinguir de un escaneo).
 - Pruebas: `turno-de-mesa.rls.test.ts` **27/27** (tres nuevas de `visit_in_turn`: regla y tolerancia, coincide con `create_waiter_call`, solo `service_role`); `visita.test.ts` **9/9**; E2E `ticket-de-visita.spec.ts` (reemplaza «recargar emite un ticket nuevo»; escanear redirige conservando `lang`, recargar reutiliza la visita, `v` inválida, y tras reiniciar o cobrar recargar pide escanear de nuevo y re-escanear permite llamar; el feed recibe la visita): `ticket-de-visita` + `feed-videos` **28/28**. `acl` suma `visit_in_turn`.
+
+## Verificación remota de la visita en la URL (2026-10-25)
+
+El usuario pidió revisar y completar la actualización de staging. Sobre HEAD `ffe4bb8` (implementación `faf6c8a`, sin cambios de código), Codex encontró que **ya estaba desplegada**, aunque el handoff seguía indicando pendiente. No fue necesario volver a migrar ni desplegar.
+
+- Fly: `status` y `releases` confirman **v52 complete**, máquina `started` en `gru`, control **1 passing**, imagen `deployment-01M5RTJWP9DC0EJSEC30MJP98C`.
+- Supabase enlazado de staging: `migration list --linked` confirma todas las versiones locales, incluida `20261203100000`; `db push --dry-run` devuelve `upToDate: true`, sin migraciones pendientes.
+- Consulta de catálogo de `visit_in_turn`: cuerpo SQL coincide con la migración, `SECURITY DEFINER`, `search_path` vacío; ejecución denegada a `anon` y `authenticated`, permitida a `service_role`.
+- Consultas de solo lectura sobre una mesa de la demo La Bestia: visita anterior al turno rechazada, posterior aceptada y fecha nula rechazada. No se alteraron turnos ni datos.
+- HTTP contra `https://ucomenu-staging.fly.dev`: `/login`, ambas cartas de demo y `/privacidad` **200**; token inexistente **404**; `/sala/la-bestia` sin sesión **307**. Escanear una mesa de demo lleva a una URL con `v`; dos recargas consecutivas mantienen el ticket sin redirigir; una visita inválida muestra el mensaje de vencimiento sin emitir otra; el escaneo con `lang=en` conserva idioma y emite visita.
+- `pnpm test src/lib/llamados/visita.test.ts`: **9/9**. El primer comando HTTP falló al comparar acentos porque PowerShell los convirtió en `?` al pasar el script a Node; repetido con escapes Unicode, correcto.
+- **No ejecutado en esta sesión:** build, suites RLS/E2E completas, interacción de navegador, cobro/reinicio remoto ni teléfono real. La evidencia anterior de implementación sigue arriba; aquí se comprobó el estado publicado con lecturas. Pendiente la prueba de teléfono del usuario.
