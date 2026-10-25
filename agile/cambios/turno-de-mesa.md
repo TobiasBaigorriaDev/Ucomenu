@@ -21,7 +21,7 @@ Que cobrar la mesa «renueve» el QR **sin cambiar el QR impreso**: al cerrar o 
 
 ## Fallos y recuperación
 - Si la rotación falla dentro de `close_order`, falla el cierre completo (transacción): el mozo reintenta; no queda un pedido cerrado con turno vigente.
-- Orden de bloqueos: pedido → mesa (nunca al revés). Verificar que ninguna función existente tome la mesa y luego el pedido (deadlock).
+- Orden de bloqueos: **mesa → pedido**, el mismo que usa borrar una mesa (la clave foránea `on delete set null (table_id)`). El orden contrario producía un deadlock (hallazgo 2 de la revisión). La autorización se vuelve a comprobar después de ambas esperas y antes de escribir (hallazgo 1).
 - Rollback: `git revert` + `pnpm db:reset`; con datos, volver a crear `close_order`/`void_order` de `20261128100000`, borrar `reset_table_turn` y `drop column turn_started_at`.
 
 ## Aceptación
@@ -48,3 +48,10 @@ Base local reseteada con la migración nueva, 2026-10-24, sobre `9168c30` + el d
 - `e2e/sala-turno.spec.ts` (nuevo) **2/2** a 390 px (confirmación, cerrar sin reiniciar no cambia nada, el reinicio mueve solo esa mesa y deja el token, mesa de otro local = 404), con `sala-operar` y `sala-anotar`: 14/14 con 3 trabajadores. `pnpm typecheck` y `pnpm lint`: limpios; `pnpm build` correcto.
 - **Mutaciones** (función cambiada en la base local; restaurada con `pnpm db:reset`): `ticket_in_turn` con `>=` → falla 1 prueba; `reset_table_turn` sin comprobar la organización → falla 1. Ambas detectadas.
 - **No corrido:** revisión independiente, aplicar en staging, teléfono real, mutación de «repetir el cierre mueve el turno» (la defensa es un `return` anterior al UPDATE y la prueba lo cubre con dos cierres seguidos).
+
+## Revisión y aprobación
+- **Ronda 1 — Codex, solo lectura, nivel C, sobre `e9de69d`: APROBAR CON CAMBIOS, 2 hallazgos importantes, ambos reales** (los reproduje con una prueba que fallaba antes de corregir):
+  1. *Autorización sin revalidar tras esperar la mesa*: `reset_table_turn` comprobaba la membresía antes del `UPDATE` y `close_order`/`void_order` sumaban la espera de la mesa después de su última comprobación. Corregido: se toma el candado de la mesa y se vuelve a comprobar antes de escribir.
+  2. *Deadlock entre cierre y borrado de mesa*: el cierre bloqueaba pedido → mesa y borrar una mesa bloquea mesa → pedido (FK `on delete set null`). Corregido: el cierre y la anulación toman primero la mesa (`for no key update`, que no choca con los `for key share` de las claves foráneas) y después el pedido. Si la mesa se borró mientras esperaban, el pedido ya quedó sin `table_id` y se cierra igual.
+- Pruebas de regresión nuevas en `turno-de-mesa.rls.test.ts` (**15/15**): una con membresía revocada mientras esperan la mesa (reiniciar, cerrar y anular) y otra con un cierre que compite con un `DELETE` de la mesa (sin `deadlock`, el cierre se completa y el pedido queda `closed` sin mesa). **Fallaban con el código anterior** (`table_not_found` esperado y no devuelto; `ERROR: deadlock detected`) y pasan con la corrección. `acl` + `turno-de-mesa` 37/37; `pedidos`, `mesas`, `sala-*`, `borrado-de-organizaciones` y `purga-de-pedidos` 152/152.
+- Ronda 2 (verificación): pendiente.

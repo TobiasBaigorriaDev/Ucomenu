@@ -14,8 +14,10 @@
 --
 -- El `qr_token` y la ruta `/t/{token}` no cambian: lo que se renueva es qué tickets ven la cuenta, no el QR impreso.
 --
--- Orden de bloqueos: pedido (`for update`) y después la fila de la mesa (UPDATE de una columna que no es clave: no choca con el
--- `FOR KEY SHARE` que toma la clave foránea de `orders` ni con `add_order_item`, que solo lee la mesa).
+-- Orden de bloqueos: MESA y después PEDIDO, el mismo que usa borrar una mesa (la clave foránea `on delete set null (table_id)` toma la
+-- mesa y después actualiza sus pedidos): el orden contrario entre un cierre y un borrado produce un deadlock (hallazgo de la revisión,
+-- ronda 1). Se toma `for no key update` sobre la mesa (choca con el `for update` de un borrado, no con el `for key share` de las claves
+-- foráneas de los pedidos). La autorización se vuelve a comprobar DESPUÉS de las dos esperas y antes de escribir.
 --
 -- Rollback (local): git revert + `pnpm db:reset`. En una base con datos:
 --   begin;
@@ -67,7 +69,13 @@ begin
   if not private.is_org_member(v_org) then
     raise exception 'orders_not_allowed' using errcode = '42501';
   end if;
+  -- Primero la mesa y después el pedido (ver la cabecera). Si la mesa se borró mientras esperábamos, no hay fila y el pedido ya
+  -- quedó con `table_id` nulo: se relee con el candado del pedido.
+  if v_table is not null then
+    perform 1 from public.tables t where t.id = v_table for no key update;
+  end if;
   select o.status, o.table_id into v_status, v_table from public.orders o where o.id = p_order for update;
+  -- Hay dos esperas nuevas (mesa y pedido): se vuelve a comprobar quién llama antes de escribir.
   if not private.is_org_member(v_org) then
     raise exception 'orders_not_allowed' using errcode = '42501';
   end if;
@@ -119,6 +127,9 @@ begin
   if char_length(v_reason) > 200 or v_reason ~ '[[:cntrl:]]' then
     raise exception 'invalid_reason' using errcode = '22023';
   end if;
+  if v_table is not null then
+    perform 1 from public.tables t where t.id = v_table for no key update;
+  end if;
   select o.status, o.table_id into v_status, v_table from public.orders o where o.id = p_order for update;
   if not private.is_org_member(v_org) then
     raise exception 'orders_not_allowed' using errcode = '42501';
@@ -161,10 +172,13 @@ begin
   if not found or not private.is_org_member(v_org) then
     raise exception 'table_not_found' using errcode = 'P0002';
   end if;
-  update public.tables set turn_started_at = clock_timestamp() where id = p_table returning turn_started_at into v_turn;
-  if not found then
+  -- El candado de la fila es OTRA espera: se vuelve a comprobar quién llama antes de escribir. Si la mesa se borró mientras
+  -- esperábamos, ya no hay fila.
+  perform 1 from public.tables t where t.id = p_table for no key update;
+  if not found or not private.is_org_member(v_org) then
     raise exception 'table_not_found' using errcode = 'P0002';
   end if;
+  update public.tables set turn_started_at = clock_timestamp() where id = p_table returning turn_started_at into v_turn;
   return jsonb_build_object('table_id', p_table, 'turn_started_at', v_turn);
 end;
 $$;

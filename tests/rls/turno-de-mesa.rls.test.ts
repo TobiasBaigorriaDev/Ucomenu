@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -241,5 +242,67 @@ describe("ticket_in_turn", () => {
     await pausa();
     ok(await cerrar(owner.db, order));
     expect(enTurno(l.table, `'${ticket}'::timestamptz`)).toBe(false);
+  });
+});
+
+describe("la autorización se revalida después de esperar la fila de la mesa (hallazgo de la revisión, ronda 1)", () => {
+  /** Otra sesión retiene la fila de la mesa unos segundos; `llamada` queda esperándola y, mientras, se revoca la membresía. */
+  async function revocandoMientrasEspera(l: Local, userId: string, llamada: () => PromiseLike<Resp>, fragmento: string): Promise<Resp> {
+    const retiene = spawn(
+      "docker",
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.tables where id = '${l.table}' for update; select pg_sleep(4); commit;`],
+      { stdio: "ignore" },
+    );
+    const termino = new Promise((r) => retiene.on("exit", r));
+    await new Promise((r) => setTimeout(r, 2000));
+    const espera = llamada().then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    expect(Number(sql(`select count(*) from pg_stat_activity where wait_event_type = 'Lock' and query like '%${fragmento}%'`)[0][0])).toBeGreaterThanOrEqual(1);
+    expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", userId)).error).toBeNull();
+    const r = await espera;
+    await termino;
+    await addMembership(service, staff, l.id, "staff");
+    return r;
+  }
+
+  it("reiniciar, cerrar y anular: una membresía revocada mientras esperan la mesa no las deja pasar", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    const antes = turno(l.table);
+
+    const r = await revocandoMientrasEspera(l, staff.id, () => reiniciar(staff.db, l.table), "reset_table_turn");
+    expect(r.error?.message).toBe("table_not_found");
+    const c = await revocandoMientrasEspera(l, staff.id, () => cerrar(staff.db, order), "close_order");
+    expect(c.error?.message).toBe("orders_not_allowed");
+    const a = await revocandoMientrasEspera(l, staff.id, () => anular(staff.db, order, "x"), "void_order");
+    expect(a.error?.message).toBe("orders_not_allowed");
+
+    expect(turno(l.table)).toBe(antes);
+    expect(sql(`select status from public.orders where id = '${order}'`)[0][0]).toBe("open");
+  });
+});
+
+describe("cerrar y borrar la mesa a la vez no se traban (hallazgo de la revisión, ronda 1)", () => {
+  it("el orden de bloqueo es mesa → pedido, como el de borrar una mesa: sin deadlock, el cierre se completa", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    // Otra sesión toma la mesa, espera, y la borra (la FK pone `table_id` en NULL en sus pedidos: necesita el pedido).
+    const borra = spawn(
+      "docker",
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.tables where id = '${l.table}' for update; select pg_sleep(3); delete from public.tables where id = '${l.table}'; commit;`],
+      { stdio: ["ignore", "pipe", "pipe"] },
+    );
+    let salida = "";
+    borra.stderr.on("data", (d) => (salida += String(d)));
+    const termino = new Promise<number | null>((r) => borra.on("exit", r));
+    await new Promise((r) => setTimeout(r, 1500));
+    const cierre = await cerrar(staff.db, order);
+    const codigo = await termino;
+
+    expect(salida).not.toMatch(/deadlock/i);
+    expect(codigo).toBe(0);
+    expect(cierre.error).toBeNull();
+    expect(sql(`select status, coalesce(table_id::text, 'sin-mesa') from public.orders where id = '${order}'`)[0]).toEqual(["closed", "sin-mesa"]);
+    expect(sql(`select count(*) from public.tables where id = '${l.table}'`)[0][0]).toBe("0");
   });
 });
