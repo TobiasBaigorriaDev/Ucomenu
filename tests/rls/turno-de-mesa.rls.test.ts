@@ -340,3 +340,30 @@ describe("el pedido de cuenta pendiente se da por vencido al terminar el turno (
     expect(llamados(l.table)).toEqual([["bill", "expired"]]);
   });
 });
+
+describe("un «Pedir la cuenta» que se está creando mientras se cierra la mesa no queda pendiente del turno anterior (hallazgo de la revisión, ronda 2)", () => {
+  it("el cierre espera al llamado en curso (mismo candado de la mesa) y después lo vence", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    const token = sql(`select qr_token from public.tables where id = '${l.table}'`)[0][0];
+    // Otra transacción CREA el pedido de cuenta y lo deja sin confirmar unos segundos.
+    const crea = spawn(
+      "docker",
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select public.create_waiter_call('${token}', 'bill'); select pg_sleep(3); commit;`],
+      { stdio: "ignore" },
+    );
+    const termino = new Promise((r) => crea.on("exit", r));
+    await new Promise((r) => setTimeout(r, 1500));
+    const cierre = cerrar(staff.db, order).then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    // El cierre está esperando un candado asesor (el de los llamados de esa mesa).
+    expect(Number(sql("select count(*) from pg_stat_activity where wait_event_type = 'Lock' and wait_event = 'advisory' and query like '%close_order%'")[0][0])).toBeGreaterThanOrEqual(1);
+    const r = await cierre;
+    await termino;
+
+    expect(r.error).toBeNull();
+    // Sin esa espera quedaba un `pending` con fecha anterior al turno, que taparía el pedido de la mesa nueva.
+    expect(sql(`select kind, status from public.waiter_calls where table_id = '${l.table}'`)).toEqual([["bill", "expired"]]);
+    expect(sql(`select status from public.orders where id = '${order}'`)[0][0]).toBe("closed");
+  });
+});

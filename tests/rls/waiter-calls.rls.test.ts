@@ -72,13 +72,22 @@ const llamar = async (token: unknown, kind: unknown, client?: unknown, db: Db = 
 const filas = async (orgId: string) =>
   (await service.from("waiter_calls").select("*").eq("organization_id", orgId).order("created_at")).data ?? [];
 
-/** Hace que los llamados existentes de una mesa parezcan de hace `ms` milisegundos. */
+/**
+ * Hace que los llamados existentes de una mesa parezcan de hace `ms` milisegundos. El turno de la mesa (ADR 0044) también se atrasa: el
+ * cooldown cuenta solo los llamados del turno vigente y la mesa de la prueba se acaba de crear, así que sin esto los llamados «viejos»
+ * quedarían antes del turno, como si fueran de una mesa anterior.
+ */
 async function envejecer(tableId: string, ms: number) {
   const { error } = await service
     .from("waiter_calls")
     .update({ created_at: new Date(Date.now() - ms).toISOString() })
     .eq("table_id", tableId);
   expect(error).toBeNull();
+  const turno = await service
+    .from("tables")
+    .update({ turn_started_at: new Date(Date.now() - ms - 60 * 60_000).toISOString() })
+    .eq("id", tableId);
+  expect(turno.error).toBeNull();
 }
 
 beforeAll(async () => {

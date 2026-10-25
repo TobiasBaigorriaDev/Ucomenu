@@ -59,6 +59,11 @@ as $$
 declare
   v_turn timestamptz := clock_timestamp();
 begin
+  -- Mismo candado que `create_waiter_call` (por mesa): un «Pedir la cuenta» que se está creando termina antes de que el turno cambie
+  -- (y entonces se vence abajo) o empieza después (y ya es del turno nuevo). Sin esto, un llamado sin confirmar era invisible para el
+  -- UPDATE de abajo y quedaba `pending` con fecha anterior al turno (hallazgo de la revisión de la cuenta del comensal, ronda 2). Se toma
+  -- después del bloqueo de la mesa y del pedido: `create_waiter_call` toma este candado y solo lee la mesa, sin bloquearla.
+  perform pg_advisory_xact_lock(hashtextextended('waiter_call:' || p_table::text, 0));
   update public.tables set turn_started_at = v_turn where id = p_table;
   -- El pedido de cuenta pendiente era de quienes ya se fueron (y a lo sumo hay uno por mesa: índice único parcial).
   update public.waiter_calls set status = 'expired' where table_id = p_table and kind = 'bill' and status = 'pending';
