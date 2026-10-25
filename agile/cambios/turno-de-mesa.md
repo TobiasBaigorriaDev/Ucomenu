@@ -70,3 +70,5 @@ Probando en staging con un mismo teléfono, el usuario vio que **«Reiniciar QR 
 - Efecto para el comensal: tras cobrar, quien siga en la mesa y quiera llamar tiene que escanear de nuevo.
 - Las pruebas viejas que fabrican tickets «de hace X» sobre mesas recién creadas (`waiter-calls`, `sala-module`, `ticket-de-visita`) suponían una mesa que nace después de su propio ticket; ahora sus mesas nacen con un turno de hace días (no cambia lo que prueban).
 - Pruebas de carrera de este archivo: pasaron a esperas activas (hasta que la otra sesión duerme y la llamada queda bloqueada) en vez de tiempos fijos, que daban falsos fallos con 14 archivos en paralelo.
+- **Revisión de este cambio — Codex, solo lectura, nivel C, sobre `63fd7a5`: APROBAR, sin hallazgos funcionales.** Una sugerencia, válida y ya corregida en `90ce1ab`: la ficha decía 28/28 y el archivo tiene 24 pruebas. Confirma que la corrección de los llamados conserva la tolerancia de 1 s y que la prueba de contraste de la cuenta es sensible a la falla (sin ejecución visual propia).
+- Despliegue de este cambio en staging (migración `20261202100000` y nueva imagen): **pendiente de la aprobación del usuario**.
