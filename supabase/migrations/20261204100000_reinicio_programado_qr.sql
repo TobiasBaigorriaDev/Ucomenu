@@ -1,5 +1,8 @@
 -- Reinicio diario por sucursal y reinicio manual de todo el local.
 -- Ficha: agile/cambios/reinicio-programado-qr.md. No cambia QR ni pedidos.
+-- Rollback operativo con datos: select cron.unschedule('reset-scheduled-table-turns');
+-- luego volver al código previo. Las columnas y funciones aditivas pueden quedar sin uso.
+-- No revivir visitas terminadas: los clientes escanean otra vez. No borrar tablas ni pedidos.
 begin;
 
 create function private.valid_qr_reset_times(p_times time[])
@@ -17,20 +20,34 @@ alter table public.branches
   add column qr_reset_after timestamptz not null default now(),
   add constraint branches_qr_reset_times_check check (private.valid_qr_reset_times(qr_reset_times));
 grant update (qr_reset_times) on public.branches to authenticated;
+-- La carta conserva las columnas públicas existentes; los horarios no se publican.
+revoke select on public.branches from anon, authenticated;
+grant select (id, organization_id, name, slug, created_at, is_active, slug_aliases,
+  waiter_call_cooldown_seconds, google_review_url, timezone) on public.branches to anon, authenticated;
+
+create function public.owner_qr_reset_schedules(p_org uuid)
+returns table(branch_id uuid, reset_times time[])
+language sql stable security definer set search_path = '' as $$
+  select b.id, b.qr_reset_times from public.branches b
+  where b.organization_id = p_org and private.is_org_owner(p_org);
+$$;
+revoke all on function public.owner_qr_reset_schedules(uuid) from public, anon, authenticated, service_role;
+grant execute on function public.owner_qr_reset_schedules(uuid) to authenticated;
 -- CHECK invoca una función privada: el rol necesita EXECUTE pero no accede a datos.
 grant execute on function private.valid_qr_reset_times(time[]) to authenticated, service_role;
 
 create function private.qr_schedule_changed()
 returns trigger language plpgsql set search_path = '' as $$
 begin
-  if new.qr_reset_times is distinct from old.qr_reset_times or new.timezone is distinct from old.timezone then
+  if new.qr_reset_times is distinct from old.qr_reset_times or new.timezone is distinct from old.timezone
+     or new.is_active is distinct from old.is_active then
     new.qr_reset_after := clock_timestamp();
   end if;
   return new;
 end;
 $$;
 revoke all on function private.qr_schedule_changed() from public, anon, authenticated;
-create trigger branches_qr_schedule_changed before update of qr_reset_times, timezone on public.branches
+create trigger branches_qr_schedule_changed before update of qr_reset_times, timezone, is_active on public.branches
   for each row execute function private.qr_schedule_changed();
 
 create function public.reset_all_table_turns(p_org uuid)

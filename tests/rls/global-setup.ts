@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { purgeAuditLogWhere, purgeOrgRecordsWhere } from "./purge-price-history";
+import { pauseQrResetJob } from "../cron-local";
 
 /**
  * Limpieza previa de las pruebas de RLS. Si una corrida anterior se interrumpió (o su limpieza final no alcanzó a
@@ -19,6 +20,8 @@ export default async function setup() {
   }
 
   const db = createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const restoreCron = pauseQrResetJob();
+  try {
 
   // Una organización con historial de precios o pagos no se puede borrar (RESTRICT) y ambos solo se agregan: se purgan primero.
   purgeOrgRecordsWhere("o.slug like 'tt-%'");
@@ -38,4 +41,9 @@ export default async function setup() {
   for (const user of users.data?.users ?? []) {
     if (user.email?.startsWith("rls-")) await db.auth.admin.deleteUser(user.id);
   }
+  } catch (error) {
+    restoreCron();
+    throw error;
+  }
+  return restoreCron;
 }

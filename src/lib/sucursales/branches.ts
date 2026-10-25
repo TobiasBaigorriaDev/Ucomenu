@@ -49,12 +49,15 @@ const collator = new Intl.Collator("es-AR", { numeric: true, sensitivity: "base"
 
 /** Las sucursales de la organización, activas e inactivas (orden natural por nombre), con la cantidad de mesas. */
 export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]> {
-  const [branches, tables] = await Promise.all([
-    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url, timezone, qr_reset_times").eq("organization_id", orgId).order("id").range(from, to)),
+  const [branches, tables, schedules] = await Promise.all([
+    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url, timezone").eq("organization_id", orgId).order("id").range(from, to)),
     readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.rpc("owner_qr_reset_schedules", { p_org: orgId }).order("branch_id").range(from, to)),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
   if (tables.error) throw new Error(`No se pudieron leer las mesas: ${tables.error.message}`);
+  if (schedules.error) throw new Error(`No se pudieron leer los horarios: ${schedules.error.message}`);
+  const resetTimes = new Map((schedules.data ?? []).map((row) => [row.branch_id, row.reset_times]));
 
   const counts = new Map<string, { tables: number; activeTables: number }>();
   for (const table of tables.data ?? []) {
@@ -65,12 +68,12 @@ export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]>
   }
 
   return (branches.data ?? [])
-    .map(({ is_active, google_review_url, timezone, qr_reset_times, ...branch }) => ({
+    .map(({ is_active, google_review_url, timezone, ...branch }) => ({
       ...branch,
       isActive: is_active,
       reviewUrl: google_review_url,
       timeZone: timezone || DEFAULT_BRANCH_TIME_ZONE,
-      qrResetTimes: qr_reset_times.map((time) => time.slice(0, 5)),
+      qrResetTimes: resetTimes.get(branch.id)?.map((time) => time.slice(0, 5)),
       ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }),
     }))
     .sort((a, b) => collator.compare(a.name, b.name));

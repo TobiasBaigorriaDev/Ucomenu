@@ -99,11 +99,25 @@ describe("reinicio de QR programado y masivo", () => {
     run("2020-07-06T21:01:00Z");
     expect(await turns(f.org)).toEqual(before);
   });
-  it("el ejecutor no se puede invocar desde ningún rol de la API y cron queda activo cada minuto", () => {
+  it("el ejecutor no se puede invocar desde la API; el job existe cada minuto y está aislado durante las pruebas", () => {
     for (const role of ["anon", "authenticated", "service_role"]) {
       expect(sql(`select has_function_privilege('${role}', 'private.run_scheduled_table_resets(timestamptz)', 'execute')`)[0][0]).toBe("f");
     }
-    expect(sql("select schedule, active::text, username from cron.job where jobname='reset-scheduled-table-turns'")).toEqual([["* * * * *", "true", "postgres"]]);
+    expect(sql("select schedule, active::text, username from cron.job where jobname='reset-scheduled-table-turns'")).toEqual([["* * * * *", "false", "postgres"]]);
+  });
+  it("los horarios se leen solo por RPC del Dueño y reactivar no recupera horarios de una sucursal apagada", async () => {
+    const f = await fixture();
+    for (const db of [anonClient(), owner.db, staff.db, stranger.db]) {
+      expect((await db.from("branches").select("qr_reset_times, qr_reset_after").eq("id", f.branches[0].id)).error?.code).toBe("42501");
+    }
+    expect((await owner.db.rpc("owner_qr_reset_schedules", { p_org: f.org })).data).toHaveLength(2);
+    for (const db of [staff.db, stranger.db]) expect((await db.rpc("owner_qr_reset_schedules", { p_org: f.org })).data).toEqual([]);
+    expect((await anonClient().rpc("owner_qr_reset_schedules", { p_org: f.org })).error?.code).toBe("42501");
+    const id = f.branches[0].id;
+    await owner.db.from("branches").update({ is_active: false }).eq("id", id);
+    schedule(id);
+    expect((await owner.db.from("branches").update({ is_active: true }).eq("id", id)).error).toBeNull();
+    expect(run("2020-07-01T08:00:00Z")).toBe(0);
   });
   it("Staff reinicia todo su local, incluidas sucursales inactivas; no cambia QR ni toca otro local", async () => {
     const a = await fixture();

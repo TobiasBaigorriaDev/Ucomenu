@@ -32,7 +32,7 @@ export function ResetAllButton({ slug }: { slug: string }) {
       {count === null ? <>
         <p className="mt-3 text-lg">Vas a terminar las visitas de todas las mesas de este local, en todas sus sucursales. Los clientes tendrán que escanear de nuevo para llamar al mozo o ver la cuenta.</p>
         <p className="mt-2 text-base text-muted">El QR impreso no cambia. Los pedidos y sus importes se conservan.</p>
-      </> : <p className="mt-3 text-lg" role="status">Listo: se reiniciaron {count} mesas. Los clientes ya pueden escanear de nuevo.</p>}
+      </> : <p className="mt-3 text-lg" role="status">Listo: {count === 1 ? "se reinició 1 mesa" : `se reiniciaron ${count} mesas`}. Incluye las mesas inactivas. Los clientes ya pueden escanear de nuevo.</p>}
       {error ? <p className="mt-3 text-base text-danger" role="alert">{error}</p> : null}
     </Sheet> : null}
   </>;
