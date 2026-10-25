@@ -4,19 +4,20 @@ Actualizado: 2026-10-25 · agente saliente: Codex. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Reinicios de QR programados y masivos: implementados en local y aprobados por Claude**, nivel C. Rama `main`; implementación `1f82cce`, correcciones `e46a942`. La [ficha](cambios/reinicio-programado-qr.md) concentra aceptación, evidencia, informes y recuperación. El Dueño configura horarios diarios por sucursal en su zona horaria, con 05:00 por defecto; una lista vacía desactiva. Sala → Mesas ofrece a Dueño y Staff reiniciar todas las mesas del local, en todas sus sucursales, con confirmación. El QR impreso y los pedidos se conservan.
+**Reinicios de QR programados y masivos: en staging, Fly v53**, con la migración `20261204100000`. El usuario autorizó aplicar el incremento con «Aplicalo», después de la aprobación de Claude. Rama `main`; implementación `1f82cce`, correcciones `e46a942`, imagen construida desde `9d0091f`. La [ficha](cambios/reinicio-programado-qr.md) concentra aceptación, evidencia local/remota, informes y recuperación.
 
-La migración nueva `20261204100000` agrega configuración, marcador de servidor, RPC de lectura exclusiva del Dueño, reinicio masivo y trabajo de PostgreSQL cada minuto. Los horarios internos no son públicos. Cambiar horarios, zona o reactivar empieza a contar desde ese momento; tras una interrupción del servicio se recupera el último reinicio pendiente. Los setups de RLS/E2E pausan y restauran el cron solo en Docker local, para aislar las fechas simuladas.
+El Dueño configura horarios diarios en Panel → Sucursales, con 05:00 por defecto en la zona de cada sucursal; una lista vacía desactiva el automatismo. Sala → Mesas ofrece a Dueño y Staff reiniciar todas las mesas del local, en todas sus sucursales, con confirmación. El QR impreso y los pedidos se conservan. Los horarios internos solo los lee el Dueño por RPC; el marcador no es público.
 
-**Staging sigue en Fly v52**, hasta `20261203100000`. La visita en URL ya estaba desplegada: ver la [verificación remota](cambios/turno-de-mesa.md#verificación-remota-de-la-visita-en-la-url-2026-10-25). El nuevo dry-run lista únicamente la migración de este incremento. No se aplicó ni desplegó el cambio nuevo; los commits siguen locales.
+La base enlazada sigue siendo el proyecto de staging `oasixhsdyigimwvcxtkx`. Se aplicó únicamente la migración prevista, sin seeds ni cambios de secretos. La aplicación usa la imagen `qr-reset-9d0091f`; no se reconstruyó entre las pruebas y el despliegue. El cron funciona desde PostgreSQL aunque Fly esté apagado. Cambiar horarios, zona o reactivar empieza a contar desde ese momento; tras una interrupción se recupera el último reinicio pendiente.
 
 ## Límites y bloqueos
 
-- Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimiento.
-- La falla conocida de traducciones, las sugerencias no bloqueantes de Claude y los límites de verificación están en la ficha; no equivalen a defectos del reinicio.
-- Si se mata la suite sin teardown, el cron local puede quedar pausado: comprobar `cron.job` o resetear la base local antes del ensayo manual.
-- Producción sigue bloqueada por dominio, revisión legal y purgas. Rotar la clave legacy de staging sigue pendiente y fuera del pedido.
+- Falta que el usuario pruebe con sesión real de Dueño/Mozo y en teléfono: configurar horarios, reiniciar todas las mesas, recargar una visita anterior y volver a escanear.
+- Si Windows repite `0xC0000409` con `forks`, el pool `threads` funcionó para el archivo afectado; ver la ficha, sin cambiar la configuración global.
+- Los setups pausan y restauran el cron local. Si se mata la suite sin teardown, comprobar `cron.job` o resetear local antes del ensayo manual.
+- Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimiento. Los commits siguen locales, sin push.
+- Producción continúa bloqueada por dominio, revisión legal y purgas. Rotar la clave legacy de staging sigue pendiente, fuera de alcance.
 
 ## Próximo paso
 
-Con autorización para esta migración nueva y su despliegue, ampliar RLS antes de actualizar staging; aplicar solo el archivo pendiente, desplegar y probar en teléfono real. Las siguientes sugerencias de pruebas no requieren reabrir la implementación aprobada salvo que revelen un defecto.
+Recibir la prueba del usuario en staging. Siguiente migración libre: `20261205100000`. Las sugerencias operativas no bloqueantes y los límites de la revisión están en la ficha.
