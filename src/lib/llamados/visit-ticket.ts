@@ -6,10 +6,10 @@ import { clientSecret } from "./client-key";
  * llamado lo mandan de vuelta. Pasado el plazo, la acción responde «la sesión venció» y hay que escanear el QR de
  * nuevo. Así una pestaña que quedó abierta cuando el comensal se fue deja de poder avisar.
  *
- * Qué NO resuelve (decisión del usuario, ficha): recargar la URL —desde el historial, por ejemplo— emite un ticket
- * nuevo, porque desde afuera es indistinguible de un escaneo. Y se valida en la app, no en la base: quien llame a la
- * función de base directo se lo salta (mismo criterio que el límite por cliente, ADR 0010). Para esos casos la sala
- * muestra cuánto hacía que había escaneado.
+ * Recargar NO lo renueva (ADR 0044, enmienda 2): la visita vive en la URL (`?v=`, ver `visita.ts`); escanear la emite y recargar la reutiliza,
+ * así que tras un cobro o un «Reiniciar QR» la pestaña vieja pide escanear de nuevo. Lo que sigue sin resolver: quien escribe la URL a mano sin `v`
+ * es, para el servidor, un escaneo. Y se valida en la app, no en la base: quien llame a la función de base directo se lo salta (mismo criterio que el
+ * límite por cliente, ADR 0010). Para esos casos la sala muestra cuánto hacía que había escaneado.
  *
  * Es sin estado: `<segundos de emisión>.<HMAC-SHA256(secreto, "visit:" + token + ":" + segundos)>` truncado a 32 hex.
  * Va atado al token de la mesa (un ticket de otra mesa no sirve). Usa el mismo secreto de servidor que el

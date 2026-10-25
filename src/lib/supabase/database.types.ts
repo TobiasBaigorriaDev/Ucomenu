@@ -997,6 +997,9 @@ isOneToOne: false
 "update_order_item":
 { Args: { "p_item": string,"p_note"?: string,"p_quantity": number }; Returns: Json
                            },
+"visit_in_turn":
+{ Args: { "p_ticket_at": string,"p_token": string }; Returns: boolean
+                           },
 "void_order":
 { Args: { "p_order": string,"p_reason"?: string }; Returns: Json
                            }

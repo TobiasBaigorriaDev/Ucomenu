@@ -1,13 +1,16 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { MenuUnavailable } from "@/components/menu/menu-unavailable";
 import { PublicMenuView } from "@/components/menu/public-menu-view";
 import { CallBar } from "./call-bar";
 import { localizedMenu, requestLang, requestLangForNotice } from "@/lib/idiomas/pedido";
 import { TEXTOS } from "@/lib/idiomas/textos";
-import { issueVisitTicket, VISIT_TTL_MS } from "@/lib/llamados/visit-ticket";
+import { issueVisitTicket } from "@/lib/llamados/visit-ticket";
+import { visitInTurn } from "@/lib/llamados/visit-turn";
+import { conParametro, leerVisitaDeLaUrl, urlConVisita } from "@/lib/llamados/visita";
 import { resolveTable } from "@/lib/mesas/public-table";
 import { getPublicMenu } from "@/lib/public-menu";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * Entrada por el QR de una mesa. El token vive en la URL, así que la página no se indexa y no envía el
@@ -36,6 +39,19 @@ export default async function TablePage({ params, searchParams }: PageProps<"/t/
     return <MenuUnavailable organizationName={table.orgName} reason={table.status === "inactive" ? "branch_inactive" : "suspended"} lang={await requestLangForNotice(query)} />;
   }
 
+  // La visita vive en la URL (`?v=`, ADR 0044): escanear (sin `v`) emite una visita nueva y redirige; recargar REUTILIZA la misma, así que
+  // tras un cobro o un «Reiniciar QR» una pestaña vieja ve «escaneá de nuevo» en vez de recibir un ticket nuevo con los botones. Solo hace
+  // falta cuando la mesa ofrece llamados. `redirect` va fuera de todo `try`: lanza para cortar el render.
+  let visita: { ticket: string; ttlMs: number; expired: boolean; v: string } | null = null;
+  if (table.callsEnabled) {
+    const leida = leerVisitaDeLaUrl(token, query.v);
+    if (leida.kind === "nueva") redirect(urlConVisita(`/t/${token}`, query, issueVisitTicket(token)));
+    visita =
+      leida.kind === "propia"
+        ? { ticket: leida.ticket, ttlMs: leida.ttlMs, expired: !(await visitInTurn(createAdminClient, token, leida.issuedAt)), v: leida.ticket }
+        : { ticket: "", ttlMs: 0, expired: true, v: leida.raw };
+  }
+
   const result = await getPublicMenu(table.orgSlug, table.branchSlug);
   if (!result) notFound();
   if (result.kind === "unavailable") return <MenuUnavailable organizationName={result.organizationName} reason={result.reason} lang={await requestLangForNotice(query)} />;
@@ -47,10 +63,11 @@ export default async function TablePage({ params, searchParams }: PageProps<"/t/
   // aunque alguien fuerce la acción, la función de base responde «no disponible». El ticket de visita (que se emite en cada
   // carga de la página, nunca desde caché) lo valida la acción: una pestaña vieja deja de poder avisar (ticket-de-visita).
   // El acceso a los videos vive en el dock cuando lo hay; sin dock (mesa sin llamados) queda el enlace suelto de la carta.
-  const videosPath = `/t/${token}/videos`;
-  const videosHref = menu.hasVideos ? `${videosPath}?lang=${lang}` : undefined;
-  return table.callsEnabled ? (
-    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={issueVisitTicket(token)} ttlMs={VISIT_TTL_MS} lang={lang} videosHref={videosHref} reviewUrl={menu.branch.reviewUrl} reviewKey={menu.branch.id} />} />
+  // El feed de videos recibe la MISMA visita (`v`): recargar allá o volver acá tampoco emite otra.
+  const videosPath = visita ? conParametro(`/t/${token}/videos`, "v", visita.v) : `/t/${token}/videos`;
+  const videosHref = menu.hasVideos ? conParametro(videosPath, "lang", lang) : undefined;
+  return visita ? (
+    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={visita.ticket} ttlMs={visita.ttlMs} expired={visita.expired} lang={lang} videosHref={videosHref} reviewUrl={menu.branch.reviewUrl} reviewKey={menu.branch.id} />} />
   ) : (
     <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableActive ? table.tableLabel : null} />
   );

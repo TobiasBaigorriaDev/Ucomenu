@@ -100,6 +100,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   update_order_item: [false, true], // pedidos del mozo: cantidad y observación de una línea anotada; valida adentro
   close_order: [false, true], // pedidos del mozo: cierra un pedido; solo exige ser miembro (nunca se bloquea por mora)
   void_order: [false, true], // pedidos del mozo: anula un pedido con motivo; solo exige ser miembro (nunca se bloquea por mora)
+  visit_in_turn: [false, false], // visita vigente en el turno de la mesa (ficha turno-de-mesa, ADR 0044): solo service_role, desde la página pública /t/{token} tras verificar el ticket; devuelve un booleano
   get_table_account: [false, false], // cuenta del comensal (ficha cuenta-del-comensal, ADR 0044): única lectura de pedidos para un anónimo; solo service_role, desde la acción de servidor tras verificar el ticket
   reset_table_turn: [false, true], // turno de mesa (ficha turno-de-mesa, ADR 0044): el miembro reinicia a mano el turno de una mesa; nunca se bloquea por plan ni mora
   add_order_item: [false, true], // pedidos del mozo (ficha pedidos-esquema-y-alta-de-items, ADR 0041): única puerta de escritura de orders y order_items; valida adentro (miembro, plan, mora)

@@ -10,6 +10,7 @@ import type { PublicMenu } from "@/lib/public-menu";
 import { logoUrl } from "@/lib/identidad/logos";
 import { paletteStyle } from "@/lib/identidad/palettes";
 import { themeStyle, THEMES } from "@/lib/identidad/temas";
+import { conParametro } from "@/lib/llamados/visita";
 import { videosHref } from "@/lib/videos/feed";
 import { cartaFontClass } from "./carta-fonts";
 import { TemaIcono } from "./tema-icono";
@@ -47,7 +48,7 @@ export function PublicMenuView({
         // Con la barra de llamado (mesa), el acceso es su tercera celda y este enlace no se dibuja.
         <div className="mx-auto max-w-3xl px-4 pb-6 sm:px-6">
           <Link
-            href={`${videosPath ?? videosHref(menu.organization.slug, menu.branch.slug)}?lang=${lang}`}
+            href={conParametro(videosPath ?? videosHref(menu.organization.slug, menu.branch.slug), "lang", lang)}
             prefetch={false}
             data-testid="ver-videos"
             className="carta-chip inline-flex min-h-11 items-center gap-2.5 rounded-full border-[1.5px] border-ink px-5 text-base font-semibold hover:bg-ink/5"

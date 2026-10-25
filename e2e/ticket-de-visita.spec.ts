@@ -140,17 +140,78 @@ test.describe("el ticket de visita en la pestaña del comensal", () => {
     expect(await llamadosDe(t.orgId)).toHaveLength(0);
   });
 
-  test("recargar la página emite un ticket nuevo (límite conocido y aceptado: desde afuera es indistinguible de un escaneo)", async ({ page }) => {
+  test("escanear emite la visita y la deja en la URL; recargar REUTILIZA la misma (no emite otra) y sigue llamando", async ({ page }) => {
     const { t, mesa1 } = await nuevoLocal("ticket-recarga");
-    await page.goto(`/t/${mesa1.qr_token}`);
+    await page.goto(`/t/${mesa1.qr_token}?lang=es`);
+    // El escaneo (sin `v`) redirige a la URL con la visita y conserva el resto de la query.
+    await expect(page).toHaveURL(new RegExp(`/t/${mesa1.qr_token}\\?lang=es&v=\\d+\\.[0-9a-f]{32}$`));
     const primero = await page.locator('input[name="ticket"]').inputValue();
-    await page.waitForTimeout(1100); // los tickets llevan segundos: otro segundo, otro ticket
+    await page.waitForTimeout(1100); // los tickets llevan segundos: si se emitiera otro, sería distinto
     await page.reload();
-    const segundo = await page.locator('input[name="ticket"]').inputValue();
-    expect(segundo).not.toBe(primero);
+    expect(await page.locator('input[name="ticket"]').inputValue()).toBe(primero);
     await llamarAlMozo(page).click();
     await expect(page.getByTestId("mensaje-llamado")).toContainText("Avisamos al personal");
     expect(await llamadosDe(t.orgId)).toHaveLength(1);
+  });
+
+  test("una visita en la URL forjada, de otra mesa o vencida no recibe botones ni un ticket nuevo; sin `v` (escanear de nuevo) sí", async ({ page }) => {
+    const { t, mesa1, mesa2 } = await nuevoLocal("ticket-url-mala");
+    for (const v of ["basura", `${Math.floor(Date.now() / 1000)}.${"0".repeat(32)}`, issueVisitTicket(mesa2.qr_token), issueVisitTicket(mesa1.qr_token, Date.now() - VISIT_TTL_MS - 60_000)]) {
+      await page.goto(`/t/${mesa1.qr_token}?v=${v}`);
+      await expect(vencida(page), v).toContainText(MENSAJE_VENCIDA);
+      await expect(llamarAlMozo(page)).toHaveCount(0);
+      expect(page.url()).toContain(`v=${v}`); // no se reemplazó por una visita nueva
+    }
+    expect(await llamadosDe(t.orgId)).toHaveLength(0);
+    await page.goto(`/t/${mesa1.qr_token}`);
+    await expect(llamarAlMozo(page)).toBeVisible();
+  });
+});
+
+test.describe("tras cobrar o reiniciar el QR, recargar no devuelve los botones (feedback del usuario, ADR 0044)", () => {
+  for (const motivo of ["reiniciar el QR", "cobrar la mesa"] as const) {
+    test(`tras ${motivo}, recargar la pestaña vieja pide escanear de nuevo; escanear de nuevo permite llamar`, async ({ page }) => {
+      const { t, mesa1 } = await nuevoLocal(`ticket-turno-${motivo === "cobrar la mesa" ? "cobro" : "reinicio"}`);
+      await page.goto(`/t/${mesa1.qr_token}`);
+      await expect(llamarAlMozo(page)).toBeVisible();
+      const urlDeLaVisita = page.url();
+      // El ticket guarda segundos enteros y el corte tolera 1 s: se deja pasar para que el turno sea claramente posterior.
+      await page.waitForTimeout(1300);
+      // El turno de la mesa termina (lo mismo que hace `close_order`, `void_order` o «Reiniciar QR de la mesa»).
+      expect((await service().from("tables").update({ turn_started_at: new Date().toISOString() }).eq("id", mesa1.id)).error).toBeNull();
+
+      await page.reload();
+      expect(page.url()).toBe(urlDeLaVisita); // la misma visita: no se emitió otra
+      await expect(vencida(page)).toContainText(MENSAJE_VENCIDA);
+      await expect(llamarAlMozo(page)).toHaveCount(0);
+      await expect(pedirCuenta(page)).toHaveCount(0);
+      expect(await llamadosDe(t.orgId)).toHaveLength(0);
+
+      // Escanear de nuevo (la URL del QR, sin `v`) emite una visita posterior al turno: llama con normalidad.
+      await page.goto(`/t/${mesa1.qr_token}`);
+      await llamarAlMozo(page).click();
+      await expect(page.getByTestId("mensaje-llamado")).toContainText("Avisamos al personal");
+      expect(await llamadosDe(t.orgId)).toHaveLength(1);
+    });
+  }
+
+  test("la visita viaja al feed de videos y de vuelta: recargar o volver tampoco devuelve los botones", async ({ page }) => {
+    const { t, mesa1 } = await nuevoLocal("ticket-turno-feed");
+    await page.goto(`/t/${mesa1.qr_token}?lang=es`);
+    const visita = new URL(page.url()).searchParams.get("v")!;
+    await page.waitForTimeout(1300);
+    expect((await service().from("tables").update({ turn_started_at: new Date().toISOString() }).eq("id", mesa1.id)).error).toBeNull();
+
+    // Aunque la mesa no tenga videos, la dirección del feed lleva la misma visita y el feed la reutiliza (no emite otra).
+    await page.goto(`/t/${mesa1.qr_token}/videos?v=${visita}&lang=es`);
+    expect(new URL(page.url()).searchParams.get("v")).toBe(visita);
+    await expect(vencida(page)).toContainText(MENSAJE_VENCIDA);
+    await expect(llamarAlMozo(page)).toHaveCount(0);
+    expect(await llamadosDe(t.orgId)).toHaveLength(0);
+    // Sin `v`, el feed es un escaneo más: emite y redirige.
+    await page.goto(`/t/${mesa1.qr_token}/videos?lang=es`);
+    expect(new URL(page.url()).searchParams.get("v")).not.toBeNull();
+    expect(new URL(page.url()).searchParams.get("v")).not.toBe(visita);
   });
 });
 

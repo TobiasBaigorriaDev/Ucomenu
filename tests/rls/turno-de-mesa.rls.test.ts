@@ -511,3 +511,43 @@ describe("los llamados también terminan con el turno de la mesa (feedback del u
     expect(await llamar(l.table2, viejo)).toBe("session_closed");
   });
 });
+
+describe("visit_in_turn: ¿la visita sigue vigente en el turno? (para no ofrecer los botones a quien recarga una visita terminada)", () => {
+  const token = (table: string) => sql(`select qr_token from public.tables where id = '${table}'`)[0][0];
+  const relativoAlTurno = (table: string, intervalo: string) => sql(`select (turn_started_at ${intervalo})::text from public.tables where id = '${table}'`)[0][0];
+  const vigente = async (db: Db, tok: string, ticket: string | null) => await db.rpc("visit_in_turn", { p_token: tok, p_ticket_at: ticket } as never);
+
+  it("misma regla y tolerancia que create_waiter_call: antes del turno (1 s o más) no; del mismo segundo o posterior, sí; sin ticket o token malo, no", async () => {
+    const l = await nuevoLocal();
+    await pausa();
+    ok(await reiniciar(owner.db, l.table));
+    const t = token(l.table);
+    expect(ok(await vigente(service, t, relativoAlTurno(l.table, "- interval '10 seconds'")))).toBe(false);
+    expect(ok(await vigente(service, t, relativoAlTurno(l.table, "- interval '1 second'")))).toBe(false);
+    expect(ok(await vigente(service, t, relativoAlTurno(l.table, "- interval '0.5 seconds'")))).toBe(true);
+    expect(ok(await vigente(service, t, relativoAlTurno(l.table, "+ interval '1 second'")))).toBe(true);
+    expect(ok(await vigente(service, t, null))).toBe(false);
+    for (const malo of ["0".repeat(32), "no-es-un-token", "", t.toUpperCase(), `${t}0`]) expect(ok(await vigente(service, malo, relativoAlTurno(l.table, "+ interval '1 second'"))), malo).toBe(false);
+  });
+
+  it("coincide con lo que hace create_waiter_call: si dice que no, el llamado responde session_closed; si dice que sí, se crea", async () => {
+    const l = await nuevoLocal();
+    await pausa();
+    ok(await reiniciar(owner.db, l.table));
+    const t = token(l.table);
+    for (const [intervalo, esperado] of [["- interval '5 seconds'", "session_closed"], ["+ interval '1 second'", "created"]] as const) {
+      const ticket = relativoAlTurno(l.table, intervalo);
+      sql(`delete from public.waiter_calls where table_id = '${l.table}'`);
+      const vig = ok<boolean>(await vigente(service, t, ticket));
+      const llamado = ok<{ status: string }>(await service.rpc("create_waiter_call", { p_token: t, p_kind: "waiter", p_visit_started_at: ticket } as never)).status;
+      expect(llamado).toBe(esperado);
+      expect(vig).toBe(esperado === "created");
+    }
+  });
+
+  it("solo service_role: anon y un usuario autenticado no pueden ejecutarla", async () => {
+    const l = await nuevoLocal();
+    const ticket = relativoAlTurno(l.table, "+ interval '1 second'");
+    for (const db of [anonClient(), owner.db]) expect((await vigente(db, token(l.table), ticket)).error).not.toBeNull();
+  });
+});

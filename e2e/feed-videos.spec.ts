@@ -325,7 +325,7 @@ test.describe("el feed desde la mesa conserva el llamado al mozo", () => {
       await page.goto(`/t/${token}`);
       // En la mesa el acceso es la tercera celda del dock (no hay enlace suelto aparte) y no se pisa con los botones.
       await expect(page.getByTestId("ver-videos")).toHaveCount(1);
-      await expect(page.getByTestId("barra-llamado").getByTestId("ver-videos")).toHaveAttribute("href", `/t/${token}/videos?lang=es`);
+      await expect(page.getByTestId("barra-llamado").getByTestId("ver-videos")).toHaveAttribute("href", new RegExp(`^/t/${token}/videos\\?v=\\d+\\.[0-9a-f]{32}&lang=es$`)); // lleva la visita de la URL (ADR 0044)
       await expect(page.getByTestId("ver-videos")).toHaveText("Menufeed");
       await expectNoHorizontalOverflow(page);
       await page.getByTestId("ver-videos").click();

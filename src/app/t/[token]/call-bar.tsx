@@ -135,10 +135,13 @@ export function CallBar({
   videosHref,
   reviewUrl,
   reviewKey,
+  expired = false,
 }: {
   token: string;
   ticket: string;
   ttlMs: number;
+  /** La visita de la URL ya terminó (el turno de la mesa empezó después, o el ticket venció): arranca en «escaneá de nuevo», sin botones. */
+  expired?: boolean;
   lang: Lang;
   videosHref?: string;
   /** Enlace de reseñas de Google de la sucursal; sin él no hay invitación. `reviewKey` (la sucursal) acota «una vez al día» por dispositivo. */
@@ -158,7 +161,7 @@ export function CallBar({
   const [accountOpen, setAccountOpen] = useState(false);
   const [accountExpired, setAccountExpired] = useState(false);
   const markAccountExpired = useCallback(() => setAccountExpired(true), []);
-  const sessionExpired = useSessionExpired(ttlMs) || state.expired === true || accountExpired;
+  const sessionExpired = useSessionExpired(ttlMs) || expired || state.expired === true || accountExpired;
 
   return (
     <>
