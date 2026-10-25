@@ -367,3 +367,66 @@ describe("un «Pedir la cuenta» que se está creando mientras se cierra la mesa
     expect(sql(`select status from public.orders where id = '${order}'`)[0][0]).toBe("closed");
   });
 });
+
+describe("las esperas del candado de los llamados (hallazgos de la revisión, ronda 3)", () => {
+  const retener = (sqlTexto: string) => {
+    const proceso = spawn("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", sqlTexto], { stdio: "ignore" });
+    return new Promise((r) => proceso.on("exit", r));
+  };
+  const esperandoCandado = (fragmento: string) =>
+    Number(sql(`select count(*) from pg_stat_activity where wait_event_type = 'Lock' and wait_event = 'advisory' and query like '%${fragmento}%'`)[0][0]);
+  const llamados = (table: string) => sql(`select kind, status from public.waiter_calls where table_id = '${table}' order by kind`);
+
+  it("un «Pedir la cuenta» que espera el candado mientras el turno termina usa el turno NUEVO para su cooldown", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    const token = sql(`select qr_token from public.tables where id = '${l.table}'`)[0][0];
+    ok(await service.rpc("create_waiter_call", { p_token: token, p_kind: "bill" } as never));
+    // Otra transacción CIERRA el pedido (con la identidad del Dueño) y tarda en confirmar.
+    const termina = retener(
+      `begin; select set_config('request.jwt.claims', '{"sub":"${owner.id}","role":"authenticated"}', true); select public.close_order('${order}'); select pg_sleep(3); commit;`,
+    );
+    await new Promise((r) => setTimeout(r, 1500));
+    const pide = service.rpc("create_waiter_call", { p_token: token, p_kind: "bill" } as never).then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    expect(esperandoCandado("create_waiter_call")).toBeGreaterThanOrEqual(1);
+    const r = await pide;
+    await termina;
+    // Con el turno viejo contaba el llamado vencido de hace segundos y respondía `cooldown`, sin llamado del turno vigente.
+    expect(ok<{ status: string }>(r).status).toBe("created");
+    expect(llamados(l.table)).toEqual([["bill", "expired"], ["bill", "pending"]]);
+  });
+
+  /** Otra sesión retiene el candado de los llamados de la mesa; `llamada` espera DENTRO de `end_table_turn` y se revoca su membresía. */
+  async function revocandoMientrasEsperaElCandado(l: Local, userId: string, llamada: () => PromiseLike<Resp>, fragmento: string): Promise<Resp> {
+    const retiene = retener(`begin; select pg_advisory_xact_lock(hashtextextended('waiter_call:' || '${l.table}', 0)); select pg_sleep(4); commit;`);
+    await new Promise((r) => setTimeout(r, 2000));
+    const espera = llamada().then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    expect(esperandoCandado(fragmento)).toBeGreaterThanOrEqual(1);
+    expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", userId)).error).toBeNull();
+    const r = await espera;
+    await retiene;
+    await addMembership(service, staff, l.id, "staff");
+    return r;
+  }
+
+  it("reiniciar, cerrar y anular: una membresía revocada mientras esperan ese candado no las deja pasar ni vencer el pedido de cuenta", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    const token = sql(`select qr_token from public.tables where id = '${l.table}'`)[0][0];
+    ok(await service.rpc("create_waiter_call", { p_token: token, p_kind: "bill" } as never));
+    const antes = turno(l.table);
+
+    const r = await revocandoMientrasEsperaElCandado(l, staff.id, () => reiniciar(staff.db, l.table), "reset_table_turn");
+    expect(r.error?.message).toBe("table_not_found");
+    const c = await revocandoMientrasEsperaElCandado(l, staff.id, () => cerrar(staff.db, order), "close_order");
+    expect(c.error?.message).toBe("orders_not_allowed");
+    const a = await revocandoMientrasEsperaElCandado(l, staff.id, () => anular(staff.db, order, "x"), "void_order");
+    expect(a.error?.message).toBe("orders_not_allowed");
+
+    expect(turno(l.table)).toBe(antes);
+    expect(llamados(l.table)).toEqual([["bill", "pending"]]);
+    expect(sql(`select status from public.orders where id = '${order}'`)[0][0]).toBe("open");
+  });
+});

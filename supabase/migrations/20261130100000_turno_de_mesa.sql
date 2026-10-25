@@ -4,7 +4,7 @@
 --  * `tables.turn_started_at`: inicio del turno vigente de la mesa. Las mesas existentes arrancan en la fecha de esta migración.
 --    Ningún rol de la API puede escribirla (los permisos de columna de `tables` no la incluyen): solo la mueven `close_order`,
 --    `void_order` y `reset_table_turn`.
---  * `private.end_table_turn(p_table)`: termina el turno de la mesa (mueve `turn_started_at`) y da por VENCIDO su «Pedir la cuenta»
+--  * `private.end_table_turn(p_table, p_org)`: termina el turno de la mesa (mueve `turn_started_at`; vuelve a comprobar la membresía tras esperar el candado de los llamados) y da por VENCIDO su «Pedir la cuenta»
 --    pendiente: ese pedido era de quienes ya se fueron y, si quedara pendiente, taparía (`already_pending`) el de la mesa nueva
 --    (hallazgo de la revisión de la cuenta del comensal). El «Llamar al mozo» no se toca.
 --  * `close_order` y `void_order` (misma firma, mismos permisos, `create or replace`): cuando cambian el estado de un pedido con mesa,
@@ -26,7 +26,7 @@
 --   begin;
 --   drop function public.reset_table_turn(uuid);
 --   drop function private.ticket_in_turn(uuid, timestamptz);
---   drop function private.end_table_turn(uuid);
+--   drop function private.end_table_turn(uuid, uuid);
 --   -- volver a crear close_order y void_order con el cuerpo de 20261128100000 (sin el UPDATE de la mesa);
 --   alter table public.tables drop column turn_started_at;
 --   commit;
@@ -49,7 +49,7 @@ as $$
 $$;
 revoke all on function private.ticket_in_turn(uuid, timestamptz) from public, anon, authenticated;
 
-create function private.end_table_turn(p_table uuid)
+create function private.end_table_turn(p_table uuid, p_org uuid)
 returns timestamptz
 language plpgsql
 volatile
@@ -64,13 +64,18 @@ begin
   -- UPDATE de abajo y quedaba `pending` con fecha anterior al turno (hallazgo de la revisión de la cuenta del comensal, ronda 2). Se toma
   -- después del bloqueo de la mesa y del pedido: `create_waiter_call` toma este candado y solo lee la mesa, sin bloquearla.
   perform pg_advisory_xact_lock(hashtextextended('waiter_call:' || p_table::text, 0));
+  -- Esta espera es posterior a la última comprobación de quien llama (hallazgo de la revisión, ronda 3): se vuelve a comprobar y, si ya no
+  -- es miembro, no se escribe nada y devuelve NULL (quien llama lo traduce a su error y la transacción se deshace entera).
+  if not private.is_org_member(p_org) then
+    return null;
+  end if;
   update public.tables set turn_started_at = v_turn where id = p_table;
   -- El pedido de cuenta pendiente era de quienes ya se fueron (y a lo sumo hay uno por mesa: índice único parcial).
   update public.waiter_calls set status = 'expired' where table_id = p_table and kind = 'bill' and status = 'pending';
   return v_turn;
 end;
 $$;
-revoke all on function private.end_table_turn(uuid) from public, anon, authenticated;
+revoke all on function private.end_table_turn(uuid, uuid) from public, anon, authenticated;
 
 create or replace function public.close_order(p_order uuid)
 returns jsonb
@@ -84,6 +89,7 @@ declare
   v_org uuid;
   v_table uuid;
   v_status text;
+  v_turn timestamptz;
 begin
   if v_uid is null then
     raise exception 'orders_not_allowed' using errcode = '42501';
@@ -115,7 +121,10 @@ begin
   update public.orders set status = 'closed', closed_at = clock_timestamp(), closed_by = v_uid where id = p_order;
   -- El turno de la mesa termina con el cobro (ADR 0044). Una mesa borrada (table_id nulo) no tiene turno que mover.
   if v_table is not null then
-    perform private.end_table_turn(v_table);
+    v_turn := private.end_table_turn(v_table, v_org);
+    if v_turn is null then
+      raise exception 'orders_not_allowed' using errcode = '42501';
+    end if;
   end if;
   return jsonb_build_object('order_id', p_order, 'status', 'closed', 'unchanged', false);
 end;
@@ -136,6 +145,7 @@ declare
   v_table uuid;
   v_status text;
   v_reason text;
+  v_turn timestamptz;
 begin
   if v_uid is null then
     raise exception 'orders_not_allowed' using errcode = '42501';
@@ -171,7 +181,10 @@ begin
   set status = 'void', closed_at = clock_timestamp(), closed_by = v_uid, void_reason = v_reason
   where id = p_order;
   if v_table is not null then
-    perform private.end_table_turn(v_table);
+    v_turn := private.end_table_turn(v_table, v_org);
+    if v_turn is null then
+      raise exception 'orders_not_allowed' using errcode = '42501';
+    end if;
   end if;
   return jsonb_build_object('order_id', p_order, 'status', 'void', 'unchanged', false);
 end;
@@ -205,7 +218,10 @@ begin
   if not found or not private.is_org_member(v_org) then
     raise exception 'table_not_found' using errcode = 'P0002';
   end if;
-  v_turn := private.end_table_turn(p_table);
+  v_turn := private.end_table_turn(p_table, v_org);
+  if v_turn is null then
+    raise exception 'table_not_found' using errcode = 'P0002';
+  end if;
   return jsonb_build_object('table_id', p_table, 'turn_started_at', v_turn);
 end;
 $$;

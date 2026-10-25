@@ -139,6 +139,7 @@ declare
   v_count integer;
   v_oldest timestamptz;
   v_retry integer;
+  v_turn timestamptz;
 begin
   if p_kind is null or p_kind not in ('waiter', 'bill')
      or p_token is null or p_token !~ '^[0-9a-f]{32}$' then
@@ -168,6 +169,10 @@ begin
   from public.branches b
   where b.id = v_table.branch_id
   for share;
+
+  -- El inicio del turno se lee DESPUÉS del candado de la mesa: si un cierre confirmó mientras este llamado esperaba, el turno que vale es el
+  -- nuevo (el valor leído arriba es el anterior y haría contar el llamado de quienes ya se fueron).
+  select t.turn_started_at into v_turn from public.tables t where t.id = v_table.id;
 
   if not v_table.is_active
      or not coalesce(v_branch_active, false)
@@ -236,7 +241,7 @@ begin
   -- vigente (ADR 0044): cuando el mozo cobra o reinicia el QR llega una mesa nueva, que no tiene que esperar por quienes ya se fueron.
   select max(created_at) into v_last
   from public.waiter_calls
-  where table_id = v_table.id and kind = p_kind and created_at > v_table.turn_started_at;
+  where table_id = v_table.id and kind = p_kind and created_at > coalesce(v_turn, v_table.turn_started_at);
 
   if v_last is not null and v_last + make_interval(secs => v_table.cooldown) > now() then
     v_retry := greatest(1, ceil(extract(epoch from (v_last + make_interval(secs => v_table.cooldown) - now())))::integer);
