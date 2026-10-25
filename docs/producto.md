@@ -72,6 +72,7 @@ Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases 
 - Pedido: abierto → cerrado | anulado. Ítem: anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). Solo por mesa en la primera entrega.
 - Cada línea copia nombre, precio (el efectivo al anotarla, con promoción si rige) y opciones; el precio lo calcula el servidor.
 - La Sala suma la vista «Mesas» (pedido abierto + llamados de cada mesa). «Pedir la cuenta» sigue siendo un llamado y muestra al mozo el total; atenderlo no cierra el pedido.
+- **La cuenta del comensal** ([ADR 0044](decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)): tras tocar «Pedir la cuenta», `/t/{token}` ofrece «Ver mi cuenta» con los platos vigentes, sus importes y el total («no válida como factura»), sin observaciones. Es lo único de un pedido que ve un anónimo y solo dentro del **turno de mesa**: el QR impreso no cambia, pero cerrar o anular el pedido (o «Reiniciar QR de la mesa» en la Sala) abre un turno nuevo y los celulares anteriores tienen que escanear de nuevo. Quien escanee el QR durante el turno y pida la cuenta puede ver el consumo de esa mesa (riesgo aceptado).
 - Sin punto de venta fiscal: el cierre muestra una precuenta «no válida como factura»; sin cobro, propinas, división de cuenta ni pantalla de cocina.
 - En solo lectura o suspendida no se abren pedidos ni se agregan ítems; cerrar y anular siempre se puede. Se conservan 2 años desde el cierre (*a confirmar con el contador*).
 

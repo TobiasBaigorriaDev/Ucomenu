@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useState, type ReactNode } from "react";
+import { useActionState, useCallback, useEffect, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
+import { AccountSheet } from "./account-sheet";
 import { createWaiterCallAction, type CallState } from "./actions";
 
 /** Celdas del dock: mismo lenguaje que el bento de categorías (radio grande y colores de la paleta del local). */
@@ -150,9 +151,14 @@ export function CallBar({
     return reviewUrl && reviewKey && next.kind === "bill" && next.tone === "ok" && claimReviewInvite(reviewKey) ? { ...next, invite: true } : next;
   }, {});
   const [closed, setClosed] = useState<unknown>(null);
-  const sessionExpired = useSessionExpired(ttlMs) || state.expired === true;
+  // «Ver mi cuenta» (ADR 0044): la hoja vive fuera del formulario; si la base dice que el turno ya no es este, la barra pasa a «vencida».
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [accountExpired, setAccountExpired] = useState(false);
+  const markAccountExpired = useCallback(() => setAccountExpired(true), []);
+  const sessionExpired = useSessionExpired(ttlMs) || state.expired === true || accountExpired;
 
   return (
+    <>
     <form
       action={formAction}
       aria-label={TEXTOS[lang].call.form}
@@ -193,8 +199,20 @@ export function CallBar({
             </button>
           </div>
         ) : null}
+        {!sessionExpired && state.account ? (
+          <button
+            type="button"
+            data-testid="ver-cuenta"
+            onClick={() => setAccountOpen(true)}
+            className={`${cellBase} mb-2 border-[1.5px] border-ink text-ink hover:bg-ink/5`}
+          >
+            {TEXTOS[lang].account.view}
+          </button>
+        ) : null}
         {sessionExpired ? videosHref ? <VideosCell href={videosHref} lang={lang} stacked={false} /> : null : <Buttons lang={lang} videosHref={videosHref} />}
       </div>
     </form>
+    {accountOpen ? <AccountSheet token={token} ticket={ticket} lang={lang} onClose={() => setAccountOpen(false)} onExpired={markAccountExpired} /> : null}
+    </>
   );
 }

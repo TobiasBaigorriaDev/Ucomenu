@@ -67,6 +67,22 @@ export type Textos = {
     cooldown: (seconds: number) => string;
     rateLimited: (minutes: number) => string;
   };
+  /** Cuenta del comensal (ficha cuenta-del-comensal): lo que ve quien pidió la cuenta. No es una factura. */
+  account: {
+    view: string;
+    title: string;
+    loading: string;
+    error: string;
+    empty: string;
+    total: string;
+    dishes: (n: number) => string;
+    each: (price: string) => string;
+    legend: string;
+    note: string;
+    asOf: (time: string) => string;
+    refresh: string;
+    close: string;
+  };
   /** Feed de videos (ficha feed-de-videos). */
   feed: {
     /** El acceso desde la carta. */
@@ -187,6 +203,21 @@ const es: Textos = {
     cooldown: (s) => `Ya avisaste hace un momento. Podés volver a avisar en ${s} ${s === 1 ? "segundo" : "segundos"}.`,
     rateLimited: (m) => `Se hicieron demasiados avisos desde tu conexión. Probá de nuevo en ${m} ${m === 1 ? "minuto" : "minutos"}.`,
   },
+  account: {
+    view: "Ver mi cuenta",
+    title: "Tu cuenta",
+    loading: "Buscando tu cuenta…",
+    error: "No pudimos mostrar tu cuenta. Pedísela al mozo.",
+    empty: "Todavía no hay platos anotados en tu mesa.",
+    total: "Total hasta ahora",
+    dishes: (n) => (n === 1 ? "1 plato" : `${n} platos`),
+    each: (price) => `${price} c/u`,
+    legend: "No válida como factura",
+    note: "Es lo anotado hasta ahora: el mozo puede sumar más. El importe final lo confirma el personal.",
+    asOf: (time) => `Actualizada a las ${time}`,
+    refresh: "Actualizar",
+    close: "Cerrar",
+  },
   feed: {
     link: "Ver Menufeed",
     dockLink: "Menufeed",
@@ -306,6 +337,21 @@ const en: Textos = {
     cooldown: (s) => `You just notified us a moment ago. You can notify again in ${s} ${s === 1 ? "second" : "seconds"}.`,
     rateLimited: (m) => `Too many notifications were sent from your connection. Try again in ${m} ${m === 1 ? "minute" : "minutes"}.`,
   },
+  account: {
+    view: "View my check",
+    title: "Your check",
+    loading: "Looking up your check…",
+    error: "We couldn't show your check. Please ask your waiter.",
+    empty: "Nothing has been added to your table yet.",
+    total: "Total so far",
+    dishes: (n) => (n === 1 ? "1 dish" : `${n} dishes`),
+    each: (price) => `${price} each`,
+    legend: "Not valid as an invoice",
+    note: "This is what has been added so far: your waiter may add more. The staff confirms the final amount.",
+    asOf: (time) => `Updated at ${time}`,
+    refresh: "Refresh",
+    close: "Close",
+  },
   feed: {
     link: "Watch Menufeed",
     dockLink: "Menufeed",
@@ -424,6 +470,21 @@ const pt: Textos = {
     already: { waiter: "Já avisamos a equipe. Já já alguém atende você.", bill: "Já pedimos a sua conta. Ela chega já já." },
     cooldown: (s) => `Você acabou de avisar. Pode avisar de novo em ${s} ${s === 1 ? "segundo" : "segundos"}.`,
     rateLimited: (m) => `Foram feitos avisos demais a partir da sua conexão. Tente de novo em ${m} ${m === 1 ? "minuto" : "minutos"}.`,
+  },
+  account: {
+    view: "Ver minha conta",
+    title: "Sua conta",
+    loading: "Buscando a sua conta…",
+    error: "Não conseguimos mostrar a sua conta. Peça ao garçom.",
+    empty: "Ainda não há pratos anotados na sua mesa.",
+    total: "Total até agora",
+    dishes: (n) => (n === 1 ? "1 prato" : `${n} pratos`),
+    each: (price) => `${price} cada`,
+    legend: "Sem valor fiscal",
+    note: "É o que foi anotado até agora: o garçom pode acrescentar mais. O valor final é confirmado pela equipe.",
+    asOf: (time) => `Atualizada às ${time}`,
+    refresh: "Atualizar",
+    close: "Fechar",
   },
   feed: {
     link: "Ver Menufeed",

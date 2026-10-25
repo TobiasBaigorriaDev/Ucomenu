@@ -893,6 +893,9 @@ isOneToOne: false
               "base_price_cents": number,"discount_type": string,"discount_value": number,"ends_local": string,"price_cents": number,"product_id": string,"promotion_id": string,"promotion_name": string
             }[]
                            },
+"get_table_account":
+{ Args: { "p_ticket_at": string,"p_token": string }; Returns: Json
+                           },
 "my_branch_view":
 { Args: { "p_org": string }; Returns: (string)[]
                            },
