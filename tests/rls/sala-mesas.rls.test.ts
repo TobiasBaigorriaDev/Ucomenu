@@ -266,6 +266,12 @@ describe("el total en «Pide la cuenta» de la Sala de llamados", () => {
     await llamar(l.mesas[0].token, "bill");
     expect((await loadSala(owner.db, l.id)).calls[0].account).toEqual({ totalCents: 10000, dishes: 1 });
     expect((await owner.db.rpc("close_order", { p_order: a.order_id })).error).toBeNull();
-    expect((await loadSala(owner.db, l.id)).calls[0]).not.toHaveProperty("account");
+    // Cobrar termina el turno de la mesa y da por vencido su «Pedir la cuenta» pendiente (ADR 0044): la tarjeta sale de la Sala.
+    expect((await loadSala(owner.db, l.id)).calls).toEqual([]);
+    // Una mesa que pide la cuenta DESPUÉS, sin pedido abierto, aparece sin total (el cooldown es del turno: pide enseguida).
+    await llamar(l.mesas[0].token, "bill");
+    const nueva = (await loadSala(owner.db, l.id)).calls;
+    expect(nueva).toHaveLength(1);
+    expect(nueva[0]).not.toHaveProperty("account");
   });
 });

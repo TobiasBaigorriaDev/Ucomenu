@@ -14,11 +14,11 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Seleccionado
 
-- [C] Turno de mesa que rota al cobrar (el QR impreso no cambia) → [ficha](cambios/turno-de-mesa.md) · [ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)
-- [C] El comensal ve su precuenta al pedir la cuenta (depende del turno de mesa) → [ficha](cambios/cuenta-del-comensal.md)
+- (vacío)
 
 ## Para verificar
 
+- [C] Turno de mesa (rota al cerrar, anular o reiniciar; el QR impreso no cambia) y cuenta del comensal («Ver mi cuenta» tras pedir la cuenta): implementados en local y aprobados por Codex; **sus migraciones (`20261130100000`, `20261201100000`) esperan la aprobación del usuario para staging** → [turno](cambios/turno-de-mesa.md) · [cuenta](cambios/cuenta-del-comensal.md) · [ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)
 - [M] Estilo de carta «Afiche» (Big Shoulders, bandas de color, platos numerados): aprobado por el usuario y en staging (Fly v44, migración aplicada); falta probarlo con un local real en staging → [ficha](cambios/estilo-afiche.md)
 - [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada, aprobada por Codex (sin hallazgos) y por el usuario, y en staging con su migración (Fly versión 33, 2026-10-23); falta probarla con sesión de SuperAdmin y de Dueño en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 
