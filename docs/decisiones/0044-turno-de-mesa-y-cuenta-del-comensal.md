@@ -22,6 +22,9 @@ La base ya tiene dos piezas: el **ticket de visita** (HMAC sin estado emitido en
 - **Código que da el mozo, o geolocalización** — más fricción o no fiable; se acepta el riesgo de abajo.
 - **Política de lectura para `anon` sobre pedidos** — expondría todo; se usa una función de solo servidor (patrón del ADR 0038).
 
+## Enmienda (2026-10-25, feedback del usuario en staging)
+El turno no solo decide quién ve la cuenta: **los llamados al mozo también terminan con él**. Con la versión original, al «Reiniciar QR de la mesa» el celular que ya estaba en la mesa seguía pudiendo llamar (el ticket de visita no miraba el turno). Ahora `create_waiter_call` responde `session_closed` (el aviso de siempre, «Esta sesión venció. Escaneá de nuevo el QR») si el turno empezó después de emitido el ticket, con la misma tolerancia de 1 segundo que el cierre de sesión por cuenta atendida y **sin** los 10 minutos de gracia de aquél. Vale para el cobro (`close_order`, `void_order`) y para el reinicio manual. Consecuencia para el comensal: después de que el mozo cierra el pedido, quien siga en la mesa y quiera llamar o pedir algo tiene que escanear de nuevo el QR.
+
 ## Consecuencias
 - **Riesgo aceptado por el usuario:** quien escanee el QR durante el turno, estando o no en el local, puede ver el consumo de esa mesa (platos y total, sin datos personales) **después de que se pidió la cuenta**. El turno limita cuánto dura, no quién. Se mitiga con el ticket, el cierre del turno y que el mozo ve cuándo escaneó.
 - La función `get_table_account` y `reset_table_turn` son nuevas superficies; la primera solo `service_role`.

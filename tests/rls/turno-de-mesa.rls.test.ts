@@ -75,6 +75,22 @@ const reiniciar = (db: Db, table: string) => db.rpc("reset_table_turn", { p_tabl
 const turno = (table: string) => sql(`select turn_started_at::text from public.tables where id = '${table}'`)[0][0];
 /** Espera una pizca para que dos `clock_timestamp()` no coincidan. */
 const pausa = () => new Promise((r) => setTimeout(r, 15));
+/** Espera activa en vez de un tiempo fijo: bajo carga `docker exec` tarda en arrancar y una pausa corta daba falsos fallos. */
+const hasta = async (condicion: () => boolean, ms = 12_000) => {
+  const fin = Date.now() + ms;
+  while (Date.now() < fin) {
+    if (condicion()) return true;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  return condicion();
+};
+/** La sesión retenedora (su consulta lleva `marca`) ya llegó a su `pg_sleep`: ya tiene los candados y los conserva. */
+const durmiendo = (marca: string) => Number(sql(`select count(*) from pg_stat_activity where wait_event = 'PgSleep' and query like '%${marca}%'`)[0][0]) > 0;
+/** Hay una sesión esperando un candado dentro de una consulta que menciona `fragmento` (y, si se pide, de ese tipo de espera). */
+const bloqueada = (fragmento: string, evento?: string) =>
+  Number(sql(`select count(*) from pg_stat_activity where wait_event_type = 'Lock' ${evento ? `and wait_event = '${evento}'` : ""} and query like '%${fragmento}%'`)[0][0]) > 0;
+/** Termina la sesión retenedora (deshace su transacción y suelta sus candados) sin esperar a que acabe su sueño. */
+const soltar = (marca: string) => sql(`select pg_terminate_backend(pid) from pg_stat_activity where wait_event = 'PgSleep' and query like '%${marca}%'`);
 const enTurno = (table: string, ticketSql: string) => sql(`select private.ticket_in_turn('${table}', ${ticketSql})`)[0][0] === "t";
 
 beforeAll(async () => {
@@ -250,15 +266,15 @@ describe("la autorización se revalida después de esperar la fila de la mesa (h
   async function revocandoMientrasEspera(l: Local, userId: string, llamada: () => PromiseLike<Resp>, fragmento: string): Promise<Resp> {
     const retiene = spawn(
       "docker",
-      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.tables where id = '${l.table}' for update; select pg_sleep(4); commit;`],
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.tables where id = '${l.table}' for update; select pg_sleep(30); commit;`],
       { stdio: "ignore" },
     );
     const termino = new Promise((r) => retiene.on("exit", r));
-    await new Promise((r) => setTimeout(r, 2000));
+    expect(await hasta(() => durmiendo(l.table))).toBe(true);
     const espera = llamada().then((r) => r);
-    await new Promise((r) => setTimeout(r, 800));
-    expect(Number(sql(`select count(*) from pg_stat_activity where wait_event_type = 'Lock' and query like '%${fragmento}%'`)[0][0])).toBeGreaterThanOrEqual(1);
+    expect(await hasta(() => bloqueada(fragmento))).toBe(true);
     expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", userId)).error).toBeNull();
+    soltar(l.table);
     const r = await espera;
     await termino;
     await addMembership(service, staff, l.id, "staff");
@@ -289,14 +305,17 @@ describe("cerrar y borrar la mesa a la vez no se traban (hallazgo de la revisió
     // Otra sesión toma la mesa, espera, y la borra (la FK pone `table_id` en NULL en sus pedidos: necesita el pedido).
     const borra = spawn(
       "docker",
-      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.tables where id = '${l.table}' for update; select pg_sleep(3); delete from public.tables where id = '${l.table}'; commit;`],
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select 1 from public.tables where id = '${l.table}' for update; select pg_sleep(6); delete from public.tables where id = '${l.table}'; commit;`],
       { stdio: ["ignore", "pipe", "pipe"] },
     );
     let salida = "";
     borra.stderr.on("data", (d) => (salida += String(d)));
     const termino = new Promise<number | null>((r) => borra.on("exit", r));
-    await new Promise((r) => setTimeout(r, 1500));
-    const cierre = await cerrar(staff.db, order);
+    expect(await hasta(() => durmiendo(l.table))).toBe(true);
+    const cierreEnCurso = cerrar(staff.db, order).then((r) => r); // `.then` dispara la petición (el builder de supabase-js es perezoso)
+    // El cierre ya está esperando la mesa (retenida por la otra sesión): hay competencia real, no dos operaciones seguidas.
+    expect(await hasta(() => bloqueada("close_order"))).toBe(true);
+    const cierre = await cierreEnCurso;
     const codigo = await termino;
 
     expect(salida).not.toMatch(/deadlock/i);
@@ -349,15 +368,14 @@ describe("un «Pedir la cuenta» que se está creando mientras se cierra la mesa
     // Otra transacción CREA el pedido de cuenta y lo deja sin confirmar unos segundos.
     const crea = spawn(
       "docker",
-      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select public.create_waiter_call('${token}', 'bill'); select pg_sleep(3); commit;`],
+      ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select public.create_waiter_call('${token}', 'bill'); select pg_sleep(6); commit;`],
       { stdio: "ignore" },
     );
     const termino = new Promise((r) => crea.on("exit", r));
-    await new Promise((r) => setTimeout(r, 1500));
+    expect(await hasta(() => durmiendo(token))).toBe(true);
     const cierre = cerrar(staff.db, order).then((r) => r);
-    await new Promise((r) => setTimeout(r, 800));
     // El cierre está esperando un candado asesor (el de los llamados de esa mesa).
-    expect(Number(sql("select count(*) from pg_stat_activity where wait_event_type = 'Lock' and wait_event = 'advisory' and query like '%close_order%'")[0][0])).toBeGreaterThanOrEqual(1);
+    expect(await hasta(() => bloqueada("close_order", "advisory"))).toBe(true);
     const r = await cierre;
     await termino;
 
@@ -373,8 +391,6 @@ describe("las esperas del candado de los llamados (hallazgos de la revisión, ro
     const proceso = spawn("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", sqlTexto], { stdio: "ignore" });
     return new Promise((r) => proceso.on("exit", r));
   };
-  const esperandoCandado = (fragmento: string) =>
-    Number(sql(`select count(*) from pg_stat_activity where wait_event_type = 'Lock' and wait_event = 'advisory' and query like '%${fragmento}%'`)[0][0]);
   const llamados = (table: string) => sql(`select kind, status from public.waiter_calls where table_id = '${table}' order by kind`);
 
   it("un «Pedir la cuenta» que espera el candado mientras el turno termina usa el turno NUEVO para su cooldown", async () => {
@@ -384,12 +400,11 @@ describe("las esperas del candado de los llamados (hallazgos de la revisión, ro
     ok(await service.rpc("create_waiter_call", { p_token: token, p_kind: "bill" } as never));
     // Otra transacción CIERRA el pedido (con la identidad del Dueño) y tarda en confirmar.
     const termina = retener(
-      `begin; select set_config('request.jwt.claims', '{"sub":"${owner.id}","role":"authenticated"}', true); select public.close_order('${order}'); select pg_sleep(3); commit;`,
+      `begin; select set_config('request.jwt.claims', '{"sub":"${owner.id}","role":"authenticated"}', true); select public.close_order('${order}'); select pg_sleep(6); commit;`,
     );
-    await new Promise((r) => setTimeout(r, 1500));
+    expect(await hasta(() => durmiendo(order))).toBe(true);
     const pide = service.rpc("create_waiter_call", { p_token: token, p_kind: "bill" } as never).then((r) => r);
-    await new Promise((r) => setTimeout(r, 800));
-    expect(esperandoCandado("create_waiter_call")).toBeGreaterThanOrEqual(1);
+    expect(await hasta(() => bloqueada("create_waiter_call", "advisory"))).toBe(true);
     const r = await pide;
     await termina;
     // Con el turno viejo contaba el llamado vencido de hace segundos y respondía `cooldown`, sin llamado del turno vigente.
@@ -399,12 +414,12 @@ describe("las esperas del candado de los llamados (hallazgos de la revisión, ro
 
   /** Otra sesión retiene el candado de los llamados de la mesa; `llamada` espera DENTRO de `end_table_turn` y se revoca su membresía. */
   async function revocandoMientrasEsperaElCandado(l: Local, userId: string, llamada: () => PromiseLike<Resp>, fragmento: string): Promise<Resp> {
-    const retiene = retener(`begin; select pg_advisory_xact_lock(hashtextextended('waiter_call:' || '${l.table}', 0)); select pg_sleep(4); commit;`);
-    await new Promise((r) => setTimeout(r, 2000));
+    const retiene = retener(`begin; select pg_advisory_xact_lock(hashtextextended('waiter_call:' || '${l.table}', 0)); select pg_sleep(30); commit;`);
+    expect(await hasta(() => durmiendo(l.table))).toBe(true);
     const espera = llamada().then((r) => r);
-    await new Promise((r) => setTimeout(r, 800));
-    expect(esperandoCandado(fragmento)).toBeGreaterThanOrEqual(1);
+    expect(await hasta(() => bloqueada(fragmento, "advisory"))).toBe(true);
     expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", userId)).error).toBeNull();
+    soltar(l.table);
     const r = await espera;
     await retiene;
     await addMembership(service, staff, l.id, "staff");
@@ -428,5 +443,71 @@ describe("las esperas del candado de los llamados (hallazgos de la revisión, ro
     expect(turno(l.table)).toBe(antes);
     expect(llamados(l.table)).toEqual([["bill", "pending"]]);
     expect(sql(`select status from public.orders where id = '${order}'`)[0][0]).toBe("open");
+  });
+});
+
+describe("los llamados también terminan con el turno de la mesa (feedback del usuario en staging)", () => {
+  const token = (table: string) => sql(`select qr_token from public.tables where id = '${table}'`)[0][0];
+  /** Un instante relativo al inicio del turno de la mesa, como texto de timestamptz (la base lo interpreta; es el ticket de visita). */
+  const relativoAlTurno = (table: string, intervalo: string) => sql(`select (turn_started_at ${intervalo})::text from public.tables where id = '${table}'`)[0][0];
+  const llamar = async (table: string, ticket: string | null, kind: "waiter" | "bill" = "waiter") =>
+    ok<{ status: string }>(
+      await service.rpc("create_waiter_call", { p_token: token(table), p_kind: kind, ...(ticket === null ? {} : { p_visit_started_at: ticket }) } as never),
+    ).status;
+  const cuantos = (table: string) => Number(sql(`select count(*) from public.waiter_calls where table_id = '${table}'`)[0][0]);
+
+  it("tras «Reiniciar QR», el ticket de antes ya no llama; el de después sí; sin ticket (directo a la API) tampoco se ve afectado", async () => {
+    const l = await nuevoLocal();
+    // El comensal escaneó hace 10 s (el turno de una mesa recién creada empezó con ella: se atrasa para que el ticket sea válido).
+    sql(`update public.tables set turn_started_at = now() - interval '1 hour' where id = '${l.table}'`);
+    const viejo = sql("select (now() - interval '10 seconds')::text")[0][0];
+    expect(await llamar(l.table, viejo)).toBe("created");
+    sql(`delete from public.waiter_calls where table_id = '${l.table}'`);
+
+    await pausa();
+    ok(await reiniciar(staff.db, l.table));
+    // Con el ticket anterior al turno: «escaneá de nuevo», y no se crea nada.
+    expect(await llamar(l.table, viejo)).toBe("session_closed");
+    expect(await llamar(l.table, viejo, "bill")).toBe("session_closed");
+    expect(cuantos(l.table)).toBe(0);
+    // Quien escanea después del reinicio llama con normalidad.
+    expect(await llamar(l.table, relativoAlTurno(l.table, "+ interval '1 second'"))).toBe("created");
+    // Sin ticket (llamar directo a la API, que la app no usa) no hay nada que comparar.
+    sql(`delete from public.waiter_calls where table_id = '${l.table}'`);
+    expect(await llamar(l.table, null)).toBe("created");
+  });
+
+  it("cobrar (cerrar) y anular el pedido también cortan los llamados del ticket anterior", async () => {
+    const l = await nuevoLocal();
+    sql(`update public.tables set turn_started_at = now() - interval '1 hour' where id in ('${l.table}', '${l.table2}')`);
+    const a = await anotar(owner.db, l);
+    const b = await anotar(owner.db, l, l.table2);
+    const viejo = sql("select (now() - interval '10 seconds')::text")[0][0];
+    await pausa();
+    ok(await cerrar(owner.db, a));
+    ok(await anular(owner.db, b));
+    expect(await llamar(l.table, viejo)).toBe("session_closed");
+    expect(await llamar(l.table2, viejo)).toBe("session_closed");
+    expect(cuantos(l.table) + cuantos(l.table2)).toBe(0);
+  });
+
+  it("tolerancia de 1 s: un ticket del mismo segundo que el turno no se rechaza; uno de un segundo antes, sí", async () => {
+    const l = await nuevoLocal();
+    await pausa();
+    ok(await reiniciar(owner.db, l.table));
+    expect(await llamar(l.table, relativoAlTurno(l.table, "- interval '0.5 seconds'"))).toBe("created");
+    sql(`delete from public.waiter_calls where table_id = '${l.table}'`);
+    expect(await llamar(l.table, relativoAlTurno(l.table, "- interval '1 second'"))).toBe("session_closed");
+    expect(cuantos(l.table)).toBe(0);
+  });
+
+  it("el turno de otra mesa no corta los llamados de ésta", async () => {
+    const l = await nuevoLocal();
+    sql(`update public.tables set turn_started_at = now() - interval '1 hour' where id in ('${l.table}', '${l.table2}')`);
+    const viejo = sql("select (now() - interval '10 seconds')::text")[0][0];
+    await pausa();
+    ok(await reiniciar(owner.db, l.table2));
+    expect(await llamar(l.table, viejo)).toBe("created");
+    expect(await llamar(l.table2, viejo)).toBe("session_closed");
   });
 });

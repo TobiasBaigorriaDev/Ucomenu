@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { PALETTE_KEYS } from "../src/lib/identidad/palettes";
 import { createTenant, expectNoHorizontalOverflow, service, type Person, type Tenant } from "./support";
 
 /**
@@ -157,6 +158,119 @@ test.describe("la cuenta del comensal", () => {
     await page.getByTestId("cuenta-actualizar").click();
     await expect(page.getByTestId("cuenta-vencida")).toBeVisible();
     await expect(page.getByTestId("cuenta")).toHaveCount(0);
+    await ctx.close();
+  });
+});
+
+test.describe("los llamados terminan con el turno de la mesa (feedback del usuario en staging)", () => {
+  const llamadosDe = async (orgId: string) => (await service().from("waiter_calls").select("kind, status").eq("organization_id", orgId)).data ?? [];
+
+  for (const cierre of ["reiniciar el QR", "cobrar la mesa"] as const) {
+    test(`tras ${cierre}, el celular que ya estaba en la mesa no puede llamar al mozo hasta escanear de nuevo`, async ({ browser }) => {
+      const l = await nuevoLocal(`llamados-turno-${cierre === "cobrar la mesa" ? "cobro" : "reinicio"}`);
+      const p = await pedido(l);
+      const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+      const page = await ctx.newPage();
+      await page.goto(`/t/${l.mesa.qr_token}`);
+      await expect(barra(page)).toBeVisible();
+      // El ticket guarda segundos enteros y el corte tolera 1 s: hay que dejar pasar el segundo para que el turno sea claramente posterior.
+      await page.waitForTimeout(1300);
+
+      if (cierre === "reiniciar el QR") expect((await p.db.rpc("reset_table_turn", { p_table: l.mesa.id })).error).toBeNull();
+      else expect((await p.db.rpc("close_order", { p_order: p.order })).error).toBeNull();
+
+      await barra(page).getByRole("button", { name: "Llamar al mozo" }).click();
+      await expect(page.getByTestId("sesion-vencida")).toContainText("Esta sesión venció");
+      expect(await llamadosDe(l.t.orgId)).toEqual([]);
+
+      // Escanear de nuevo (un ticket posterior al turno) permite llamar con normalidad.
+      await page.goto(`/t/${l.mesa.qr_token}`);
+      await barra(page).getByRole("button", { name: "Llamar al mozo" }).click();
+      await expect(page.getByTestId("mensaje-llamado")).toContainText("Avisamos al personal");
+      expect(await llamadosDe(l.t.orgId)).toEqual([{ kind: "waiter", status: "pending" }]);
+      await ctx.close();
+    });
+  }
+});
+
+/**
+ * Contraste real (WCAG) de cada texto de la hoja contra su fondo efectivo. La hoja vive dentro de `.carta`, así que hereda la paleta del
+ * local: en las oscuras la tinta es CLARA y un fondo fijo claro dejaba «letras clarititas» (feedback del usuario en staging).
+ */
+async function peoresContrastes(page: Page) {
+  return page.getByTestId("hoja-cuenta").evaluate((dialog) => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    const rgba = (css: string): [number, number, number, number] => {
+      ctx.clearRect(0, 0, 1, 1);
+      ctx.fillStyle = "#000";
+      ctx.fillStyle = css;
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+      return [r, g, b, a / 255];
+    };
+    const luminance = ([r, g, b]: number[]) => {
+      const f = (v: number) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+      return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+    };
+    const background = (element: Element): number[] => {
+      // De abajo hacia arriba: se compone cada fondo semitransparente sobre lo que hay detrás (blanco si no queda nada opaco).
+      const layers: [number, number, number, number][] = [];
+      for (let node: Element | null = element; node; node = node.parentElement) {
+        const color = rgba(getComputedStyle(node).backgroundColor);
+        if (color[3] > 0) layers.push(color);
+        if (color[3] >= 1) break;
+      }
+      let base: number[] = [255, 255, 255];
+      for (const [r, g, b, a] of layers.reverse()) base = [r * a + base[0] * (1 - a), g * a + base[1] * (1 - a), b * a + base[2] * (1 - a)];
+      return base;
+    };
+    const resultados: { texto: string; ratio: number }[] = [];
+    const walker = document.createTreeWalker(dialog, NodeFilter.SHOW_TEXT);
+    for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+      const texto = (node.textContent ?? "").trim();
+      const element = node.parentElement;
+      if (!texto || !element) continue;
+      const foreground = rgba(getComputedStyle(element).color);
+      const back = background(element);
+      const fg = [0, 1, 2].map((i) => foreground[i] * foreground[3] + back[i] * (1 - foreground[3]));
+      const l1 = luminance(fg);
+      const l2 = luminance(back);
+      resultados.push({ texto: texto.slice(0, 40), ratio: (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05) });
+    }
+    return resultados.sort((a, b) => a.ratio - b.ratio).slice(0, 3);
+  });
+}
+
+test.describe("legibilidad de la cuenta con las paletas del local", () => {
+  test("todos los textos de la hoja pasan 4,5:1 en cada paleta, clara u oscura, y en el estilo afiche", async ({ browser }) => {
+    test.setTimeout(240_000);
+    const l = await nuevoLocal("cuenta-paletas");
+    await pedido(l);
+    const db = service();
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    const casos: { palette: string; layout: string }[] = [
+      ...PALETTE_KEYS.map((palette) => ({ palette, layout: "bento" })),
+      { palette: "carbon", layout: "afiche" },
+      { palette: "oliva", layout: "afiche" },
+    ];
+    const fallas: string[] = [];
+    for (const { palette, layout } of casos) {
+      expect((await db.from("organizations").update({ menu_palette: palette, menu_layout: layout }).eq("id", l.t.orgId)).error).toBeNull();
+      await page.goto(`/t/${l.mesa.qr_token}`);
+      await expect(barra(page)).toBeVisible();
+      // Un solo pedido de cuenta por mesa: la primera vez se crea; después queda pendiente (o en espera) y el botón sigue ofreciéndose.
+      await pedirCuenta(page).click();
+      await page.getByTestId("ver-cuenta").click();
+      await expect(page.getByTestId("cuenta-total")).toBeVisible();
+      for (const peor of await peoresContrastes(page)) {
+        if (peor.ratio < 4.5) fallas.push(`${palette}/${layout}: «${peor.texto}» ${peor.ratio.toFixed(2)}:1`);
+      }
+      await page.getByTestId("hoja-cuenta").getByRole("button", { name: "Cerrar" }).first().click();
+    }
+    expect(fallas).toEqual([]);
     await ctx.close();
   });
 });

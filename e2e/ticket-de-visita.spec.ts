@@ -28,6 +28,9 @@ async function nuevoLocal(label: string) {
     .select("id, label, qr_token")
     .order("label");
   if (mesas.error) throw new Error(mesas.error.message);
+  // Una mesa real existe mucho antes de que alguien la escanee: su turno (ADR 0044) empezó hace días. Estas pruebas fabrican tickets «de hace
+  // 3 horas» y «de hace media hora»; sobre una mesa recién creada serían anteriores a su propio nacimiento y se darían por una visita terminada.
+  await db.from("tables").update({ turn_started_at: new Date(Date.now() - 2 * 24 * HORA).toISOString() }).eq("branch_id", branch.data!.id);
   return { t, branch: branch.data!.id, mesa1: mesas.data[0], mesa2: mesas.data[1] };
 }
 

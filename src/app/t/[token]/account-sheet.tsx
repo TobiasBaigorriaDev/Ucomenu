@@ -58,7 +58,7 @@ export function AccountSheet({ token, ticket, lang, onClose, onExpired }: { toke
       aria-labelledby={titleId}
       data-testid="hoja-cuenta"
       onClose={onClose}
-      className="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-3xl border-0 bg-porcelain p-0 text-ink backdrop:bg-ink/50 sm:m-auto sm:max-w-lg sm:rounded-3xl"
+      className="carta-dialog m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-3xl border-0 bg-porcelain p-0 text-ink backdrop:bg-ink/50 sm:m-auto sm:max-w-lg sm:rounded-3xl"
     >
       <div className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
@@ -82,7 +82,7 @@ export function AccountSheet({ token, ticket, lang, onClose, onExpired }: { toke
         ) : null}
 
         {result?.status === "error" ? (
-          <p role="alert" className="mt-4 text-lg font-medium text-danger" data-testid="cuenta-error">
+          <p role="alert" className="mt-4 rounded-2xl border-2 border-ink px-4 py-3 text-lg font-medium" data-testid="cuenta-error">
             {t.error}
           </p>
         ) : null}
@@ -104,7 +104,7 @@ export function AccountSheet({ token, ticket, lang, onClose, onExpired }: { toke
             <p className="text-base text-muted">
               <span data-testid="cuenta-mesa">{result.account.tableLabel}</span> · {result.account.orgName}
             </p>
-            <ul className="mt-3 divide-y divide-ink/10 rounded-3xl border border-ink/15 bg-white" data-testid="cuenta-lineas">
+            <ul className="mt-3 divide-y divide-ink/15 rounded-3xl border border-ink/25 bg-ink/5" data-testid="cuenta-lineas">
               {result.account.lines.map((line, index) => (
                 <li key={index} className="flex items-start justify-between gap-3 px-4 py-3" data-testid="cuenta-linea">
                   <div className="min-w-0">

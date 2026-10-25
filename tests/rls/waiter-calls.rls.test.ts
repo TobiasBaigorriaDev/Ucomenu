@@ -49,6 +49,10 @@ async function nuevoLocal(slug: string, plan: "basic" | "pro" = "pro", members =
     .select("id, label, qr_token")
     .order("label");
   if (tables.error) throw new Error(tables.error.message);
+  // Una mesa real existe mucho antes de que alguien la escanee: su turno (ADR 0044) empezó hace días. Sin esto, los tickets «de hace unos segundos»
+  // de estas pruebas serían anteriores al nacimiento de la mesa y `create_waiter_call` los daría por una visita terminada.
+  const antiguo = await service.from("tables").update({ turn_started_at: new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString() }).eq("branch_id", branch.data.id);
+  if (antiguo.error) throw new Error(antiguo.error.message);
   if (members) {
     await addMembership(service, owner, id, "owner");
     await addMembership(service, staff, id, "staff");

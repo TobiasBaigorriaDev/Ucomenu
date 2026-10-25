@@ -109,6 +109,8 @@ describe("loadSala", () => {
     const local = await nuevoLocal("tt-salamod-visita");
     const [a, b] = local.tables;
     const hace3h = new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString();
+    // La mesa existe desde hace días (su turno, ADR 0044, empezó antes de que este comensal escaneara hace 3 horas).
+    expect((await service.from("tables").update({ turn_started_at: new Date(Date.now() - 2 * 24 * 60 * 60_000).toISOString() }).eq("id", a.id)).error).toBeNull();
     expect((await serviceClient().rpc("create_waiter_call", { p_token: a.token, p_kind: "waiter", p_visit_started_at: hace3h })).data).toEqual({ status: "created" });
     await llamar(b.token, "waiter"); // sin dato (p. ej. un llamado hecho directo por la API)
     const sala = await loadSala(staff.db, local.id);
