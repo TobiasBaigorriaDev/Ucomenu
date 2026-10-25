@@ -11,6 +11,9 @@ import { sql } from "./helpers";
 // Matriz cerrada de funciones: cualquier función nueva hace fallar la prueba hasta que se la declare acá,
 // con sus permisos a propósito. Columnas: [definer, anon, public, authenticated].
 const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authenticated: boolean]> = {
+  valid_qr_reset_times: [false, false, true],
+  qr_schedule_changed: [false, false, false],
+  run_scheduled_table_resets: [true, false, false],
   billing_state: [false, false, false], // pura; solo la usan otras funciones
   can_attend_calls: [true, false, true], // usada por la política de UPDATE de waiter_calls (panel de sala)
   create_trial_subscription: [true, false, false], // trigger
@@ -103,6 +106,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   visit_in_turn: [false, false], // visita vigente en el turno de la mesa (ficha turno-de-mesa, ADR 0044): solo service_role, desde la página pública /t/{token} tras verificar el ticket; devuelve un booleano
   get_table_account: [false, false], // cuenta del comensal (ficha cuenta-del-comensal, ADR 0044): única lectura de pedidos para un anónimo; solo service_role, desde la acción de servidor tras verificar el ticket
   reset_table_turn: [false, true], // turno de mesa (ficha turno-de-mesa, ADR 0044): el miembro reinicia a mano el turno de una mesa; nunca se bloquea por plan ni mora
+  reset_all_table_turns: [false, true],
   add_order_item: [false, true], // pedidos del mozo (ficha pedidos-esquema-y-alta-de-items, ADR 0041): única puerta de escritura de orders y order_items; valida adentro (miembro, plan, mora)
   org_entitlements: [false, true],
   owner_calls_by_hour: [false, true], // analítica básica (ADR 0022): llamados por hora para el Dueño con el plan; vuelve a comprobar todo; solo lectura
@@ -401,6 +405,7 @@ describe("RLS y permisos de tablas", () => {
       ["branches", "google_review_url"], // solo el Dueño con la cuenta al día, por la política de branches (ficha enlace-de-resenas-de-google)
       ["branches", "is_active"], // solo el Dueño y con la cuenta al día, por la política de branches (ficha desactivar-sucursales)
       ["branches", "name"],
+      ["branches", "qr_reset_times"],
       ["branches", "timezone"], // solo el Dueño con la cuenta al día, por la política de branches (ficha zona-horaria-por-sucursal)
       ["branches", "waiter_call_cooldown_seconds"], // solo el Dueño, por la política de branches
       ["tables", "is_active"],

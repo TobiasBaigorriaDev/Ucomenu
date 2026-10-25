@@ -53,14 +53,14 @@ export type Database = {
                   ]
                 },"branches": {
                   Row: {
-                    "created_at": string,"google_review_url": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases": (string)[],"timezone": string,"waiter_call_cooldown_seconds": number
+                    "created_at": string,"google_review_url": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"qr_reset_after": string,"qr_reset_times": (string)[],"slug": string,"slug_aliases": (string)[],"timezone": string,"waiter_call_cooldown_seconds": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"slug": string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"qr_reset_after"?: string,"qr_reset_times"?: (string)[],"slug": string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
                   }
                   Update: {
-                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"slug"?: string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"qr_reset_after"?: string,"qr_reset_times"?: (string)[],"slug"?: string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
                   }
                   Relationships: [
                     {
@@ -966,6 +966,9 @@ isOneToOne: false
                            },
 "replace_product_image":
 { Args: { "p_org": string,"p_path": string,"p_product": string }; Returns: Json
+                           },
+"reset_all_table_turns":
+{ Args: { "p_org": string }; Returns: number
                            },
 "reset_table_turn":
 { Args: { "p_table": string }; Returns: Json

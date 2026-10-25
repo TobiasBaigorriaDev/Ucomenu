@@ -10,7 +10,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## En curso
 
-- (vacío)
+- [C] Reinicio de QR programado por sucursal (05:00 por defecto) y masivo por el mozo — implementación y verificación local → [ficha](cambios/reinicio-programado-qr.md)
 
 ## Seleccionado
 

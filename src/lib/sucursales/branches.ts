@@ -40,6 +40,7 @@ export type Sucursal = {
   reviewUrl: string | null;
   /** Zona horaria IANA de la sucursal (lista cerrada de `rules.ts`). */
   timeZone: string;
+  qrResetTimes?: string[];
   tables: number;
   activeTables: number;
 };
@@ -49,7 +50,7 @@ const collator = new Intl.Collator("es-AR", { numeric: true, sensitivity: "base"
 /** Las sucursales de la organización, activas e inactivas (orden natural por nombre), con la cantidad de mesas. */
 export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]> {
   const [branches, tables] = await Promise.all([
-    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url, timezone").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url, timezone, qr_reset_times").eq("organization_id", orgId).order("id").range(from, to)),
     readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
   ]);
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
@@ -64,11 +65,12 @@ export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]>
   }
 
   return (branches.data ?? [])
-    .map(({ is_active, google_review_url, timezone, ...branch }) => ({
+    .map(({ is_active, google_review_url, timezone, qr_reset_times, ...branch }) => ({
       ...branch,
       isActive: is_active,
       reviewUrl: google_review_url,
       timeZone: timezone || DEFAULT_BRANCH_TIME_ZONE,
+      qrResetTimes: qr_reset_times.map((time) => time.slice(0, 5)),
       ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }),
     }))
     .sort((a, b) => collator.compare(a.name, b.name));

@@ -6,6 +6,7 @@ import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
 import { createBranch, renameBranch, setBranchActive, setBranchReviewLink, setBranchTimeZone, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
 import { createSessionClient } from "@/lib/supabase/server";
+import { parseQrResetTimes } from "@/lib/sucursales/qr-schedule";
 
 /**
  * Server actions de las sucursales. Cada una vuelve a exigir sesión y rol de DUEÑO del local (`requireOwner`): el `slug`
@@ -80,4 +81,15 @@ export async function setBranchTimeZoneAction(_previous: FormState, formData: Fo
   const timeZone = text(formData, "timezone");
   if (!id) return { error: sucursalesErrorMessage("not_found", null), values: { timezone: timeZone } };
   return outcome(slug, orgId, await setBranchTimeZone(db, orgId, id, timeZone), "Zona horaria guardada.", { timezone: timeZone });
+}
+
+export async function setQrResetTimesAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  const times = parseQrResetTimes(formData.getAll("reset_time"));
+  if (!id || !times) return { error: "Elegí hasta 24 horarios distintos, en horas y minutos." };
+  const { data, error } = await db.from("branches").update({ qr_reset_times: times }).eq("id", id).eq("organization_id", orgId).select("id");
+  if (error || data.length !== 1) return { error: "No se guardaron los horarios. Comprobá que seguís siendo Dueño y que la cuenta está al día." };
+  revalidatePath(`/panel/${slug}/sucursales`);
+  return { ok: true, message: times.length ? "Horarios de reinicio guardados." : "Reinicio automático desactivado." };
 }

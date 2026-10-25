@@ -30,6 +30,11 @@ Tras la enmienda anterior el usuario vio que **recargar la página** devolvía l
 - **Lo que no se puede evitar:** quien escribe la URL a mano sin `v` (o la edita) es, para el servidor, un escaneo, y recibe una visita nueva. Alcanza para el uso real (recargar, volver desde el historial o una pestaña restaurada) y no para quien lo busca a propósito, como ya decía el ADR 0010.
 - La URL que se ve en el navegador es más larga (`?v=…`); el QR impreso no cambia.
 
+## Enmienda 3 (2026-10-25): reinicio diario y de todo el local
+El usuario pide horarios diarios editables por el Dueño, con **05:00** por defecto, y un botón de reinicio de todas las mesas para el mozo. Los horarios se configuran por sucursal en su zona horaria existente. Una lista vacía desactiva el automatismo; se recomiendan horarios de cierre. Un único trabajo de PostgreSQL cada minuto evita depender de que Fly esté encendido. El primer horario cuenta desde el alta o el guardado; tras una interrupción se recupera el último pendiente al volver el servicio, sin repetir cada horario perdido. El horario ambiguo por cambio estacional se interpreta como PostgreSQL (la segunda ocurrencia).
+
+El reinicio masivo requiere membresía y confirmación, abarca todas las sucursales del local y conserva el criterio del reinicio individual: sin bloqueo por plan ni mora. Ambos mecanismos terminan visitas y vencen pedidos de cuenta pendientes, sin cambiar el QR impreso ni modificar pedidos. Los permisos, las pruebas y la recuperación están en la [ficha](../../agile/cambios/reinicio-programado-qr.md).
+
 ## Consecuencias
 - **Riesgo aceptado por el usuario:** quien escanee el QR durante el turno, estando o no en el local, puede ver el consumo de esa mesa (platos y total, sin datos personales) **después de que se pidió la cuenta**. El turno limita cuánto dura, no quién. Se mitiga con el ticket, el cierre del turno y que el mozo ve cuándo escaneó.
 - La función `get_table_account` y `reset_table_turn` son nuevas superficies; la primera solo `service_role`.

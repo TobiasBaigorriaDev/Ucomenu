@@ -7,6 +7,7 @@ import { branchLimitMessage, sucursalesBlockNotice } from "@/lib/sucursales/mess
 import { branchTimeZoneLabel } from "@/lib/sucursales/rules";
 import { createSessionClient } from "@/lib/supabase/server";
 import { CreateBranchForm, RenameBranchForm, ReviewLinkForm, TimeZoneForm, ToggleBranchActiveForm } from "./branch-forms";
+import { QrScheduleForm } from "./qr-schedule-form";
 
 export const metadata: Metadata = { title: "Sucursales" };
 
@@ -109,6 +110,7 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
                     canWrite={canWrite}
                   />
                 </div>
+                <QrScheduleForm orgSlug={membership.org.slug} id={branch.id} name={branch.name} times={branch.qrResetTimes ?? ["05:00"]} timeZone={branch.timeZone} canWrite={canWrite} />
               </li>
             ))}
           </ul>

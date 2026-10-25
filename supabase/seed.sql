@@ -7,6 +7,7 @@
 insert into public.organizations (id, slug, name, menu_palette) values
   ('10000000-0000-4000-8000-000000000001', 'cafe-ejemplo', 'Café Ejemplo', 'oliva');
 
+-- Las sucursales de ejemplo heredan el reinicio diario de QR a las 05:00, en su zona horaria.
 insert into public.branches (id, organization_id, slug, name) values
   ('11000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'centro', 'Centro');
 
