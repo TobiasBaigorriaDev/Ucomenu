@@ -60,6 +60,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   record_order_event: [true, false, false], // trigger de orders y order_items: escribe order_events (la API no tiene INSERT)
   order_events_append_only: [false, false, false], // trigger de order_events: rechaza UPDATE, DELETE y TRUNCATE
   purge_organization_order_events: [true, false, false], // purga del registro de pedidos al borrar una organización (ADR 0041): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
+  end_table_turn: [true, false, false], // turno de mesa (ficha turno-de-mesa, ADR 0044): termina el turno de una mesa y vence su «Pedir la cuenta» pendiente; la llaman close_order, void_order y reset_table_turn; sin EXECUTE para la API
   ticket_in_turn: [true, false, false], // turno de mesa (ficha turno-de-mesa, ADR 0044): ¿el ticket de visita se emitió después del inicio del turno?; sin EXECUTE para la API
   can_take_orders: [true, false, false], // la usa add_order_item (ficha pedidos-esquema-y-alta-de-items): miembro + función `orders` en el plan + cuenta al día; sin EXECUTE para la API
   can_manage_promotions: [true, false, true], // usada por las políticas de escritura de promotions y sus tablas (ficha promociones-y-precio-efectivo): Dueño + función en el plan + cuenta al día

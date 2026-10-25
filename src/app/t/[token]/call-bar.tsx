@@ -145,8 +145,11 @@ export function CallBar({
   reviewUrl?: string | null;
   reviewKey?: string;
 }) {
+  // «Ver mi cuenta» (ADR 0044) sigue ofrecido aunque después se toque «Llamar al mozo» (cada envío reemplaza el estado del anterior).
+  const [accountReady, setAccountReady] = useState(false);
   const [state, formAction] = useActionState<CallState & { invite?: boolean }, FormData>(async (previous, formData) => {
     const next: CallState & { invite?: boolean } = await createWaiterCallAction(previous, formData);
+    if (next.account) setAccountReady(true);
     // La invitación se ofrece solo tras pedir la cuenta, cuando el pedido se registró de verdad, y una vez al día por dispositivo.
     return reviewUrl && reviewKey && next.kind === "bill" && next.tone === "ok" && claimReviewInvite(reviewKey) ? { ...next, invite: true } : next;
   }, {});
@@ -199,7 +202,7 @@ export function CallBar({
             </button>
           </div>
         ) : null}
-        {!sessionExpired && state.account ? (
+        {!sessionExpired && accountReady ? (
           <button
             type="button"
             data-testid="ver-cuenta"

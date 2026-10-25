@@ -21,6 +21,10 @@ async function nuevoLocal(label: string) {
     .insert([{ organization_id: t.orgId, branch_id: branch.data!.id, label: "Mesa 7" }])
     .select("id, qr_token");
   if (mesas.error) throw new Error(mesas.error.message);
+  // El ticket de visita guarda segundos enteros y debe ser ESTRICTAMENTE posterior al inicio del turno: una mesa recién creada rechazaría
+  // un escaneo del mismo segundo (pide escanear de nuevo; una persona real nunca escanea en el segundo en que el mozo cobra). La mesa de
+  // la prueba arranca con un turno de hace un minuto, como una mesa de verdad.
+  await db.from("tables").update({ turn_started_at: new Date(Date.now() - 60_000).toISOString() }).eq("id", mesas.data[0].id);
   const category = await db.from("categories").insert({ organization_id: t.orgId, name: "Platos" }).select("id").single();
   const bife = await db.from("products").insert({ organization_id: t.orgId, category_id: category.data!.id, name: "Bife de chorizo", price_cents: 10000 }).select("id").single();
   const flan = await db.from("products").insert({ organization_id: t.orgId, category_id: category.data!.id, name: "Flan casero", price_cents: 3000 }).select("id").single();
@@ -91,6 +95,11 @@ test.describe("la cuenta del comensal", () => {
 
     await hoja.getByRole("button", { name: "Cerrar" }).first().click();
     await expect(hoja).toHaveCount(0);
+
+    // Llamar al mozo después no hace desaparecer «Ver mi cuenta» (cada envío reemplaza el mensaje del anterior).
+    await barra(page).getByRole("button", { name: "Llamar al mozo" }).click();
+    await expect(page.getByTestId("mensaje-llamado")).toContainText("Avisamos al personal");
+    await expect(page.getByTestId("ver-cuenta")).toBeVisible();
     await ctx.close();
   });
 

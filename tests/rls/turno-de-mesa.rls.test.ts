@@ -306,3 +306,37 @@ describe("cerrar y borrar la mesa a la vez no se traban (hallazgo de la revisió
     expect(sql(`select count(*) from public.tables where id = '${l.table}'`)[0][0]).toBe("0");
   });
 });
+
+describe("el pedido de cuenta pendiente se da por vencido al terminar el turno (hallazgo de la revisión, ronda 1 de cuenta-del-comensal)", () => {
+  const llamados = (table: string) => sql(`select kind, status from public.waiter_calls where table_id = '${table}' order by kind`);
+  const llamar = async (l: Local, kind: "bill" | "waiter") => ok(await service.rpc("create_waiter_call", { p_token: sql(`select qr_token from public.tables where id = '${l.table}'`)[0][0], p_kind: kind } as never));
+
+  it("cerrar y anular vencen el «Pedir la cuenta» pendiente de ESA mesa; el «Llamar al mozo» y los de otra mesa quedan", async () => {
+    const l = await nuevoLocal();
+    const a = await anotar(owner.db, l);
+    const b = await anotar(owner.db, l, l.table2);
+    await llamar(l, "bill");
+    await llamar(l, "waiter");
+    const token2 = sql(`select qr_token from public.tables where id = '${l.table2}'`)[0][0];
+    ok(await service.rpc("create_waiter_call", { p_token: token2, p_kind: "bill" } as never));
+
+    ok(await cerrar(owner.db, a));
+    expect(llamados(l.table)).toEqual([["bill", "expired"], ["waiter", "pending"]]);
+    expect(llamados(l.table2)).toEqual([["bill", "pending"]]);
+
+    ok(await anular(owner.db, b));
+    expect(llamados(l.table2)).toEqual([["bill", "expired"]]);
+  });
+
+  it("un cierre repetido o fallido no toca los llamados, y el reinicio manual sí vence el pedido de cuenta", async () => {
+    const l = await nuevoLocal();
+    const order = await anotar(owner.db, l);
+    await llamar(l, "bill");
+    expect((await anular(owner.db, order, null)).error?.message).toBe("reason_required");
+    expect((await cerrar(stranger.db, order)).error?.message).toBe("orders_not_allowed");
+    expect(llamados(l.table)).toEqual([["bill", "pending"]]);
+
+    ok(await reiniciar(staff.db, l.table));
+    expect(llamados(l.table)).toEqual([["bill", "expired"]]);
+  });
+});

@@ -7,8 +7,8 @@ Que cobrar la mesa «renueve» el QR **sin cambiar el QR impreso**: al cerrar o 
 
 ## Decisiones (particulares)
 1. **Esquema:** `tables.turn_started_at timestamptz not null default now()`. Las mesas existentes arrancan con su fecha de creación del turno = la de la migración (sin datos que mover).
-2. **Rotación dentro de la función:** `close_order` y `void_order` ponen `turn_started_at = clock_timestamp()` en la mesa del pedido (si tiene `table_id`) en la **misma transacción**, después del `for update` del pedido y solo cuando el estado cambia (repetir devuelve `unchanged` y no rota). Una mesa borrada (`table_id` nulo) no rota nada.
-3. **`reset_table_turn(p_table uuid)`** (nueva, `authenticated`): cualquier miembro de la organización de la mesa; nunca depende de plan ni de mora; mesa inexistente o ajena = `table_not_found` indistinguible. Rota igual y devuelve `{table_id, turn_started_at}`.
+2. **Rotación dentro de la función** (`private.end_table_turn`, que también da por **vencido el «Pedir la cuenta» pendiente** de la mesa: era de quienes ya se fueron y, pendiente, taparía con «ya pedida» el de la mesa nueva; el «Llamar al mozo» no se toca): `close_order` y `void_order` ponen `turn_started_at = clock_timestamp()` en la mesa del pedido (si tiene `table_id`) en la **misma transacción**, después del `for update` del pedido y solo cuando el estado cambia (repetir devuelve `unchanged` y no rota). Una mesa borrada (`table_id` nulo) no rota nada.
+3. **`reset_table_turn(p_table uuid)`** (nueva, `authenticated`): cualquier miembro de la organización de la mesa; nunca depende de plan ni de mora; mesa inexistente o ajena = `table_not_found` indistinguible. Rota igual (y vence el pedido de cuenta pendiente) y devuelve `{table_id, turn_started_at}`.
 4. **Lectura:** `private.ticket_in_turn(p_table, p_ticket_at)` = `p_ticket_at > turn_started_at` (estricto: un ticket de la misma emisión que la rotación no vale). Se usa en la mitad siguiente; acá solo se crea y se prueba.
 5. **Sala:** botón «Reiniciar QR de la mesa» en la pantalla de la mesa, con confirmación («Quienes tengan la cuenta abierta en el celular tendrán que escanear de nuevo») y aviso del resultado. Sin cambios en el QR, en su token ni en su descarga.
 6. **Lo que no cambia:** la regla de los 10 minutos tras atender la cuenta (`session_closed`) y el vencimiento del ticket a las 3 h siguen igual y conviven con esto.
@@ -32,6 +32,7 @@ Que cobrar la mesa «renueve» el QR **sin cambiar el QR impreso**: al cerrar o 
 - [x] `ticket_in_turn`: ticket anterior = falso; igual a la rotación = falso; posterior = verdadero.
 - [x] En la Sala, «Reiniciar QR de la mesa» pide confirmación, rota y avisa; a 390 px sin desborde.
 - [x] El `qr_token` y la ruta `/t/{token}` no cambian.
+- [x] Cerrar, anular o reiniciar vence el «Pedir la cuenta» pendiente de ESA mesa y no toca el «Llamar al mozo» ni otras mesas; un cierre repetido o fallido no toca los llamados.
 
 ## Pruebas previstas
 RLS (con `docker exec` donde haga falta): rotación por cierre/anulación/reinicio, idempotencia, permisos y ajeno. Unitarias del cliente de la acción. E2E de la pantalla de la mesa a 390 px. Mutaciones sobre: rotar al repetir el cierre, `ticket_in_turn` no estricto, reinicio sin comprobar la organización.
@@ -56,3 +57,6 @@ Base local reseteada con la migración nueva, 2026-10-24, sobre `9168c30` + el d
 - Pruebas de regresión nuevas en `turno-de-mesa.rls.test.ts` (**15/15**): una con membresía revocada mientras esperan la mesa (reiniciar, cerrar y anular) y otra con un cierre que compite con un `DELETE` de la mesa (sin `deadlock`, el cierre se completa y el pedido queda `closed` sin mesa). **Fallaban con el código anterior** (`table_not_found` esperado y no devuelto; `ERROR: deadlock detected`) y pasan con la corrección. `acl` + `turno-de-mesa` 37/37; `pedidos`, `mesas`, `sala-*`, `borrado-de-organizaciones` y `purga-de-pedidos` 152/152.
 - **Ronda 2 — verificación de Codex sobre `4b65ab1`: APROBAR.** Sin hallazgos nuevos ni regresiones; los dos hallazgos previos, corregidos. No ejecutó pruebas (las corridas son las de arriba).
 - **Aprobación del usuario para aplicar la migración en staging: pendiente** (el veredicto de Codex no la reemplaza). La migración se corrigió en su mismo archivo porque nunca se aplicó fuera de local.
+
+## Cambio posterior (hallazgo de la revisión de la cuenta del comensal, ronda 1)
+La [revisión de Codex de la cuenta del comensal](cuenta-del-comensal.md#revisión-y-aprobación) encontró que un «Pedir la cuenta» pendiente del turno anterior tapaba el de la mesa nueva. Se corrigió **en esta misma migración** (nunca se aplicó fuera de local) con `private.end_table_turn` y se agregó la prueba (`turno-de-mesa.rls.test.ts` **17/17**; fallaba antes de corregir y cae con la mutación «sin vencer el pedido de cuenta»). Efecto visible para el mozo: la tarjeta «Pide la cuenta» de una mesa que acaba de cobrar sale sola de la Sala. Ronda de verificación de Codex de este cambio: ver la ficha de la cuenta del comensal.

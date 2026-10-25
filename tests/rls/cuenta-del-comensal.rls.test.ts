@@ -65,6 +65,9 @@ const cuenta = (token: string, ticketAt: string | null) => service.rpc("get_tabl
 const ahora = () => sql("select clock_timestamp()::text")[0][0].replace(" ", "T").replace(/\+00$/, "Z");
 const pausa = () => new Promise((r) => setTimeout(r, 15));
 
+/** Pasan los minutos del cooldown (60 s) entre el llamado anterior y el de la mesa nueva: se atrasa su hora. */
+const atrasarLlamados = (l: Local) => sql(`update public.waiter_calls set created_at = created_at - interval '5 minutes' where table_id = '${l.table}'`);
+
 /** Un local con un pedido (2 bifes con bacon y nota, 1 flan y un flan cancelado) y la cuenta pedida. */
 async function conCuentaPedida() {
   const l = await nuevoLocal();
@@ -132,15 +135,43 @@ describe("cuándo NO devuelve datos", () => {
     expect(ok(await cuenta(l.token, ahora()))).toEqual({ status: "unavailable" });
   });
 
-  it("un ticket anterior al turno ya no ve la cuenta, y uno posterior sí (si se pidió dentro del turno)", async () => {
+  it("un ticket anterior al turno ya no ve la cuenta del turno nuevo, aunque haya pedido abierto y cuenta pedida en él; uno posterior sí", async () => {
+    const { l, order } = await conCuentaPedida();
+    const viejo = ahora();
+    await pausa();
+    ok(await owner.db.rpc("close_order", { p_order: order } as never));
+    atrasarLlamados(l);
+    // Turno nuevo: otro pedido y se pide la cuenta DENTRO del turno.
+    ok(await anotar(l, l.flan, 2));
+    expect(ok<{ status: string }>(await pedirCuenta(l)).status).toBe("created");
+    await pausa();
+    // El ticket de antes del cobro no ve el consumo nuevo; el de ahora sí. Solo `ticket_in_turn` los distingue.
+    expect(ok(await cuenta(l.token, viejo))).toEqual({ status: "unavailable" });
+    expect(ok<{ status: string; total_cents: number }>(await cuenta(l.token, ahora()))).toMatchObject({ status: "ok", total_cents: 6000 });
+  });
+
+  it("reiniciar el turno a mano también corta el ticket anterior, con cuenta pedida en el turno nuevo", async () => {
     const { l } = await conCuentaPedida();
     const viejo = ahora();
     await pausa();
     ok(await owner.db.rpc("reset_table_turn", { p_table: l.table } as never));
+    atrasarLlamados(l);
+    expect(ok<{ status: string }>(await pedirCuenta(l)).status).toBe("created");
     await pausa();
     expect(ok(await cuenta(l.token, viejo))).toEqual({ status: "unavailable" });
-    // El nuevo turno no hereda la cuenta pedida antes: hace falta pedirla de nuevo.
-    expect(ok(await cuenta(l.token, ahora()))).toEqual({ status: "unavailable" });
+    expect(ok<{ status: string }>(await cuenta(l.token, ahora())).status).toBe("ok");
+  });
+
+  it("el pedido de cuenta que quedó sin atender del turno anterior no tapa el de la mesa nueva (hallazgo de la revisión, ronda 1)", async () => {
+    const { l, order } = await conCuentaPedida();
+    // El mozo cobra sin marcar «Atendido»: el llamado quedó pendiente.
+    ok(await owner.db.rpc("close_order", { p_order: order } as never));
+    atrasarLlamados(l);
+    ok(await anotar(l, l.flan, 1));
+    const nuevo = ok<{ status: string }>(await pedirCuenta(l));
+    expect(nuevo.status).toBe("created");
+    await pausa();
+    expect(ok<{ status: string }>(await cuenta(l.token, ahora())).status).toBe("ok");
   });
 
   it("al cerrar o anular el pedido el turno rota y el ticket anterior queda sin cuenta", async () => {
