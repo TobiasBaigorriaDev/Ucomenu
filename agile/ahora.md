@@ -4,17 +4,11 @@ Actualizado: 2026-10-26 · agente saliente: Claude. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Rol de cocinero (nivel C): hecho, aprobado y en staging (Fly v59, migración `20261207100000` aplicada).** Pedido del usuario: un cocinero que ve los pedidos, marca cada plato «listo» y agota platos. Flujo anotado → listo → entregado; el cocinero solo hace lo de cocina; Pro y Premium en todas las sucursales. El usuario lo probó en local con una cuenta de cocinero y aprobó subirlo.
+**Staging está en Fly v60** (imagen `ucomenu-staging:apariencia-6b82cf2`; marcha atrás: `rol-cocinero-0d926a7`, v59). Incluye el rol de cocinero (nivel C, migración `20261207100000` aplicada, [ADR 0048](../docs/decisiones/0048-rol-cocinero.md), [ficha](cambios/rol-cocinero.md)) y el arreglo de Apariencia.
 
-- Pantalla `/cocina/{slug}` con *Pedidos* y *Platos agotados*; el cocinero no entra a Sala ni a panel. El mozo ve «Listo para entregar» en Mesas y ya no tiene «En cocina».
-- `is_org_member` pasó a ser solo Dueño o Staff: cualquier tabla o función nueva nace cerrada para el cocinero.
-- Decisión en el [ADR 0048](../docs/decisiones/0048-rol-cocinero.md); aceptación, revisión (3 rondas de Codex) y evidencia de staging en la [ficha](cambios/rol-cocinero.md).
-
-Antes: Mesas en vivo con filas y llamados dentro de Mesas, en staging (Fly v58); a probar con sesión real y teléfono.
-
-**Arreglo de Apariencia (S, 2026-10-26):** tras guardar colores, estilo o fecha especial, React 19 reiniciaba el formulario y la opción marcada volvía a la anterior. Los radios y fechas se remontan con una clave que incluye el valor guardado (`6b82cf2`, test E2E de regresión en `e2e/identidad.spec.ts`). En staging: **Fly v60**, imagen `ucomenu-staging:apariencia-6b82cf2` (marcha atrás: `rol-cocinero-0d926a7`, v59). Sin esquema ni migración.
-
-Se revisó la invitación a reseñar tras «Pedir la cuenta»: funciona en Pro y Premium (test de Premium agregado). No aparece si ya se mostró ese día en el dispositivo, si el pedido de cuenta ya estaba pendiente o si la sucursal no tiene enlace; es el comportamiento especificado.
+- **Cocinero:** pantalla `/cocina/{slug}` con *Pedidos* y *Platos agotados*; no entra a Sala ni a panel. El mozo ve «Listo para entregar». `is_org_member` es solo Dueño o Staff: lo nuevo nace cerrado para el cocinero.
+- **Apariencia (S):** tras guardar, React 19 reiniciaba el formulario y la opción marcada volvía a la anterior. Radios y fechas se remontan con una clave que incluye el valor guardado (`6b82cf2`, regresión en `e2e/identidad.spec.ts`). Sin migración.
+- **Reseñas tras «Pedir la cuenta»:** funciona en Pro y Premium. No aparece si ya se mostró ese día en el dispositivo, si la cuenta ya estaba pendiente o si la sucursal no tiene enlace (comportamiento especificado).
 
 Rama `main`, subida a `origin/main`.
 
