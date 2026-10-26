@@ -1,5 +1,5 @@
 # Cambio: Personal por sucursal (solo pantalla)
-Estado: verificado en local (falta la comprobación manual del usuario)
+Estado: desplegado en staging (Fly v62, migración `20261208100000`) el 2026-10-26; falta la prueba manual del usuario con sesión real
 Nivel: M (decidido por el usuario el 2026-10-26: «por ahora solo limitarlo a lo que el mozo y el cocinero ven en pantalla, sin RLS; luego lo hago en nivel C»). La versión con restricción real es el ítem [C] del Backlog del tablero.
 
 ## Objetivo
@@ -32,7 +32,8 @@ Migración `20261208100000_personal_por_sucursal.sql` (aplicada con `pnpm db:res
 - `pnpm lint` y `pnpm typecheck`: sin errores.
 - RLS (Supabase local), en verde: `personal-por-sucursal` (12: vista efectiva, preferencia dentro de lo asignado, Mesas y Sala sin nombres ni conteos ajenos, Dueño sin restricción, sucursal desactivada → nada, columna no editable por la persona, cocina, avisos push), `personnel` (39, con 4 nuevas de asignación), `acl` (22, con las dos funciones nuevas en la matriz), `rol-cocinero`, `vista-sucursal`, `sala-module`, `sala-mesas`, `push` y `desactivar-sucursales`.
 - E2E tras `pnpm build`: `personal-por-sucursal` (3: el Dueño asigna desde Personal y el mozo solo ve esa sucursal, 404 por URL a la otra, cocinero asignado, sucursal desactivada), más `cocina`, `sala-mesas`, `llamados` y `desactivar-sucursales` en verde. `acceso.spec` falló en 10–11 pruebas al correrlo en paralelo con otras (el ingreso superó los 20 s bajo carga) y pasó completo (35/35) con `--workers=1`; no toca lo cambiado.
-- No se corrió: la comprobación manual en navegador y teléfono (pendiente del usuario), ni E2E completo.
+- **Staging (2026-10-26), aprobado por el usuario («Apruebo despliegue a staging»):** código de `a14dded`. `supabase db push --linked --dry-run` contra `oasixhsdyigimwvcxtkx` listó solo `20261208100000_personal_por_sucursal.sql`; aplicada con `db push --linked --skip-vault --yes`, sin seeds ni roles; dry-run posterior `upToDate: true`. Imagen `ucomenu-staging:personal-sucursal-a14dded` con `flyctl deploy -c fly.staging.toml --local-only --depot=false`: **Fly v62**, `started`, 1 passing. HTTP sin sesión: `/`, `/login`, `/privacidad` y `/m/la-bestia/centro` 200; `/panel/demo`, `/sala/demo/mesas` y `/cocina/demo` 307; `/cocina/demo/estado` y `/sala/demo/estado` 401. Un anónimo recibe `42501` en `my_branch_access` y `kitchen_branches`. Marcha atrás: imagen `ucomenu-staging:alimentaria-124bbc9` (v61) y, antes, el rollback de la migración descrito en su encabezado.
+- No se corrió: la prueba con sesión real y teléfono en staging; la comprobación manual en navegador y teléfono (pendiente del usuario), ni E2E completo.
 
 ## Límites conocidos (los cubre el ítem [C] del tablero)
 - Las escrituras no se restringen: `set_order_item_status`, `set_kitchen_availability`, atender llamados y anotar pedidos aceptan una sucursal ajena si alguien llama a la API con sus ids; la RLS de `orders`, `order_items`, `tables` y `waiter_calls` sigue por organización.
