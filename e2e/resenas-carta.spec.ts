@@ -9,12 +9,12 @@ import { createTenant, expectNoHorizontalOverflow, service, type Tenant } from "
 const tenants: Tenant[] = [];
 const ENLACE = "https://g.page/r/CabcdEFGH1234/review";
 
-async function nuevoLocal(label: string, opciones: { plan: "basic" | "pro"; enlace: string | null }) {
+async function nuevoLocal(label: string, opciones: { plan: "basic" | "pro" | "premium"; enlace: string | null }) {
   const t = await createTenant(label, "active");
   tenants.push(t);
   const db = service();
-  if (opciones.plan === "pro") {
-    const r = await db.from("subscriptions").update({ plan_code: "pro" }).eq("organization_id", t.orgId);
+  if (opciones.plan !== "basic") {
+    const r = await db.from("subscriptions").update({ plan_code: opciones.plan }).eq("organization_id", t.orgId);
     if (r.error) throw new Error(r.error.message);
   }
   const branch = await db.from("branches").update({ google_review_url: opciones.enlace }).eq("organization_id", t.orgId).select("id").single();
@@ -84,6 +84,14 @@ test.describe("invitación a reseñar en la carta", () => {
     await barra(page).getByRole("button", { name: "Pedir la cuenta" }).click();
     await expect(page.getByTestId("mensaje-llamado")).toContainText("Pedimos tu cuenta");
     await expect(invitacion(page)).toHaveCount(0);
+  });
+
+  test("con Premium también aparece al pedir la cuenta", async ({ page }) => {
+    const { mesa1 } = await nuevoLocal("resenas-premium", { plan: "premium", enlace: ENLACE });
+    await page.goto(`/t/${mesa1.qr_token}`);
+    await barra(page).getByRole("button", { name: "Pedir la cuenta" }).click();
+    await expect(page.getByTestId("mensaje-llamado")).toContainText("Pedimos tu cuenta");
+    await expect(invitacion(page)).toContainText("Si querés, podés dejar tu reseña de este lugar en Google.");
   });
 
   test("sin enlace de reseñas, pedir la cuenta no invita a nada", async ({ page }) => {

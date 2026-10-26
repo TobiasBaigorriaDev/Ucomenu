@@ -12,6 +12,10 @@ Actualizado: 2026-10-26 · agente saliente: Claude. Historia en Git y fichas.
 
 Antes: Mesas en vivo con filas y llamados dentro de Mesas, en staging (Fly v58); a probar con sesión real y teléfono.
 
+**Arreglo de Apariencia (S, 2026-10-26):** tras guardar colores, estilo o fecha especial, React 19 reiniciaba el formulario y la opción marcada volvía a la anterior. Los radios y fechas se remontan con una clave que incluye el valor guardado (`6b82cf2`, test E2E de regresión en `e2e/identidad.spec.ts`). En staging: **Fly v60**, imagen `ucomenu-staging:apariencia-6b82cf2` (marcha atrás: `rol-cocinero-0d926a7`, v59). Sin esquema ni migración.
+
+Se revisó la invitación a reseñar tras «Pedir la cuenta»: funciona en Pro y Premium (test de Premium agregado). No aparece si ya se mostró ese día en el dispositivo, si el pedido de cuenta ya estaba pendiente o si la sucursal no tiene enlace; es el comportamiento especificado.
+
 Rama `main`, subida a `origin/main`.
 
 ## Límites y bloqueos
