@@ -63,6 +63,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"analytics_summary_claims": {
+                  Row: {
+                    "branch_id": string | null,"claimed_at": string,"days": number,"organization_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id"?: string | null,"claimed_at": string,"days": number,"organization_id": string
+                  }
+                  Update: {
+                    "branch_id"?: string | null,"claimed_at"?: string,"days"?: number,"organization_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "analytics_summary_claims_branch_id_organization_id_fkey"
+      columns: ["branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "analytics_summary_claims_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"audit_log": {
                   Row: {
                     "action": string,"actor_email": string,"actor_id": string,"after": Json | null,"before": Json | null,"created_at": string,"id": string,"organization_id": string | null
@@ -902,6 +928,9 @@ isOneToOne: false
 "admin_void_payment":
 { Args: { "p_actor": string,"p_org": string,"p_payment": string,"p_reason": string }; Returns: string
                            },
+"claim_analytics_summary":
+{ Args: { "p_branch"?: string,"p_cooldown_minutes": number,"p_days": number,"p_org": string }; Returns: Json
+                           },
 "close_order":
 { Args: { "p_order": string }; Returns: Json
                            },
@@ -995,6 +1024,9 @@ isOneToOne: false
 "register_push_subscription":
 { Args: { "p_auth": string,"p_endpoint": string,"p_org": string,"p_p256dh": string }; Returns: string
                            },
+"release_analytics_summary_claim":
+{ Args: { "p_branch"?: string,"p_claim": string,"p_days": number,"p_org": string }; Returns: undefined
+                           },
 "reorder_siblings":
 { Args: { "p_current": Json,"p_final": (string)[],"p_org": string,"p_scope": string,"p_table": string }; Returns: undefined
                            },
@@ -1014,7 +1046,7 @@ isOneToOne: false
 { Args: { "p_token": string }; Returns: Json
                            },
 "save_analytics_summary":
-{ Args: { "p_branch"?: string,"p_content": Json,"p_days": number,"p_org": string,"p_provider": string }; Returns: string
+{ Args: { "p_branch"?: string,"p_content": Json,"p_days": number,"p_org": string,"p_provider": string,"p_user": string }; Returns: string
                            },
 "save_promotion":
 { Args: { "p_all_branches": boolean,"p_branches": (string)[],"p_categories": (string)[],"p_discount_type": string,"p_discount_value": number,"p_end_minute": number,"p_ends_on": string,"p_id": string,"p_is_active": boolean,"p_name": string,"p_org": string,"p_products": (string)[],"p_start_minute": number,"p_starts_on": string,"p_weekdays_mask": number }; Returns: string

@@ -13,6 +13,9 @@ import type { Database } from "./database.types";
  *  - Excepción acotada (ADR 0020): `src/lib/push/notify-call.ts` lo usa, sin sesión de nadie, solo para llamar a
  *    `push_targets_for_call` y `drop_push_subscriptions` tras crearse un llamado. Esas funciones validan adentro
  *    (token de mesa, pendiente reciente) y son las únicas con acceso a las suscripciones.
+ *  - Excepción acotada (ADR 0047): `src/app/panel/[org]/analitica/actions.ts` lo usa solo para llamar a `save_analytics_summary`, tras
+ *    `requireOwner` y con el resumen ya validado. La función vuelve a comprobar que quien pidió sea Dueño con el plan; ningún rol de la
+ *    API puede ejecutarla (así el Dueño no escribe por la API un texto que no pasó la validación).
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
