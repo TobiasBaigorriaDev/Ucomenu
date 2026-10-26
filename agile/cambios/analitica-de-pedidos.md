@@ -59,5 +59,6 @@ Ejecutado el 2026-10-25 sobre `main` (base local reseteada con la migración `20
   2. *El teclado se perdía al achicar el período:* el índice enfocable (28 de 30) quedaba fuera de rango con 7 columnas y Tab salteaba el gráfico. Ahora se usa el pico cuando el índice no existe. Regresión E2E (30 → 7 días) que falla sin la corrección.
   3. *«Platos sin pedidos» desaparecía si fallaba solo la lectura de ventas:* la decisión de qué secciones se arman pasó a una función pura (`visibleSections`) con prueba: con ventas caídas y platos que sí vendieron se sigue mostrando; sin esa certeza, no se afirma qué no se pidió.
   4. *Sugerencia (mediana vs promedio no distinguidos):* aceptada; caso asimétrico 30/30/300 y mutación detectada.
-- Ronda de verificación: pendiente.
+- **Ronda 2 (verificación, Codex sobre `2664770`): APROBAR CON CAMBIOS, 1 hallazgo «importante» nuevo, real y corregido:** «Otras categorías» no aparecía si lo recortado tenía unidades pero importe cero (platos a $ 0). Ahora aparece si falta importe **o** unidades; regresión en `ventas.test.ts` (falla con la condición anterior). Confirmó corregidos el teclado, «sin pedidos» con ventas caídas y la mediana.
+- Ronda 3 (verificación): pendiente.
 - Aprobación del usuario: pendiente.

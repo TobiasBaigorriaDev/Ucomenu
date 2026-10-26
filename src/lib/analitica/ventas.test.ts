@@ -265,6 +265,15 @@ describe("categorías con lo que quedó afuera", () => {
     expect(sharePercent(r.rows[0].revenueCents, r.totalCents)).toBe(50); // no 52 % sobre lo listado
   });
 
+  it("también hay «otras» cuando lo que quedó afuera son unidades sin importe (platos a $ 0)", () => {
+    const ventas = parseSales({
+      ...VENTAS,
+      current: { ...TOTALES, revenue_cents: 120000, units: 13 },
+      by_category: [{ category_id: "c1", name: "Platos", units: 12, revenue_cents: 120000 }],
+    })!;
+    expect(categoryRows(ventas).others).toEqual({ units: 1, revenueCents: 0 });
+  });
+
   it("sin nada afuera no hay «otras»", () => {
     const ventas = parseSales({ ...VENTAS, current: { ...TOTALES, revenue_cents: 48000, units: 7 } })!; // por categoría: 46.000 + 2.000
     expect(categoryRows(ventas).others).toBeNull();

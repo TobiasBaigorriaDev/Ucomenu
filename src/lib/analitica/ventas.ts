@@ -199,7 +199,10 @@ export function categoryRows(sales: Sales): { rows: CategoryRow[]; totalCents: n
   const totalCents = sales.current.revenueCents;
   const listedCents = sales.categories.reduce((sum, item) => sum + item.revenueCents, 0);
   const listedUnits = sales.categories.reduce((sum, item) => sum + item.units, 0);
-  const others = totalCents > listedCents ? { units: Math.max(0, sales.current.units - listedUnits), revenueCents: totalCents - listedCents } : null;
+  const missingCents = Math.max(0, totalCents - listedCents);
+  const missingUnits = Math.max(0, sales.current.units - listedUnits);
+  // También cuando solo faltan unidades (platos a $ 0 en una categoría que quedó afuera).
+  const others = missingCents > 0 || missingUnits > 0 ? { units: missingUnits, revenueCents: missingCents } : null;
   return { rows: sales.categories, totalCents, others };
 }
 
