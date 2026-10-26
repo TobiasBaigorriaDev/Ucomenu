@@ -18,6 +18,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Para verificar
 
+- [M] Sugerencia de traducciones con IA (botón «Sugerir con IA» en las traducciones de la carta; Gemini con clave gratuita en local y staging, Claude en producción): implementada y verificada con un Gemini de mentira; falta probarla con la clave real → [ficha](cambios/traduccion-automatica.md) · ADR 0046
 - [C] Reinicio de QR programado por sucursal y masivo por el mozo — aprobado por Claude y por el usuario; en staging (Fly v53), pendiente prueba en teléfono → [ficha](cambios/reinicio-programado-qr.md)
 - [C] Turno de mesa (rota al cerrar, anular o reiniciar; el QR impreso no cambia) y cuenta del comensal («Ver mi cuenta» tras pedir la cuenta): implementados en local y aprobados por Codex; **en staging (Fly v51, migraciones hasta `20261202100000` aplicadas el 2026-10-25); el usuario ya los probó y su feedback (llamados tras reiniciar, cuenta con paletas oscuras) está corregido y desplegado; falta que lo vuelva a probar** → [turno](cambios/turno-de-mesa.md) · [cuenta](cambios/cuenta-del-comensal.md) · [ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)
 - [M] Estilo de carta «Afiche» (Big Shoulders, bandas de color, platos numerados): aprobado por el usuario y en staging (Fly v44, migración aplicada); falta probarlo con un local real en staging → [ficha](cambios/estilo-afiche.md)

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
 import { writeBlockNotice } from "@/lib/carta/messages";
+import { getTranslationProvider } from "@/lib/idiomas/gemini";
 import { isTranslatedLang, LANG_NAME, TRANSLATED_LANGS, type TranslatedLang } from "@/lib/idiomas/idiomas";
 import { loadTranslationTree, translationProgress } from "@/lib/idiomas/panel";
 import { createSessionClient } from "@/lib/supabase/server";
@@ -63,7 +64,7 @@ export default async function TraduccionesPage({ params, searchParams }: PagePro
       {tree.length === 0 ? (
         <p className="mt-8 max-w-prose text-lg text-muted">Todavía no hay nada para traducir. Cargá primero las categorías y los platos.</p>
       ) : (
-        <TranslationsForm key={lang} orgSlug={membership.org.slug} lang={lang} tree={tree} canWrite={canWrite} />
+        <TranslationsForm key={lang} orgSlug={membership.org.slug} lang={lang} tree={tree} canWrite={canWrite} canSuggest={getTranslationProvider() !== null} />
       )}
     </main>
   );

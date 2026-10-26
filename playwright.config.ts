@@ -1,4 +1,5 @@
 import { defineConfig } from "@playwright/test";
+import { E2E_GEMINI_KEY, GEMINI_STUB_URL } from "./e2e/gemini-stub";
 import { E2E_MUX, MUX_STUB_URL } from "./e2e/mux-stub";
 
 // El servidor de prueba hereda estas variables: la clave de servicio (solo en .env.test.local) llega a la app
@@ -28,6 +29,12 @@ process.env.MUX_TOKEN_ID = E2E_MUX.tokenId;
 process.env.MUX_TOKEN_SECRET = E2E_MUX.tokenSecret;
 process.env.MUX_WEBHOOK_SECRET = E2E_MUX.webhookSecret;
 process.env.MUX_API_URL = MUX_STUB_URL;
+
+// Sugerencia de traducciones (ficha traduccion-automatica): el servidor de pruebas habla con un Gemini de MENTIRA
+// (`e2e/gemini-stub.ts`) y una clave de pruebas, SIEMPRE, para que la clave real de `.env.local` no llegue a un E2E ni se gaste cuota.
+process.env.GEMINI_API_KEY = E2E_GEMINI_KEY;
+process.env.GEMINI_API_URL = GEMINI_STUB_URL;
+delete process.env.GEMINI_MODEL;
 
 // `E2E_PORT` permite que dos worktrees corran E2E a la vez (cada uno con su propio Supabase local y su puerto).
 const PORT = Number(process.env.E2E_PORT ?? 3100);

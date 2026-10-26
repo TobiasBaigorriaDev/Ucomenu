@@ -299,3 +299,56 @@ test("el resultado del guardado se ve junto al botón fijo, desde donde se guard
   await expect(largo).toHaveValue("a".repeat(81));
   await expectNoHorizontalOverflow(page);
 });
+
+test("«Sugerir con IA» completa solo los campos vacíos, resalta lo sugerido y no guarda hasta que el local pulsa Guardar", async ({ page }) => {
+  const t = await nuevoLocal("idi-sugerir");
+  await sembrar(t);
+  await login(page, t.owner.email, t.owner.password);
+  await page.goto(`/panel/${t.slug}/carta/traducciones`);
+
+  // Lo que el local ya escribió no se pisa.
+  const categoria = page.getByLabel("Traducción al English de Cafetería");
+  await categoria.fill("Coffee shop");
+  await page.getByRole("button", { name: "Sugerir con IA lo que falta en English" }).click();
+  await expect(page.getByTestId("sugerencia-resultado")).toContainText("Se completaron 4 campos");
+  await expect(categoria).toHaveValue("Coffee shop");
+  await expect(categoria).not.toHaveAttribute("data-sugerido", "true");
+  const plato = page.getByLabel("Traducción al English de Café con leche");
+  await expect(plato).toHaveValue("EN: Café con leche");
+  await expect(plato).toHaveAttribute("data-sugerido", "true");
+  await expect(page.getByLabel("Traducción al English de Con leche entera")).toHaveValue("EN: Con leche entera");
+  await expectNoHorizontalOverflow(page);
+
+  // Todavía no se guardó nada: ni en el progreso ni en la carta pública.
+  await page.goto(`/panel/${t.slug}/carta/traducciones`);
+  await expect(page.getByTestId("progreso-traduccion")).toContainText("0 de 5");
+  await expect(page.getByLabel("Traducción al English de Café con leche")).toHaveValue("");
+
+  // Sugerir, corregir una y guardar: queda lo que el local revisó.
+  await page.getByRole("button", { name: "Sugerir con IA lo que falta en English" }).click();
+  await expect(page.getByTestId("sugerencia-resultado")).toContainText("Se completaron 5 campos");
+  await page.getByLabel("Traducción al English de Café con leche").fill("Latte");
+  await expect(page.getByLabel("Traducción al English de Café con leche")).not.toHaveAttribute("data-sugerido", "true");
+  await page.getByRole("button", { name: "Guardar traducciones al English" }).click();
+  // Cuatro filas (la categoría, el plato con nombre y descripción, el grupo y la opción), cinco textos.
+  await expect(page.locator("form").getByRole("status")).toHaveText("Se guardaron 4 cambios.");
+  await expect(page.locator("[data-sugerido]")).toHaveCount(0);
+  await expect(page.getByTestId("progreso-traduccion")).toContainText("5 de 5");
+
+  await page.goto(`/m/${t.slug}/centro?lang=en`);
+  await expect(page.getByRole("heading", { level: 3, name: "Latte" })).toBeVisible();
+  await expect(page.getByText("EN: Con leche entera")).toBeVisible();
+
+  // Con todo completo, no hay nada que sugerir.
+  await page.goto(`/panel/${t.slug}/carta/traducciones`);
+  await page.getByRole("button", { name: "Sugerir con IA lo que falta en English" }).click();
+  await expect(alerta(page)).toContainText("No hay textos vacíos");
+});
+
+test("«Sugerir con IA» está deshabilitado en una cuenta en solo lectura", async ({ page }) => {
+  const t = await nuevoLocal("idi-sugerir-ro", "read_only");
+  await sembrar(t);
+  await login(page, t.owner.email, t.owner.password);
+  await page.goto(`/panel/${t.slug}/carta/traducciones`);
+  await expect(page.getByRole("button", { name: "Sugerir con IA lo que falta en English" })).toBeDisabled();
+});
