@@ -72,7 +72,7 @@ export const getMemberships = cache(async (userId: string): Promise<OrgMembershi
   return own.data
     .flatMap((m): OrgMembership[] => {
       const org = byId.get(m.organization_id);
-      return org && (m.role === "owner" || m.role === "staff") ? [{ role: m.role, org }] : [];
+      return org && (m.role === "owner" || m.role === "staff" || m.role === "cook") ? [{ role: m.role, org }] : [];
     })
     .sort((a, b) => a.org.name.localeCompare(b.org.name, "es"));
 });
@@ -89,15 +89,26 @@ export async function requireUser(next: string): Promise<User> {
 }
 
 /**
- * Exige sesión y membresía vigente en la organización `slug`. Quien no es miembro (o el slug no existe)
- * recibe el mismo 404: no se revela qué organizaciones existen.
+ * Exige sesión y membresía vigente en la organización `slug`, en cualquier rol (también el cocinero). Quien no es miembro
+ * (o el slug no existe) recibe el mismo 404: no se revela qué organizaciones existen. Solo para lo que es de cocina
+ * (`/cocina`); el panel y la sala usan `requireMembership`, que deja afuera al cocinero.
  */
-export async function requireMembership(slug: string, next: string) {
+export async function requireKitchen(slug: string, next: string) {
   const user = await requireUser(next);
   const memberships = await getMemberships(user.id);
   const membership = memberships.find((m) => m.org.slug === slug);
   if (!membership) notFound();
   return { user, membership, memberships };
+}
+
+/**
+ * Exige sesión y membresía de Dueño o Personal en la organización `slug` (el panel y la sala). El cocinero no entra: va a su
+ * pantalla, sin ver nada de acá. Quien no es miembro (o el slug no existe) recibe el mismo 404.
+ */
+export async function requireMembership(slug: string, next: string) {
+  const result = await requireKitchen(slug, next);
+  if (result.membership.role === "cook") redirect(`/cocina/${slug}`);
+  return result;
 }
 
 /** Como `requireMembership`, pero solo para el Dueño. El Staff vuelve al inicio de su panel, sin ver nada. */

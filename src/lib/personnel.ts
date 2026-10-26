@@ -24,6 +24,9 @@ import type { Database } from "@/lib/supabase/database.types";
 
 type Db = SupabaseClient<Database>;
 
+/** Orden de la lista del equipo: Dueños, Personal y Cocina. */
+const ROLE_ORDER: Record<Role, number> = { owner: 0, staff: 1, cook: 2 };
+
 export type PersonnelContext = { session: Db; admin: Db; actorId: string };
 
 export type PersonnelError =
@@ -31,6 +34,7 @@ export type PersonnelError =
   | "forbidden" // no es Dueño de la organización
   | "invalid_email"
   | "invalid_role"
+  | "plan_without_orders" // el rol de cocinero necesita pedidos en el plan
   | "email_unavailable" // alta sobre un email ya registrado (mensaje genérico)
   | "read_only" // cuenta en solo lectura o suspendida: no se da acceso nuevo
   | "last_owner" // la base protegió al último Dueño
@@ -53,6 +57,7 @@ export const PERSONNEL_ERROR_MESSAGE: Record<PersonnelError, string> = {
   forbidden: "No tenés permiso para gestionar el personal de este local.",
   invalid_email: "Revisá el email: no parece válido.",
   invalid_role: "Elegí un rol válido.",
+  plan_without_orders: "El rol de cocina necesita un plan con pedidos (Pro o Premium) y la cuenta al día.",
   email_unavailable: "No se pudo crear la cuenta con ese email.",
   read_only: "La cuenta está en solo lectura o suspendida: no se pueden sumar personas ni dar permisos de Dueño. Sí podés quitar personal y cambiar contraseñas.",
   last_owner: "Tiene que quedar al menos un Dueño en el local.",
@@ -64,7 +69,7 @@ export const PERSONNEL_ERROR_MESSAGE: Record<PersonnelError, string> = {
   unexpected: "No se pudo completar la acción. Probá de nuevo en unos minutos.",
 };
 
-const isRole = (value: unknown): value is Role => value === "owner" || value === "staff";
+const isRole = (value: unknown): value is Role => value === "owner" || value === "staff" || value === "cook";
 
 const isLastOwnerError = (error: { code?: string; message?: string } | null) =>
   error?.code === "23514" && (error.message ?? "").includes("last_owner_required");
@@ -84,6 +89,12 @@ async function isOwnerOf(ctx: PersonnelContext, orgId: string): Promise<boolean>
 async function canWrite(ctx: PersonnelContext, orgId: string): Promise<boolean> {
   const { data, error } = await ctx.session.rpc("org_entitlements", { p_org: orgId });
   return !error && parseEntitlements(data)?.canWrite === true;
+}
+
+/** ¿El plan (con la cuenta al día) incluye pedidos? Sin ellos un cocinero no podría hacer nada: no se le da el rol. */
+async function hasOrders(ctx: PersonnelContext, orgId: string): Promise<boolean> {
+  const { data, error } = await ctx.session.rpc("org_entitlements", { p_org: orgId });
+  return !error && parseEntitlements(data)?.features.includes("orders") === true;
 }
 
 type Target = { id: string; user_id: string; role: Role };
@@ -155,7 +166,7 @@ export async function listMembers(ctx: PersonnelContext, orgId: string): Promise
   return ok(
     members
       .filter((m): m is Member => m !== null)
-      .sort((a, b) => (a.role === b.role ? a.email.localeCompare(b.email) : a.role === "owner" ? -1 : 1)),
+      .sort((a, b) => (a.role === b.role ? a.email.localeCompare(b.email) : ROLE_ORDER[a.role] - ROLE_ORDER[b.role])),
   );
 }
 
@@ -210,6 +221,7 @@ export async function createMember(
   const weak = validatePassword(input.password);
   if (weak) return fail(weak);
   if (!(await canWrite(ctx, orgId))) return fail("read_only");
+  if (input.role === "cook" && !(await hasOrders(ctx, orgId))) return fail("plan_without_orders");
 
   const created = await ctx.admin.auth.admin.createUser({ email, password: input.password, email_confirm: true });
   if (created.error || !created.data.user) {
@@ -250,6 +262,8 @@ export async function setMemberRole(
 
   // Dar el rol de Dueño es dar acceso nuevo: requiere cuenta al día. Bajar de rol siempre se puede.
   if (role === "owner" && !(await canWrite(ctx, orgId))) return fail("read_only");
+  // El rol de cocinero solo tiene sentido con pedidos en el plan.
+  if (role === "cook" && !(await hasOrders(ctx, orgId))) return fail("plan_without_orders");
 
   const { error } = await ctx.admin.from("memberships").update({ role }).eq("id", target.id).eq("organization_id", orgId);
   if (isLastOwnerError(error)) return fail("last_owner");

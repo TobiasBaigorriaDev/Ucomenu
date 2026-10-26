@@ -8,20 +8,21 @@
 import { MAX_NOTE, MAX_QUANTITY, noteProblem, normalizeNote } from "./anotar";
 import type { LineStatus, OrderLine } from "./mesas";
 
-/** A qué estado se puede mandar una línea (`noted` es el de alta y no se vuelve a él). */
+/** A qué estado se puede mandar una línea desde la Sala (`noted` es el de alta; «listo» lo marca la cocina, ADR 0048). */
 export type LineTarget = "in_kitchen" | "delivered" | "cancelled";
 
 export const LINE_TARGETS: readonly LineTarget[] = ["in_kitchen", "delivered", "cancelled"];
 
 /**
- * Transiciones permitidas por la base: anotado → en cocina (opcional) → entregado; cancelar desde cualquiera salvo lo ya cancelado; sin
- * marcha atrás. Se muestran en este orden: primero avanzar, al final cancelar.
+ * Transiciones que ofrece la Sala: anotado, en cocina (heredado) o listo → entregado; cancelar desde cualquiera salvo lo ya cancelado; sin
+ * marcha atrás. «En cocina» ya no se ofrece (la cocina marca «listo»): la base lo sigue aceptando para lo que ya estaba así. Se muestran
+ * en este orden: primero avanzar, al final cancelar.
  */
 export function lineMoves(status: LineStatus): LineTarget[] {
   switch (status) {
     case "noted":
-      return ["in_kitchen", "delivered", "cancelled"];
     case "in_kitchen":
+    case "ready":
       return ["delivered", "cancelled"];
     case "delivered":
       return ["cancelled"];
@@ -44,7 +45,7 @@ export const MOVE_LABEL: Record<LineTarget, string> = {
 
 /** Platos (unidades) vivos que todavía no se entregaron: lo que se avisa antes de cerrar (cerrar igual es decisión del mozo). */
 export function undeliveredUnits(lines: readonly Pick<OrderLine, "status" | "quantity">[]): number {
-  return lines.filter((line) => line.status === "noted" || line.status === "in_kitchen").reduce((sum, line) => sum + line.quantity, 0);
+  return lines.filter((line) => line.status === "noted" || line.status === "in_kitchen" || line.status === "ready").reduce((sum, line) => sum + line.quantity, 0);
 }
 
 // ---------------------------------------------------------------------------

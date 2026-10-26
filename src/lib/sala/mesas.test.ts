@@ -45,10 +45,11 @@ describe("resumen del pedido abierto", () => {
     const resumen = summarizeOrder("2026-10-24T10:00:00.000Z", [
       linea({ quantity: 2 }),
       linea({ status: "in_kitchen", quantity: 1 }),
+      linea({ status: "ready", quantity: 4 }),
       linea({ status: "delivered", quantity: 3 }),
       linea({ status: "cancelled", quantity: 5 }),
     ]);
-    expect(resumen).toEqual({ openedAt: "2026-10-24T10:00:00.000Z", dishes: 6, noted: 2, inKitchen: 1, delivered: 3, totalCents: 6000 });
+    expect(resumen).toEqual({ openedAt: "2026-10-24T10:00:00.000Z", dishes: 10, noted: 2, inKitchen: 1, ready: 4, delivered: 3, totalCents: 10000 });
   });
 
   it("sin líneas vivas no hay resumen: la mesa se ve libre", () => {
@@ -58,15 +59,18 @@ describe("resumen del pedido abierto", () => {
 
   it("el texto de estado omite los estados en cero y usa singular", () => {
     const base = { openedAt: "2026-10-24T10:00:00.000Z", totalCents: 0 };
-    expect(orderStatusText({ ...base, dishes: 1, noted: 1, inKitchen: 0, delivered: 0 })).toBe("1 plato · 1 anotado");
-    expect(orderStatusText({ ...base, dishes: 6, noted: 2, inKitchen: 1, delivered: 3 })).toBe("6 platos · 2 anotados · 1 en cocina · 3 entregados");
-    expect(orderStatusText({ ...base, dishes: 2, noted: 0, inKitchen: 0, delivered: 2 })).toBe("2 platos · 2 entregados");
+    expect(orderStatusText({ ...base, dishes: 1, noted: 1, inKitchen: 0, ready: 0, delivered: 0 })).toBe("1 plato · 1 anotado");
+    expect(orderStatusText({ ...base, dishes: 6, noted: 2, inKitchen: 1, ready: 0, delivered: 3 })).toBe("6 platos · 2 anotados · 1 en cocina · 3 entregados");
+    expect(orderStatusText({ ...base, dishes: 2, noted: 0, inKitchen: 0, ready: 0, delivered: 2 })).toBe("2 platos · 2 entregados");
+    expect(orderStatusText({ ...base, dishes: 4, noted: 1, inKitchen: 0, ready: 2, delivered: 1 })).toBe("4 platos · 1 anotado · 2 listos · 1 entregado");
+    expect(orderStatusText({ ...base, dishes: 1, noted: 0, inKitchen: 0, ready: 1, delivered: 0 })).toBe("1 plato · 1 listo");
   });
 });
 
 const carta = (label: string, over: Partial<MesaCard> = {}): MesaCard => ({ tableId: label, tableLabel: label, branchName: "Centro", calls: [], order: null, ...over });
 const llamado = (kind: "waiter" | "bill", createdAt: string, id = `${kind}-${createdAt}`) => ({ id, kind, createdAt, visitStartedAt: null });
-const pedido = (openedAt: string) => ({ openedAt, dishes: 1, noted: 1, inKitchen: 0, delivered: 0, totalCents: 1000 });
+const pedido = (openedAt: string) => ({ openedAt, dishes: 1, noted: 1, inKitchen: 0, ready: 0, delivered: 0, totalCents: 1000 });
+const pedidoListo = (openedAt: string) => ({ openedAt, dishes: 1, noted: 0, inKitchen: 0, ready: 1, delivered: 0, totalCents: 1000 });
 
 describe("orden de las mesas", () => {
   it("cuenta, después llamado, después pedido (el más antiguo primero) y al final las libres; dentro de cada grupo, por etiqueta numérica", () => {
@@ -81,6 +85,17 @@ describe("orden de las mesas", () => {
       carta("Mesa 8", { calls: [llamado("waiter", "2026-10-24T11:45:00.000Z")] }),
     ];
     expect(sortMesas(mesas).map((m) => m.tableLabel)).toEqual(["Mesa 7", "Mesa 6", "Mesa 8", "Mesa 5", "Mesa 4", "Mesa 3", "Mesa 2", "Mesa 10"]);
+  });
+
+  it("una mesa con platos listos para entregar va después de los llamados y antes de las que solo tienen pedido", () => {
+    const mesas = [
+      carta("Mesa 1", { order: pedido("2026-10-24T08:00:00.000Z") }),
+      carta("Mesa 2", { order: pedidoListo("2026-10-24T11:00:00.000Z") }),
+      carta("Mesa 3", { order: pedidoListo("2026-10-24T09:00:00.000Z") }),
+      carta("Mesa 4", { calls: [llamado("waiter", "2026-10-24T11:50:00.000Z")] }),
+      carta("Mesa 5"),
+    ];
+    expect(sortMesas(mesas).map((m) => m.tableLabel)).toEqual(["Mesa 4", "Mesa 3", "Mesa 2", "Mesa 1", "Mesa 5"]);
   });
 
   it("no modifica la lista recibida", () => {
@@ -103,7 +118,7 @@ const estado = (over: Record<string, unknown> = {}) => ({
       tableLabel: "Mesa 1",
       branchName: "Centro",
       calls: [{ id: "c1", kind: "bill", createdAt: "2026-10-24T11:58:00.000Z", visitStartedAt: "2026-10-24T11:20:00.000Z" }],
-      order: { openedAt: "2026-10-24T11:00:00.000Z", dishes: 3, noted: 1, inKitchen: 1, delivered: 1, totalCents: 450000 },
+      order: { openedAt: "2026-10-24T11:00:00.000Z", dishes: 3, noted: 1, inKitchen: 1, ready: 0, delivered: 1, totalCents: 450000 },
     },
     { tableId: "t2", tableLabel: "Mesa 2", branchName: "Centro", calls: [], order: null },
   ],

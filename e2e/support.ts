@@ -52,7 +52,7 @@ export type Tenant = {
   cleanup: () => Promise<void>;
 };
 
-async function createPerson(label: string, orgId: string, role: "owner" | "staff"): Promise<Person> {
+export async function createPerson(label: string, orgId: string, role: "owner" | "staff" | "cook"): Promise<Person> {
   const db = service();
   const email = `e2e-${label}-${rand()}@example.test`;
   const created = await db.auth.admin.createUser({ email, password: TEST_PASSWORD, email_confirm: true });

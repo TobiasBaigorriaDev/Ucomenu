@@ -52,10 +52,11 @@ export function CreateMemberForm({ orgSlug, canWrite }: { orgSlug: string; canWr
               <select
                 id="alta-rol"
                 name="role"
-                defaultValue={state.values?.role === "owner" ? "owner" : "staff"}
+                defaultValue={state.values?.role === "owner" || state.values?.role === "cook" ? state.values.role : "staff"}
                 className={`${inputClass} mt-1`}
               >
                 <option value="staff">Personal: carta y sala</option>
+                <option value="cook">Cocina: pedidos y platos agotados (plan Pro o Premium)</option>
                 <option value="owner">Dueño: además suscripción y personal</option>
               </select>
             </div>

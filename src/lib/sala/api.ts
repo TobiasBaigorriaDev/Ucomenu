@@ -11,7 +11,7 @@ const NO_STORE = { "Cache-Control": "no-store" };
  * (RLS), nunca `service_role`, y vuelve a comprobar identidad y membresía en cada pedido (el proxy solo mira que haya sesión):
  *  - sin sesión o con una sesión que Auth rechaza: 401 (la pantalla pide ingresar de nuevo);
  *  - Auth caído o lento (red, 5xx): 503, NO 401: la sesión puede estar bien y la pantalla tiene que seguir reintentando;
- *  - no es miembro del local, o el local no existe: 404 idéntico (no revela qué locales existen);
+ *  - no es Dueño ni Personal del local (tampoco el cocinero), o el local no existe: 404 idéntico (no revela qué locales existen);
  *  - falla la base (también al leer la identidad o las membresías): 503 (la pantalla muestra «Sin conexión» y reintenta).
  * Nada se guarda en caché.
  */
@@ -24,7 +24,8 @@ export async function respondSala(slug: string, load: (db: SupabaseClient<Databa
 
     // Si falla la consulta de membresías (base caída con Auth en pie) lanza: cae al 503, no a un 500 sin JSON.
     const membership = (await getMemberships(user.id)).find((m) => m.org.slug === slug);
-    if (!membership) return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_STORE });
+    // El cocinero no usa la Sala: misma respuesta que para quien no es del local.
+    if (!membership || membership.role === "cook") return NextResponse.json({ error: "not_found" }, { status: 404, headers: NO_STORE });
 
     const state = await load(await createSessionClient(), membership.org.id);
     return NextResponse.json(state, { headers: NO_STORE });

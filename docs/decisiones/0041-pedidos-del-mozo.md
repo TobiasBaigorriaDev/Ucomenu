@@ -9,7 +9,7 @@
 ## Decisión
 1. **Solo el personal autenticado** (Dueño y Staff) crea y modifica pedidos, desde la **Sala** (`/sala/{slug}`), que suma una vista «Mesas» con el pedido abierto y los llamados de cada mesa. La carta del comensal sigue siendo solo consulta y nadie anónimo lee ni escribe pedidos.
 2. **Copia al anotar.** Cada línea guarda nombre, precio efectivo (ADR 0040: el del momento en que se anota), promoción aplicada y las opciones elegidas con su diferencia. El precio lo calcula la base; el que manda el cliente se ignora. Se validan mínimos y máximos de los grupos y la visibilidad en la sucursal.
-3. **Estados:** pedido abierto → cerrado | anulado; ítem anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). «En cocina» es manual: no hay pantalla de cocina en esta etapa. Toda acción queda en un registro de solo-agregado.
+3. **Estados:** pedido abierto → cerrado | anulado; ítem anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). «En cocina» es manual: no hay pantalla de cocina en esta etapa. Toda acción queda en un registro de solo-agregado. *(Enmienda 2026-10-26, [ADR 0048](0048-rol-cocinero.md): hay pantalla de cocina para un rol propio y el estado «listo» reemplaza a «En cocina» en la pantalla del mozo.)*
 4. **Solo por mesa** en la primera entrega (sin mostrador ni para llevar).
 5. **Mora:** en solo lectura o suspendida no se abren pedidos ni se agregan ítems, pero **cerrar y anular nunca se bloquean**.
 6. **No fiscal:** el cierre muestra una precuenta con la leyenda «no válida como factura». Sin cobro, propinas, división de cuenta ni impresión de comandas.

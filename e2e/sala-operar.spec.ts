@@ -66,9 +66,9 @@ test.afterAll(async () => {
 });
 
 test.describe("operar el pedido", () => {
-  test("una línea avanza anotado → en cocina → entregado, o directo a entregado; la entregada solo se puede cancelar", async ({ browser }) => {
+  test("una línea avanza anotado → listo (lo marca la cocina) → entregado, o directo a entregado; la entregada solo se puede cancelar", async ({ browser }) => {
     const l = await nuevoLocal("operar-estados");
-    await anotar(l.t.owner, l, l.bife, 2);
+    const pedidoBife = await anotar(l.t.owner, l, l.bife, 2);
     await anotar(l.t.owner, l, l.flan, 1);
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
@@ -77,17 +77,20 @@ test.describe("operar el pedido", () => {
 
     const bife = linea(page, "Bife");
     await expect(bife).toHaveAttribute("data-estado", "noted");
-    await expect(bife.getByRole("button")).toHaveText(["En cocina", "Entregado", "Modificar", "Cancelar"]);
-    await bife.getByRole("button", { name: /Pasar a cocina/ }).click();
-    await expect(bife).toHaveAttribute("data-estado", "in_kitchen");
-    await expect(bife.getByTestId("linea-estado")).toHaveText("En cocina");
-    // En cocina ya no se modifica, y sigue pudiendo entregarse o cancelarse.
+    // «En cocina» ya no se ofrece: la cocina marca «listo».
+    await expect(bife.getByRole("button")).toHaveText(["Entregado", "Modificar", "Cancelar"]);
+    const listo = await pedidoBife.db.rpc("set_order_item_status", { p_item: pedidoBife.item, p_status: "ready" });
+    expect(listo.error).toBeNull();
+    await page.reload();
+    await expect(bife).toHaveAttribute("data-estado", "ready");
+    await expect(bife.getByTestId("linea-estado")).toHaveText("Listo para entregar");
+    // Lista ya no se modifica, y sigue pudiendo entregarse o cancelarse.
     await expect(bife.getByRole("button")).toHaveText(["Entregado", "Cancelar"]);
     await bife.getByRole("button", { name: /Marcar entregado/ }).click();
     await expect(bife).toHaveAttribute("data-estado", "delivered");
     await expect(bife.getByRole("button")).toHaveText(["Cancelar"]);
 
-    // Sin pasar por cocina.
+    // Sin pasar por la cocina.
     const flan = linea(page, "Flan");
     await flan.getByRole("button", { name: /Marcar entregado/ }).click();
     await expect(flan).toHaveAttribute("data-estado", "delivered");
@@ -230,12 +233,12 @@ test.describe("operar el pedido", () => {
     await abrir(page, l);
     await expect(linea(page, "Bife")).toHaveAttribute("data-estado", "noted");
 
-    // Otro mozo la entrega mientras esta pantalla sigue mostrándola como anotada.
-    expect((await a.db.rpc("set_order_item_status", { p_item: a.item, p_status: "delivered" })).error).toBeNull();
-    await linea(page, "Bife").getByRole("button", { name: /Pasar a cocina/ }).click();
+    // Otro mozo la cancela mientras esta pantalla sigue mostrándola como anotada.
+    expect((await a.db.rpc("set_order_item_status", { p_item: a.item, p_status: "cancelled" })).error).toBeNull();
+    await linea(page, "Bife").getByRole("button", { name: /Marcar entregado/ }).click();
     await expect(linea(page, "Bife").getByTestId("linea-error")).toContainText("Otra persona ya cambió esta línea");
-    await expect(linea(page, "Bife")).toHaveAttribute("data-estado", "delivered");
-    expect((await estados(l))[0].status).toBe("delivered");
+    await expect(linea(page, "Bife")).toHaveAttribute("data-estado", "cancelled");
+    expect((await estados(l))[0].status).toBe("cancelled");
     await ctx.close();
   });
 

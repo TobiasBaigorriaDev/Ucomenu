@@ -66,6 +66,11 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   purge_organization_order_events: [true, false, false], // purga del registro de pedidos al borrar una organización (ADR 0041): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
   end_table_turn: [true, false, false], // turno de mesa (ficha turno-de-mesa, ADR 0044): termina el turno de una mesa y vence su «Pedir la cuenta» pendiente; la llaman close_order, void_order y reset_table_turn; sin EXECUTE para la API
   ticket_in_turn: [true, false, false], // turno de mesa (ficha turno-de-mesa, ADR 0044): ¿el ticket de visita se emitió después del inicio del turno?; sin EXECUTE para la API
+  is_org_cook: [true, false, false], // rol de cocinero (ADR 0048): solo la usan las funciones de cocina; sin EXECUTE para la API
+  is_org_kitchen: [true, false, false], // Dueño, Staff o cocinero (ADR 0048)
+  can_kitchen_orders: [true, false, false], // kitchen_*: trabaja en cocina + función `orders` + cuenta al día
+  can_set_item_status: [true, false, false], // set_order_item_status: el cocinero solo ready/noted; Dueño y Staff, todo
+  cook_drops_push: [true, false, false], // trigger de memberships: quien pasa a cocinero pierde sus suscripciones push
   can_take_orders: [true, false, false], // la usa add_order_item (ficha pedidos-esquema-y-alta-de-items): miembro + función `orders` en el plan + cuenta al día; sin EXECUTE para la API
   can_manage_promotions: [true, false, true], // usada por las políticas de escritura de promotions y sus tablas (ficha promociones-y-precio-efectivo): Dueño + función en el plan + cuenta al día
   record_promotion_change: [true, false, false], // trigger de promotions, promotion_targets y promotion_branches: escribe promotion_history (la API no tiene INSERT)
@@ -100,6 +105,10 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   purge_video_comments: [false, false], // retención de comentarios rechazados y pendientes viejos (ADR 0031): solo service_role
   set_video_like: [false, false], // única puerta de escritura de video_likes; solo service_role (ADR 0031, 0038)
   create_waiter_call: [false, false], // única puerta de escritura de waiter_calls; solo service_role (ADR 0010, 0038)
+  kitchen_orders: [false, true], // pantalla de cocina (ADR 0048): pedidos abiertos sin precios; valida adentro (rol de cocina, plan, mora)
+  kitchen_branches: [false, true], // pantalla de cocina: sucursales activas (id y nombre)
+  kitchen_menu: [false, true], // pantalla de cocina: platos activos y visibles de una sucursal, sin precios
+  set_kitchen_availability: [false, true], // pantalla de cocina: agotado/disponible (solo is_available); valida adentro
   set_order_item_status: [false, true], // pedidos del mozo (ficha pedidos-estados-y-registro): estados de una línea; valida adentro (miembro, plan, mora)
   update_order_item: [false, true], // pedidos del mozo: cantidad y observación de una línea anotada; valida adentro
   close_order: [false, true], // pedidos del mozo: cierra un pedido; solo exige ser miembro (nunca se bloquea por mora)

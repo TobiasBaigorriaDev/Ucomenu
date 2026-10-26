@@ -7,8 +7,8 @@
  */
 import type { CallKind, SalaBranch, SalaCall } from "./types";
 
-/** Estados de una línea (ADR 0041, decisión 3). */
-export type LineStatus = "noted" | "in_kitchen" | "delivered" | "cancelled";
+/** Estados de una línea (ADR 0041, decisión 3; `ready` es el «listo para entregar» de la cocina, ADR 0048). */
+export type LineStatus = "noted" | "in_kitchen" | "ready" | "delivered" | "cancelled";
 
 export type OrderLine = {
   status: LineStatus;
@@ -26,6 +26,8 @@ export type MesaOrder = {
   /** De esos platos, cuántos hay en cada estado. */
   noted: number;
   inKitchen: number;
+  /** Listos para entregar (los marcó la cocina). */
+  ready: number;
   delivered: number;
   /** Suma de las líneas no canceladas, en centavos. */
   totalCents: number;
@@ -62,7 +64,7 @@ export type MesasState = {
   mesas: MesaCard[];
 };
 
-export const LINE_STATUSES: readonly LineStatus[] = ["noted", "in_kitchen", "delivered", "cancelled"];
+export const LINE_STATUSES: readonly LineStatus[] = ["noted", "in_kitchen", "ready", "delivered", "cancelled"];
 
 export const isLineStatus = (value: unknown): value is LineStatus => LINE_STATUSES.includes(value as LineStatus);
 
@@ -89,6 +91,7 @@ export function summarizeOrder(openedAt: string, lines: readonly OrderLine[]): M
     dishes: live.reduce((sum, line) => sum + line.quantity, 0),
     noted: units("noted"),
     inKitchen: units("in_kitchen"),
+    ready: units("ready"),
     delivered: units("delivered"),
     totalCents: orderCents(live),
   };
@@ -97,20 +100,21 @@ export function summarizeOrder(openedAt: string, lines: readonly OrderLine[]): M
 const rankOf = (card: MesaCard): number => {
   if (card.calls.some((call) => call.kind === "bill")) return 0;
   if (card.calls.length > 0) return 1;
-  return card.order ? 2 : 3;
+  if (card.order && card.order.ready > 0) return 2; // platos listos esperando que los lleven
+  return card.order ? 3 : 4;
 };
 
 const byLabel = (a: MesaCard, b: MesaCard) => a.tableLabel.localeCompare(b.tableLabel, "es-AR", { numeric: true }) || a.branchName.localeCompare(b.branchName, "es-AR");
 
 /**
- * Primero las que piden la cuenta, después las que llaman, después las que tienen pedido (el más antiguo primero: es el que más
- * lleva) y al final las libres. Dentro de cada grupo, por la etiqueta de la mesa (numérica) y la sucursal.
+ * Primero las que piden la cuenta, después las que llaman, después las que tienen platos listos para entregar, después las que
+ * tienen pedido (en ambos grupos el más antiguo primero: es el que más lleva) y al final las libres. Dentro de cada grupo, por la etiqueta de la mesa (numérica) y la sucursal.
  */
 export function sortMesas(mesas: readonly MesaCard[]): MesaCard[] {
   return [...mesas].sort((a, b) => {
     const rank = rankOf(a) - rankOf(b);
     if (rank !== 0) return rank;
-    if (rankOf(a) === 2) {
+    if (rankOf(a) === 2 || rankOf(a) === 3) {
       const opened = Date.parse(a.order!.openedAt) - Date.parse(b.order!.openedAt);
       if (opened !== 0) return opened;
     }
@@ -141,11 +145,12 @@ export function flattenCalls(mesas: readonly MesaCard[]): SalaCall[] {
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.tableLabel.localeCompare(b.tableLabel, "es-AR", { numeric: true }));
 }
 
-/** «3 platos · 1 anotado · 1 en cocina · 1 entregado» (sin los estados en cero). */
+/** «3 platos · 1 anotado · 1 listo · 1 entregado» (sin los estados en cero). */
 export function orderStatusText(order: MesaOrder): string {
   const parts = [order.dishes === 1 ? "1 plato" : `${order.dishes} platos`];
   if (order.noted > 0) parts.push(order.noted === 1 ? "1 anotado" : `${order.noted} anotados`);
   if (order.inKitchen > 0) parts.push(`${order.inKitchen} en cocina`);
+  if (order.ready > 0) parts.push(order.ready === 1 ? "1 listo" : `${order.ready} listos`);
   if (order.delivered > 0) parts.push(order.delivered === 1 ? "1 entregado" : `${order.delivered} entregados`);
   return parts.join(" · ");
 }
@@ -157,9 +162,9 @@ const isIso = (value: unknown): value is string => typeof value === "string" && 
 function parseOrder(raw: unknown): MesaOrder | null | undefined {
   if (raw === null) return null;
   if (!isRecord(raw)) return undefined;
-  const { openedAt, dishes, noted, inKitchen, delivered, totalCents } = raw;
-  if (!isIso(openedAt) || !isCents(dishes) || !isCents(noted) || !isCents(inKitchen) || !isCents(delivered) || !isCents(totalCents)) return undefined;
-  return { openedAt, dishes, noted, inKitchen, delivered, totalCents };
+  const { openedAt, dishes, noted, inKitchen, ready, delivered, totalCents } = raw;
+  if (!isIso(openedAt) || !isCents(dishes) || !isCents(noted) || !isCents(inKitchen) || !isCents(ready) || !isCents(delivered) || !isCents(totalCents)) return undefined;
+  return { openedAt, dishes, noted, inKitchen, ready, delivered, totalCents };
 }
 
 function parseCard(raw: unknown): MesaCard | null {

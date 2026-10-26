@@ -1,27 +1,31 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { getEntitlements, getMemberships, requireMembership, requireUser } from "@/lib/auth/session";
+import { getEntitlements, getMemberships, requireKitchen, requireMembership, requireUser } from "@/lib/auth/session";
 import { moraNotice } from "@/lib/entitlements";
 import { toneFor } from "@/components/menu/tones";
 import { AppShell, ROLE_LABEL } from "./app-shell";
 import { LlamadosBanner } from "./llamados-banner";
 import { MoraBanner } from "./mora-banner";
 
+/** El panel y la sala son de Dueño y Personal: el cocinero solo tiene `/cocina`. */
+const visibleIn = <T extends { role: string }>(area: "panel" | "sala" | "cocina", memberships: T[]): T[] =>
+  area === "cocina" ? memberships : memberships.filter((m) => m.role !== "cook");
+
 /**
- * Layout de un local dentro de `/panel/{slug}` o `/sala/{slug}`: valida la membresía y arma la cabecera
+ * Layout de un local dentro de `/panel/{slug}`, `/sala/{slug}` o `/cocina/{slug}`: valida la membresía y arma la cabecera
  * y el aviso de mora. Un layout no se re-ejecuta al navegar entre páginas hijas: cada página debe
  * volver a exigir su propio nivel de acceso.
  */
-export async function OrgArea({ area, slug, children }: { area: "panel" | "sala"; slug: string; children: ReactNode }) {
-  const { membership, memberships } = await requireMembership(slug, `/${area}/${slug}`);
+export async function OrgArea({ area, slug, children }: { area: "panel" | "sala" | "cocina"; slug: string; children: ReactNode }) {
+  const { membership, memberships } = await (area === "cocina" ? requireKitchen : requireMembership)(slug, `/${area}/${slug}`);
   const ent = await getEntitlements(membership.org.id);
   const notice = moraNotice(ent, membership.role);
   // En el panel, quien edita la carta se entera arriba de que una mesa llamó (la sala en vivo tiene su propia lista).
   const showCalls = area === "panel" && ent?.features.includes("waiter_call") === true;
 
   return (
-    <AppShell area={area} org={membership.org} role={membership.role} hasSeveralOrgs={memberships.length > 1}>
+    <AppShell area={area} org={membership.org} role={membership.role} hasSeveralOrgs={visibleIn(area, memberships).length > 1}>
       {showCalls ? <LlamadosBanner slug={membership.org.slug} /> : null}
       {notice ? <MoraBanner notice={notice} /> : null}
       {children}
@@ -30,12 +34,15 @@ export async function OrgArea({ area, slug, children }: { area: "panel" | "sala"
 }
 
 /**
- * Entrada de `/panel` y `/sala`: sin locales muestra un aviso, con uno entra directo y con varios
- * muestra el selector. La organización activa vive en la URL, no en una cookie.
+ * Entrada de `/panel`, `/sala` y `/cocina`: sin locales muestra un aviso, con uno entra directo y con varios
+ * muestra el selector. La organización activa vive en la URL, no en una cookie. Quien solo es cocinero y entra al panel
+ * o a la sala va a su pantalla.
  */
-export async function OrgEntry({ area }: { area: "panel" | "sala" }) {
+export async function OrgEntry({ area }: { area: "panel" | "sala" | "cocina" }) {
   const user = await requireUser(`/${area}`);
-  const memberships = await getMemberships(user.id);
+  const all = await getMemberships(user.id);
+  const memberships = visibleIn(area, all);
+  if (memberships.length === 0 && all.length > 0) redirect(all.length === 1 ? `/cocina/${all[0].org.slug}` : "/cocina");
 
   if (memberships.length === 1) redirect(`/${area}/${memberships[0].org.slug}`);
 

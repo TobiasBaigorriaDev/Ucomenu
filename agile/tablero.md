@@ -10,7 +10,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## En curso
 
-- (vacío)
+- [C] Rol de cocinero (pantalla `/cocina`: pedidos con «Listo», platos agotados por sucursal; Pro y Premium; flujo anotado → listo → entregado; sin precios ni acceso a Sala y panel): implementado en local; falta la verificación completa y la revisión independiente → [ficha](cambios/rol-cocinero.md) · [ADR 0048](../docs/decisiones/0048-rol-cocinero.md)
 
 ## Seleccionado
 

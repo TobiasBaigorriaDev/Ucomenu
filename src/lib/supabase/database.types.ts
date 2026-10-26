@@ -951,6 +951,15 @@ isOneToOne: false
 "get_table_account":
 { Args: { "p_ticket_at": string,"p_token": string }; Returns: Json
                            },
+"kitchen_branches":
+{ Args: { "p_org": string }; Returns: Json
+                           },
+"kitchen_menu":
+{ Args: { "p_branch": string,"p_org": string }; Returns: Json
+                           },
+"kitchen_orders":
+{ Args: { "p_branch"?: string,"p_org": string }; Returns: Json
+                           },
 "my_branch_view":
 { Args: { "p_org": string }; Returns: (string)[]
                            },
@@ -1050,6 +1059,9 @@ isOneToOne: false
                            },
 "save_promotion":
 { Args: { "p_all_branches": boolean,"p_branches": (string)[],"p_categories": (string)[],"p_discount_type": string,"p_discount_value": number,"p_end_minute": number,"p_ends_on": string,"p_id": string,"p_is_active": boolean,"p_name": string,"p_org": string,"p_products": (string)[],"p_start_minute": number,"p_starts_on": string,"p_weekdays_mask": number }; Returns: string
+                           },
+"set_kitchen_availability":
+{ Args: { "p_available": boolean,"p_branch": string,"p_org": string,"p_product": string }; Returns: Json
                            },
 "set_my_branch_view":
 { Args: { "p_branches": (string)[],"p_org": string }; Returns: string

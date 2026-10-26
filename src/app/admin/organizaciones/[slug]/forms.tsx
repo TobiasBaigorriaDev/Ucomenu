@@ -754,7 +754,7 @@ export function DeleteOrganizationForm({ slug, name }: { slug: string; name: str
   );
 }
 
-type Found = { others: { name: string; role: string }[]; alreadyStaffHere: boolean };
+type Found = { others: { name: string; role: string }[]; alreadyStaffHere: boolean; alreadyCookHere: boolean };
 
 /** Lo que la acción devolvió sobre la cuenta encontrada, leído con cuidado (llega como texto en `values`). */
 function readFound(values: FormState["values"]): Found {
@@ -771,7 +771,7 @@ function readFound(values: FormState["values"]): Found {
   } catch {
     others = [];
   }
-  return { others, alreadyStaffHere: values?.here === "staff" };
+  return { others, alreadyStaffHere: values?.here === "staff", alreadyCookHere: values?.here === "cook" };
 }
 
 /**
@@ -833,6 +833,7 @@ export function AddOwnerForm({ slug }: { slug: string }) {
                     </>
                   )}
                   {found.alreadyStaffHere ? <p className="mt-1">Ya es Personal de esta organización: se la asciende a Dueño.</p> : null}
+                  {found.alreadyCookHere ? <p className="mt-1">Ya es de Cocina de esta organización: se la asciende a Dueño.</p> : null}
                 </div>
                 <p className="max-w-prose text-base leading-relaxed" data-testid="aviso-dueno-existente">
                   Sumar un Dueño le da control total sobre este local. Confirmá solo si es la misma persona: si la cuenta era de Personal

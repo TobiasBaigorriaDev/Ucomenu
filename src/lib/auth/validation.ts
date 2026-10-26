@@ -33,7 +33,7 @@ export function normalizeEmail(raw: unknown): string | null {
  * Destino permitido después del login. Solo rutas internas de las áreas con sesión;
  * cualquier otra cosa (URL externa, `//host`, esquema, barra invertida, otras rutas) se ignora.
  */
-const NEXT_PATTERN = /^\/(panel|sala|cuenta|admin)(\/[A-Za-z0-9_-]+)*\/?$/;
+const NEXT_PATTERN = /^\/(panel|sala|cocina|cuenta|admin)(\/[A-Za-z0-9_-]+)*\/?$/;
 
 export function safeNext(raw: unknown): string | null {
   if (typeof raw !== "string" || raw.length > 200) return null;

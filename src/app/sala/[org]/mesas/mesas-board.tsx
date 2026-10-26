@@ -49,16 +49,28 @@ const primaryClass =
   "inline-flex min-h-11 items-center justify-center rounded-full bg-cobalt px-5 py-2 text-base font-medium text-white hover:bg-brand-deep disabled:opacity-60";
 
 /** El mismo vocabulario de siempre: cada tipo de aviso lleva su banda (verde y rosa); el pedido y la mesa libre, neutras. */
-const BAND_CLASS = { bill: "bg-blush text-ink", waiter: "bg-brand text-white", order: "bg-ink/10 text-ink", free: "bg-ink/5 text-muted" } as const;
+const BAND_CLASS = {
+  bill: "bg-blush text-ink",
+  waiter: "bg-brand text-white",
+  ready: "bg-cobalt text-white",
+  order: "bg-ink/10 text-ink",
+  free: "bg-ink/5 text-muted",
+} as const;
 
 function bandOf(card: MesaCard): { className: string; label: string } {
   if (card.calls.some((call) => call.kind === "bill")) return { className: BAND_CLASS.bill, label: KIND_LABEL.bill };
   if (card.calls.length > 0) return { className: BAND_CLASS.waiter, label: KIND_LABEL.waiter };
+  if (card.order && card.order.ready > 0) return { className: BAND_CLASS.ready, label: "Listo para entregar" };
   if (card.order) return { className: BAND_CLASS.order, label: "Con pedido" };
   return { className: BAND_CLASS.free, label: "Libre" };
 }
 
-const estadoDe = (card: MesaCard) => (card.calls.some((c) => c.kind === "bill") ? "cuenta" : card.calls.length > 0 ? "llama" : card.order ? "pedido" : "libre");
+const estadoDe = (card: MesaCard) =>
+  card.calls.some((c) => c.kind === "bill") ? "cuenta" : card.calls.length > 0 ? "llama" : card.order && card.order.ready > 0 ? "listo" : card.order ? "pedido" : "libre";
+
+/** Mesa → platos listos de su pedido: sirve para enterarse de cuándo la cocina marca algo listo. */
+const readyByTable = (mesas: readonly MesaCard[]): Map<string, number> =>
+  new Map(mesas.flatMap((card): [string, number][] => (card.order && card.order.ready > 0 ? [[card.tableId, card.order.ready]] : [])));
 
 export function MesasBoard({
   slug,
@@ -81,6 +93,8 @@ export function MesasBoard({
   const [hadAlerts, setHadAlerts] = useState(false);
   const [layout, setLayout] = useState<Layout>("tarjetas");
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
+  // Mesas donde la cocina acaba de marcar algo listo (se resaltan unos segundos).
+  const [freshReady, setFreshReady] = useState<ReadonlySet<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -97,6 +111,8 @@ export function MesasBoard({
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
   const offset = useRef(0);
   const seen = useRef<Set<string>>(new Set(flattenCalls(initial.mesas).map((call) => call.id)));
+  // Platos listos por mesa en la última respuesta: si suben, la cocina marcó algo (solo lo que pasa después de cargar suena y se anuncia).
+  const lastReady = useRef(readyByTable(initial.mesas));
   // Qué sucursales miraba la última respuesta: si cambia (la persona eligió otras), lo que ya estaba pendiente no suena ni se anuncia.
   const lastView = useRef(initial.view.join(","));
   // Pide un sondeo ya (tras cambiar la vista); lo arma el efecto del sondeo.
@@ -172,13 +188,27 @@ export function MesasBoard({
     setLastOk(Date.parse(next.serverNow));
     setState(next);
 
-    if (incoming.length === 0) return;
+    // Con otra vista, lo que aparece ahora ya estaba listo (la vista anterior lo ocultaba): es base, sin sonido ni anuncio.
+    const readyNow = readyByTable(next.mesas);
+    const justReady = viewChanged ? [] : next.mesas.filter((card) => (readyNow.get(card.tableId) ?? 0) > (lastReady.current.get(card.tableId) ?? 0));
+    lastReady.current = readyNow;
+
+    if (incoming.length === 0 && justReady.length === 0) return;
     const ids = incoming.map((call) => call.id);
+    const readyIds = justReady.map((card) => card.tableId);
     setFresh((current) => new Set([...current, ...ids]));
+    setFreshReady((current) => new Set([...current, ...readyIds]));
     setTimeout(() => {
       setFresh((current) => new Set([...current].filter((id) => !ids.includes(id))));
+      setFreshReady((current) => new Set([...current].filter((id) => !readyIds.includes(id))));
     }, FRESH_MS);
-    setAnnouncement(newCallsAnnouncement(incoming, next.multiBranch));
+    const readyText =
+      justReady.length === 0
+        ? ""
+        : justReady.length === 1
+          ? `Listo para entregar: ${callName(justReady[0], next.multiBranch)}.`
+          : `Hay platos listos para entregar en ${justReady.length} mesas.`;
+    setAnnouncement([incoming.length > 0 ? newCallsAnnouncement(incoming, next.multiBranch) : "", readyText].filter(Boolean).join(" "));
     beepIfOn();
   }, []);
 
@@ -454,6 +484,7 @@ export function MesasBoard({
     const status = (
       <p className="text-base" data-testid="pedido-estado">
         {orderStatusText(card.order)}
+        {card.order.ready > 0 ? <strong data-testid="pedido-listo"> · Listo para entregar</strong> : null}
       </p>
     );
     const total = (
@@ -483,7 +514,7 @@ export function MesasBoard({
       <div aria-live="polite" data-testid="anuncio" className="sr-only">
         {announcement}
       </div>
-      {fresh.size > 0 && announcement ? (
+      {(fresh.size > 0 || freshReady.size > 0) && announcement ? (
         <p aria-hidden="true" data-testid="aviso-nuevo" className="mb-4 rounded-2xl bg-tile px-4 py-3 text-lg font-semibold ring-2 ring-inset ring-cobalt">
           {announcement}
         </p>
@@ -588,7 +619,7 @@ export function MesasBoard({
           {state.mesas.map((card) => {
             const band = bandOf(card);
             const urgent = card.calls.some((call) => isUrgent(waitingMs(call, now)));
-            const isNewCard = card.calls.some((call) => fresh.has(call.id));
+            const isNewCard = card.calls.some((call) => fresh.has(call.id)) || freshReady.has(card.tableId);
             const border = urgent ? "border-4 border-suspended-edge" : isNewCard ? "border-4 border-cobalt" : "border border-ink/15";
             const anotar = (
               <Link

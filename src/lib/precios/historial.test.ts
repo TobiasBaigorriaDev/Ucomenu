@@ -14,7 +14,7 @@ const OTRA = "a0000000-0000-4000-8000-000000000002";
 const YO = "a0000000-0000-4000-8000-000000000001";
 // Intl usa espacio duro entre el símbolo y el número: se normaliza para comparar.
 const plain = <T extends { transition: string; difference: string }>(c: T): T => ({ ...c, transition: c.transition.replace(/\s/g, " "), difference: c.difference.replace(/\s/g, " ") });
-const ROLES = { owner: "Dueño", staff: "Personal" } as const;
+const ROLES = { owner: "Dueño", staff: "Personal", cook: "Cocina" } as const;
 
 describe("cursor de paginación", () => {
   it("ida y vuelta, con microsegundos y con desfase", () => {

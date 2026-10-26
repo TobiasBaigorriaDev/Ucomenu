@@ -10,12 +10,17 @@ import { Mark } from "./mark";
 import { NavLinks, type NavItem } from "./nav-links";
 import "./panel.css";
 
-export const ROLE_LABEL: Record<Role, string> = { owner: "Dueño", staff: "Personal" };
+export const ROLE_LABEL: Record<Role, string> = { owner: "Dueño", staff: "Personal", cook: "Cocina" };
 
-const SECTIONS_LABEL = { panel: "Secciones del panel", sala: "Secciones de la sala", admin: "Secciones de SuperAdmin" } as const;
+const SECTIONS_LABEL = {
+  panel: "Secciones del panel",
+  sala: "Secciones de la sala",
+  cocina: "Secciones de la cocina",
+  admin: "Secciones de SuperAdmin",
+} as const;
 
 type Props = {
-  area: "panel" | "sala" | "admin";
+  area: "panel" | "sala" | "cocina" | "admin";
   /** Organización activa. Sin ella (selector), la cabecera muestra solo la marca. */
   org?: { slug: string; name: string; menu_palette?: string | null; logo_path?: string | null };
   role?: Role;
@@ -53,6 +58,11 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
         items.push({ href: `/panel/${org.slug}/personal`, label: "Personal", icon: "personal", group: "Gestión" });
       }
       items.push({ href: `/sala/${org.slug}/mesas`, label: "Sala en vivo", icon: "sala", group: "Servicio", alertOnCalls: true });
+    } else if (area === "cocina") {
+      items.push({ href: `/cocina/${org.slug}`, label: "Pedidos", exact: true, icon: "sala" });
+      items.push({ href: `/cocina/${org.slug}/carta`, label: "Platos agotados", icon: "carta" });
+      // El cocinero no tiene panel: el enlace es solo de quien también lo usa (Dueño y Personal).
+      if (role !== "cook") items.push({ href: `/panel/${org.slug}`, label: "Volver al panel principal", icon: "panel" });
     } else {
       items.push({ href: `/sala/${org.slug}/mesas`, label: "Mesas en vivo", icon: "mesas" });
       items.push({ href: `/panel/${org.slug}`, label: "Volver al panel principal", icon: "panel" });

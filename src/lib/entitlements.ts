@@ -4,7 +4,7 @@
  */
 
 export type BillingState = "active" | "grace" | "read_only" | "suspended";
-export type Role = "owner" | "staff";
+export type Role = "owner" | "staff" | "cook";
 
 /**
  * Estado de la prueba gratuita, aparte de la mora (misma regla que `private.trial_status` de la base):

@@ -304,7 +304,7 @@ export async function deleteOrganizationAction(_previous: FormState, formData: F
 // Sumar una cuenta existente como Dueño (ficha dueno-existente)
 // ---------------------------------------------------------------------------
 
-const ROLE_LABEL = { owner: "Dueño", staff: "Personal" } as const;
+const ROLE_LABEL = { owner: "Dueño", staff: "Personal", cook: "Cocina" } as const;
 
 function describeAffiliations(others: Affiliation[]): string {
   if (others.length === 0) return "Todavía no trabaja en ningún otro local.";
@@ -321,7 +321,12 @@ export async function addExistingOwnerAction(_previous: FormState, formData: For
   if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
 
   if (result.data.status === "needs_confirmation") {
-    const here = result.data.currentRole === "staff" ? " Ya es Personal de esta organización: se la asciende a Dueño." : "";
+    const here =
+      result.data.currentRole === "staff"
+        ? " Ya es Personal de esta organización: se la asciende a Dueño."
+        : result.data.currentRole === "cook"
+          ? " Ya es de Cocina de esta organización: se la asciende a Dueño."
+          : "";
     return {
       message: `Encontramos la cuenta ${values.email}. ${describeAffiliations(result.data.others)}${here}`,
       // `others` y `here` son para mostrar el hallazgo ordenado ANTES de la casilla; la confirmación sigue atada a `userId`.
@@ -330,7 +335,7 @@ export async function addExistingOwnerAction(_previous: FormState, formData: For
         step: "confirm",
         userId: result.data.userId,
         others: JSON.stringify(result.data.others.map((a) => ({ name: a.name, role: ROLE_LABEL[a.role] }))),
-        here: result.data.currentRole === "staff" ? "staff" : "",
+        here: result.data.currentRole ?? "",
       },
     };
   }

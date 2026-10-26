@@ -38,9 +38,9 @@ export async function proxy(request: NextRequest) {
   // Comodidad, no autorización: sin sesión, a /login conservando la ruta completa que se pidió.
   // La página vuelve a comprobar todo en el servidor (getUser + membresía).
   const { pathname } = request.nextUrl;
-  // Las consultas del panel de sala (`/estado` y `/mesas/estado`) son una API (JSON): sin sesión responden 401 en vez de redirigir a una página HTML.
+  // Las consultas del panel de sala (`/estado` y `/mesas/estado`, y el `/estado` de la cocina) son una API (JSON): sin sesión responden 401 en vez de redirigir a una página HTML.
   // Si Auth no pudo responder (red, 5xx) no se sabe si hay sesión: 503, para que la pantalla siga reintentando.
-  if (!data?.claims && /^\/sala\/[^/]+(\/mesas)?\/estado$/.test(pathname)) {
+  if (!data?.claims && /^\/(sala\/[^/]+(\/mesas)?|cocina\/[^/]+)\/estado$/.test(pathname)) {
     if (isTransientAuthError(error)) {
       return NextResponse.json({ error: "unavailable" }, { status: 503, headers: { "Cache-Control": "no-store" } });
     }
@@ -56,5 +56,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/cuenta", "/panel/:path*", "/sala/:path*", "/admin/:path*"],
+  matcher: ["/login", "/cuenta", "/panel/:path*", "/sala/:path*", "/cocina/:path*", "/admin/:path*"],
 };

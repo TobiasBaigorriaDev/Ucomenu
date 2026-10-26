@@ -14,12 +14,12 @@ import { dbFailure, findOrgId } from "./subscriptions";
  * SuperAdmin confirme que es la misma persona; con `confirmed` suma la membresía.
  */
 
-export type Affiliation = { name: string; slug: string; role: "owner" | "staff" };
+export type Affiliation = { name: string; slug: string; role: "owner" | "staff" | "cook" };
 
 export type AddOwnerOutcome =
   /** Nada se escribió: la cuenta existe y hay que confirmar. `currentRole` = su rol en ESTA organización, si ya trabaja en ella. */
-  | { status: "needs_confirmation"; userId: string; currentRole: "staff" | null; others: Affiliation[] }
-  /** `added` = membresía nueva; `promoted` = era Personal de esta organización y pasó a Dueño. */
+  | { status: "needs_confirmation"; userId: string; currentRole: "staff" | "cook" | null; others: Affiliation[] }
+  /** `added` = membresía nueva; `promoted` = era Personal o de cocina de esta organización y pasó a Dueño. */
   | { status: "added" | "promoted"; others: Affiliation[] };
 
 export type AddOwnerInput = {
@@ -37,7 +37,7 @@ function parseAffiliations(raw: unknown): Affiliation[] {
   return raw.flatMap((item) => {
     if (!isRecord(item)) return [];
     const { name, slug, role } = item;
-    if (typeof name !== "string" || typeof slug !== "string" || (role !== "owner" && role !== "staff")) return [];
+    if (typeof name !== "string" || typeof slug !== "string" || (role !== "owner" && role !== "staff" && role !== "cook")) return [];
     return [{ name, slug, role }];
   });
 }
@@ -67,7 +67,7 @@ export async function addExistingOwner(ctx: AdminContext, input: AddOwnerInput):
       return fail("already_owner");
     case "needs_confirmation":
       return typeof data.user_id === "string"
-        ? ok({ status: "needs_confirmation", userId: data.user_id, currentRole: data.current_role === "staff" ? "staff" : null, others })
+        ? ok({ status: "needs_confirmation", userId: data.user_id, currentRole: data.current_role === "staff" || data.current_role === "cook" ? data.current_role : null, others })
         : fail("unexpected");
     case "added":
     case "promoted":

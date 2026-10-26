@@ -2,12 +2,29 @@ import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { ROLE_LABEL } from "@/components/panel/app-shell";
 import { PasswordField } from "@/components/panel/password-field";
 import { dangerButtonClass, secondaryButtonClass } from "@/components/panel/styles";
+import type { Role } from "@/lib/entitlements";
 import type { Member } from "@/lib/personnel";
 import { removeMemberAction, resetPasswordAction, setRoleAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 const summaryClass = `${secondaryButtonClass} ${summaryExtras}`;
 const dangerSummaryClass = `${dangerButtonClass} ${summaryExtras}`;
+
+/** A qué otros roles se puede pasar a alguien, con el texto del botón. */
+const ROLE_MOVES: Record<Role, { to: Role; label: string }[]> = {
+  owner: [
+    { to: "staff", label: "Pasar a personal" },
+    { to: "cook", label: "Pasar a cocina" },
+  ],
+  staff: [
+    { to: "owner", label: "Hacer dueño" },
+    { to: "cook", label: "Pasar a cocina" },
+  ],
+  cook: [
+    { to: "staff", label: "Pasar a personal" },
+    { to: "owner", label: "Hacer dueño" },
+  ],
+};
 
 /** Una persona del equipo con sus acciones. Los formularios llaman a server actions que revalidan el rol. */
 export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string }) {
@@ -31,13 +48,15 @@ export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string
         <p className="mt-1 text-sm text-muted">Esta es tu cuenta. Cambiá tu contraseña desde Mi cuenta.</p>
       ) : (
         <div className="mt-3 flex flex-wrap items-start gap-2">
-          <ActionForm action={setRoleAction}>
-            {hidden}
-            <input type="hidden" name="role" value={role === "owner" ? "staff" : "owner"} />
-            <SubmitButton className={secondaryButtonClass}>{role === "owner" ? "Pasar a personal" : "Hacer dueño"}</SubmitButton>
-          </ActionForm>
+          {ROLE_MOVES[role].map((move) => (
+            <ActionForm key={move.to} action={setRoleAction}>
+              {hidden}
+              <input type="hidden" name="role" value={move.to} />
+              <SubmitButton className={secondaryButtonClass}>{move.label}</SubmitButton>
+            </ActionForm>
+          ))}
 
-          {role === "staff" && !sharedAccount ? (
+          {role !== "owner" && !sharedAccount ? (
             <details className="w-full sm:w-auto">
               <summary className={summaryClass}>Cambiar contraseña</summary>
               <ActionForm action={resetPasswordAction} className="mt-3 grid max-w-md gap-3">
@@ -68,7 +87,7 @@ export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string
         </div>
       )}
 
-      {!isSelf && role === "staff" && sharedAccount ? (
+      {!isSelf && role !== "owner" && sharedAccount ? (
         <p className="mt-2 text-sm text-muted">Su cuenta se usa también fuera de este local: su contraseña no se cambia desde acá.</p>
       ) : null}
     </li>

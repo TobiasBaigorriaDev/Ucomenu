@@ -68,7 +68,7 @@ export async function setRoleAction(_previous: FormState, formData: FormData): P
 
   const role = text(formData, "role");
   const result = await setMemberRole(ctx, orgId, text(formData, "membership"), role);
-  return outcome(slug, result, role === "owner" ? "Ahora es Dueño." : "Ahora es parte del personal.");
+  return outcome(slug, result, role === "owner" ? "Ahora es Dueño." : role === "cook" ? "Ahora es de cocina." : "Ahora es parte del personal.");
 }
 
 export async function resetPasswordAction(_previous: FormState, formData: FormData): Promise<FormState> {

@@ -15,16 +15,17 @@ import {
 const U = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 
 describe("qué se puede hacer con una línea", () => {
-  it("avanza anotado → en cocina → entregado (en cocina es opcional), sin marcha atrás, y cancelar desde cualquiera salvo lo cancelado", () => {
-    expect(lineMoves("noted")).toEqual(["in_kitchen", "delivered", "cancelled"]);
+  it("avanza a entregado desde anotado, en cocina (heredado) o listo; sin marcha atrás; cancelar desde cualquiera salvo lo cancelado; «en cocina» ya no se ofrece", () => {
+    expect(lineMoves("noted")).toEqual(["delivered", "cancelled"]);
     expect(lineMoves("in_kitchen")).toEqual(["delivered", "cancelled"]);
+    expect(lineMoves("ready")).toEqual(["delivered", "cancelled"]);
     expect(lineMoves("delivered")).toEqual(["cancelled"]);
     expect(lineMoves("cancelled")).toEqual([]);
   });
 
   it("solo una línea anotada se modifica", () => {
     expect(canEditLine("noted")).toBe(true);
-    for (const status of ["in_kitchen", "delivered", "cancelled"] as const) expect(canEditLine(status)).toBe(false);
+    for (const status of ["in_kitchen", "ready", "delivered", "cancelled"] as const) expect(canEditLine(status)).toBe(false);
   });
 
   it("cancelar una línea ya entregada exige motivo; las demás cancelaciones y los avances, no", () => {
@@ -34,15 +35,16 @@ describe("qué se puede hacer con una línea", () => {
     expect(needsReason("noted", "delivered")).toBe(false);
   });
 
-  it("cuenta como sin entregar las unidades anotadas o en cocina, no las entregadas ni las canceladas", () => {
+  it("cuenta como sin entregar las unidades anotadas, en cocina o listas, no las entregadas ni las canceladas", () => {
     expect(
       undeliveredUnits([
         { status: "noted", quantity: 2 },
         { status: "in_kitchen", quantity: 3 },
+        { status: "ready", quantity: 6 },
         { status: "delivered", quantity: 4 },
         { status: "cancelled", quantity: 5 },
       ]),
-    ).toBe(5);
+    ).toBe(11);
     expect(undeliveredUnits([])).toBe(0);
   });
 });

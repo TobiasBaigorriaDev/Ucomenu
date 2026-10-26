@@ -118,7 +118,8 @@ describe("estados de una línea", () => {
     const { item } = await conLinea(l);
     ok(await estado(owner.db, item, "in_kitchen"));
     expect(ok(await estado(owner.db, item, "in_kitchen"))).toMatchObject({ unchanged: true });
-    expect((await estado(owner.db, item, "noted")).error?.message).toBe("invalid_status");
+    // «noted» solo es un destino para deshacer un «listo» (ADR 0048): desde cualquier otro estado es una transición inválida.
+    expect((await estado(owner.db, item, "noted")).error?.message).toBe("invalid_transition");
     expect((await estado(owner.db, item, "otro")).error?.message).toBe("invalid_status");
     expect((await estado(owner.db, item, null)).error?.message).toBe("invalid_status");
     ok(await estado(owner.db, item, "delivered"));

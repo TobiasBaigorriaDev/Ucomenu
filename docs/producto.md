@@ -15,6 +15,7 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 | --- | --- | --- |
 | **Comensal** | Ver la carta al instante desde el celular, encontrar lo que puede comer, llamar al mozo o pedir la cuenta sin levantar la mano | Anónimo, sin registro ni app. Solo se identifica si se suma al programa de fidelidad |
 | **Staff / Mozo** | Atender llamados desde el panel de sala; sumar sellos escaneando pases; mantener platos, precios, stock y mesas | Usuario con login, limitado a su organización. Acceso operativo completo (ver *Roles y permisos*) |
+| **Cocinero** | Ver los pedidos que anotó el mozo, marcar cada plato **listo** para entregar y marcar **agotado** lo que se terminó | Usuario con login, limitado a su organización y a la pantalla de cocina; sin precios ni acceso a la Sala ni al panel. Pro y Premium ([ADR 0048](decisiones/0048-rol-cocinero.md)) |
 | **Dueño del restaurante** | Todo lo del Staff más sucursales, personal, apariencia, y ver su plan y su facturación | Administrador de su organización (tenant). No ve datos de otras organizaciones |
 | **SuperAdmin SaaS** | Dar de alta organizaciones, asignar y suspender planes y add-ons, dar soporte | Equipo de UcoMenu. Toda acción sobre planes queda auditada |
 
@@ -69,12 +70,13 @@ Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases 
 #### 7. Pedidos del mozo (Pro y Premium) — [ADR 0041](decisiones/0041-pedidos-del-mozo.md)
 *Avance: en la base, alta de líneas con variantes, adicionales y observación (`add_order_item`, fichas [esquema](../agile/cambios/pedidos-esquema-y-alta-de-items.md) y [opciones](../agile/cambios/pedidos-variantes-adicionales-observaciones.md)); y, en la ficha [estados y registro](../agile/cambios/pedidos-estados-y-registro.md), estados, modificar, cancelar, cerrar y anular con su registro; todavía sin pantalla, total ni precuenta.*
 - El **mozo** (Dueño o Staff con sesión) anota en la **Sala** lo que el cliente le dicta: mesa, platos, variantes, adicionales, cantidades y observaciones; después modifica, cancela y cambia estados. **El comensal no pide**: la carta sigue siendo solo consulta.
-- Pedido: abierto → cerrado | anulado. Ítem: anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). Solo por mesa en la primera entrega.
+- Pedido: abierto → cerrado | anulado. Ítem: anotado → **listo** (lo marca la cocina) → entregado | cancelado (con motivo si ya se entregó); el mozo puede entregar sin que pase por «listo» (sin cocinero, o para una bebida). El «En cocina» manual se retiró de la pantalla ([ADR 0048](decisiones/0048-rol-cocinero.md)). Solo por mesa en la primera entrega.
 - Cada línea copia nombre, precio (el efectivo al anotarla, con promoción si rige) y opciones; el precio lo calcula el servidor.
+- Cuando la cocina marca un plato listo, la mesa muestra «Listo para entregar», sube en el orden, resalta y suena/anuncia como un llamado nuevo.
 - La Sala tiene la vista «Mesas» (pedido abierto + llamados de cada mesa, con «Atendido» en la misma tarjeta). La pantalla se llama «Mesas en vivo» y se puede ver como tarjetas o como filas (más cómodo en el teléfono, mismos datos). «Pedir la cuenta» sigue siendo un llamado y muestra al mozo el total; atenderlo no cierra el pedido.
 - **La cuenta del comensal** ([ADR 0044](decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)): tras tocar «Pedir la cuenta», `/t/{token}` ofrece «Ver mi cuenta» con los platos vigentes, sus importes y el total («no válida como factura»), sin observaciones. Es lo único de un pedido que ve un anónimo y solo dentro del **turno de mesa**: el QR impreso no cambia, pero cerrar o anular el pedido (o «Reiniciar QR de la mesa» en la Sala) abre un turno nuevo y los celulares anteriores tienen que escanear de nuevo. Quien escanee el QR durante el turno y pida la cuenta puede ver el consumo de esa mesa (riesgo aceptado).
 - **Reinicios de QR:** el Dueño configura horarios diarios por sucursal (05:00 por defecto, en su zona horaria; puede agregar varios o desactivar). Se recomiendan momentos en que el negocio esté cerrado. El mozo también puede reiniciar todas las mesas del local desde Sala → Mesas, con confirmación. Termina las visitas sin cambiar QR impresos ni cerrar pedidos. [Decisión y límites](decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md#enmienda-3-2026-10-25-reinicio-diario-y-de-todo-el-local).
-- Sin punto de venta fiscal: el cierre muestra una precuenta «no válida como factura»; sin cobro, propinas, división de cuenta ni pantalla de cocina.
+- Sin punto de venta fiscal: el cierre muestra una precuenta «no válida como factura»; sin cobro, propinas, división de cuenta ni impresión de comandas. La pantalla de cocina es la del rol de cocinero.
 - En solo lectura o suspendida no se abren pedidos ni se agregan ítems; cerrar y anular siempre se puede. Se conservan 2 años desde el cierre (*a confirmar con el contador*).
 
 #### 8. Promociones programadas / Happy Hour (Pro y Premium) — [ADR 0040](decisiones/0040-promociones-programadas.md)
@@ -111,7 +113,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
 | Invitación a reseñar en Google | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
 | Promociones programadas / Happy Hour *(implementadas el 2026-10-23)* | — | ✔ | ✔ |
-| Pedidos que anota el mozo (*sin implementar*) | — | ✔ | ✔ |
+| Pedidos que anota el mozo y pantalla de cocina con rol de cocinero | — | ✔ | ✔ |
 | Clientes recurrentes (*sin implementar*) | — | — | ✔ |
 
 - **Feed de videos cortos:** incluido en Premium, con un cupo de **10 videos publicados** (parametrizable en la base). Reemplaza al add-on WebAR (+USD 25/mes, cupo de 15 platos 3D y packs de +10), que se descartó el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); hoy no hay ningún add-on a la venta.
@@ -154,21 +156,23 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 - Ningún usuario de una organización puede leer ni modificar datos de otra. Es el invariante central del producto.
 
 ### Roles y permisos
-Solo hay dos roles dentro de una organización; **no existe rol intermedio de encargado**.
+Hay tres roles dentro de una organización; **no existe rol intermedio de encargado**. El **Cocinero** ([ADR 0048](decisiones/0048-rol-cocinero.md)) solo existe con pedidos en el plan (Pro y Premium).
 
-| Capacidad | Staff / Mozo | Dueño |
-| --- | :---: | :---: |
-| Atender llamados en el panel de sala | ✔ | ✔ |
-| Escanear pases Wallet y sumar sellos | ✔ | ✔ |
-| Gestionar platos, precios, stock (disponibilidad) y mesas | ✔ | ✔ |
-| Administrar sucursales, personal y apariencia | — | ✔ |
-| Anotar, modificar y cerrar pedidos en la Sala (*sin implementar*) | ✔ | ✔ |
-| Ver promociones / crearlas y editarlas (*sin implementar*) | ver | ✔ |
-| Identificar clientes recurrentes y vincularlos a un pedido (*sin implementar*; el Staff ve el teléfono enmascarado) | ✔ | ✔ |
-| Ver plan, facturación y el aviso de mora completo (días de atraso, fechas, cómo regularizar) | — | ✔ |
-| Ver el aviso operativo de mora (estado de la cuenta y «avisale al dueño», sin plan, fechas ni montos) | ✔ | ✔ |
+| Capacidad | Cocinero | Staff / Mozo | Dueño |
+| --- | :---: | :---: | :---: |
+| Atender llamados en el panel de sala | — | ✔ | ✔ |
+| Escanear pases Wallet y sumar sellos | — | ✔ | ✔ |
+| Gestionar platos, precios, stock (disponibilidad) y mesas | solo marcar agotado / disponible | ✔ | ✔ |
+| Administrar sucursales, personal y apariencia | — | — | ✔ |
+| Anotar, modificar y cerrar pedidos en la Sala | — | ✔ | ✔ |
+| Ver los pedidos abiertos (sin precios) y marcar cada plato **listo** (y deshacerlo) en la pantalla de cocina | ✔ | ✔ | ✔ |
+| Ver promociones / crearlas y editarlas (*sin implementar*) | — | ver | ✔ |
+| Identificar clientes recurrentes y vincularlos a un pedido (*sin implementar*; el Staff ve el teléfono enmascarado) | — | ✔ | ✔ |
+| Ver plan, facturación y el aviso de mora completo (días de atraso, fechas, cómo regularizar) | — | — | ✔ |
+| Ver el aviso operativo de mora (estado de la cuenta y «avisale al dueño», sin plan, fechas ni montos) | solo «la cocina no está disponible» | ✔ | ✔ |
 
 - *Supuesto (nuevo):* lo que el Staff **no** puede hacer es lo que no figura en su definición (personal, sucursales, apariencia, plan).
+- **Cocinero** ([ADR 0048](decisiones/0048-rol-cocinero.md)): lo da y lo quita el Dueño desde Personal (solo con `orders` en el plan). Entra a `/cocina/{slug}`, con dos pantallas: **Pedidos** (mesa, antigüedad, platos, opciones y observaciones, sin precios; «Listo» y «Deshacer»; sonido de platos nuevos) y **Platos agotados** (por sucursal; el comensal sigue viendo el plato como «no disponible»). No entra a la Sala ni al panel, no recibe avisos de llamados y no puede anotar, entregar, cancelar, cerrar ni anular. Dueño y Staff también pueden usar `/cocina`. Con la cuenta en solo lectura o suspendida, o sin `orders` en el plan, no opera.
 - Cambiar plan, add-ons o estado de la suscripción es **exclusivo del SuperAdmin**; el Dueño solo los ve.
 - Como el Staff puede cambiar precios, los **cambios de precio quedan registrados** (quién, cuándo, valor anterior y nuevo), sea Staff o Dueño quien los haga. Confirmado por el usuario el 2026-10-13.
 - **Historial de precios** *(ADR 0012)*: lo registra la base ante cada cambio efectivo del precio de un plato (no al crearlo ni al editar otros campos); **Dueño y Staff leen el historial de su organización** *(confirmado por el usuario el 2026-10-14)*, nadie lo modifica ni lo borra desde la aplicación. Un cambio hecho sin usuario (operación técnica) se registra sin autor. **Pantalla** *(hecha, 2026-10-14)*: `/panel/{slug}/historial-de-precios` (todo el local, desde un botón en la carta) y `/panel/{slug}/carta/platos/{id}/historial` (un plato); del más nuevo al más viejo, 50 por página; se abre también con la cuenta en solo lectura o suspendida. Muestra plato, «precio anterior → nuevo» con «Sube/Baja», fecha y hora de Argentina y quién: el **Dueño ve el email** de quien sigue en el local; el **Staff** solo «Vos» u «Otra persona del equipo»; quien ya no está en el local, «Persona que ya no está en el local» (nunca su email); un cambio técnico, «Operación técnica (sin usuario)»; un plato eliminado, «Plato eliminado» (decisión del usuario, ficha `pantalla-historial-de-precios.md`).

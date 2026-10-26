@@ -160,7 +160,7 @@ export async function setSubscription(
   if (error) throw new Error(`No se pudo actualizar la suscripción: ${error.message}`);
 }
 
-export async function addMembership(service: Db, user: TestUser, orgId: string, role: "owner" | "staff"): Promise<void> {
+export async function addMembership(service: Db, user: TestUser, orgId: string, role: "owner" | "staff" | "cook"): Promise<void> {
   const { error } = await service.from("memberships").insert({ user_id: user.id, organization_id: orgId, role });
   if (error) throw new Error(`No se pudo crear la membresía: ${error.message}`);
 }

@@ -237,6 +237,7 @@ export const isStaleFailure = (reason: AddFailure): boolean =>
 export const LINE_STATUS_TEXT: Record<LineStatus, string> = {
   noted: "Anotado",
   in_kitchen: "En cocina",
+  ready: "Listo para entregar",
   delivered: "Entregado",
   cancelled: "Cancelado",
 };
