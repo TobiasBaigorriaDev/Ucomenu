@@ -10,7 +10,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## En curso
 
-- [C] Rol de cocinero (pantalla `/cocina`: pedidos con «Listo», platos agotados por sucursal; Pro y Premium; flujo anotado → listo → entregado; sin precios ni acceso a Sala y panel): implementado en local; falta la verificación completa y la revisión independiente → [ficha](cambios/rol-cocinero.md) · [ADR 0048](../docs/decisiones/0048-rol-cocinero.md)
+- (vacío)
 
 ## Seleccionado
 
@@ -18,6 +18,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Para verificar
 
+- [C] Rol de cocinero (pantalla `/cocina`: pedidos con «Listo», platos agotados por sucursal; Pro y Premium; flujo anotado → listo → entregado; sin precios ni acceso a Sala y panel): implementado y verificado en local, aprobado por Codex en 3 rondas; **falta tu aprobación para desplegar (migración `20261207100000`) y tu prueba con sesión real y teléfono** → [ficha](cambios/rol-cocinero.md) · [ADR 0048](../docs/decisiones/0048-rol-cocinero.md)
 - [C] Resumen de la analítica con IA (botón «Generar resumen» en `/panel/{slug}/analitica`: párrafo, hallazgos y acciones sobre las cifras del período; Gemini gratis con datos ficticios y Claude antes de usar ventas reales): implementado, verificado, aprobado por Codex en 3 rondas y por el usuario; migración aplicada y en staging (Fly v56, 2026-10-26); falta tu prueba con un Dueño → [ficha](cambios/resumen-de-analitica-con-ia.md) · ADR 0047
 - [M] Sugerencia de traducciones con IA (botón «Sugerir con IA» en las traducciones de la carta; Gemini con clave gratuita en local y staging, Claude en producción): implementada, verificada y probada por el usuario con la clave real de Gemini en local; en staging (Fly v55, 2026-10-26); falta probar el botón con sesión ahí → [ficha](cambios/traduccion-automatica.md) · ADR 0046
 - [C] Reinicio de QR programado por sucursal y masivo por el mozo — aprobado por Claude y por el usuario; en staging (Fly v53), pendiente prueba en teléfono → [ficha](cambios/reinicio-programado-qr.md)

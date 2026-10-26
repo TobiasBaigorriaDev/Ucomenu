@@ -1,5 +1,5 @@
 # Cambio: Rol de cocinero (pedidos, «listo» y platos agotados)
-Estado: **implementado y verificado en local; falta la revisión independiente y tu prueba con sesión real**. Migración nueva: `20261207100000_rol_cocinero.sql` (aplicada solo en local).
+Estado: **implementado, verificado en local y aprobado por Codex (ronda 3); falta tu aprobación para desplegar y tu prueba con sesión real y teléfono**. Commits locales `850d717`, `8ad8a71` y `5af09d9`, sin `push`. Migración nueva: `20261207100000_rol_cocinero.sql` (aplicada solo en local).
 Nivel: **C** — agrega un rol y cambia qué abre `is_org_member` (autorización/RLS) y sus límites de exposición de datos. Una revisión independiente antes de dar por cerrado; aprobación humana antes de desplegar.
 
 ## Objetivo
@@ -48,7 +48,7 @@ Cocinero atado a una sucursal; tiempos de preparación o estados intermedios; im
 **Ronda 2 (verificación de Codex, commit `8ad8a71`): RECHAZAR** con 2 hallazgos nuevos sobre las correcciones:
 - *Deshacer y volver a marcar «Listo» pierde el aviso* — real, regresión de mi corrección del hallazgo 4 (`seenReady` acumulaba ids). Ahora se reemplaza por lo que está listo en cada respuesta. Prueba unitaria nueva y E2E del escenario (deshacer y remarcar); el E2E falla con el comportamiento anterior.
 - *Pagos sin datos en la prueba de aislamiento* — cierto: se siembra un pago, se comprueba que el Dueño lo ve por `owner_payments` y que el cocinero no.
-Falta la ronda 3 de verificación (la última: si no aprueba, se consulta antes de seguir).
+**Ronda 3 (verificación de Codex, commit `5af09d9`): APROBAR**, sin hallazgos nuevos. El veredicto de Codex no reemplaza tu aprobación: falta para desplegar (la migración toca permisos).
 
 ## Evidencia
 Sobre el diff sin commitear de `main` (2026-10-26):
@@ -58,4 +58,6 @@ Sobre el diff sin commitear de `main` (2026-10-26):
 - `tests/rls/rol-cocinero.rls.test.ts` (nueva, 24 casos): el rol, lectura cerrada de las tablas del local, escritura cerrada de la carta, sin funciones del mozo, `kitchen_*` sin precios, listo/deshacer con su registro, transiciones inválidas, agotar solo `is_available`, otro local, anon, plan Básico, gracia/solo lectura/suspendida, baja de la organización y push.
 - E2E contra el build: `cocina` (8, nueva), `sala`, `sala-mesas`, `sala-anotar`, `sala-operar`, `acceso`: 94 de 95 en la primera corrida (una prueba de `cocina` cayó con `0xC0000409` y pasó al repetirla; en `sala-operar` una prueba usaba el botón «En cocina», que ya no existe, y se reescribió; `cocina` Personal esperaba un mensaje que vive en la fila). Otros 15 archivos que tocan Sala, panel, push, turno, analítica y SuperAdmin: 114 de 114.
 - Captura de las dos pantallas a 390 px revisada (sin desborde, botones de 44 px, sin precios).
+- Tras las rondas de revisión (commit `5af09d9`): `typecheck`, `lint` y `build` en verde; `pnpm test` 1198 de 1198 y, con el último ajuste, `src/lib/sala` 78 de 78. **RLS completa otra vez**: 69 archivos, 1460 de 1461 pruebas en la primera corrida; la falla (`owner-lectura`, una restricción de auditoría violada por filas sobrantes de las pruebas de mutación) y dos *workers* con `0xC0000409` (`borrado-de-organizaciones`, `personnel`) pasaron al repetir esos tres archivos: 76 de 76. E2E `cocina` (con el escenario de deshacer y remarcar «listo»), `sala-mesas`, `sala-operar`, `sala-push` y `panel-push` en verde.
+- Comprobado rompiendo la defensa: las carreras de agotar y de registrar el aviso (RLS) y la de deshacer y remarcar «listo» (E2E) fallan sin la corrección.
 - Sin probar: sesión real y teléfono; staging (no se desplegó nada).
