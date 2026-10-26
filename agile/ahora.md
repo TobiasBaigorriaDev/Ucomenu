@@ -4,11 +4,11 @@ Actualizado: 2026-10-26 · agente saliente: Claude Code. Historia en Git y ficha
 
 ## Punto de retomada
 
-**Staging sigue en Fly v60** (`apariencia-6b82cf2`, marcha atrás `rol-cocinero-0d926a7`, v59). Lo nuevo de esta sesión **no está desplegado**.
+**Staging está en Fly v61** (imagen `ucomenu-staging:alimentaria-124bbc9`; marcha atrás: `apariencia-6b82cf2`, v60). Sin migraciones. Las tres páginas legales responden 200 y muestran los textos nuevos y los pendientes.
 
 **Auditoría legal (nivel M, sin migración):** [ficha](cambios/informacion-alimentaria-y-textos-legales.md). La app no guarda ingredientes ni alérgenos, solo tres etiquetas declaradas por el local; se corrigieron los textos que sugerían lo contrario, se agregaron notas de contacto cruzado y de opciones en el detalle, y el aviso del filtro vacío. Hallazgo importante: cambiar el texto original de un plato, variante o adicional dejaba publicada la traducción vieja; ahora se quita (`src/lib/carta/traducciones-obsoletas.ts`, con prueba que falla sin el arreglo). `/terminos`, `/privacidad` y `/alergenos` se reescribieron; lo que el usuario no decidió aparece en las páginas como «Pendiente de definir antes del lanzamiento».
 
-Commit local en `main` sobre `98fc22b` (ver `git log`); sin push.
+Commit `124bbc9` subido a `origin/main`.
 
 ## Límites y bloqueos
 
@@ -21,4 +21,4 @@ Commit local en `main` sobre `98fc22b` (ver `git log`); sin push.
 
 ## Próximo paso
 
-Que el usuario revise la ficha, decida los pendientes y consiga la revisión del abogado. Después, decidir si se despliega a staging (pide aprobación) y retomar el backlog del [tablero](tablero.md). Siguiente migración libre: `20261208100000`.
+Que el usuario revise la ficha, decida los pendientes y consiga la revisión del abogado. Después, retomar el backlog del [tablero](tablero.md). Siguiente migración libre: `20261208100000`.
