@@ -4,7 +4,7 @@ Actualizado: 2026-10-25 · agente saliente: Claude. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Sugerencia de traducciones con IA: implementada y verificada en local**, falta probarla con una clave real de Gemini. En `/panel/{slug}/carta/traducciones` un botón «Sugerir con IA lo que falta en {idioma}» completa solo los campos vacíos (resaltados); el local revisa y guarda como siempre. Nivel **M**. La [ficha](cambios/traduccion-automatica.md) tiene decisiones, aceptación y evidencia; el motivo duradero está en el [ADR 0046](../docs/decisiones/0046-sugerencia-de-traducciones-con-ia.md). El proveedor está detrás de una interfaz: hoy Gemini (clave gratuita, para local y staging con datos ficticios); en producción el usuario quiere pasar a **Claude** si todo va bien (otra implementación en `getTranslationProvider()`, con su clave y aprobación).
+**Sugerencia de traducciones con IA: implementada, verificada y probada por vos con la clave real de Gemini en local («funciona excelente»)**; sin desplegar a staging. En `/panel/{slug}/carta/traducciones` un botón «Sugerir con IA lo que falta en {idioma}» completa solo los campos vacíos (resaltados); el local revisa y guarda como siempre. Nivel **M**. La [ficha](cambios/traduccion-automatica.md) tiene decisiones, aceptación y evidencia; el motivo duradero está en el [ADR 0046](../docs/decisiones/0046-sugerencia-de-traducciones-con-ia.md). El proveedor está detrás de una interfaz: hoy Gemini (clave gratuita, para local y staging con datos ficticios); en producción el usuario quiere pasar a **Claude** si todo va bien (otra implementación en `getTranslationProvider()`, con su clave y aprobación).
 
 Para probarla: poner `GEMINI_API_KEY` en `.env.local` (clave de Google AI Studio; ver `.env.example`) y `pnpm dev`; en staging, `fly secrets set` con aprobación. Sin la clave, el botón no aparece.
 
@@ -23,4 +23,4 @@ Rama `main`; los commits siguen locales, sin push.
 
 ## Próximo paso
 
-Probar la sugerencia con la clave real (calidad de nombres propios al inglés y portugués) y, si convence, decidir cuándo sumar el proveedor Claude. Después, elegir la próxima tarea del tablero. Siguiente migración libre: `20261206100000`.
+Decidir si se despliega a staging (requiere tu aprobación y `fly secrets set GEMINI_API_KEY`) y cuándo sumar el proveedor Claude para producción. Después, elegir la próxima tarea del tablero. Siguiente migración libre: `20261206100000`.

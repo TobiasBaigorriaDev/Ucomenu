@@ -1,5 +1,5 @@
 # Cambio: Sugerencia de traducciones con IA
-Estado: implementado y verificado en local; falta la prueba con la clave real de Gemini y la del usuario
+Estado: implementado, verificado en local y probado por el usuario con la clave real de Gemini (2026-10-25: «funciona excelente»); sin desplegar a staging
 Nivel: M (un servicio externo recibe los textos de la carta; sin permisos, dinero, borrados ni datos personales ni esquema nuevo; ver «Nivel»)
 
 ## Objetivo
@@ -20,7 +20,7 @@ Que el Dueño y el Staff completen de una vez las traducciones de la carta (`/pa
 - [x] Dada una carta sin textos vacíos, entonces el botón informa que no hay nada que sugerir y no llama al servicio.
 - [x] Dada una cuenta en solo lectura, entonces el botón está deshabilitado; sin `GEMINI_API_KEY`, no aparece.
 - [x] Una respuesta con claves ajenas, vacías o demasiado largas no llega al formulario; un servicio caído da un aviso sin perder lo escrito.
-- [ ] Con la clave real de Gemini: traducción de una carta de prueba al inglés y portugués, revisada por una persona (calidad de nombres propios).
+- [x] Con la clave real de Gemini, probado por el usuario en local: «funciona excelente».
 
 ## Fuera de alcance
 Traducir al guardar o al vuelo en la carta pública; más idiomas; el proveedor Claude (siguiente paso, para producción); límite de uso por local (los pedidos están acotados por clic y exigen sesión de miembro; si hiciera falta, un tope diario va en otra ficha).
@@ -33,4 +33,4 @@ Ejecutada el 2026-10-25; el diff probado es el de esta ficha sobre `7032f0d` (ve
 - `pnpm lint` OK · `pnpm typecheck` OK · `pnpm build` OK.
 - Unitarias: `sugerir.test.ts` (qué se pide y en qué orden, validación de la respuesta, tramos, tramo caído, claves ajenas) y `gemini.test.ts` (clave en el encabezado y no en la dirección, texto como datos, error sin cuerpo, respuesta vacía, `GEMINI_API_URL` solo local, función apagada sin clave).
 - E2E `e2e/idiomas.spec.ts` **9/9** (7 previas + 2 nuevas) con el Gemini de mentira: no pisa lo escrito, resalta, no guarda hasta «Guardar», quita el resalto al editar, 390 px sin desborde, «no hay nada que sugerir» y solo lectura deshabilitado.
-- Sin correr: RLS (no cambia esquema ni permisos) y la llamada al Gemini real (falta la clave del usuario).
+- Prueba del usuario con la clave real de Gemini en local (2026-10-25): «funciona excelente». Sin correr: RLS (no cambia esquema ni permisos).
