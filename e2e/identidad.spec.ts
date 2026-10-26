@@ -182,6 +182,34 @@ test("el Dueño publica colores y logo; persisten en carta y QR sin mezclar loca
   await publicPage.close();
 });
 
+test("tras guardar, la opción elegida sigue marcada (colores, estilo y fechas) sin recargar", async ({ page }) => {
+  const t = await tenant("marca-sigue");
+  await editor(page, t);
+  await page.getByRole("radio", { name: "Vino", exact: true }).check();
+  await page.getByRole("button", { name: "Guardar colores" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Colores guardados." })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Vino", exact: true })).toBeChecked();
+  await page.getByRole("radio", { name: "Carbón", exact: true }).check();
+  await page.getByRole("button", { name: "Guardar colores" }).click();
+  await expect.poll(async () => (await identity(t)).menu_palette).toBe("carbon");
+  await expect(page.getByRole("button", { name: "Guardar colores" })).toBeEnabled();
+  await expect(page.getByRole("radio", { name: "Carbón", exact: true })).toBeChecked();
+
+  await page.getByRole("radio", { name: "Clásica" }).check();
+  await page.getByRole("button", { name: "Guardar estilo" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Estilo guardado." })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Clásica" })).toBeChecked();
+
+  await page.getByRole("radio", { name: "Navidad" }).check();
+  await page.getByLabel("Desde (opcional)").fill("2030-12-01");
+  await page.getByLabel("Hasta (opcional)").fill("2030-12-31");
+  await page.getByRole("button", { name: "Guardar fecha especial" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Fecha especial guardada." })).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Navidad" })).toBeChecked();
+  await expect(page.getByLabel("Desde (opcional)")).toHaveValue("2030-12-01");
+  await expect(page.getByLabel("Hasta (opcional)")).toHaveValue("2030-12-31");
+});
+
 test("Staff no ve Apariencia y una dirección directa lo devuelve al inicio", async ({ page }) => {
   const t = await tenant("marca-staff");
   await login(page, t.staff.email, t.staff.password);

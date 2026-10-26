@@ -34,7 +34,7 @@ export function PaletteForm({ orgSlug, canWrite, name, palette, logo, layout }: 
                 const p = PALETTES[key];
                 return (
                   <label key={key} className="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
-                    <input type="radio" name="palette" value={key} checked={selected === key} onChange={() => setSelected(key)} className="size-4 shrink-0 accent-cobalt" />
+                    <input key={`${key}:${palette}`} type="radio" name="palette" value={key} checked={selected === key} onChange={() => setSelected(key)} className="size-4 shrink-0 accent-cobalt" />
                     <span className="min-w-0">
                       <span className="block font-medium">{p.name}</span>
                       <span aria-hidden="true" className="mt-1 flex gap-1">
@@ -65,7 +65,7 @@ export function LayoutForm({ orgSlug, canWrite, name, palette, logo, layout }: P
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {LAYOUT_KEYS.map(key => (
             <label key={key} className="flex cursor-pointer items-start gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
-              <input type="radio" name="layout" value={key} checked={selected === key} onChange={() => setSelected(key)} className="mt-1 size-4 shrink-0 accent-cobalt" />
+              <input key={`${key}:${layout}`} type="radio" name="layout" value={key} checked={selected === key} onChange={() => setSelected(key)} className="mt-1 size-4 shrink-0 accent-cobalt" />
               <span className="min-w-0">
                 <span className="block font-medium">{LAYOUTS[key].name}</span>
                 <span className="mt-1 block text-sm text-muted">{LAYOUTS[key].description}</span>
@@ -108,7 +108,7 @@ export function ThemeForm({ orgSlug, canWrite, name, palette, logo, layout, them
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[NO_THEME, ...THEME_KEYS].map(key => (
             <label key={key} className="flex min-h-16 cursor-pointer items-start gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
-              <input type="radio" name="theme" value={key} checked={selected === key} onChange={() => setSelected(key as Theme | typeof NO_THEME)} className="mt-1 size-4 shrink-0 accent-cobalt" />
+              <input key={`${key}:${theme}`} type="radio" name="theme" value={key} checked={selected === key} onChange={() => setSelected(key as Theme | typeof NO_THEME)} className="mt-1 size-4 shrink-0 accent-cobalt" />
               <span className="min-w-0">
                 <span className="block font-medium">{key === NO_THEME ? "Ninguno" : THEMES[key as Theme].name}</span>
                 <span className="mt-0.5 block text-sm text-muted">{key === NO_THEME ? "La carta normal" : THEMES[key as Theme].when}</span>
@@ -119,11 +119,11 @@ export function ThemeForm({ orgSlug, canWrite, name, palette, logo, layout, them
         <div className="mt-5 grid max-w-md gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="tema-desde" className={labelClass}>Desde (opcional)</label>
-            <input id="tema-desde" name="from" type="date" value={selected === NO_THEME ? "" : start} onChange={event => setStart(event.target.value)} disabled={selected === NO_THEME} className={`${inputClass} mt-1`} />
+            <input key={`desde:${from}`} id="tema-desde" name="from" type="date" value={selected === NO_THEME ? "" : start} onChange={event => setStart(event.target.value)} disabled={selected === NO_THEME} className={`${inputClass} mt-1`} />
           </div>
           <div>
             <label htmlFor="tema-hasta" className={labelClass}>Hasta (opcional)</label>
-            <input id="tema-hasta" name="until" type="date" value={selected === NO_THEME ? "" : end} onChange={event => setEnd(event.target.value)} disabled={selected === NO_THEME} aria-invalid={wrongOrder} aria-describedby="tema-ayuda" className={`${inputClass} mt-1`} />
+            <input key={`hasta:${until}`} id="tema-hasta" name="until" type="date" value={selected === NO_THEME ? "" : end} onChange={event => setEnd(event.target.value)} disabled={selected === NO_THEME} aria-invalid={wrongOrder} aria-describedby="tema-ayuda" className={`${inputClass} mt-1`} />
           </div>
         </div>
         <p id="tema-ayuda" className={`mt-2 text-sm ${wrongOrder ? "font-medium text-danger" : "text-muted"}`}>
