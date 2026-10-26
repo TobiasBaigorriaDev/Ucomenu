@@ -76,7 +76,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [M] Operar el pedido desde la Sala: cambiar estados, modificar y cancelar líneas, cerrar y anular → [ficha](cambios/sala-operar-pedido.md) (hecho, en staging, 2026-10-24)
 - [M] Precuenta «no válida como factura», imprimible y sin observaciones → [ficha](cambios/sala-precuenta.md) (hecho, en staging, 2026-10-24)
 - [C] Retención de pedidos (2 años desde el cierre, a confirmar con el contador) y su purga por lotes (`service_role`) → [ficha](cambios/retencion-de-pedidos.md) (hecho, revisado por Codex y migración en staging, 2026-10-24; sin programar; la purga con la organización ya estaba hecha)
-- [C] Analítica de pedidos para el Dueño (rework Pro/Premium: resumen con comparación, ventas por día, franjas, platos, categorías y anulaciones) → [ficha](cambios/analitica-de-pedidos.md) · ADR 0045 (hecho en local, 2026-10-25; pendiente de revisión independiente, staging y tu aprobación)
+- [C] Analítica de pedidos para el Dueño (rework Pro/Premium: resumen con comparación, ventas por día, franjas, platos, categorías y anulaciones) → [ficha](cambios/analitica-de-pedidos.md) · ADR 0045 (hecho, revisado por Codex en 3 rondas, aprobado por el usuario y desplegado en staging, Fly v54, 2026-10-25)
 
 **S4 — Clientes recurrentes** (bloqueado por: pedidos y revisión legal)
 - [S] Texto de consentimiento y privacidad revisado por un abogado (rol de encargado, inscripción ante la AAIP) — bloqueado por: abogado
