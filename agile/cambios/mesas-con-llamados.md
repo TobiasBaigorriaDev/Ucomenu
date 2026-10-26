@@ -1,5 +1,5 @@
 # Cambio: Llamados dentro de «Mesas» (una sola pantalla para el mozo)
-Estado: **hecho, en `origin/main` (`7a1e2d1`) y desplegado en staging (Fly v57, 2026-10-26)**. Falta tu prueba con sesión real y en teléfono. Sin migración.
+Estado: **hecho, en `origin/main` (`47ac84f`) y desplegado en staging (Fly v58, 2026-10-26)**. Falta tu prueba con sesión real y en teléfono. Sin migración.
 Nivel: **M** — reorganiza pantallas y reutiliza lo que ya existe (atender un llamado, vista por sucursal, sonido, aviso push); no cambia permisos, planes ni dinero. Sin revisión independiente por defecto.
 
 ## Objetivo
@@ -39,5 +39,6 @@ Sobre el diff sin commitear de `main` (2026-10-26):
 - Pruebas nuevas en `sala-mesas`: la Sala entra en Mesas y su navegación es solo Mesas y Panel; «Pide la cuenta» se atiende junto al total; una mesa de baja con un llamado pendiente sigue a la vista; el contenido de `/mesas/estado` (llamados con id y escaneo, `othersPending`, sin el token del QR).
 - Revisado el diff y una captura a 390 px (tarjetas con «Atendido», sin desborde).
 - **Staging (2026-10-26):** imagen `ucomenu-staging:mesas-llamados-7a1e2d1`, desplegada por el usuario con `flyctl deploy -c fly.staging.toml --local-only --depot=false` y los cuatro argumentos públicos: **Fly v57**, `started`, 1 passing. HTTP sin sesión: `/`, `/login` y `/privacidad` 200; `/sala/demo` y `/panel/demo/analitica` 307 (al login). Sin migración.
-- Ajuste de filas y nombres (2026-10-26, sin desplegar): `typecheck`, `lint`, `build` y 1180 unitarias en verde; E2E de `sala`, `sala-mesas` (con la prueba nueva de filas), `sala-precuenta`, `sala-anotar`, `sala-operar`, `sala-turno`, `panel-llamados-aviso`, `panel-push`, `sala-push` y `acceso`: 108 de 108 (un *worker* cayó con `0xC0000409` en la primera corrida y el mismo test pasó al repetirlo). Captura de la vista en filas a 390 px revisada.
+- Ajuste de filas y nombres (2026-10-26): `typecheck`, `lint`, `build` y 1180 unitarias en verde; E2E de `sala`, `sala-mesas` (con la prueba nueva de filas), `sala-precuenta`, `sala-anotar`, `sala-operar`, `sala-turno`, `panel-llamados-aviso`, `panel-push`, `sala-push` y `acceso`: 108 de 108 (un *worker* cayó con `0xC0000409` en la primera corrida y el mismo test pasó al repetirlo). Captura de la vista en filas a 390 px revisada.
+- **Staging, ajuste de filas y nombres (2026-10-26):** imagen `ucomenu-staging:mesas-en-vivo-47ac84f`, mismo comando que la v57: **Fly v58**, `started`, 1 passing; `/`, `/login` y `/privacidad` 200, `/sala/demo` y `/panel/demo/analitica` 307. Sin migración.
 - Sin probar: sesión real y teléfono.

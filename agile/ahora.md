@@ -4,11 +4,11 @@ Actualizado: 2026-10-26 · agente saliente: Claude. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Llamados dentro de «Mesas» (nivel M): hecho, en `origin/main` (`7a1e2d1`) y en staging (Fly v57).** Pedido del usuario: que el mozo trabaje en una sola pestaña. La pantalla «Sala en vivo» (lista de llamados) desapareció de la navegación de la Sala, que queda con **Mesas en vivo** y **Volver al panel principal**; `/sala/{slug}` redirige a `/sala/{slug}/mesas`. Cada tarjeta de mesa muestra sus llamados con «Atendido», y Mesas absorbió el sonido, el aviso del sistema, el selector de sucursales y los anuncios. Un solo sondeo (`/mesas/estado`); `/sala/{slug}/estado` queda solo para el cartel del panel. Decisiones, aceptación y evidencia en la [ficha](cambios/mesas-con-llamados.md). Sin migración.
+**Llamados dentro de «Mesas» (nivel M): hecho, en `origin/main` y en staging.** Pedido del usuario: que el mozo trabaje en una sola pestaña. La pantalla «Sala en vivo» (lista de llamados) desapareció de la navegación de la Sala, que queda con **Mesas en vivo** y **Volver al panel principal**; `/sala/{slug}` redirige a `/sala/{slug}/mesas`. Cada tarjeta de mesa muestra sus llamados con «Atendido», y Mesas absorbió el sonido, el aviso del sistema, el selector de sucursales y los anuncios. Un solo sondeo (`/mesas/estado`); `/sala/{slug}/estado` queda solo para el cartel del panel. Decisiones, aceptación y evidencia en la [ficha](cambios/mesas-con-llamados.md). Sin migración.
 
 Verificado: typecheck, lint, build, 1180 pruebas unitarias y 150 E2E de los archivos que tocan la sala o el panel (ver la ficha para las dos fallas que se repitieron). **Falta tu prueba con sesión real y en teléfono.**
 
-Ajuste posterior, **solo en local y sin desplegar**: opción «Ver como: Tarjetas | Filas» (mismos datos, se recuerda en el dispositivo) y los nombres «Mesas en vivo» y «Volver al panel principal».
+Ajuste posterior, **en `origin/main` (`47ac84f`) y en staging (Fly v58)**: opción «Ver como: Tarjetas | Filas» (mismos datos, se recuerda en el dispositivo) y los nombres «Mesas en vivo» y «Volver al panel principal».
 
 El enlace «Sala en vivo» del panel (con la alerta y el contador) se conserva y ahora lleva a Mesas.
 
