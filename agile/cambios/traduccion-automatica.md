@@ -33,4 +33,6 @@ Ejecutada el 2026-10-25; el diff probado es el de esta ficha sobre `7032f0d` (ve
 - `pnpm lint` OK · `pnpm typecheck` OK · `pnpm build` OK.
 - Unitarias: `sugerir.test.ts` (qué se pide y en qué orden, validación de la respuesta, tramos, tramo caído, claves ajenas) y `gemini.test.ts` (clave en el encabezado y no en la dirección, texto como datos, error sin cuerpo, respuesta vacía, `GEMINI_API_URL` solo local, función apagada sin clave).
 - E2E `e2e/idiomas.spec.ts` **9/9** (7 previas + 2 nuevas) con el Gemini de mentira: no pisa lo escrito, resalta, no guarda hasta «Guardar», quita el resalto al editar, 390 px sin desborde, «no hay nada que sugerir» y solo lectura deshabilitado.
-- Prueba del usuario con la clave real de Gemini en local (2026-10-25): «funciona excelente». Sin correr: RLS (no cambia esquema ni permisos).
+- Prueba del usuario con la clave real de Gemini en local (2026-10-25): «funciona excelente». 
+- **Staging (2026-10-26, aprobado por el usuario):** sin migraciones. `GEMINI_API_KEY` (la gratuita, solo datos ficticios) cargada con `flyctl secrets import --stage` desde `.env.local`, sin mostrarla; imagen `ucomenu-staging:traduccion-ia-9524ce0` con los cuatro argumentos públicos, `flyctl deploy -c fly.staging.toml --local-only --depot=false`: **Fly v55**, `started`, **1 passing**. HTTP sin sesión: `/`, `/login`, `/m/la-bestia/centro` y `/privacidad` **200**; `/panel/demo/carta/traducciones` **307**. **No se probó el botón con sesión en staging.** Commits subidos a `origin/main`.
+- Sin correr: RLS (no cambia esquema ni permisos).
