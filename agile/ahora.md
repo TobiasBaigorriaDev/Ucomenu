@@ -4,13 +4,13 @@ Actualizado: 2026-10-26 · agente saliente: Claude. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Resumen de la analítica con IA (nivel C): implementado, verificado en local y aprobado por la revisión independiente (Codex, 3 rondas, 3 hallazgos reales corregidos); falta tu aprobación para aplicar la migración y desplegar a staging.** En `/panel/{slug}/analitica` un botón «Generar resumen» redacta, con un servicio de IA, un párrafo, hallazgos y acciones para probar a partir de las cifras del período (7, 30 o 90 días; todas las sucursales o una). Solo el Dueño con el plan. Mínimo 5 pedidos, uno por período y alcance, no se regenera antes de 10 minutos. La [ficha](cambios/resumen-de-analitica-con-ia.md) tiene decisiones, invariantes y evidencia; el motivo duradero, el [ADR 0047](../docs/decisiones/0047-resumen-de-analitica-con-ia.md). Trae una migración nueva, `20261206100000` (tabla `analytics_summaries` y la función `save_analytics_summary`), **sin aplicar en staging**.
+**Resumen de la analítica con IA (nivel C): implementado, aprobado por la revisión independiente (Codex, 3 rondas, 3 hallazgos reales corregidos) y por vos; migración aplicada y en staging (Fly v56). Falta que lo pruebes con un Dueño.** En `/panel/{slug}/analitica` un botón «Generar resumen» redacta, con un servicio de IA, un párrafo, hallazgos y acciones para probar a partir de las cifras del período (7, 30 o 90 días; todas las sucursales o una). Solo el Dueño con el plan. Mínimo 5 pedidos, uno por período y alcance, no se regenera antes de 10 minutos. La [ficha](cambios/resumen-de-analitica-con-ia.md) tiene decisiones, invariantes y evidencia; el motivo duradero, el [ADR 0047](../docs/decisiones/0047-resumen-de-analitica-con-ia.md). Migración `20261206100000` (tablas `analytics_summaries` y `analytics_summary_claims`; reservar, devolver y guardar solo las ejecuta el servidor), **aplicada en staging**.
 
 Hoy usa Gemini con la clave gratuita (la misma de las traducciones): **solo datos ficticios**. **Antes de usar ventas reales hay que pasar a Claude** y no cargar la clave gratuita en producción (anotado en `docs/produccion.md`). Sin clave, la función queda apagada.
 
 Antes: la sugerencia de traducciones con IA está en staging (Fly v55) y el usuario la probó: «funciona bien» ([ficha](cambios/traduccion-automatica.md)).
 
-Rama `main`, subida a `origin/main` hasta la sugerencia de traducciones; lo del resumen (`fd1e3b7`, `84bb2f0`, `43feeb3` y el cierre documental) está en commits locales.
+Rama `main`, subida a `origin/main`.
 
 ## Límites y bloqueos
 
@@ -23,4 +23,4 @@ Rama `main`, subida a `origin/main` hasta la sugerencia de traducciones; lo del 
 
 ## Próximo paso
 
-Con tu aprobación, aplicar la migración `20261206100000` en staging (dry-run primero) y desplegar; después lo probás con un Dueño. Las llamadas a la IA usan `GEMINI_API_KEY`, que ya está como secreto en staging. Siguiente migración libre: `20261207100000`.
+Probar en staging con un Dueño que tenga al menos 5 pedidos cerrados (Pro o Premium) y decidir cuándo sumar el proveedor Claude, que hay que tener **antes de usar ventas reales**. Siguiente migración libre: `20261207100000`.
