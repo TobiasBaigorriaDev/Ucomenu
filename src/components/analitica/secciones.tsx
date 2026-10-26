@@ -4,8 +4,10 @@ import { barPercent, plural } from "@/lib/analitica/lectura";
 import {
   averageTicket,
   busiestWeekday,
+  categoryRows,
   changeLabel,
   dayLabel,
+  hasOrderData,
   hourSpan,
   minutesLabel,
   percentChange,
@@ -34,10 +36,6 @@ const Title = ({ id, children }: { id: string; children: React.ReactNode }) => (
     {children}
   </h2>
 );
-
-/** ¿Hubo algo que mostrar de pedidos en el período o en el anterior? */
-export const hasOrderData = (sales: Sales) =>
-  sales.current.orders + sales.previous.orders + sales.current.voidedOrders + sales.current.cancelledUnits > 0;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Resumen
@@ -279,33 +277,30 @@ export function BestProductsSection({ products, days }: { products: Products | n
 }
 
 export function CategoriesSection({ sales }: { sales: Sales }) {
-  const total = sales.categories.reduce((sum, item) => sum + item.revenueCents, 0);
+  const { rows, totalCents, others } = categoryRows(sales);
   return (
     <section aria-labelledby="categorias-titulo" className="mt-12" data-testid="ventas-por-categoria">
       <Title id="categorias-titulo">Ventas por categoría</Title>
-      {sales.categories.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="mt-3 max-w-prose text-base text-muted" data-testid="categorias-vacio">
           Todavía no hay ventas para repartir por categoría.
         </p>
       ) : (
         <ol className="mt-4 panel-list" data-testid="categorias-lista">
-          {sales.categories.map((item) => {
-            const share = sharePercent(item.revenueCents, total);
-            return (
-              <li key={item.id ?? "sin-categoria"} className="border-b border-ink/15 py-3" data-testid="categoria-fila" data-nombre={item.name ?? "Sin categoría"}>
-                <div className="flex items-baseline gap-3">
-                  <span className="min-w-0 flex-1 text-lg break-words">{item.name ?? "Sin categoría (plato borrado)"}</span>
-                  <span className="shrink-0 text-lg font-medium tabular-nums">{formatArs(item.revenueCents)}</span>
-                </div>
-                <div aria-hidden className="mt-2 h-2 rounded-full bg-ink/10">
-                  <div className="h-2 rounded-full bg-terra" style={{ width: `${barPercent(item.revenueCents, total)}%` }} />
-                </div>
-                <p className="mt-1 text-sm text-muted">
-                  {share} % de las ventas · {plural(item.units, "unidad", "unidades")}
-                </p>
-              </li>
-            );
-          })}
+          {[...rows, ...(others ? [{ id: "otras", name: "Otras categorías", ...others }] : [])].map((item) => (
+            <li key={item.id ?? "sin-categoria"} className="border-b border-ink/15 py-3" data-testid="categoria-fila" data-nombre={item.name ?? "Sin categoría"}>
+              <div className="flex items-baseline gap-3">
+                <span className="min-w-0 flex-1 text-lg break-words">{item.name ?? "Sin categoría (plato borrado)"}</span>
+                <span className="shrink-0 text-lg font-medium tabular-nums">{formatArs(item.revenueCents)}</span>
+              </div>
+              <div aria-hidden className="mt-2 h-2 rounded-full bg-ink/10">
+                <div className="h-2 rounded-full bg-terra" style={{ width: `${barPercent(item.revenueCents, totalCents)}%` }} />
+              </div>
+              <p className="mt-1 text-sm text-muted">
+                {sharePercent(item.revenueCents, totalCents)} % de las ventas · {plural(item.units, "unidad", "unidades")}
+              </p>
+            </li>
+          ))}
         </ol>
       )}
     </section>

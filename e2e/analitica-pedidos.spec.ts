@@ -131,6 +131,8 @@ test.describe("la analítica de pedidos del Dueño", () => {
     await expect(page.getByTestId("kpi-pedidos-valor")).toHaveText("4");
     await expect(page.getByTestId("kpi-ventas-cambio")).toHaveAttribute("data-cambio", "sin-datos"); // antes no hubo ventas: no se inventa un porcentaje
     await expect(page.getByTestId("kpi-ventas-cambio")).toContainText("Sin datos de los 7 días anteriores");
+    // Al achicar el período el gráfico cambia de 30 a 7 columnas: una sigue entrando con Tab (no queda un índice fuera de rango).
+    await expect(page.getByTestId("grafico-dias").locator("button[tabindex='0']")).toHaveCount(1);
 
     await periodos.getByRole("link", { name: "Últimos 90 días" }).click();
     await expect(page).toHaveURL(/dias=90/);

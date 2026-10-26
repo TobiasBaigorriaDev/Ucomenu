@@ -6,7 +6,6 @@ import {
   CategoriesSection,
   ControlSection,
   DailySalesSection,
-  hasOrderData,
   SlotsSection,
   SummarySection,
   UnsoldSection,
@@ -24,7 +23,7 @@ import {
   type DishViews,
   type HourCalls,
 } from "@/lib/analitica/lectura";
-import { PERIODS, parsePeriod, type PeriodDays } from "@/lib/analitica/ventas";
+import { PERIODS, parsePeriod, visibleSections, type PeriodDays } from "@/lib/analitica/ventas";
 import { readBranchView } from "@/lib/sucursales/vista";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -122,8 +121,8 @@ async function Content({
 }) {
   const db = await createSessionClient();
   const [{ dishes, calls }, { sales, products }] = await Promise.all([loadAnalytics(db, orgId, branchId, days), loadSales(db, orgId, days, branchId)]);
-  // Con pedidos confirmados vacíos no se arman secciones de ventas; con la lectura caída sí se muestran los avisos de error.
-  const withOrders = sales !== null && hasOrderData(sales);
+  // Sin pedidos no se arman secciones de ventas; con una lectura caída sí se muestran los avisos de error (cada una por separado).
+  const show = visibleSections(sales, products);
   const periodHref = (value: PeriodDays) => `${base}?${new URLSearchParams({ ...(branchParam ? { sucursal: branchParam } : {}), dias: String(value) })}`;
   const branchHref = (slug: string | null) => `${base}?${new URLSearchParams({ sucursal: slug ?? ALL_BRANCHES, dias: String(days) })}`;
   const chip = (active: boolean) =>
@@ -149,20 +148,16 @@ async function Content({
       ) : null}
 
       <SummarySection sales={sales} />
-      {withOrders ? (
+      {show.withOrders ? (
         <>
-          <DailySalesSection sales={sales} timeZone={timeZone} />
-          <SlotsSection sales={sales} />
+          <DailySalesSection sales={sales!} timeZone={timeZone} />
+          <SlotsSection sales={sales!} />
         </>
       ) : null}
-      {withOrders || sales === null ? <BestProductsSection products={products} days={days} /> : null}
-      {withOrders ? (
-        <>
-          <CategoriesSection sales={sales} />
-          <UnsoldSection products={products} days={days} />
-          <ControlSection sales={sales} />
-        </>
-      ) : null}
+      {show.bestProducts ? <BestProductsSection products={products} days={days} /> : null}
+      {show.withOrders ? <CategoriesSection sales={sales!} /> : null}
+      {show.unsold ? <UnsoldSection products={products} days={days} /> : null}
+      {show.withOrders ? <ControlSection sales={sales!} /> : null}
 
       <TopDishesSection dishes={dishes?.dishes ?? null} total={dishes?.total ?? 0} failed={dishes === null} days={days} />
       <CallsSection hours={calls} />

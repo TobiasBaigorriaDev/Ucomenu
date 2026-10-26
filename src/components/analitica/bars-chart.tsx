@@ -43,7 +43,9 @@ export function BarsChart({
   const max = Math.max(0, ...bars.map((bar) => bar.value));
   const peak = Math.max(0, bars.findIndex((bar) => bar.value === max));
   const [active, setActive] = useState<number | null>(null);
-  const [tabbable, setTabbable] = useState(peak); // una sola columna entra con Tab; las demás, con flechas
+  const [tabbableIndex, setTabbable] = useState(peak); // una sola columna entra con Tab; las demás, con flechas
+  // Al cambiar el período el gráfico tiene otra cantidad de columnas: un índice fuera de rango dejaría todas fuera del Tab.
+  const tabbable = tabbableIndex < bars.length ? tabbableIndex : peak;
   const root = useRef<HTMLDivElement>(null);
   const columns = useRef<(HTMLButtonElement | null)[]>([]);
   const current = active === null ? null : bars[active];

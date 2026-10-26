@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   averageTicket,
   busiestWeekday,
+  categoryRows,
   changeLabel,
   dayLabel,
+  hasOrderData,
   hourSpan,
   minutesLabel,
   parsePeriod,
@@ -14,6 +16,7 @@ import {
   slotLevel,
   slotMax,
   topSlots,
+  visibleSections,
 } from "./ventas";
 
 const TOTALES = {
@@ -242,5 +245,53 @@ describe("franjas", () => {
     expect(busiestWeekday(slots)).toEqual({ dow: 5, orders: 4 });
     expect(busiestWeekday(parseSales({ ...VENTAS, by_slot: [] })!.slots)).toBeNull();
     expect(topSlots(parseSales({ ...VENTAS, by_slot: [] })!.slots)).toEqual([]);
+  });
+});
+
+describe("categorías con lo que quedó afuera", () => {
+  it("los porcentajes salen del total vendido y lo recortado se junta en «otras»", () => {
+    // El resumen vendió 240.000 en 14 unidades; la base entregó solo dos categorías por 230.000 en 12.
+    const ventas = parseSales({
+      ...VENTAS,
+      current: { ...TOTALES, revenue_cents: 240000, units: 14 },
+      by_category: [
+        { category_id: "c1", name: "Platos", units: 8, revenue_cents: 120000 },
+        { category_id: "c2", name: "Postres", units: 4, revenue_cents: 110000 },
+      ],
+    })!;
+    const r = categoryRows(ventas);
+    expect(r.totalCents).toBe(240000);
+    expect(r.others).toEqual({ units: 2, revenueCents: 10000 });
+    expect(sharePercent(r.rows[0].revenueCents, r.totalCents)).toBe(50); // no 52 % sobre lo listado
+  });
+
+  it("sin nada afuera no hay «otras»", () => {
+    const ventas = parseSales({ ...VENTAS, current: { ...TOTALES, revenue_cents: 48000, units: 7 } })!; // por categoría: 46.000 + 2.000
+    expect(categoryRows(ventas).others).toBeNull();
+  });
+});
+
+describe("secciones visibles según qué lectura falló", () => {
+  const ventas = parseSales(VENTAS)!;
+  const vacia = parseSales({ ...VENTAS, current: { ...TOTALES, orders: 0, voided_orders: 0, cancelled_units: 0 }, previous: { ...TOTALES, orders: 0 } })!;
+  const platos = (vendidos: number) => ({ best: Array.from({ length: vendidos }, (_, i) => ({ id: `p${i}`, name: "x", category: null, units: 1, revenueCents: 1, views: 0, inCatalog: true, active: true })), unsold: [], unsoldTotal: 0 });
+
+  it("con pedidos se arman todas", () => {
+    expect(hasOrderData(ventas)).toBe(true);
+    expect(visibleSections(ventas, platos(1))).toEqual({ withOrders: true, bestProducts: true, unsold: true });
+  });
+
+  it("sin pedidos no se arma ninguna sección de pedidos", () => {
+    expect(hasOrderData(vacia)).toBe(false);
+    expect(visibleSections(vacia, platos(0))).toEqual({ withOrders: false, bestProducts: false, unsold: false });
+  });
+
+  it("si fallan solo las ventas pero los platos se leyeron y vendieron, «sin pedidos» se sigue mostrando", () => {
+    expect(visibleSections(null, platos(2))).toEqual({ withOrders: false, bestProducts: true, unsold: true });
+  });
+
+  it("si fallan las ventas y los platos no vendieron nada, no se afirma qué no se pidió; si fallan las dos, se muestran los avisos", () => {
+    expect(visibleSections(null, platos(0))).toEqual({ withOrders: false, bestProducts: true, unsold: false });
+    expect(visibleSections(null, null)).toEqual({ withOrders: false, bestProducts: true, unsold: true });
   });
 });

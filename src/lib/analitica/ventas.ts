@@ -172,6 +172,37 @@ export function parseProducts(raw: unknown): Products | null {
 /** Redondea un importe en centavos al peso entero más cercano (los promedios no necesitan centavos). */
 export const roundToPesos = (cents: number): number => Math.round(cents / 100) * 100;
 
+/** ¿Hubo algo que mostrar de pedidos en el período o en el anterior? */
+export const hasOrderData = (sales: Sales) => sales.current.orders + sales.previous.orders + sales.current.voidedOrders + sales.current.cancelledUnits > 0;
+
+/**
+ * Qué secciones de pedidos se arman. Cada lectura falla por separado (`null`): si fallan las ventas pero los platos se leyeron y
+ * ya vendieron algo, «Platos sin pedidos» se sigue mostrando; sin saber si hubo ventas ni platos vendidos no se puede afirmar
+ * qué no se pidió (todo parecería sin pedidos), así que en ese caso se muestra el aviso de error.
+ */
+export function visibleSections(sales: Sales | null, products: Products | null) {
+  const withOrders = sales !== null && hasOrderData(sales);
+  return {
+    withOrders,
+    bestProducts: withOrders || sales === null,
+    unsold: withOrders || (sales === null && (products === null || products.best.length > 0)),
+  };
+}
+
+export type CategoryRow = { id: string | null; name: string | null; units: number; revenueCents: number };
+
+/**
+ * Categorías para mostrar con sus porcentajes sobre el TOTAL vendido (el del resumen), no sobre lo listado: la base entrega las
+ * 12 mayores y lo que queda afuera se muestra junto como «otras». `others` es `null` si nada quedó afuera.
+ */
+export function categoryRows(sales: Sales): { rows: CategoryRow[]; totalCents: number; others: { units: number; revenueCents: number } | null } {
+  const totalCents = sales.current.revenueCents;
+  const listedCents = sales.categories.reduce((sum, item) => sum + item.revenueCents, 0);
+  const listedUnits = sales.categories.reduce((sum, item) => sum + item.units, 0);
+  const others = totalCents > listedCents ? { units: Math.max(0, sales.current.units - listedUnits), revenueCents: totalCents - listedCents } : null;
+  return { rows: sales.categories, totalCents, others };
+}
+
 /** Ticket promedio en centavos, a pesos enteros; `null` sin pedidos. */
 export const averageTicket = (totals: PeriodTotals): number | null => (totals.orders > 0 ? roundToPesos(totals.revenueCents / totals.orders) : null);
 

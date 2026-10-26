@@ -269,6 +269,16 @@ describe("ventas del período (solo pedidos cerrados, líneas vivas, precio + op
     expect((await leerPlatos(b.owner.db, b.id)).best.map((x) => [x.name, x.units])).toEqual([["Milanesa", 99]]);
   });
 
+  it("el tiempo típico es la mediana: una mesa olvidada abierta horas no lo arruina (30, 30 y 300 minutos dan 30, no 120)", async () => {
+    const local = await crearLocal();
+    const linea = [{ producto: local.producto.Milanesa, nombre: "Milanesa", qty: 1, base: 10000 }];
+    for (const [abre, cierra] of [["10:00", "10:30"], ["11:00", "11:30"], ["12:00", "17:00"]]) {
+      sembrar(local, { branch: local.uno, estado: "closed", abre: loc(BA, 1, abre), cierra: loc(BA, 1, cierra), lineas: linea });
+    }
+    const r = await leerVentas(local.owner.db, local.id);
+    expect(r.current).toMatchObject({ orders: 3, median_minutes: 30 });
+  });
+
   it("un local sin pedidos devuelve ceros, listas vacías y tiempo típico nulo", async () => {
     const local = await crearLocal();
     const r = await leerVentas(local.owner.db, local.id);
