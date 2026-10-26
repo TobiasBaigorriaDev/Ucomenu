@@ -1,5 +1,5 @@
 # Cambio: Sugerencia de traducciones con IA
-Estado: implementado, verificado en local y probado por el usuario con la clave real de Gemini (2026-10-25: «funciona excelente»); sin desplegar a staging
+Estado: implementado, verificado en local y probado por el usuario con la clave real de Gemini (2026-10-25: «funciona excelente»); en staging (Fly v55, 2026-10-26)
 Nivel: M (un servicio externo recibe los textos de la carta; sin permisos, dinero, borrados ni datos personales ni esquema nuevo; ver «Nivel»)
 
 ## Objetivo
