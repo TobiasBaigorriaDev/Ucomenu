@@ -41,7 +41,42 @@ test("los términos fijan las reglas de los comentarios para comensales y locale
   await expect(page.getByText("no se publica hasta que el local lo aprueba")).toBeVisible();
   await expect(page.getByText("Sos responsable de lo que escribís")).toBeVisible();
   await expect(page.getByText("Sos responsable de lo que aprobás")).toBeVisible();
-  await expect(page.getByText(/ni por los comentarios que dejan los comensales/)).toBeVisible();
+  await expect(page.getByText(/lo que aprueba como comentario/)).toBeVisible();
+});
+
+test("los términos no eximen de forma absoluta ni dan prioridad al personal sobre la carta", async ({ page }) => {
+  await page.goto("/terminos");
+  const body = page.locator("main");
+  // Antes: «UcoMenu no es responsable por … la información de alérgenos» y «vale lo que te informe el personal».
+  await expect(body).not.toContainText("no es responsable por el contenido");
+  await expect(body).not.toContainText("información de alérgenos que el local brinde");
+  await expect(body).not.toContainText("vale lo que te informe el personal");
+  await expect(body).toContainText("no limitan los derechos que la ley te reconoce como consumidor");
+  await expect(body).toContainText("Responde por los daños que causen sus propios incumplimientos y fallas técnicas");
+  await expect(body).toContainText("Tenés que mantener actualizados los ingredientes, los precios y las etiquetas dietarias");
+  await expect(body.getByRole("heading", { name: "7. Reportar información incorrecta o riesgosa" })).toBeVisible();
+});
+
+test("el aviso de alérgenos no promete información que la carta no tiene", async ({ page }) => {
+  await page.goto("/alergenos");
+  const body = page.locator("main");
+  await expect(body).toContainText("no muestra los ingredientes ni los alérgenos de cada plato");
+  await expect(body).toContainText("Un plato sin etiqueta no está declarado como apto");
+  await expect(body).toContainText("Contaminación cruzada");
+  await expect(body).toContainText("Variantes y adicionales");
+  await expect(body).toContainText("consultale por el plato");
+});
+
+test("la privacidad nombra al responsable, el canal y los plazos de la ley, y marca a la vista lo que falta decidir", async ({ page }) => {
+  await page.goto("/privacidad");
+  const body = page.locator("main");
+  await expect(body.getByRole("heading", { name: "1. Quién es el responsable y cómo contactarlo" })).toBeVisible();
+  await expect(body).toContainText("10 días corridos");
+  await expect(body).toContainText("5 días hábiles");
+  await expect(body).toContainText("Supabase");
+  await expect(body).toContainText("Fly.io");
+  // Mientras el usuario no decida razón social, CUIT, domicilio y correo, el texto lo muestra como pendiente (no los inventa).
+  expect(await page.getByTestId("pendiente-legal").count()).toBeGreaterThan(0);
 });
 
 for (const [origen, ruta] of [

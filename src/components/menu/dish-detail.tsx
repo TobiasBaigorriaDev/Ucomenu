@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef } from "react";
+import { DIETARY_TAGS } from "@/lib/carta/dietary";
 import { imageUrl } from "@/lib/carta/images";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
@@ -26,6 +27,7 @@ export function DishDetail({ product, onClose, lang }: { product: MenuProduct; o
     if (dialog && !dialog.open) dialog.showModal();
   }, []);
   const photo = imageUrl(product.image_path);
+  const hasTags = DIETARY_TAGS.some((tag) => product.dietary_tags?.includes(tag));
   return (
     <dialog ref={ref} onClose={onClose} aria-labelledby="dish-detail-title"
       className="carta-dialog fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto overscroll-contain rounded-xl bg-porcelain p-0 text-ink">
@@ -41,6 +43,11 @@ export function DishDetail({ product, onClose, lang }: { product: MenuProduct; o
       <PromoNote promotion={product.promotion} lang={lang} className="mt-1" />
       {product.description ? <p className="mt-4 leading-relaxed [overflow-wrap:anywhere]">{product.description}</p> : null}
       <DietaryLabels tags={product.dietary_tags} lang={lang} />
+      {hasTags ? (
+        <p data-testid="nota-etiquetas" className="mt-2 text-sm leading-relaxed text-muted">
+          {t.dish.tagsNote}{product.option_groups?.length ? ` ${t.dish.tagsOptionsNote}` : ""}
+        </p>
+      ) : null}
       {product.is_available === false ? <p className="mt-3 font-semibold text-[var(--carta-terra)]">{t.dish.soldOutBranch}</p> : null}
       {product.option_groups?.length ? <div className="mt-6"><DishOptions productId={`detalle-${product.id}`} groups={product.option_groups} lang={lang} /></div> : null}
       <p className="mt-6 text-sm leading-relaxed text-muted">{t.detailAllergens}</p>

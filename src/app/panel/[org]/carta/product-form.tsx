@@ -139,7 +139,7 @@ export function ProductForm({ orgSlug, productId, categories, branches, initial,
 
             <fieldset aria-describedby="dietary-help" className={productId ? "sm:col-span-2" : undefined}>
               <legend className={labelClass}>Etiquetas dietarias</legend>
-              <p id="dietary-help" className="mt-1 text-sm text-muted">Marcá solo lo que el local puede confirmar, incluyendo la preparación y sus opciones.</p>
+              <p id="dietary-help" className="mt-1 text-sm text-muted">Marcá solo lo que el local puede confirmar para la receta de hoy, incluyendo el contacto con otros ingredientes en la cocina, las variantes y los adicionales. La etiqueta se muestra en todas las sucursales donde se ve el plato: si en alguna no se cumple, ocultalo ahí. Revisala cada vez que cambie la receta o un proveedor. Un plato sin etiqueta no se muestra como apto para ninguna dieta.</p>
               <div className={productId ? "mt-1 flex flex-wrap gap-x-5" : undefined}>
               {DIETARY_TAGS.map((tag) => (
                 <label key={tag} className="flex min-h-11 items-center gap-3">

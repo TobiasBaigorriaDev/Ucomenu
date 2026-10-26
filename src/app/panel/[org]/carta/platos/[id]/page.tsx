@@ -102,7 +102,7 @@ export default async function EditProductPage({ params, searchParams }: PageProp
           </div>
         }
         opciones={
-          <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} />
+          <OpcionesSection orgSlug={membership.org.slug} productId={product.id} groups={groups} canWrite={canWrite} hasDietaryTags={product.dietary_tags.length > 0} />
         }
         sucursales={
           <AvailabilityForms

@@ -93,6 +93,7 @@ export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { se
       </> : <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
         <h2 className="font-display text-2xl">{t.search.emptyTitle}</h2>
         <p className="mt-3 text-muted">{t.search.emptyHint}</p>
+        {tags.length > 0 ? <p data-testid="vacio-etiquetas" className="mt-3 text-sm text-muted">{t.search.emptyHintTags}</p> : null}
       </main>}
       {selected ? <DishDetail product={selected} onClose={() => setSelectedId(null)} lang={lang} /> : null}
     </>

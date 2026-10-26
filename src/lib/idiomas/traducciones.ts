@@ -87,6 +87,24 @@ export function applyTranslationInput(
   return { ok: true, value };
 }
 
+/**
+ * Quita de TODOS los idiomas los campos cuyo texto original (en español) cambió. Una traducción vieja que sigue visible
+ * mientras el original cambió puede mostrar a un comensal extranjero un ingrediente o una opción que ya no son los de la
+ * carta; sin traducción, ese campo vuelve a verse en español. Los idiomas que quedan sin campos se quitan.
+ */
+export function dropStaleTranslations(current: Translations, changed: { name?: boolean; description?: boolean }): Translations {
+  const result: Translations = {};
+  for (const lang of TRANSLATED_LANGS) {
+    const entry = current[lang];
+    if (!entry) continue;
+    const name = changed.name ? undefined : entry.name;
+    const description = changed.description ? undefined : entry.description;
+    if (name === undefined && description === undefined) continue;
+    result[lang] = { ...(name !== undefined ? { name } : {}), ...(description !== undefined ? { description } : {}) };
+  }
+  return result;
+}
+
 /** ¿Dos columnas son iguales? Sirve para escribir solo las filas que cambiaron. */
 export function sameTranslations(a: Translations, b: Translations): boolean {
   return JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));

@@ -8,6 +8,7 @@ import { changesFor, moveWithin, nextSortOrder, sortForDisplay, type Direction }
 import { parsePrice, type PriceProblem } from "./price";
 import { validateDescription, validateName } from "./validation";
 import { parseDietaryTags } from "./dietary";
+import { staleTranslationsPatch } from "./traducciones-obsoletas";
 
 /**
  * Gestión de la carta (ficha gestion-de-carta). Todo se hace con el cliente de la PERSONA (rol
@@ -342,9 +343,13 @@ export async function updateProduct(db: Db, orgId: string, id: string, input: Pr
     sortOrder = next;
   }
 
+  // Si cambió el nombre o la descripción, las traducciones de ese campo ya no dicen lo mismo: se quitan (ver el módulo).
+  const stale = await staleTranslationsPatch(db, "products", orgId, id, parsed.data);
+  if (!stale) return fail("unexpected");
+
   const { data, error } = await db
     .from("products")
-    .update({ ...parsed.data, category_id: input.categoryId, sort_order: sortOrder })
+    .update({ ...parsed.data, ...stale, category_id: input.categoryId, sort_order: sortOrder })
     .eq("id", id)
     .eq("organization_id", orgId)
     .select("id");

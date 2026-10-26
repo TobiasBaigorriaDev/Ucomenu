@@ -54,6 +54,10 @@ test("Staff declara etiquetas; búsqueda combinada y detalle conservan el contex
     await expect(detail).toBeVisible();
     await expect(detail).toContainText("Con almendras");
     await expect(detail).toContainText("Sin TACC");
+    // Las etiquetas del detalle se presentan como declaración del local, con la salvedad de contacto cruzado y el aviso de consultar.
+    await expect(detail.getByTestId("nota-etiquetas")).toContainText("no certificada");
+    await expect(detail.getByTestId("nota-etiquetas")).toContainText("contacto con otros ingredientes");
+    await expect(detail).toContainText("consultá al personal antes de pedir");
     await page.keyboard.press("Escape");
     await expect(detail).not.toBeVisible();
     await expect(trigger).toBeFocused();
@@ -61,6 +65,7 @@ test("Staff declara etiquetas; búsqueda combinada y detalle conservan el contex
     await expectNoHorizontalOverflow(page);
     await page.getByRole("button", { name: "Vegetariano", exact: true }).click();
     await expect(page.getByRole("heading", { name: "No encontramos platos con esa búsqueda." })).toBeVisible();
+    await expect(page.getByTestId("vacio-etiquetas")).toContainText("no significa que el local no tenga opciones");
     await expect(page.getByRole("navigation", { name: "Categorías de la carta" })).toHaveCount(0);
     await page.getByRole("button", { name: "Limpiar búsqueda y filtros" }).click();
     await expect(page.getByRole("heading", { level: 3 })).toHaveCount(2);

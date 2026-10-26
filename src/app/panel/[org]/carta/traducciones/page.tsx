@@ -32,6 +32,11 @@ export default async function TraduccionesPage({ params, searchParams }: PagePro
         Escribí cómo se llama cada categoría, plato y opción en otro idioma. Lo que dejes vacío se muestra en español. El selector de
         idioma aparece en la carta apenas cargues el primer texto en ese idioma. Los textos legales siguen en español.
       </p>
+      <p className="mt-2 max-w-prose text-base text-muted" data-testid="aviso-traducciones-obsoletas">
+        Si cambiás en español el nombre o la descripción de un plato, o el nombre de una variante o un adicional, sus traducciones
+        se borran al guardar: así la carta nunca muestra en otro idioma un texto que ya no es el vigente (por ejemplo, un
+        ingrediente que cambió). Volvé a traducirlo después.
+      </p>
       {notice ? (
         <p className="mt-3 max-w-prose text-base font-medium" data-testid="carta-bloqueada">
           {notice}

@@ -12,10 +12,12 @@ type Props = {
   productId: string;
   groups: CartaOptionGroup[];
   canWrite: boolean;
+  /** El plato tiene etiquetas dietarias: cada opción nueva o cambiada puede dejarlas de cumplir. */
+  hasDietaryTags?: boolean;
 };
 
 /** «Variantes y adicionales» en la pantalla del plato: grupos, sus opciones y el alta de un grupo nuevo. */
-export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props) {
+export function OpcionesSection({ orgSlug, productId, groups, canWrite, hasDietaryTags = false }: Props) {
   return (
     <section aria-labelledby="opciones" className="panel-cell" data-testid="opciones">
       <h2 id="opciones" className="font-display text-2xl">
@@ -25,6 +27,12 @@ export function OpcionesSection({ orgSlug, productId, groups, canWrite }: Props)
         Una variante se elige entre varias (el tamaño, el punto de cocción). Los adicionales son extras opcionales. La carta
         muestra cada opción con su diferencia de precio, solo como información: el precio del plato sigue siendo el de arriba.
       </p>
+      {hasDietaryTags ? (
+        <p className="mt-2 max-w-prose text-base font-medium" data-testid="opciones-etiquetas">
+          Este plato tiene etiquetas dietarias. Si una variante o un adicional las deja de cumplir (por ejemplo, un extra con
+          queso en un plato vegano), sacá la etiqueta del plato en «Datos del plato».
+        </p>
+      ) : null}
 
       {groups.length === 0 ? (
         <p className="mt-4 text-base text-muted" data-testid="sin-grupos">

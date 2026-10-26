@@ -42,12 +42,18 @@ export type Textos = {
     clear: string;
     emptyTitle: string;
     emptyHint: string;
+    /** Cuando hay etiquetas elegidas y no aparece ningún plato: la falta de resultados no es una afirmación sobre el local. */
+    emptyHintTags: string;
   };
   dietary: { gluten_free: string; vegan: string; vegetarian: string; list: string };
   categories: { index: string; bar: string };
   dish: {
     soldOut: string;
     soldOutBranch: string;
+    /** Dentro del detalle, bajo las etiquetas dietarias: son una declaración del local, no una garantía. */
+    tagsNote: string;
+    /** Además, cuando el plato tiene variantes o adicionales: pueden cambiar lo declarado. */
+    tagsOptionsNote: string;
     photoAlt: (name: string) => string;
     viewDetail: (name: string) => string;
     back: string;
@@ -143,8 +149,8 @@ const es: Textos = {
   logoAlt: (organization) => `Logo de ${organization}`,
   emptyTitle: "Esta carta todavía no tiene platos.",
   emptyHint: "Volvé a mirar en unos minutos.",
-  footerAllergens: "La información de alérgenos de cada plato la declara el local. Ante cualquier duda, consultá al personal.",
-  detailAllergens: "La información de alérgenos la declara el local. Ante cualquier duda, consultá al personal.",
+  footerAllergens: "Esta carta no informa los alérgenos de cada plato: un plato sin etiqueta no está declarado como apto para ninguna dieta. Si tenés alergia, intolerancia o celiaquía, consultá al personal antes de pedir.",
+  detailAllergens: "Si tenés alergia, intolerancia o celiaquía, consultá al personal antes de pedir. Que un plato no tenga etiqueta no significa que sea apto para vos.",
   madeWith: "Hecho con UcoMenu",
   languageLabel: "Idioma",
   review: { footer: "Dejá tu reseña en Google", invite: "Si querés, podés dejar tu reseña de este lugar en Google.", action: "Dejar una reseña", close: "Cerrar" },
@@ -159,18 +165,21 @@ const es: Textos = {
     label: "Buscar platos",
     placeholder: "Nombre o descripción",
     tagsLegend: "Etiquetas declaradas por el local",
-    tagsNotice: "Etiquetas declaradas por el local, no certificadas: con alergias o celiaquía, confirmalo con el personal.",
+    tagsNotice: "Etiquetas declaradas por el local, no certificadas: con alergias o celiaquía, consultá al personal antes de pedir.",
     allTags: "Se muestran los platos que tienen todas las etiquetas elegidas.",
     allergenLink: "Aviso de alérgenos",
     clear: "Limpiar búsqueda y filtros",
     emptyTitle: "No encontramos platos con esa búsqueda.",
     emptyHint: "Probá con otro nombre o quitá algún filtro.",
+    emptyHintTags: "Que no aparezcan platos no significa que el local no tenga opciones para tu dieta: consultá al personal.",
   },
   dietary: { gluten_free: "Sin TACC", vegan: "Vegano", vegetarian: "Vegetariano", list: "Etiquetas dietarias declaradas por el local" },
   categories: { index: "Categorías de la carta", bar: "Cambiar de categoría" },
   dish: {
     soldOut: "Agotado",
     soldOutBranch: "Agotado en esta sucursal",
+    tagsNote: "Etiqueta declarada por el local, no certificada. Puede haber contacto con otros ingredientes durante la preparación.",
+    tagsOptionsNote: "Las opciones y adicionales pueden cambiar estas etiquetas: consultá al personal antes de elegirlas.",
     photoAlt: (name) => `Foto de ${name}`,
     viewDetail: (name) => `Ver detalle de ${name}`,
     back: "Volver a la carta",
@@ -278,8 +287,8 @@ const en: Textos = {
   logoAlt: (organization) => `${organization} logo`,
   emptyTitle: "This menu has no dishes yet.",
   emptyHint: "Check back in a few minutes.",
-  footerAllergens: "Allergen information for each dish is declared by the restaurant. If in doubt, ask the staff.",
-  detailAllergens: "Allergen information is declared by the restaurant. If in doubt, ask the staff.",
+  footerAllergens: "This menu does not list the allergens of each dish: a dish without a tag is not declared suitable for any diet. If you have an allergy, intolerance or celiac disease, ask the staff before ordering.",
+  detailAllergens: "If you have an allergy, intolerance or celiac disease, ask the staff before ordering. A dish without a tag is not necessarily suitable for you.",
   madeWith: "Made with UcoMenu",
   languageLabel: "Language",
   review: { footer: "Leave a review on Google", invite: "If you'd like, you can leave a review of this place on Google.", action: "Leave a review", close: "Close" },
@@ -293,18 +302,21 @@ const en: Textos = {
     label: "Search dishes",
     placeholder: "Name or description",
     tagsLegend: "Tags declared by the restaurant",
-    tagsNotice: "Tags are declared by the restaurant, not certified: if you have allergies or celiac disease, confirm with the staff.",
+    tagsNotice: "Tags are declared by the restaurant, not certified: if you have allergies or celiac disease, ask the staff before ordering.",
     allTags: "Showing dishes that have all the selected tags.",
     allergenLink: "Allergen notice",
     clear: "Clear search and filters",
     emptyTitle: "We couldn't find dishes matching that search.",
     emptyHint: "Try another name or remove a filter.",
+    emptyHintTags: "No dishes showing does not mean the restaurant has no options for your diet: ask the staff.",
   },
   dietary: { gluten_free: "Gluten-free", vegan: "Vegan", vegetarian: "Vegetarian", list: "Dietary tags declared by the restaurant" },
   categories: { index: "Menu categories", bar: "Switch category" },
   dish: {
     soldOut: "Sold out",
     soldOutBranch: "Sold out at this location",
+    tagsNote: "Tag declared by the restaurant, not certified. There may be contact with other ingredients during preparation.",
+    tagsOptionsNote: "Options and extras can change these tags: ask the staff before choosing them.",
     photoAlt: (name) => `Photo of ${name}`,
     viewDetail: (name) => `View details of ${name}`,
     back: "Back to the menu",
@@ -412,8 +424,8 @@ const pt: Textos = {
   logoAlt: (organization) => `Logo de ${organization}`,
   emptyTitle: "Este cardápio ainda não tem pratos.",
   emptyHint: "Volte a conferir em alguns minutos.",
-  footerAllergens: "As informações sobre alérgenos de cada prato são declaradas pelo estabelecimento. Em caso de dúvida, pergunte à equipe.",
-  detailAllergens: "As informações sobre alérgenos são declaradas pelo estabelecimento. Em caso de dúvida, pergunte à equipe.",
+  footerAllergens: "Este cardápio não informa os alérgenos de cada prato: um prato sem etiqueta não está declarado como adequado a nenhuma dieta. Se você tem alergia, intolerância ou doença celíaca, pergunte à equipe antes de pedir.",
+  detailAllergens: "Se você tem alergia, intolerância ou doença celíaca, pergunte à equipe antes de pedir. Um prato sem etiqueta não é necessariamente adequado para você.",
   madeWith: "Feito com UcoMenu",
   languageLabel: "Idioma",
   review: { footer: "Deixe sua avaliação no Google", invite: "Se quiser, você pode deixar uma avaliação deste lugar no Google.", action: "Deixar uma avaliação", close: "Fechar" },
@@ -427,18 +439,21 @@ const pt: Textos = {
     label: "Buscar pratos",
     placeholder: "Nome ou descrição",
     tagsLegend: "Etiquetas declaradas pelo estabelecimento",
-    tagsNotice: "Etiquetas declaradas pelo estabelecimento, não certificadas: se você tem alergias ou doença celíaca, confirme com a equipe.",
+    tagsNotice: "Etiquetas declaradas pelo estabelecimento, não certificadas: se você tem alergias ou doença celíaca, pergunte à equipe antes de pedir.",
     allTags: "Mostrando os pratos que têm todas as etiquetas escolhidas.",
     allergenLink: "Aviso de alérgenos",
     clear: "Limpar busca e filtros",
     emptyTitle: "Não encontramos pratos com essa busca.",
     emptyHint: "Tente outro nome ou remova algum filtro.",
+    emptyHintTags: "Não aparecerem pratos não significa que o estabelecimento não tenha opções para a sua dieta: pergunte à equipe.",
   },
   dietary: { gluten_free: "Sem glúten", vegan: "Vegano", vegetarian: "Vegetariano", list: "Etiquetas alimentares declaradas pelo estabelecimento" },
   categories: { index: "Categorias do cardápio", bar: "Mudar de categoria" },
   dish: {
     soldOut: "Esgotado",
     soldOutBranch: "Esgotado nesta unidade",
+    tagsNote: "Etiqueta declarada pelo estabelecimento, não certificada. Pode haver contato com outros ingredientes durante o preparo.",
+    tagsOptionsNote: "Opções e adicionais podem mudar estas etiquetas: pergunte à equipe antes de escolhê-los.",
     photoAlt: (name) => `Foto de ${name}`,
     viewDetail: (name) => `Ver detalhes de ${name}`,
     back: "Voltar ao cardápio",

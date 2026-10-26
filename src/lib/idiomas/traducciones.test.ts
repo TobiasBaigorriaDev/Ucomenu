@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyTranslationInput, hasTranslation, parseTranslations, sameTranslations, translated } from "./traducciones";
+import { applyTranslationInput, dropStaleTranslations, hasTranslation, parseTranslations, sameTranslations, translated } from "./traducciones";
 
 describe("parseTranslations", () => {
   it("lee la forma esperada y descarta lo demás", () => {
@@ -68,5 +68,27 @@ describe("sameTranslations", () => {
     expect(sameTranslations({ en: { name: "a" } }, { en: { name: "b" } })).toBe(false);
     expect(sameTranslations({}, { en: { name: "a" } })).toBe(false);
     expect(sameTranslations({}, {})).toBe(true);
+  });
+});
+
+describe("dropStaleTranslations", () => {
+  const current = {
+    en: { name: "Flat white", description: "Made with oat milk." },
+    pt: { description: "Feito com leite de aveia." },
+  };
+  it("quita el campo cambiado en todos los idiomas y deja el otro", () => {
+    expect(dropStaleTranslations(current, { description: true })).toEqual({ en: { name: "Flat white" } });
+    expect(dropStaleTranslations(current, { name: true })).toEqual({
+      en: { description: "Made with oat milk." },
+      pt: { description: "Feito com leite de aveia." },
+    });
+  });
+  it("quita el idioma que queda sin campos y no toca nada si no cambió ninguno", () => {
+    expect(dropStaleTranslations(current, { name: true, description: true })).toEqual({});
+    expect(dropStaleTranslations(current, {})).toEqual(current);
+  });
+  it("no modifica el original", () => {
+    dropStaleTranslations(current, { description: true });
+    expect(current.pt).toEqual({ description: "Feito com leite de aveia." });
   });
 });

@@ -8,7 +8,7 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 - **Hosting:** decidido (Fly.io, contenedor en São Paulo). La cuenta y `flyctl` ya existen (staging).
 - **Un proyecto de Supabase por entorno, no por cliente:** UcoMenu es multi-inquilino (organizaciones y sucursales en las mismas tablas, aisladas por RLS). Cada negocio nuevo se da de alta desde `/admin`; no se crea ningún proyecto. En total: staging y producción.
 - **Dominio:** **`ucomenu.com`, confirmado como definitivo por el usuario (2026-10-26)**; ya es suyo y su DNS está en Cloudflare. Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción lo usa como `NEXT_PUBLIC_SITE_URL=https://ucomenu.com`; hay que apuntarlo (sección 5) **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
-- **Legal** (ficha `agile/cambios/textos-legales.md`): revisión profesional de `/terminos`, `/privacidad` y `/alergenos`, identidad del operador y correo real de contacto.
+- **Legal** (fichas `agile/cambios/textos-legales.md` e `informacion-alimentaria-y-textos-legales.md`): revisión de un abogado argentino de `/terminos`, `/privacidad` y `/alergenos`, y las decisiones del usuario que hoy aparecen como `[Pendiente de definir antes del lanzamiento: …]` en esas páginas. Razón social, CUIT y domicilio se completan en `LEGAL_ENTITY` (`src/lib/legal.ts`). **No publicar mientras alguna página muestre un pendiente.**
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
 
 ## 1. Proyecto de Supabase (aprobación: crea recursos)
@@ -183,7 +183,7 @@ Con la app publicada y sin datos reales todavía:
 - El alta de una organización de ensayo crea la sucursal y `/m/{org}/{sucursal}` abre con HTTPS.
 - Un QR de mesa abre `/t/{token}`, el llamado llega a la sala y el botón queda en cooldown; el ticket de visita vale desde otra instancia (reabrir tras un nuevo despliegue).
 - **La máquina:** con una pantalla de sala abierta un rato, anotar la memoria y la CPU de la máquina en el panel de Fly (la imagen midió ~80 MB en reposo; criterios en `docs/operacion.md`, sección 5); confirmar que `/sala/{slug}/estado` responde 401 JSON sin sesión.
-- `/terminos`, `/privacidad` y `/alergenos` abren y el contacto es el real.
+- `/terminos`, `/privacidad` y `/alergenos` abren, el contacto es el real y **ninguna muestra «Pendiente de definir»** (`data-testid="pendiente-legal"`: cero elementos).
 - No hay cookies en la carta pública (`/m/...`).
 - La purga programada corrió y no quedan llamados de más de 14 días (paso 4).
 - La purga de comentarios corrió y no quedan rechazados de más de 7 días ni pendientes de más de 30 (paso 4.b).

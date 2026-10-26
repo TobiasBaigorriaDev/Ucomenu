@@ -14,6 +14,7 @@ import {
 } from "./catalog";
 import { nextSortOrder, sortForDisplay, type Direction } from "./ordering";
 import { parseChoices, parseDelta, type ChoicesProblem } from "./options-rules";
+import { staleTranslationsPatch } from "./traducciones-obsoletas";
 import { validateName } from "./validation";
 
 /**
@@ -154,9 +155,13 @@ export async function updateGroup(db: Db, orgId: string, id: string, input: Grou
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
 
+  // Si cambió el nombre, las traducciones ya no dicen lo mismo: se quitan (ver el módulo).
+  const stale = await staleTranslationsPatch(db, "option_groups", orgId, id, parsed.data);
+  if (!stale) return fail("unexpected");
+
   const { data, error } = await db
     .from("option_groups")
-    .update(parsed.data)
+    .update({ ...parsed.data, ...stale })
     .eq("id", id)
     .eq("organization_id", orgId)
     .select("id");
@@ -233,9 +238,13 @@ export async function updateOption(db: Db, orgId: string, id: string, input: Opt
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
 
+  // Si cambió el nombre, las traducciones ya no dicen lo mismo: se quitan (ver el módulo).
+  const stale = await staleTranslationsPatch(db, "options", orgId, id, parsed.data);
+  if (!stale) return fail("unexpected");
+
   const { data, error } = await db
     .from("options")
-    .update(parsed.data)
+    .update({ ...parsed.data, ...stale })
     .eq("id", id)
     .eq("organization_id", orgId)
     .select("id");

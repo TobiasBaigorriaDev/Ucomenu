@@ -22,7 +22,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## Bloqueado
 
-- [M] Salida a producción — preparación y staging hechos; dominio `ucomenu.com` confirmado (falta apuntarlo a la app); faltan proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
+- [M] Salida a producción — preparación y staging hechos; dominio `ucomenu.com` confirmado (falta apuntarlo a la app); faltan proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal (abogado y los pendientes visibles de `/terminos` y `/privacidad`) y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
 - [S] Spike descartable de Apple Wallet y Google Wallet con ubicaciones — bloqueado por cuentas de Apple Developer y emisor de Google Wallet, aprobación y pago; valida ADR 0003 → [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md)
 
 ## Backlog
@@ -63,6 +63,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [M] Información alimentaria segura y textos legales coherentes con la app: avisos que no sugieren alérgenos que no hay, notas de contacto cruzado y de opciones, traducciones viejas quitadas al cambiar el original, y términos, privacidad y `/alergenos` reescritos con pendientes visibles; implementado y verificado en local (2026-10-26); falta abogado y decisiones del usuario → [ficha](cambios/informacion-alimentaria-y-textos-legales.md)
 - [S] Dominio: `ucomenu.com` confirmado como definitivo por el usuario (2026-10-26; ya es suyo, DNS en Cloudflare); procedimiento de apuntarlo a Fly y a Cloudflare documentado → [procedimiento](../docs/produccion.md) · [ADR 0015](../docs/decisiones/0015-estrategia-de-lanzamiento.md)
 
 - [C] Rol de cocinero (pantalla `/cocina`: pedidos con «Listo», platos agotados por sucursal; Pro y Premium; flujo anotado → listo → entregado; sin precios ni acceso a Sala y panel) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/rol-cocinero.md) · [ADR 0048](../docs/decisiones/0048-rol-cocinero.md)
