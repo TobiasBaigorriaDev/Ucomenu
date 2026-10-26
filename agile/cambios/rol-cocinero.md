@@ -13,11 +13,12 @@ Un rol de **cocinero** (pedido del usuario, 2026-10-26) que recibe las órdenes,
 5. El Dueño y el Staff también pueden usar `/cocina` (ven y marcan igual); el Staff conserva su flujo en Mesas.
 
 ## Invariantes (qué nunca debe pasar)
-- Un cocinero **no lee ni escribe** ninguna tabla por la API (precios, pedidos, mesas, llamados, personal, planes, pagos, auditoría), ni la carta, aunque conozca los ids.
+- Un cocinero **no lee ni escribe** ninguna tabla del local por la API (pedidos, líneas, registro, mesas, llamados, historial de precios, personal, plan, pagos, auditoría) ni escribe la carta, aunque conozca los ids. De la carta lee **solo lo público** (platos y categorías activos de un local publicado: lo mismo que un visitante anónimo); lo inactivo u oculto solo lo ven Dueño y Staff.
 - Un cocinero **no puede**: anotar, editar, cancelar, entregar, cerrar o anular pedidos; tocar precios, visibilidad u otros ajustes de la sucursal; gestionar personal; registrar push; entrar a `/panel` ni `/sala`.
 - Un cocinero de **otra organización** no ve ni toca nada de esta; uno de **esta** no opera sin `orders` en el plan ni con la cuenta suspendida o en solo lectura.
 - Un cocinero **no cambia su propio rol** ni el de nadie (solo el Dueño, como hoy).
-- `kitchen_orders` y `kitchen_menu` **no devuelven** columnas de precio ni totales.
+- `kitchen_orders` y `kitchen_menu` **no devuelven** columnas de precio ni totales (la carta pública sí muestra precios a cualquiera: no es un secreto que esta función deba guardar).
+- Las escrituras de cocina **revalidan quién llama después de esperar** (fila de disponibilidad, candado de la línea): una membresía revocada o cambiada mientras esperan no las deja pasar. Un registro push en vuelo no sobrevive al cambio a cocinero, y los avisos solo van a quien hoy es Dueño o Staff.
 - Pasar a `ready` es idempotente y registrado en `order_events` con la persona.
 
 ## Fallos y recuperación
@@ -36,6 +37,15 @@ Un rol de **cocinero** (pedido del usuario, 2026-10-26) que recibe las órdenes,
 
 ## Fuera de alcance
 Cocinero atado a una sucursal; tiempos de preparación o estados intermedios; impresión de comandas; avisos push al cocinero; cancelaciones por el cocinero; edición de la carta por el cocinero.
+
+## Revisión y aprobación
+**Ronda 1 (Codex, commit `850d717`, 2026-10-26): RECHAZAR** con 5 hallazgos. Triage:
+1. *Lectura pública de `products` con precios* — cierto pero es dato público por diseño (la carta publicada la ve cualquiera, `anon` incluido). El defecto era mi invariante, que prometía «no lee la carta»: corregido arriba; prueba nueva de paridad con un visitante anónimo (lo inactivo solo lo ven Dueño y Staff). Sin cambio de código.
+2. *Agotar tras revocar el acceso* — real: `set_kitchen_availability` revalida después del `UPSERT`. Prueba de carrera nueva (retiene la fila, revoca, libera); falla sin la defensa.
+3. *Registro push en carrera con el cambio a cocinero* — real: el registro revalida el rol tras el candado, el trigger toma el mismo candado y `push_targets_for_call` filtra por rol actual. Prueba de carrera nueva; falla sin las defensas (queda 1 suscripción viva).
+4. *Se pierde el aviso de un plato nuevo listo si el contador no cambia* — real: la pantalla compara ids de líneas listas (`readyIds`, `tablesWithNewReady`). Pruebas unitarias nuevas, entre ellas el escenario «se entrega uno y se marca otro».
+5. *Prueba de aislamiento con tablas vacías* — cierto: ahora se siembra cada tabla y se comprueba que quien corresponde la ve antes de comprobar que el cocinero no.
+Falta la ronda de verificación.
 
 ## Evidencia
 Sobre el diff sin commitear de `main` (2026-10-26):

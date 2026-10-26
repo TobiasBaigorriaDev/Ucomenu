@@ -7,6 +7,7 @@ import {
   parseMesasState,
   sortMesas,
   summarizeOrder,
+  tablesWithNewReady,
   type MesaCard,
   type MesasState,
   type OrderLine,
@@ -49,7 +50,7 @@ describe("resumen del pedido abierto", () => {
       linea({ status: "delivered", quantity: 3 }),
       linea({ status: "cancelled", quantity: 5 }),
     ]);
-    expect(resumen).toEqual({ openedAt: "2026-10-24T10:00:00.000Z", dishes: 10, noted: 2, inKitchen: 1, ready: 4, delivered: 3, totalCents: 10000 });
+    expect(resumen).toEqual({ openedAt: "2026-10-24T10:00:00.000Z", dishes: 10, noted: 2, inKitchen: 1, ready: 4, readyIds: [], delivered: 3, totalCents: 10000 });
   });
 
   it("sin líneas vivas no hay resumen: la mesa se ve libre", () => {
@@ -57,20 +58,52 @@ describe("resumen del pedido abierto", () => {
     expect(summarizeOrder("2026-10-24T10:00:00.000Z", [linea({ status: "cancelled" })])).toBeNull();
   });
 
+  it("resume los ids de las líneas listas (sin contar las canceladas ni las que no tienen id)", () => {
+    const resumen = summarizeOrder("2026-10-24T10:00:00.000Z", [
+      linea({ id: "a", status: "ready", quantity: 2 }),
+      linea({ id: "b", status: "ready" }),
+      linea({ id: "x", status: "cancelled" }),
+      linea({ status: "ready" }),
+      linea({ id: "d", status: "delivered" }),
+    ]);
+    expect(resumen?.ready).toBe(4);
+    expect(resumen?.readyIds).toEqual(["a", "b"]);
+  });
+
   it("el texto de estado omite los estados en cero y usa singular", () => {
     const base = { openedAt: "2026-10-24T10:00:00.000Z", totalCents: 0 };
-    expect(orderStatusText({ ...base, dishes: 1, noted: 1, inKitchen: 0, ready: 0, delivered: 0 })).toBe("1 plato · 1 anotado");
-    expect(orderStatusText({ ...base, dishes: 6, noted: 2, inKitchen: 1, ready: 0, delivered: 3 })).toBe("6 platos · 2 anotados · 1 en cocina · 3 entregados");
-    expect(orderStatusText({ ...base, dishes: 2, noted: 0, inKitchen: 0, ready: 0, delivered: 2 })).toBe("2 platos · 2 entregados");
-    expect(orderStatusText({ ...base, dishes: 4, noted: 1, inKitchen: 0, ready: 2, delivered: 1 })).toBe("4 platos · 1 anotado · 2 listos · 1 entregado");
-    expect(orderStatusText({ ...base, dishes: 1, noted: 0, inKitchen: 0, ready: 1, delivered: 0 })).toBe("1 plato · 1 listo");
+    expect(orderStatusText({ ...base, dishes: 1, noted: 1, inKitchen: 0, ready: 0, readyIds: [], delivered: 0 })).toBe("1 plato · 1 anotado");
+    expect(orderStatusText({ ...base, dishes: 6, noted: 2, inKitchen: 1, ready: 0, readyIds: [], delivered: 3 })).toBe("6 platos · 2 anotados · 1 en cocina · 3 entregados");
+    expect(orderStatusText({ ...base, dishes: 2, noted: 0, inKitchen: 0, ready: 0, readyIds: [], delivered: 2 })).toBe("2 platos · 2 entregados");
+    expect(orderStatusText({ ...base, dishes: 4, noted: 1, inKitchen: 0, ready: 2, readyIds: [], delivered: 1 })).toBe("4 platos · 1 anotado · 2 listos · 1 entregado");
+    expect(orderStatusText({ ...base, dishes: 1, noted: 0, inKitchen: 0, ready: 1, readyIds: [], delivered: 0 })).toBe("1 plato · 1 listo");
   });
 });
 
 const carta = (label: string, over: Partial<MesaCard> = {}): MesaCard => ({ tableId: label, tableLabel: label, branchName: "Centro", calls: [], order: null, ...over });
 const llamado = (kind: "waiter" | "bill", createdAt: string, id = `${kind}-${createdAt}`) => ({ id, kind, createdAt, visitStartedAt: null });
-const pedido = (openedAt: string) => ({ openedAt, dishes: 1, noted: 1, inKitchen: 0, ready: 0, delivered: 0, totalCents: 1000 });
-const pedidoListo = (openedAt: string) => ({ openedAt, dishes: 1, noted: 0, inKitchen: 0, ready: 1, delivered: 0, totalCents: 1000 });
+const pedido = (openedAt: string) => ({ openedAt, dishes: 1, noted: 1, inKitchen: 0, ready: 0, readyIds: [], delivered: 0, totalCents: 1000 });
+const pedidoListo = (openedAt: string) => ({ openedAt, dishes: 1, noted: 0, inKitchen: 0, ready: 1, readyIds: ["l1"], delivered: 0, totalCents: 1000 });
+
+describe("platos nuevos listos", () => {
+  const conListos = (label: string, ids: string[]) => carta(label, { order: { ...pedidoListo("2026-10-24T10:00:00.000Z"), ready: ids.length, readyIds: ids } });
+
+  it("un plato listo que la pantalla no había visto es noticia aunque el contador no suba (se entregó uno y se marcó otro)", () => {
+    const seen = new Set(["a"]);
+    // Antes: «a» listo (contador 1). Ahora: «a» ya se entregó y «b» está listo (contador 1).
+    expect(tablesWithNewReady(seen, [conListos("Mesa 1", ["b"])]).map((m) => m.tableLabel)).toEqual(["Mesa 1"]);
+  });
+
+  it("lo que ya se vio no vuelve a avisar, y las mesas sin listos o sin pedido tampoco", () => {
+    const seen = new Set(["a", "b"]);
+    expect(tablesWithNewReady(seen, [conListos("Mesa 1", ["a", "b"]), carta("Mesa 2"), carta("Mesa 3", { order: pedido("2026-10-24T10:00:00.000Z") })])).toEqual([]);
+  });
+
+  it("de varias mesas avisa solo las que tienen un plato nuevo", () => {
+    const seen = new Set(["a"]);
+    expect(tablesWithNewReady(seen, [conListos("Mesa 1", ["a"]), conListos("Mesa 2", ["c"])]).map((m) => m.tableLabel)).toEqual(["Mesa 2"]);
+  });
+});
 
 describe("orden de las mesas", () => {
   it("cuenta, después llamado, después pedido (el más antiguo primero) y al final las libres; dentro de cada grupo, por etiqueta numérica", () => {
@@ -118,7 +151,7 @@ const estado = (over: Record<string, unknown> = {}) => ({
       tableLabel: "Mesa 1",
       branchName: "Centro",
       calls: [{ id: "c1", kind: "bill", createdAt: "2026-10-24T11:58:00.000Z", visitStartedAt: "2026-10-24T11:20:00.000Z" }],
-      order: { openedAt: "2026-10-24T11:00:00.000Z", dishes: 3, noted: 1, inKitchen: 1, ready: 0, delivered: 1, totalCents: 450000 },
+      order: { openedAt: "2026-10-24T11:00:00.000Z", dishes: 3, noted: 1, inKitchen: 1, ready: 0, readyIds: [], delivered: 1, totalCents: 450000 },
     },
     { tableId: "t2", tableLabel: "Mesa 2", branchName: "Centro", calls: [], order: null },
   ],
@@ -164,6 +197,10 @@ describe("respuesta de la ruta de consulta", () => {
     expect(parseMesasState(estado({ enabled: "sí" }))).toBeNull();
     expect(parseMesasState(estado({ view: [1] }))).toBeNull();
     expect(parseMesasState(estado({ branches: [{ id: 1 }] }))).toBeNull();
+    // El pedido tiene que traer los ids de las líneas listas: sin ellos no se sabría CUÁL plato es nuevo.
+    const sinIds = estado();
+    delete (sinIds.mesas[0].order as Record<string, unknown>).readyIds;
+    expect(parseMesasState(sinIds)).toBeNull();
     expect(parseMesasState(estado({ othersPending: -1 }))).toBeNull();
     expect(parseMesasState(estado({ othersPending: "2" }))).toBeNull();
     const sinId = estado();

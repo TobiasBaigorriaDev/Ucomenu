@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import {
@@ -145,16 +146,54 @@ describe("el rol", () => {
 });
 
 describe("cerrado por defecto: el cocinero no hereda lo del Staff", () => {
-  it("no lee pedidos, líneas, opciones, registro, mesas, llamados ni lo demás del local; el Staff sí", async () => {
+  it("no lee pedidos, líneas, registro, mesas, llamados, historial de precios, cuenta ni vistas del local; quien sí corresponde los ve", async () => {
     const l = await nuevoLocal();
-    await conLinea(l);
-    expect(ok<unknown[]>(await staff.db.from("orders").select("id").eq("organization_id", l.id))).toHaveLength(1);
-    expect(ok<unknown[]>(await staff.db.from("tables").select("id").eq("organization_id", l.id))).toHaveLength(1);
+    await conLinea(l, { p_note: "sin sal" });
+    expect((await service.from("waiter_calls").insert({ organization_id: l.id, branch_id: l.branch, table_id: l.table, kind: "waiter" })).error).toBeNull();
+    expect((await service.from("products").update({ price_cents: 12345 }).eq("id", l.product)).error).toBeNull();
+    ok(await staff.db.rpc("set_my_branch_view", { p_org: l.id, p_branches: [l.branch] }));
 
-    for (const tabla of ["orders", "order_items", "order_item_options", "order_events", "tables", "waiter_calls", "price_history", "subscriptions", "payments", "member_branch_views"] as const) {
+    // Cada tabla se siembra y se comprueba PRIMERO que quien corresponde la ve: sin eso, «vacío» no probaría nada.
+    const tablas = [
+      ["orders", staff.db],
+      ["order_items", staff.db],
+      ["order_events", staff.db],
+      ["tables", staff.db],
+      ["waiter_calls", staff.db],
+      ["price_history", owner.db],
+      ["subscriptions", owner.db],
+    ] as const;
+    for (const [tabla, autorizado] of tablas) {
+      const visto = await autorizado.from(tabla).select("*").eq("organization_id", l.id);
+      expect(visto.error, `${tabla}: autorizado`).toBeNull();
+      expect(visto.data?.length, `${tabla}: autorizado ve algo`).toBeGreaterThan(0);
       await sinFilas(cook.db.from(tabla).select("*").eq("organization_id", l.id));
     }
+    // La vista por sucursal solo se lee con su función: quien trabaja en el local ve la suya; el cocinero, nada.
+    expect(ok<string[]>(await staff.db.rpc("my_branch_view", { p_org: l.id }))).toEqual([l.branch]);
+    const vista = await cook.db.rpc("my_branch_view", { p_org: l.id });
+    expect(vista.error !== null || (Array.isArray(vista.data) && vista.data.length === 0)).toBe(true);
+    // Pagos y auditoría no los lee nadie por la API (ni el Dueño): el cocinero tampoco, y no llega a lo que el Dueño ve por sus funciones.
+    for (const tabla of ["payments", "audit_log"] as const) await sinFilas(cook.db.from(tabla).select("*").eq("organization_id", l.id));
+    await sinFilas(cook.db.rpc("owner_payments", { p_org: l.id } as never).then((r) => ({ data: r.data, error: r.error })));
     await sinFilas(cook.db.from("branches").select("id").eq("organization_id", l.id).eq("is_active", false));
+  });
+
+  it("de la carta lee lo mismo que cualquier visitante (lo público) y nada más: lo inactivo solo lo ven Dueño y Staff", async () => {
+    const l = await nuevoLocal();
+    const inactivo = (await service.from("products").insert({ organization_id: l.id, category_id: l.category, name: "Borrador", price_cents: 1, is_active: false }).select("id").single()).data!.id;
+    const nombres = async (db: Db) => ((await db.from("products").select("name").eq("organization_id", l.id).order("name")).data ?? []).map((x) => x.name);
+
+    // La carta publicada es pública (anon incluido): el cocinero ve lo mismo que un visitante.
+    expect(await nombres(cook.db)).toEqual(["Bife", "Flan"]);
+    expect(await nombres(anonClient())).toEqual(["Bife", "Flan"]);
+    // Dueño y Staff ven además lo que no está publicado.
+    expect(await nombres(staff.db)).toEqual(["Bife", "Borrador", "Flan"]);
+    expect((await cook.db.from("products").select("id").eq("id", inactivo)).data).toEqual([]);
+    // Los ajustes de sucursal de platos no publicados tampoco los ve.
+    await service.from("product_availability").insert({ organization_id: l.id, branch_id: l.branch, product_id: inactivo, is_available: false });
+    expect((await cook.db.from("product_availability").select("product_id").eq("product_id", inactivo)).data).toEqual([]);
+    expect((await staff.db.from("product_availability").select("product_id").eq("product_id", inactivo)).data).toHaveLength(1);
   });
 
   it("no escribe la carta: ni precios, ni categorías, ni platos, ni ajustes de sucursal", async () => {
@@ -401,6 +440,59 @@ describe("otro local, plan y cuenta", () => {
     expect((await pedidosCocina(cook.db, l.id)).error?.message).toBe("orders_not_allowed");
   });
 });
+
+describe("la autorización se revalida después de esperar", () => {
+  /** Otra sesión retiene algo unos segundos; `llamada` queda esperando y, mientras, se cambia la membresía. */
+  async function mientrasEspera<T>(retiene: string, esperaPor: string, cambio: () => PromiseLike<unknown>, llamada: () => PromiseLike<T>): Promise<T> {
+    const proceso = spawn("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", retiene], { stdio: "ignore" });
+    const termino = new Promise((r) => proceso.on("exit", r));
+    await new Promise((r) => setTimeout(r, 2000));
+    const espera = llamada().then((r) => r);
+    await new Promise((r) => setTimeout(r, 800));
+    expect(Number(sql(`select count(*) from pg_stat_activity where wait_event_type = 'Lock' and query like '%${esperaPor}%'`)[0][0])).toBeGreaterThanOrEqual(1);
+    await cambio();
+    const r = await espera;
+    await termino;
+    return r;
+  }
+
+  it("agotar un plato: una membresía revocada mientras la escritura espera la fila no la deja pasar", async () => {
+    const l = await nuevoLocal();
+    await service.from("product_availability").insert({ organization_id: l.id, branch_id: l.branch, product_id: l.product, is_available: true });
+    const r = (await mientrasEspera(
+      `begin; select 1 from public.product_availability where product_id = '${l.product}' and branch_id = '${l.branch}' for update; select pg_sleep(4); commit;`,
+      "set_kitchen_availability",
+      async () => expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", cook.id)).error).toBeNull(),
+      () => agotar(cook.db, l.id, l.product, l.branch, false),
+    )) as Resp;
+    await addMembership(service, cook, l.id, "cook");
+    expect(r.error?.message).toBe("orders_not_allowed");
+    expect((await service.from("product_availability").select("is_available").eq("product_id", l.product).single()).data?.is_available).toBe(true);
+  });
+
+  it("registrar el aviso: quien pasa a cocinero mientras el registro espera no deja una suscripción viva", async () => {
+    const l = await nuevoLocal("pro", null);
+    const clave = `push_subscription:${staff.id}:${l.id}`;
+    const r = (await mientrasEspera(
+      `begin; select pg_advisory_xact_lock(hashtextextended('${clave}', 0)); select pg_sleep(4); commit;`,
+      "register_push_subscription",
+      // El cambio de rol también espera ese candado (su trigger lo toma): se lanza sin esperarlo.
+      async () => {
+        void service.from("memberships").update({ role: "cook" }).eq("organization_id", l.id).eq("user_id", staff.id).then(() => undefined);
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      },
+      () => registrarPush(staff.db, l.id),
+    )) as Resp;
+    // Pase lo que pase con el orden, al final no queda ninguna suscripción y el rol cambió.
+    expect(["ok", "unavailable"]).toContain(r.data);
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    expect(sql(`select count(*) from public.push_subscriptions where organization_id = '${l.id}' and user_id = '${staff.id}'`)[0][0]).toBe("0");
+    expect((await service.from("memberships").select("role").eq("organization_id", l.id).eq("user_id", staff.id).single()).data?.role).toBe("cook");
+  });
+});
+
+const registrarPush = (db: Db, org: string) =>
+  db.rpc("register_push_subscription", { p_org: org, p_endpoint: `https://fcm.googleapis.com/fcm/send/rls-${randomUUID()}`, p_p256dh: "B".repeat(87), p_auth: "a".repeat(22) });
 
 describe("sin avisos de llamados", () => {
   const P256DH = "B".repeat(87);

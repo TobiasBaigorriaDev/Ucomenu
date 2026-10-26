@@ -11,6 +11,8 @@ import type { CallKind, SalaBranch, SalaCall } from "./types";
 export type LineStatus = "noted" | "in_kitchen" | "ready" | "delivered" | "cancelled";
 
 export type OrderLine = {
+  /** Identifica la línea (opcional: el resumen solo lo usa para saber CUÁLES están listas). */
+  id?: string;
   status: LineStatus;
   quantity: number;
   unitPriceCents: number;
@@ -28,6 +30,8 @@ export type MesaOrder = {
   inKitchen: number;
   /** Listos para entregar (los marcó la cocina). */
   ready: number;
+  /** Ids de las líneas listas: la pantalla compara ids (no el contador) para enterarse de cada plato nuevo que marca la cocina. */
+  readyIds: string[];
   delivered: number;
   /** Suma de las líneas no canceladas, en centavos. */
   totalCents: number;
@@ -92,6 +96,7 @@ export function summarizeOrder(openedAt: string, lines: readonly OrderLine[]): M
     noted: units("noted"),
     inKitchen: units("in_kitchen"),
     ready: units("ready"),
+    readyIds: live.flatMap((line) => (line.status === "ready" && line.id ? [line.id] : [])),
     delivered: units("delivered"),
     totalCents: orderCents(live),
   };
@@ -145,6 +150,14 @@ export function flattenCalls(mesas: readonly MesaCard[]): SalaCall[] {
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.tableLabel.localeCompare(b.tableLabel, "es-AR", { numeric: true }));
 }
 
+/**
+ * Las mesas con algún plato que la cocina marcó listo y la pantalla todavía no había visto (por id de línea, no por contador: entregar
+ * un plato y que la cocina marque otro entre dos consultas deja el contador igual y el plato nuevo es noticia igual).
+ */
+export function tablesWithNewReady(seen: ReadonlySet<string>, mesas: readonly MesaCard[]): MesaCard[] {
+  return mesas.filter((card) => (card.order?.readyIds ?? []).some((id) => !seen.has(id)));
+}
+
 /** «3 platos · 1 anotado · 1 listo · 1 entregado» (sin los estados en cero). */
 export function orderStatusText(order: MesaOrder): string {
   const parts = [order.dishes === 1 ? "1 plato" : `${order.dishes} platos`];
@@ -162,9 +175,10 @@ const isIso = (value: unknown): value is string => typeof value === "string" && 
 function parseOrder(raw: unknown): MesaOrder | null | undefined {
   if (raw === null) return null;
   if (!isRecord(raw)) return undefined;
-  const { openedAt, dishes, noted, inKitchen, ready, delivered, totalCents } = raw;
+  const { openedAt, dishes, noted, inKitchen, ready, readyIds, delivered, totalCents } = raw;
   if (!isIso(openedAt) || !isCents(dishes) || !isCents(noted) || !isCents(inKitchen) || !isCents(ready) || !isCents(delivered) || !isCents(totalCents)) return undefined;
-  return { openedAt, dishes, noted, inKitchen, ready, delivered, totalCents };
+  if (!Array.isArray(readyIds) || !readyIds.every((id) => typeof id === "string")) return undefined;
+  return { openedAt, dishes, noted, inKitchen, ready, readyIds: readyIds as string[], delivered, totalCents };
 }
 
 function parseCard(raw: unknown): MesaCard | null {

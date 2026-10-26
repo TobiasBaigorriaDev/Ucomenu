@@ -13,7 +13,9 @@
 --    visibles de una sucursal, SIN precios) y `set_kitchen_availability` (escribe SOLO `is_available` de esa sucursal, con la cuenta
 --    editable).
 --  * `register_push_subscription` exige Dueño o Staff (el cocinero no recibe avisos de llamados) y un trigger borra las suscripciones
---    push de quien pasa a cocinero.
+--    push de quien pasa a cocinero (con el mismo candado que el registro, para que un registro en vuelo no sobreviva al cambio de rol);
+--    `push_targets_for_call` solo avisa a quien hoy es Dueño o Staff.
+--  * Las funciones de cocina que escriben revalidan quién llama DESPUÉS de esperar (candado de la línea o de la fila de disponibilidad).
 --
 -- Errores estables (el mensaje es el nombre): 42501 orders_not_allowed · P0002 item_not_found / branch_not_found / product_not_found ·
 -- 22023 invalid_status / invalid_transition / invalid_reason / reason_required / invalid_availability. Repetir devuelve `unchanged`.
@@ -379,6 +381,12 @@ begin
     raise exception 'product_not_found' using errcode = 'P0002';
   end;
 
+  -- El UPSERT puede haber esperado el candado de la fila (otra persona escribiéndola): se vuelve a comprobar quién llama. Si ya no
+  -- puede, la excepción deshace la escritura.
+  if not private.can_kitchen_orders(p_org) or not private.org_can_write(p_org) then
+    raise exception 'orders_not_allowed' using errcode = '42501';
+  end if;
+
   return jsonb_build_object('product_id', p_product, 'branch_id', p_branch, 'available', v_available);
 end;
 $$;
@@ -429,6 +437,12 @@ begin
   -- Tope por persona y local (un teléfono y una PC son dos; diez cubre de sobra y frena el abuso). El lock serializa los
   -- registros de la misma persona y local: sin él, dos pedidos simultáneos contarían los mismos nueve y terminarían en once.
   perform pg_advisory_xact_lock(hashtextextended('push_subscription:' || v_user::text || ':' || p_org::text, 0));
+  -- Esperar el candado lleva tiempo: se vuelve a comprobar el rol (la persona pudo pasar a cocinero mientras tanto).
+  if not exists (
+    select 1 from public.memberships m where m.user_id = v_user and m.organization_id = p_org and m.role in ('owner', 'staff')
+  ) then
+    return 'unavailable';
+  end if;
   if (
     select count(*) from public.push_subscriptions s
     where s.user_id = v_user and s.organization_id = p_org and s.endpoint <> p_endpoint
@@ -459,6 +473,9 @@ security definer
 set search_path = ''
 as $$
 begin
+  -- El mismo candado que toma register_push_subscription: o el registro termina antes (y se borra lo que insertó) o empieza después
+  -- (y ve el rol nuevo y se niega). Sin esto, un registro en vuelo podía sobrevivir al cambio de rol.
+  perform pg_advisory_xact_lock(hashtextextended('push_subscription:' || new.user_id::text || ':' || new.organization_id::text, 0));
   delete from public.push_subscriptions s where s.user_id = new.user_id and s.organization_id = new.organization_id;
   return null;
 end;
@@ -470,5 +487,93 @@ create trigger memberships_cook_no_push
   for each row
   when (new.role = 'cook' and old.role is distinct from new.role)
   execute function private.cook_drops_push();
+
+-- push_targets_for_call: solo avisa a quien hoy es Dueño o Staff (defensa en profundidad: la suscripción de un cocinero no debería existir).
+create or replace function public.push_targets_for_call(p_token text, p_kind text)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+declare
+  v_table record;
+  v_multi boolean;
+  v_subscriptions jsonb;
+begin
+  if p_kind is null or p_kind not in ('waiter', 'bill')
+     or p_token is null or p_token !~ '^[0-9a-f]{32}$' then
+    return null;
+  end if;
+
+  select t.id, t.organization_id, t.branch_id, t.label, b.name as branch_name, o.slug,
+         substr(md5(t.id::text), 1, 12) as table_key
+    into v_table
+  from public.tables t
+  join public.branches b on b.id = t.branch_id and b.is_active
+  join public.organizations o on o.id = t.organization_id and o.is_active
+  where t.qr_token = p_token
+    and t.is_active;
+
+  if not found or not private.has_feature(v_table.organization_id, 'waiter_call') then
+    return null;
+  end if;
+
+  -- Solo por un llamado que acaba de crearse y sigue pendiente: esta función no sirve para avisar "porque sí".
+  if not exists (
+    select 1 from public.waiter_calls w
+    where w.table_id = v_table.id
+      and w.kind = p_kind
+      and w.status = 'pending'
+      and w.created_at > now() - interval '2 minutes'
+  ) then
+    return null;
+  end if;
+
+  select count(*) > 1 into v_multi
+  from public.branches b
+  where b.organization_id = v_table.organization_id and b.is_active;
+
+  select coalesce(jsonb_agg(jsonb_build_object(
+           'id', s.id, 'endpoint', s.endpoint, 'p256dh', s.p256dh, 'auth', s.auth_secret)), '[]'::jsonb)
+    into v_subscriptions
+  from (
+    select ps.id, ps.endpoint, ps.p256dh, ps.auth_secret
+    from public.push_subscriptions ps
+    left join public.member_branch_views v
+      on v.user_id = ps.user_id and v.organization_id = ps.organization_id
+    where ps.organization_id = v_table.organization_id
+      -- Solo a quien hoy es Dueño o Staff (ADR 0048): un cocinero no recibe avisos de llamados aunque conserve una suscripción.
+      and exists (
+        select 1 from public.memberships m
+        where m.user_id = ps.user_id and m.organization_id = ps.organization_id and m.role in ('owner', 'staff')
+      )
+      -- Se avisa si la persona no eligió sucursales, si eligió esta, o si ninguna de las que eligió sigue activa (ante la
+      -- duda, se avisa: un aviso de más es preferible a un llamado sin atender).
+      and (
+        v.user_id is null
+        or cardinality(v.branch_ids) = 0
+        or v_table.branch_id = any (v.branch_ids)
+        or not exists (
+          select 1 from public.branches vb
+          where vb.id = any (v.branch_ids) and vb.organization_id = v.organization_id and vb.is_active
+        )
+      )
+    order by ps.registered_at desc
+    limit 200
+  ) s;
+
+  return jsonb_build_object(
+    'slug', v_table.slug,
+    'table_label', v_table.label,
+    'table_key', v_table.table_key,
+    'branch_name', v_table.branch_name,
+    'multi_branch', v_multi,
+    'subscriptions', v_subscriptions
+  );
+end;
+$$;
+comment on function public.push_targets_for_call(text, text) is
+  'Destinos del aviso de un llamado recién creado (pendiente de menos de 2 minutos): suscripciones de los miembros de esa organización que miran la sucursal de la mesa (o todas) y los datos del texto. Solo service_role.';
 
 commit;

@@ -10,7 +10,7 @@ Hasta ahora había dos roles (`owner`, `staff`) y los pedidos tenían el estado 
 1. **Tercer rol `cook`** en `memberships.role`. Lo da y lo quita el **Dueño** desde Personal; solo se puede dar con la función `orders` en el plan.
 2. **Cerrado por defecto.** `private.is_org_member` (que abre más de 130 políticas y todas las funciones del mozo) pasa a significar **Dueño o Staff**: un cocinero no hereda nada de lo que ya existe. Lo de cocina se concede aparte, con `private.is_org_kitchen` (Dueño, Staff o cocinero) y funciones propias.
 3. **Superficie del cocinero = tres funciones `SECURITY DEFINER`** (sin acceso directo a tablas):
-   - `kitchen_orders(p_org, p_branch)`: pedidos abiertos con sus líneas pendientes (anotadas y listas): mesa, plato, cantidad, opciones y observación. **Sin precios, totales ni datos de cobro.**
+   - `kitchen_orders(p_org, p_branch)`: pedidos abiertos con sus líneas pendientes (anotadas y listas): mesa, plato, cantidad, opciones y observación. **Sin precios, totales ni datos de cobro** (los precios de la carta publicada son públicos para cualquiera; lo que no se agrega es nada del pedido).
    - `kitchen_menu(p_org, p_branch)`: platos activos y visibles de la sucursal con su disponibilidad. **Sin precios.**
    - `set_kitchen_availability(p_org, p_product, p_branch, p_available)`: escribe **solo** `is_available` de esa sucursal, con la cuenta editable.
    Marcar «listo» usa `set_order_item_status`, ampliada.

@@ -51,7 +51,7 @@ export async function loadOpenOrders(db: Db, orgId: string, scope: { tableIds: r
       // Un estado desconocido (un valor que esta pantalla todavía no conoce) no se suma: mejor menos que un total inventado.
       if (!isLineStatus(row.status)) continue;
       const list = lines.get(row.order_id) ?? [];
-      list.push({ status: row.status, quantity: row.quantity, unitPriceCents: row.unit_price_cents, optionsCents: Number(row.options_cents) });
+      list.push({ id: row.id, status: row.status, quantity: row.quantity, unitPriceCents: row.unit_price_cents, optionsCents: Number(row.options_cents) });
       lines.set(row.order_id, list);
     }
   }

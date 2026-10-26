@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatArs } from "@/lib/money";
-import { flattenCalls, orderStatusText, parseMesasState, sortMesas, type MesaCall, type MesaCard, type MesasState } from "@/lib/sala/mesas";
+import { flattenCalls, orderStatusText, parseMesasState, sortMesas, tablesWithNewReady, type MesaCall, type MesaCard, type MesasState } from "@/lib/sala/mesas";
 import {
   announceableCalls,
   callName,
@@ -68,9 +68,8 @@ function bandOf(card: MesaCard): { className: string; label: string } {
 const estadoDe = (card: MesaCard) =>
   card.calls.some((c) => c.kind === "bill") ? "cuenta" : card.calls.length > 0 ? "llama" : card.order && card.order.ready > 0 ? "listo" : card.order ? "pedido" : "libre";
 
-/** Mesa → platos listos de su pedido: sirve para enterarse de cuándo la cocina marca algo listo. */
-const readyByTable = (mesas: readonly MesaCard[]): Map<string, number> =>
-  new Map(mesas.flatMap((card): [string, number][] => (card.order && card.order.ready > 0 ? [[card.tableId, card.order.ready]] : [])));
+/** Ids de las líneas listas de todas las mesas: sirve para enterarse de CADA plato nuevo que la cocina marca listo (no del contador neto). */
+const readyLineIds = (mesas: readonly MesaCard[]): string[] => mesas.flatMap((card) => card.order?.readyIds ?? []);
 
 export function MesasBoard({
   slug,
@@ -111,8 +110,8 @@ export function MesasBoard({
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
   const offset = useRef(0);
   const seen = useRef<Set<string>>(new Set(flattenCalls(initial.mesas).map((call) => call.id)));
-  // Platos listos por mesa en la última respuesta: si suben, la cocina marcó algo (solo lo que pasa después de cargar suena y se anuncia).
-  const lastReady = useRef(readyByTable(initial.mesas));
+  // Líneas que ya se vieron listas: una que aparece listo sin estar acá es un plato nuevo (solo lo que pasa después de cargar suena y se anuncia).
+  const seenReady = useRef<Set<string>>(new Set(readyLineIds(initial.mesas)));
   // Qué sucursales miraba la última respuesta: si cambia (la persona eligió otras), lo que ya estaba pendiente no suena ni se anuncia.
   const lastView = useRef(initial.view.join(","));
   // Pide un sondeo ya (tras cambiar la vista); lo arma el efecto del sondeo.
@@ -189,9 +188,8 @@ export function MesasBoard({
     setState(next);
 
     // Con otra vista, lo que aparece ahora ya estaba listo (la vista anterior lo ocultaba): es base, sin sonido ni anuncio.
-    const readyNow = readyByTable(next.mesas);
-    const justReady = viewChanged ? [] : next.mesas.filter((card) => (readyNow.get(card.tableId) ?? 0) > (lastReady.current.get(card.tableId) ?? 0));
-    lastReady.current = readyNow;
+    const justReady = viewChanged ? [] : tablesWithNewReady(seenReady.current, next.mesas);
+    for (const id of readyLineIds(next.mesas)) seenReady.current.add(id);
 
     if (incoming.length === 0 && justReady.length === 0) return;
     const ids = incoming.map((call) => call.id);
