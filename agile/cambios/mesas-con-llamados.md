@@ -1,5 +1,5 @@
 # Cambio: Llamados dentro de «Mesas» (una sola pantalla para el mozo)
-Estado: **hecho en local (2026-10-26); sin subir ni desplegar**. Falta tu prueba con sesión real y en teléfono. Sin migración.
+Estado: **hecho, en `origin/main` (`7a1e2d1`) y desplegado en staging (Fly v57, 2026-10-26)**. Falta tu prueba con sesión real y en teléfono. Sin migración.
 Nivel: **M** — reorganiza pantallas y reutiliza lo que ya existe (atender un llamado, vista por sucursal, sonido, aviso push); no cambia permisos, planes ni dinero. Sin revisión independiente por defecto.
 
 ## Objetivo
@@ -33,4 +33,5 @@ Sobre el diff sin commitear de `main` (2026-10-26):
 - E2E contra el build, 15 archivos que tocan la Sala o el panel (`sala`, `sala-mesas`, `sala-push`, `sala-anotar`, `sala-operar`, `sala-precuenta`, `sala-turno`, `panel-llamados-aviso`, `panel-push`, `acceso`, `alta-guiada`, `aviso-iphone`, `reinicio-programado-qr`, `ticket-de-visita`, `superadmin-addons-baja`): 148 de 150 en la primera corrida; las dos fallas, repetidas: «sondeo lento» pasó 3 de 3 sola (falla solo con la máquina cargada por 11 *workers*, un cronometraje de 2,5 s) y «Todas las sucursales de la analítica» fallaba por una aserción desactualizada (el enlace de la analítica ya lleva `&dias=30`; no es de este cambio): se ajustó la expresión y pasa.
 - Pruebas nuevas en `sala-mesas`: la Sala entra en Mesas y su navegación es solo Mesas y Panel; «Pide la cuenta» se atiende junto al total; una mesa de baja con un llamado pendiente sigue a la vista; el contenido de `/mesas/estado` (llamados con id y escaneo, `othersPending`, sin el token del QR).
 - Revisado el diff y una captura a 390 px (tarjetas con «Atendido», sin desborde).
-- Sin probar: sesión real y teléfono; staging.
+- **Staging (2026-10-26):** imagen `ucomenu-staging:mesas-llamados-7a1e2d1`, desplegada por el usuario con `flyctl deploy -c fly.staging.toml --local-only --depot=false` y los cuatro argumentos públicos: **Fly v57**, `started`, 1 passing. HTTP sin sesión: `/`, `/login` y `/privacidad` 200; `/sala/demo` y `/panel/demo/analitica` 307 (al login). Sin migración.
+- Sin probar: sesión real y teléfono.
