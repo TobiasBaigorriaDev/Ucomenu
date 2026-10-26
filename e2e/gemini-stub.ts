@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type Server } from "node:http";
 /**
  * Un Gemini de mentira para los E2E (ficha traduccion-automatica): el servidor de pruebas apunta a él con `GEMINI_API_URL` (la
  * app solo acepta una URL de la propia máquina), así ninguna prueba toca el servicio real ni gasta cuota. Responde a
- * `generateContent` traduciendo cada texto como «EN: …» o «PT: …» según el idioma pedido en las instrucciones. Exige la clave de
+ * `generateContent` (también con un resumen de analítica a partir de los hechos recibidos) traduciendo cada texto como «EN: …» o «PT: …» según el idioma pedido en las instrucciones. Exige la clave de
  * pruebas en `x-goog-api-key`. Lo levanta `e2e/global-setup.ts` una sola vez para toda la corrida.
  */
 
@@ -27,6 +27,17 @@ export function startGeminiStub(): Promise<{ close: () => Promise<void> }> {
     if (request.headers["x-goog-api-key"] !== E2E_GEMINI_KEY) return reply(403, {});
 
     const body = JSON.parse(await readBody(request));
+    // Resumen de la analítica (ficha resumen-de-analitica-con-ia): redacta con las cifras que recibió, como haría el servicio real.
+    if (String(body.systemInstruction?.parts?.[0]?.text).includes("business summary")) {
+      const facts = JSON.parse(body.contents[0].parts[0].text);
+      const sales = String(facts.current.sales_ars).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+      const summary = {
+        summary: `Vendiste $ ${sales} en ${facts.period_days} días, con ${facts.current.orders} pedidos cerrados. (resumen de prueba)`,
+        highlights: [{ title: "Franja fuerte", detail: `El día más fuerte fue ${facts.best_day?.label ?? "ninguno"}.` }],
+        actions: [{ action: "Revisá los platos que no se piden", reason: `Hay ${facts.dishes_not_ordered.total} platos sin pedidos en el período.` }],
+      };
+      return reply(200, { candidates: [{ content: { parts: [{ text: JSON.stringify(summary) }] } }] });
+    }
     const prefix = String(body.systemInstruction?.parts?.[0]?.text).includes("Portuguese") ? "PT" : "EN";
     const input = JSON.parse(body.contents[0].parts[0].text) as { key: string; text: string }[];
     const answer = input.map((item) => ({ key: item.key, text: `${prefix}: ${item.text}` }));

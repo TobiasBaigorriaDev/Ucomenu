@@ -84,25 +84,43 @@ export function parseAnswer(text: string): Record<string, string> {
   return result;
 }
 
+export type GeminiConfig = { apiKey: string; model: string; origin: string };
+
+/**
+ * Una llamada a `generateContent` con salida JSON según `schema`; devuelve el texto de la respuesta o `null` si vino vacía o
+ * bloqueada. Compartida por las sugerencias de traducción y el resumen de la analítica. El cuerpo de un error no se propaga:
+ * puede repetir partes del pedido (textos de la carta o cifras del local).
+ */
+export async function callGemini(config: GeminiConfig, args: { system: string; user: string; schema: unknown; temperature: number }): Promise<string | null> {
+  const response = await fetch(`${config.origin}/v1beta/models/${encodeURIComponent(config.model)}:generateContent`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-goog-api-key": config.apiKey },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: args.system }] },
+      contents: [{ role: "user", parts: [{ text: args.user }] }],
+      generationConfig: { responseMimeType: "application/json", responseSchema: args.schema, temperature: args.temperature },
+    }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    cache: "no-store",
+  });
+  if (!response.ok) throw new Error(`Gemini respondió ${response.status}.`);
+  return answerText((await response.json()) as GeminiResponse);
+}
+
+/** La configuración de Gemini del entorno, o `null` si falta la clave (las funciones de IA quedan apagadas). */
+export function geminiConfig(): GeminiConfig | null {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) return null;
+  return { apiKey, model: process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL, origin: resolveOrigin(process.env.GEMINI_API_URL) };
+}
+
 export function createGeminiProvider(apiKey: string, model = DEFAULT_MODEL, origin = DEFAULT_ORIGIN): TranslationProvider {
+  const config: GeminiConfig = { apiKey, model, origin };
   return {
     name: "gemini",
     async translate(items, lang) {
       const input = items.map((item) => ({ key: item.key, type: KIND[item.kind] + (item.field === "description" ? " (description)" : ""), text: item.text }));
-      const response = await fetch(`${origin}/v1beta/models/${encodeURIComponent(model)}:generateContent`, {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": apiKey },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION(lang) }] },
-          contents: [{ role: "user", parts: [{ text: JSON.stringify(input) }] }],
-          generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA, temperature: 0.2 },
-        }),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-        cache: "no-store",
-      });
-      // El cuerpo del error no se propaga: puede repetir partes del pedido (los textos de la carta).
-      if (!response.ok) throw new Error(`Gemini respondió ${response.status}.`);
-      const text = answerText((await response.json()) as GeminiResponse);
+      const text = await callGemini(config, { system: SYSTEM_INSTRUCTION(lang), user: JSON.stringify(input), schema: RESPONSE_SCHEMA, temperature: 0.2 });
       return text ? parseAnswer(text) : {};
     },
   };
@@ -113,7 +131,6 @@ export function createGeminiProvider(apiKey: string, model = DEFAULT_MODEL, orig
  * paso a producción con Claude se hace con otra implementación de `TranslationProvider` en este mismo punto.
  */
 export function getTranslationProvider(): TranslationProvider | null {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey) return null;
-  return createGeminiProvider(apiKey, process.env.GEMINI_MODEL?.trim() || DEFAULT_MODEL, resolveOrigin(process.env.GEMINI_API_URL));
+  const config = geminiConfig();
+  return config ? createGeminiProvider(config.apiKey, config.model, config.origin) : null;
 }

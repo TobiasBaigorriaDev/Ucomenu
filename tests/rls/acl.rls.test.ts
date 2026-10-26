@@ -26,6 +26,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   has_feature: [true, false, false],
   is_org_member: [true, false, true], // usada por políticas
   is_org_owner: [true, false, true], // usada por políticas
+  can_read_analytics_summary: [true, false, true], // usada por la política de analytics_summaries (ADR 0047): Dueño actual con `analytics` en el plan
   org_can_write: [true, false, true], // usada por políticas de escritura
   org_is_published: [true, true, true], // usada por las políticas de lectura pública (anon incluido)
   org_limit: [true, false, false],
@@ -114,6 +115,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   owner_top_dishes: [false, true], // analítica básica (ADR 0022): platos más vistos para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   owner_sales_overview: [false, true], // analítica de pedidos (ADR 0045): ventas, franjas y control para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   owner_products_performance: [false, true], // analítica de pedidos (ADR 0045): platos más vendidos y sin pedidos para el Dueño con el plan; vuelve a comprobar todo; solo lectura
+  save_analytics_summary: [false, true], // resumen con IA de la analítica (ADR 0047): única puerta de escritura de analytics_summaries; valida adentro (Dueño con el plan)
   owner_account_history: [false, true], // el Dueño lee el historial de cambios de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   owner_payments: [false, true], // el Dueño lee los pagos de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   public_menu_status: [true, true],

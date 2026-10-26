@@ -58,3 +58,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0044 | [Turno de mesa y cuenta del comensal: el QR no cambia, lo que resuelve sí](0044-turno-de-mesa-y-cuenta-del-comensal.md) | aceptada (sin implementar) | 2026-10-24 |
 | 0045 | [Analítica de pedidos: ventas anotadas por período, con los días de cada sucursal y lectura solo para el Dueño](0045-analitica-de-pedidos.md) | aceptada | 2026-10-25 |
 | 0046 | [Sugerencia de traducciones con IA: el servicio propone, el local revisa y publica](0046-sugerencia-de-traducciones-con-ia.md) | aceptada | 2026-10-25 |
+| 0047 | [Resumen de la analítica con IA: el servicio redacta sobre cifras ya calculadas y el Dueño decide qué hacer](0047-resumen-de-analitica-con-ia.md) | aceptada | 2026-10-26 |

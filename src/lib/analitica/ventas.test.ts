@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  analyticsTimeZone,
   averageTicket,
   busiestWeekday,
   categoryRows,
@@ -302,5 +303,16 @@ describe("secciones visibles según qué lectura falló", () => {
   it("si fallan las ventas y los platos no vendieron nada, no se afirma qué no se pidió; si fallan las dos, se muestran los avisos", () => {
     expect(visibleSections(null, platos(0))).toEqual({ withOrders: false, bestProducts: true, unsold: false });
     expect(visibleSections(null, null)).toEqual({ withOrders: false, bestProducts: true, unsold: true });
+  });
+});
+
+describe("zona horaria de la analítica", () => {
+  const BA = { timezone: "America/Argentina/Buenos_Aires" };
+  const MAD = { timezone: "Europe/Madrid" };
+  it("la de la sucursal elegida; sin elegir, la común a todas; si difieren, la de Argentina", () => {
+    expect(analyticsTimeZone([BA, MAD], MAD)).toBe("Europe/Madrid");
+    expect(analyticsTimeZone([MAD, MAD], null)).toBe("Europe/Madrid");
+    expect(analyticsTimeZone([BA, MAD], null)).toBe("America/Argentina/Buenos_Aires");
+    expect(analyticsTimeZone([], null)).toBe("America/Argentina/Buenos_Aires");
   });
 });

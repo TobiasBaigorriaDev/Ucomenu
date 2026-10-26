@@ -169,6 +169,15 @@ export function parseProducts(raw: unknown): Products | null {
   return { best, unsold, unsoldTotal: raw.unsold_total };
 }
 
+/** Zona con la que se rotulan las fechas cuando no hay una sucursal elegida y las sucursales no comparten zona. */
+export const DEFAULT_ZONE = "America/Argentina/Buenos_Aires";
+
+/** La zona horaria de la analítica: la de la sucursal elegida o, sin elegir, la común a todas (si difieren, la de Argentina). */
+export function analyticsTimeZone(branches: readonly { timezone: string }[], branch: { timezone: string } | null): string {
+  const zones = new Set(branches.map((item) => item.timezone));
+  return branch?.timezone ?? (zones.size === 1 ? [...zones][0] : DEFAULT_ZONE);
+}
+
 /** Redondea un importe en centavos al peso entero más cercano (los promedios no necesitan centavos). */
 export const roundToPesos = (cents: number): number => Math.round(cents / 100) * 100;
 

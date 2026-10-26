@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HoursChart } from "@/components/analitica/hours-chart";
+import { ResumenIa } from "@/components/analitica/resumen-ia";
 import {
   BestProductsSection,
   CategoriesSection,
@@ -11,7 +12,9 @@ import {
   UnsoldSection,
 } from "@/components/analitica/secciones";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
-import { loadAnalytics, loadSales } from "@/lib/analitica/cargar";
+import { loadAnalytics, loadSales, loadStoredSummary } from "@/lib/analitica/cargar";
+import { getSummaryProvider } from "@/lib/analitica/proveedor-resumen";
+import { hasEnoughOrders, MIN_ORDERS_FOR_SUMMARY } from "@/lib/analitica/resumen";
 import {
   ANALYTICS_DAYS,
   barPercent,
@@ -23,17 +26,17 @@ import {
   type DishViews,
   type HourCalls,
 } from "@/lib/analitica/lectura";
-import { PERIODS, parsePeriod, visibleSections, type PeriodDays } from "@/lib/analitica/ventas";
+import { analyticsTimeZone, PERIODS, parsePeriod, visibleSections, type PeriodDays } from "@/lib/analitica/ventas";
 import { readBranchView } from "@/lib/sucursales/vista";
 import { createSessionClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Analítica" };
 
+/** Cómo se nombra a cada servicio de IA en la pantalla. */
+const PROVIDER_LABEL: Record<string, string> = { gemini: "Gemini", claude: "Claude" };
+
 /** Valor reservado de `?sucursal=` para «Todas las sucursales» (no es un slug válido: sin guion bajo). */
 const ALL_BRANCHES = "_todas";
-
-/** Zona con la que se rotulan las fechas cuando no hay una sucursal elegida y las sucursales no comparten zona. */
-const DEFAULT_ZONE = "America/Argentina/Buenos_Aires";
 
 /**
  * Analítica del local para su Dueño. Pedidos (ficha analitica-de-pedidos, ADR 0045): resumen, ventas por día, franjas, platos,
@@ -60,8 +63,7 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
     if (view.length === 1) branch = branches.find((item) => item.id === view[0]) ?? null;
   }
   const base = `/panel/${membership.org.slug}/analitica`;
-  const zones = new Set(branches.map((item) => item.timezone));
-  const timeZone = branch?.timezone ?? (zones.size === 1 ? [...zones][0] : DEFAULT_ZONE);
+  const timeZone = analyticsTimeZone(branches, branch);
   // El filtro de sucursal viaja en la dirección también al cambiar de período (sin él, vuelve a la elegida en la sala).
   const branchParam = typeof requested === "string" ? requested : branch && branches.length > 1 ? branch.slug : null;
 
@@ -86,6 +88,7 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
         </p>
       ) : (
         <Content
+          orgSlug={membership.org.slug}
           orgId={membership.org.id}
           branchId={branch?.id ?? null}
           branches={branches}
@@ -101,6 +104,7 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
 }
 
 async function Content({
+  orgSlug,
   orgId,
   branchId,
   branches,
@@ -110,6 +114,7 @@ async function Content({
   branchParam,
   timeZone,
 }: {
+  orgSlug: string;
   orgId: string;
   branchId: string | null;
   branches: { id: string; slug: string; name: string }[];
@@ -120,7 +125,11 @@ async function Content({
   timeZone: string;
 }) {
   const db = await createSessionClient();
-  const [{ dishes, calls }, { sales, products }] = await Promise.all([loadAnalytics(db, orgId, branchId, days), loadSales(db, orgId, days, branchId)]);
+  const [{ dishes, calls }, { sales, products }, stored] = await Promise.all([
+    loadAnalytics(db, orgId, branchId, days),
+    loadSales(db, orgId, days, branchId),
+    loadStoredSummary(db, orgId, branchId, days),
+  ]);
   // Sin pedidos no se arman secciones de ventas; con una lectura caída sí se muestran los avisos de error (cada una por separado).
   const show = visibleSections(sales, products);
   const periodHref = (value: PeriodDays) => `${base}?${new URLSearchParams({ ...(branchParam ? { sucursal: branchParam } : {}), dias: String(value) })}`;
@@ -147,6 +156,23 @@ async function Content({
         </nav>
       ) : null}
 
+      <ResumenIa
+        orgSlug={orgSlug}
+        days={days}
+        branch={current ?? ""}
+        available={getSummaryProvider() !== null}
+        enoughOrders={sales !== null && hasEnoughOrders(sales)}
+        minOrders={MIN_ORDERS_FOR_SUMMARY}
+        stored={
+          stored
+            ? {
+                summary: stored.summary,
+                providerLabel: PROVIDER_LABEL[stored.provider] ?? stored.provider,
+                generatedAtLabel: new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short", timeZone }).format(new Date(stored.generatedAt)),
+              }
+            : null
+        }
+      />
       <SummarySection sales={sales} />
       {show.withOrders ? (
         <>

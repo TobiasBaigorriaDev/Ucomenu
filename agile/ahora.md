@@ -1,20 +1,20 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-25 · agente saliente: Claude. Historia en Git y fichas.
+Actualizado: 2026-10-26 · agente saliente: Claude. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Sugerencia de traducciones con IA: implementada, verificada y probada por vos con la clave real de Gemini en local («funciona excelente»)**; **en staging desde Fly v55** (2026-10-26, con `GEMINI_API_KEY` como secreto; sin probar el botón con sesión ahí). En `/panel/{slug}/carta/traducciones` un botón «Sugerir con IA lo que falta en {idioma}» completa solo los campos vacíos (resaltados); el local revisa y guarda como siempre. Nivel **M**. La [ficha](cambios/traduccion-automatica.md) tiene decisiones, aceptación y evidencia; el motivo duradero está en el [ADR 0046](../docs/decisiones/0046-sugerencia-de-traducciones-con-ia.md). El proveedor está detrás de una interfaz: hoy Gemini (clave gratuita, para local y staging con datos ficticios); en producción el usuario quiere pasar a **Claude** si todo va bien (otra implementación en `getTranslationProvider()`, con su clave y aprobación).
+**Resumen de la analítica con IA (nivel C): implementado y verificado en local; falta la revisión independiente, tu aprobación y staging.** En `/panel/{slug}/analitica` un botón «Generar resumen» redacta, con un servicio de IA, un párrafo, hallazgos y acciones para probar a partir de las cifras del período (7, 30 o 90 días; todas las sucursales o una). Solo el Dueño con el plan. Mínimo 5 pedidos, uno por período y alcance, no se regenera antes de 10 minutos. La [ficha](cambios/resumen-de-analitica-con-ia.md) tiene decisiones, invariantes y evidencia; el motivo duradero, el [ADR 0047](../docs/decisiones/0047-resumen-de-analitica-con-ia.md). Trae una migración nueva, `20261206100000` (tabla `analytics_summaries` y la función `save_analytics_summary`), **sin aplicar en staging**.
 
-Para probarla: poner `GEMINI_API_KEY` en `.env.local` (clave de Google AI Studio; ver `.env.example`) y `pnpm dev`; en staging, `fly secrets set` con aprobación. Sin la clave, el botón no aparece.
+Hoy usa Gemini con la clave gratuita (la misma de las traducciones): **solo datos ficticios**. **Antes de usar ventas reales hay que pasar a Claude** y no cargar la clave gratuita en producción (anotado en `docs/produccion.md`). Sin clave, la función queda apagada.
 
-Antes: la analítica de pedidos del Dueño quedó en staging (Fly v54), probada por el usuario ([ficha](cambios/analitica-de-pedidos.md)).
+Antes: la sugerencia de traducciones con IA está en staging (Fly v55) y el usuario la probó: «funciona bien» ([ficha](cambios/traduccion-automatica.md)).
 
-Rama `main`, subida a `origin/main`.
+Rama `main`, subida a `origin/main` hasta la sugerencia de traducciones; lo del resumen está en commits locales.
 
 ## Límites y bloqueos
 
-- S4 (Clientes recurrentes) se pasa al próximo incremento por decisión del usuario; sigue bloqueado por la revisión legal.
+- S4 (Clientes recurrentes) pasa al próximo incremento por decisión del usuario; sigue bloqueado por la revisión legal.
 - Reinicios de QR (migración `20261204100000`): en staging desde Fly v53; falta tu prueba con sesión real y en teléfono ([ficha](cambios/reinicio-programado-qr.md)).
 - Si Windows repite `0xC0000409` con `forks`, repetir ese archivo con `--pool=threads`. Si `pnpm build` falla con `EPERM` dentro de `.next`, borrar `.next` y repetir.
 - Los setups pausan y restauran el cron local; si se mata una suite sin teardown, comprobar `cron.job` o resetear local.
@@ -23,4 +23,4 @@ Rama `main`, subida a `origin/main`.
 
 ## Próximo paso
 
-Decidir cuándo sumar el proveedor Claude para producción. Después, elegir la próxima tarea del tablero. Siguiente migración libre: `20261206100000`.
+Terminar la verificación completa (RLS y E2E), pedir la revisión independiente (Codex, solo lectura) y, con tu aprobación, aplicar la migración y desplegar a staging para que lo pruebes con un Dueño. Siguiente migración libre: `20261207100000`.

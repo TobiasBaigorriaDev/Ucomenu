@@ -37,6 +37,32 @@ export type Database = {
                   Relationships: [
                     
                   ]
+                },"analytics_summaries": {
+                  Row: {
+                    "branch_id": string | null,"content": NonNullable<Json>,"days": number,"generated_at": string,"generated_by": string | null,"id": string,"organization_id": string,"provider": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id"?: string | null,"content": NonNullable<Json>,"days": number,"generated_at"?: string,"generated_by"?: string | null,"id"?: string,"organization_id": string,"provider": string
+                  }
+                  Update: {
+                    "branch_id"?: string | null,"content"?: NonNullable<Json>,"days"?: number,"generated_at"?: string,"generated_by"?: string | null,"id"?: string,"organization_id"?: string,"provider"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "analytics_summaries_branch_id_organization_id_fkey"
+      columns: ["branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "analytics_summaries_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"audit_log": {
                   Row: {
                     "action": string,"actor_email": string,"actor_id": string,"after": Json | null,"before": Json | null,"created_at": string,"id": string,"organization_id": string | null
@@ -986,6 +1012,9 @@ isOneToOne: false
                            },
 "resolve_table_qr":
 { Args: { "p_token": string }; Returns: Json
+                           },
+"save_analytics_summary":
+{ Args: { "p_branch"?: string,"p_content": Json,"p_days": number,"p_org": string,"p_provider": string }; Returns: string
                            },
 "save_promotion":
 { Args: { "p_all_branches": boolean,"p_branches": (string)[],"p_categories": (string)[],"p_discount_type": string,"p_discount_value": number,"p_end_minute": number,"p_ends_on": string,"p_id": string,"p_is_active": boolean,"p_name": string,"p_org": string,"p_products": (string)[],"p_start_minute": number,"p_starts_on": string,"p_weekdays_mask": number }; Returns: string

@@ -2,6 +2,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { parseCallsByHour, parseTopDishes, TOP_DISHES, type HourCalls, type TopDishes } from "./lectura";
+import { parseSummary, type Summary } from "./resumen";
 import { parseProducts, parseSales, PRODUCT_LIST_SIZE, type PeriodDays, type Products, type Sales } from "./ventas";
 
 type Db = SupabaseClient<Database>;
@@ -36,4 +37,18 @@ export async function loadSales(db: Db, orgId: string, days: PeriodDays, branchI
     sales: (sales.error ? null : parseSales(sales.data)) as Sales | null,
     products: (products.error ? null : parseProducts(products.data)) as Products | null,
   };
+}
+
+export type StoredSummary = { summary: Summary; provider: string; generatedAt: string };
+
+/**
+ * El último resumen con IA guardado para el período y el alcance (ADR 0047), o `null` si no hay o no se pudo leer. Con la sesión de
+ * la persona: la política de la tabla solo deja leer al Dueño con el plan.
+ */
+export async function loadStoredSummary(db: Db, orgId: string, branchId: string | null, days: PeriodDays): Promise<StoredSummary | null> {
+  const query = db.from("analytics_summaries").select("content, provider, generated_at").eq("organization_id", orgId).eq("days", days);
+  const { data, error } = await (branchId ? query.eq("branch_id", branchId) : query.is("branch_id", null)).maybeSingle();
+  if (error || !data) return null;
+  const summary = parseSummary(data.content);
+  return summary ? { summary, provider: data.provider, generatedAt: data.generated_at } : null;
 }
