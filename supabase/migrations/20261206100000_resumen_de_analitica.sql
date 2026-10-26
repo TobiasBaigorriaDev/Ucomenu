@@ -8,16 +8,16 @@
 --    ejecutara el Dueño por la API, podría escribir cualquier texto rotulado «generado por IA».
 --  * `analytics_summary_claims`, `claim_analytics_summary` y `release_analytics_summary_claim`: reserva ATÓMICA del período y
 --    alcance antes de llamar al servicio externo (un solo pedido a la vez y un tiempo mínimo entre generaciones), que se devuelve si
---    el pedido falla.
+--    el pedido falla. También solo para el servidor: si el Dueño las ejecutara por la API podría esquivar el tiempo mínimo.
 --
--- Reglas: SOLO el Dueño ACTUAL de la organización, con la función `analytics` en el plan, lee y reserva (como la analítica; en «solo
--- lectura» sí, suspendida no: `has_feature`). El contenido es texto generado a partir de agregados (nunca motivos escritos por el
+-- Reglas: SOLO el Dueño ACTUAL de la organización, con la función `analytics` en el plan, lee el resumen y puede pedir que el servidor
+-- lo genere (como la analítica; en «solo lectura» sí, suspendida no: `has_feature`). El contenido es texto generado a partir de agregados (nunca motivos escritos por el
 -- personal ni datos de comensales). La API no tiene INSERT, UPDATE ni DELETE: las filas desaparecen con la organización o la
 -- sucursal (cascada).
 --
 -- Aditiva: sin datos que migrar. Rollback (local): git revert + `pnpm db:reset`. En una base con datos reales:
 --   drop function public.save_analytics_summary(uuid, uuid, integer, jsonb, text, uuid);
---   drop function public.claim_analytics_summary(uuid, integer, integer, uuid), public.release_analytics_summary_claim(uuid, integer, timestamptz, uuid);
+--   drop function public.claim_analytics_summary(uuid, uuid, integer, integer, uuid), public.release_analytics_summary_claim(uuid, uuid, integer, timestamptz, uuid);
 --   drop table public.analytics_summary_claims, public.analytics_summaries;
 --   drop function private.can_read_analytics_summary(uuid);
 
@@ -88,9 +88,9 @@ create unique index analytics_summary_claims_scope_key
 alter table public.analytics_summary_claims enable row level security;
 revoke all on table public.analytics_summary_claims from anon, authenticated, service_role;
 
--- Reserva el período si pasaron `p_cooldown_minutes` desde la última reserva. `{"claimed": true, "claim": <fecha>}` o
+-- Reserva el período si pasaron `p_cooldown_minutes` desde la última reserva. `p_user` es quien pidió el resumen (como en el guardado). `{"claimed": true, "claim": <fecha>}` o
 -- `{"claimed": false, "wait_seconds": n}`. La comprobación y la escritura son UNA sentencia: dos pedidos simultáneos no pasan los dos.
-create function public.claim_analytics_summary(p_org uuid, p_days integer, p_cooldown_minutes integer, p_branch uuid default null)
+create function public.claim_analytics_summary(p_org uuid, p_user uuid, p_days integer, p_cooldown_minutes integer, p_branch uuid default null)
 returns jsonb
 language plpgsql
 security definer
@@ -102,7 +102,8 @@ declare
   v_cooldown interval;
 begin
   if p_org is null
-     or not private.is_org_owner(p_org)
+     or p_user is null
+     or not exists (select 1 from public.memberships m where m.organization_id = p_org and m.user_id = p_user and m.role = 'owner')
      or not private.has_feature(p_org, 'analytics') then
     raise exception 'no autorizado' using errcode = '42501';
   end if;
@@ -135,11 +136,11 @@ begin
   return jsonb_build_object('claimed', false, 'wait_seconds', greatest(1, ceil(extract(epoch from (v_last + v_cooldown - clock_timestamp())))::integer));
 end;
 $$;
-comment on function public.claim_analytics_summary(uuid, integer, integer, uuid) is
-  'Reserva atómica del período de un resumen con IA para el Dueño con el plan analytics (ADR 0047). 42501 si no corresponde.';
+comment on function public.claim_analytics_summary(uuid, uuid, integer, integer, uuid) is
+  'Reserva atómica del período de un resumen con IA (ADR 0047). Solo service_role; 42501 si p_user no es Dueño con el plan analytics.';
 
 -- Devuelve la reserva si el pedido falló (no se gastó nada): solo si sigue siendo la misma, así no pisa la de otro pedido.
-create function public.release_analytics_summary_claim(p_org uuid, p_days integer, p_claim timestamptz, p_branch uuid default null)
+create function public.release_analytics_summary_claim(p_org uuid, p_user uuid, p_days integer, p_claim timestamptz, p_branch uuid default null)
 returns void
 language plpgsql
 security definer
@@ -147,7 +148,8 @@ set search_path = ''
 as $$
 begin
   if p_org is null
-     or not private.is_org_owner(p_org)
+     or p_user is null
+     or not exists (select 1 from public.memberships m where m.organization_id = p_org and m.user_id = p_user and m.role = 'owner')
      or not private.has_feature(p_org, 'analytics') then
     raise exception 'no autorizado' using errcode = '42501';
   end if;
@@ -159,13 +161,15 @@ begin
     and c.claimed_at = p_claim;
 end;
 $$;
-comment on function public.release_analytics_summary_claim(uuid, integer, timestamptz, uuid) is
-  'Devuelve la reserva de un resumen con IA cuando el pedido falló (ADR 0047).';
+comment on function public.release_analytics_summary_claim(uuid, uuid, integer, timestamptz, uuid) is
+  'Devuelve la reserva de un resumen con IA cuando el pedido falló (ADR 0047). Solo service_role; 42501 si p_user no es Dueño con el plan analytics.';
 
-revoke all on function public.claim_analytics_summary(uuid, integer, integer, uuid), public.release_analytics_summary_claim(uuid, integer, timestamptz, uuid)
+-- Solo el servidor: si el Dueño pudiera reservar con su propio tiempo mínimo y devolver la reserva por la API, esquivaría el límite
+-- de gasto (reservar con 1 minuto, devolver y volver a generar).
+revoke all on function public.claim_analytics_summary(uuid, uuid, integer, integer, uuid), public.release_analytics_summary_claim(uuid, uuid, integer, timestamptz, uuid)
   from public, anon, authenticated, service_role;
-grant execute on function public.claim_analytics_summary(uuid, integer, integer, uuid), public.release_analytics_summary_claim(uuid, integer, timestamptz, uuid)
-  to authenticated;
+grant execute on function public.claim_analytics_summary(uuid, uuid, integer, integer, uuid), public.release_analytics_summary_claim(uuid, uuid, integer, timestamptz, uuid)
+  to service_role;
 
 -- ---------------------------------------------------------------------------
 -- Guardado (solo el servidor)

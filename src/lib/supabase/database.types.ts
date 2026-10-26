@@ -929,7 +929,7 @@ isOneToOne: false
 { Args: { "p_actor": string,"p_org": string,"p_payment": string,"p_reason": string }; Returns: string
                            },
 "claim_analytics_summary":
-{ Args: { "p_branch"?: string,"p_cooldown_minutes": number,"p_days": number,"p_org": string }; Returns: Json
+{ Args: { "p_branch"?: string,"p_cooldown_minutes": number,"p_days": number,"p_org": string,"p_user": string }; Returns: Json
                            },
 "close_order":
 { Args: { "p_order": string }; Returns: Json
@@ -1025,7 +1025,7 @@ isOneToOne: false
 { Args: { "p_auth": string,"p_endpoint": string,"p_org": string,"p_p256dh": string }; Returns: string
                            },
 "release_analytics_summary_claim":
-{ Args: { "p_branch"?: string,"p_claim": string,"p_days": number,"p_org": string }; Returns: undefined
+{ Args: { "p_branch"?: string,"p_claim": string,"p_days": number,"p_org": string,"p_user": string }; Returns: undefined
                            },
 "reorder_siblings":
 { Args: { "p_current": Json,"p_final": (string)[],"p_org": string,"p_scope": string,"p_table": string }; Returns: undefined

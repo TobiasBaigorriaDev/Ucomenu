@@ -17,8 +17,8 @@ import {
 
 /**
  * Resumen de la analítica con IA (nivel C; ficha resumen-de-analitica-con-ia, ADR 0047) contra el Supabase local: solo el Dueño
- * de un local con el plan lee su resumen y reserva el período; SOLO el servidor (servicio técnico) lo guarda, así el Dueño no puede
- * escribir por la API un texto que no pasó la validación; la reserva es atómica (dos pedidos simultáneos no pasan los dos); la tabla
+ * de un local con el plan lee su resumen; SOLO el servidor (servicio técnico) lo guarda y reserva o devuelve el período, así el Dueño
+ * no puede escribir por la API un texto que no pasó la validación ni esquivar el tiempo mínimo entre generaciones; la reserva es atómica (dos pedidos simultáneos no pasan los dos); la tabla
  * no admite escrituras directas; la fila es una por período y alcance y desaparece con la sucursal.
  */
 
@@ -68,15 +68,16 @@ const guardar = (org: string, user: string | null, dias: number, contenido: unkn
 const leer = (db: Db, org: string) => db.from("analytics_summaries").select("days, branch_id, content, provider, generated_by").eq("organization_id", org).order("days");
 
 type Reserva = { claimed: boolean; claim?: string; wait_seconds?: number };
-const reservar = (db: Db, org: string, dias = 30, branch?: string, minutos = 10) =>
-  db.rpc("claim_analytics_summary", { p_org: org, p_days: dias, p_cooldown_minutes: minutos, ...(branch ? { p_branch: branch } : {}) });
-const reservaDe = async (db: Db, org: string, dias = 30, branch?: string, minutos = 10) => {
-  const r = await reservar(db, org, dias, branch, minutos);
+/** Reserva como lo hace el servidor: con el servicio técnico y diciendo quién pidió. */
+const reservar = (user: string | null, org: string, dias = 30, branch?: string, minutos = 10, db: Db = service) =>
+  db.rpc("claim_analytics_summary", { p_org: org, p_user: user as string, p_days: dias, p_cooldown_minutes: minutos, ...(branch ? { p_branch: branch } : {}) });
+const reservaDe = async (user: string, org: string, dias = 30, branch?: string, minutos = 10) => {
+  const r = await reservar(user, org, dias, branch, minutos);
   if (r.error) throw new Error(`reservar: ${r.error.message}`);
   return r.data as unknown as Reserva;
 };
-const devolver = (db: Db, org: string, dias: number, claim: string, branch?: string) =>
-  db.rpc("release_analytics_summary_claim", { p_org: org, p_days: dias, p_claim: claim, ...(branch ? { p_branch: branch } : {}) });
+const devolver = (user: string | null, org: string, dias: number, claim: string, branch?: string, db: Db = service) =>
+  db.rpc("release_analytics_summary_claim", { p_org: org, p_user: user as string, p_days: dias, p_claim: claim, ...(branch ? { p_branch: branch } : {}) });
 
 const filas = (org: string) => Number(sql(`select count(*) from public.analytics_summaries where organization_id = '${org}'`)[0][0]);
 
@@ -124,7 +125,7 @@ describe("guardar y leer", () => {
     const local = await crearLocal();
     await guardar(local.id, local.owner.id, 30, CONTENIDO, local.dos);
     await guardar(local.id, local.owner.id, 30);
-    await reservaDe(local.owner.db, local.id, 30, local.dos);
+    await reservaDe(local.owner.id, local.id, 30, local.dos);
     sql(`delete from public.branches where id = '${local.dos}'`);
     expect((await leer(local.owner.db, local.id)).data?.map((fila) => fila.branch_id)).toEqual([null]);
     expect(Number(sql(`select count(*) from public.analytics_summary_claims where organization_id = '${local.id}'`)[0][0])).toBe(0);
@@ -222,7 +223,7 @@ describe("las tablas no admiten escrituras directas", () => {
   it("ni el Dueño ni el servicio técnico insertan, modifican ni borran por la API; las reservas no se ven ni se tocan", async () => {
     const local = await crearLocal();
     await guardar(local.id, local.owner.id, 30);
-    await reservaDe(local.owner.db, local.id);
+    await reservaDe(local.owner.id, local.id);
     for (const [nombre, db] of [
       ["Dueño", local.owner.db],
       ["servicio técnico", service],
@@ -253,11 +254,11 @@ describe("las tablas no admiten escrituras directas", () => {
 describe("reserva del período (antes de llamar al servicio externo)", () => {
   it("la primera reserva pasa y la segunda espera; devuelve cuántos segundos faltan", async () => {
     const local = await crearLocal();
-    const primera = await reservaDe(local.owner.db, local.id);
+    const primera = await reservaDe(local.owner.id, local.id);
     expect(primera.claimed).toBe(true);
     expect(typeof primera.claim).toBe("string");
 
-    const segunda = await reservaDe(local.owner.db, local.id);
+    const segunda = await reservaDe(local.owner.id, local.id);
     expect(segunda.claimed).toBe(false);
     expect(segunda.wait_seconds).toBeGreaterThan(590);
     expect(segunda.wait_seconds).toBeLessThanOrEqual(600);
@@ -265,7 +266,7 @@ describe("reserva del período (antes de llamar al servicio externo)", () => {
 
   it("pedidos SIMULTÁNEOS del mismo período y alcance: pasa uno solo", async () => {
     const local = await crearLocal();
-    const resultados = await Promise.all(Array.from({ length: 10 }, () => reservaDe(local.owner.db, local.id)));
+    const resultados = await Promise.all(Array.from({ length: 10 }, () => reservaDe(local.owner.id, local.id)));
     expect(resultados.filter((r) => r.claimed)).toHaveLength(1);
     expect(Number(sql(`select count(*) from public.analytics_summary_claims where organization_id = '${local.id}'`)[0][0])).toBe(1);
   });
@@ -273,74 +274,91 @@ describe("reserva del período (antes de llamar al servicio externo)", () => {
   it("cada período y cada alcance tienen su propia reserva", async () => {
     const local = await crearLocal();
     const reservas = [
-      await reservaDe(local.owner.db, local.id, 30),
-      await reservaDe(local.owner.db, local.id, 7),
-      await reservaDe(local.owner.db, local.id, 90),
-      await reservaDe(local.owner.db, local.id, 30, local.uno),
-      await reservaDe(local.owner.db, local.id, 30, local.dos),
+      await reservaDe(local.owner.id, local.id, 30),
+      await reservaDe(local.owner.id, local.id, 7),
+      await reservaDe(local.owner.id, local.id, 90),
+      await reservaDe(local.owner.id, local.id, 30, local.uno),
+      await reservaDe(local.owner.id, local.id, 30, local.dos),
     ];
     expect(reservas.map((r) => r.claimed)).toEqual([true, true, true, true, true]);
-    expect((await reservaDe(local.owner.db, local.id, 30, local.uno)).claimed).toBe(false);
+    expect((await reservaDe(local.owner.id, local.id, 30, local.uno)).claimed).toBe(false);
   });
 
   it("pasado el tiempo mínimo se puede reservar de nuevo; devolver la reserva la libera, pero solo si sigue siendo la misma", async () => {
     const local = await crearLocal();
-    const primera = await reservaDe(local.owner.db, local.id);
+    const primera = await reservaDe(local.owner.id, local.id);
     sql(`update public.analytics_summary_claims set claimed_at = now() - interval '11 minutes' where organization_id = '${local.id}'`);
-    const segunda = await reservaDe(local.owner.db, local.id);
+    const segunda = await reservaDe(local.owner.id, local.id);
     expect(segunda.claimed).toBe(true);
 
     // Devolver la reserva VIEJA no libera la nueva.
-    expect((await devolver(local.owner.db, local.id, 30, primera.claim!)).error).toBeNull();
-    expect((await reservaDe(local.owner.db, local.id)).claimed).toBe(false);
+    expect((await devolver(local.owner.id, local.id, 30, primera.claim!)).error).toBeNull();
+    expect((await reservaDe(local.owner.id, local.id)).claimed).toBe(false);
     // Devolver la vigente sí.
-    expect((await devolver(local.owner.db, local.id, 30, segunda.claim!)).error).toBeNull();
-    expect((await reservaDe(local.owner.db, local.id)).claimed).toBe(true);
+    expect((await devolver(local.owner.id, local.id, 30, segunda.claim!)).error).toBeNull();
+    expect((await reservaDe(local.owner.id, local.id)).claimed).toBe(true);
   });
 
   it("la reserva respeta el tiempo mínimo que pide quien llama", async () => {
     const local = await crearLocal();
-    await reservaDe(local.owner.db, local.id, 30, undefined, 5);
+    await reservaDe(local.owner.id, local.id, 30, undefined, 5);
     sql(`update public.analytics_summary_claims set claimed_at = now() - interval '6 minutes' where organization_id = '${local.id}'`);
-    expect((await reservaDe(local.owner.db, local.id, 30, undefined, 10)).claimed).toBe(false);
-    expect((await reservaDe(local.owner.db, local.id, 30, undefined, 5)).claimed).toBe(true);
+    expect((await reservaDe(local.owner.id, local.id, 30, undefined, 10)).claimed).toBe(false);
+    expect((await reservaDe(local.owner.id, local.id, 30, undefined, 5)).claimed).toBe(true);
   });
 
-  it("solo el Dueño con el plan reserva y devuelve: Staff, Dueño de otro local, sin rol y plan Básico no; anon se rechaza", async () => {
+  it("el Dueño NO puede reservar ni devolver por la API (así no esquiva el tiempo mínimo reservando con 1 minuto y devolviendo la reserva); tampoco Staff, sin rol ni anon", async () => {
     const local = await crearLocal();
-    const reserva = await reservaDe(local.owner.db, local.id);
+    const reserva = await reservaDe(local.owner.id, local.id);
     for (const [nombre, db] of [
+      ["Dueño", local.owner.db],
       ["Staff", local.staff.db],
-      ["Dueño de otro local", ajeno.db],
       ["sin rol", comun.db],
+      ["anon", anonClient()],
     ] as const) {
-      expect([nombre, (await reservar(db, local.id)).error?.code], nombre).toEqual([nombre, "42501"]);
-      expect([nombre, (await devolver(db, local.id, 30, reserva.claim!)).error?.code], nombre).toEqual([nombre, "42501"]);
+      expect([nombre, (await reservar(local.owner.id, local.id, 30, undefined, 1, db)).error?.code], nombre).toEqual([nombre, "42501"]);
+      expect([nombre, (await devolver(local.owner.id, local.id, 30, reserva.claim!, undefined, db)).error?.code], nombre).toEqual([nombre, "42501"]);
     }
-    expect((await reservar(anonClient(), local.id)).error).not.toBeNull();
-    expect((await devolver(anonClient(), local.id, 30, reserva.claim!)).error).not.toBeNull();
+    // La secuencia de la evasión (reservar con 1 minuto, devolver y volver a generar) no progresa: la reserva sigue vigente.
+    sql(`update public.analytics_summary_claims set claimed_at = now() - interval '2 minutes' where organization_id = '${local.id}'`);
+    expect((await reservar(local.owner.id, local.id, 30, undefined, 1, local.owner.db)).error?.code).toBe("42501");
+    expect((await reservaDe(local.owner.id, local.id)).claimed).toBe(false);
+  });
+
+  it("el servidor tampoco reserva ni devuelve a nombre de Staff, de un Dueño de otro local, de alguien sin rol, sin usuario ni con plan Básico", async () => {
+    const local = await crearLocal();
+    const reserva = await reservaDe(local.owner.id, local.id);
+    for (const [nombre, user] of [
+      ["Staff", local.staff.id],
+      ["Dueño de otro local", ajeno.id],
+      ["sin rol", comun.id],
+      ["sin usuario", null],
+    ] as const) {
+      expect([nombre, (await reservar(user, local.id, 7)).error?.code], nombre).toEqual([nombre, "42501"]);
+      expect([nombre, (await devolver(user, local.id, 30, reserva.claim!)).error?.code], nombre).toEqual([nombre, "42501"]);
+    }
     // Nadie ajeno liberó la reserva.
-    expect((await reservaDe(local.owner.db, local.id)).claimed).toBe(false);
+    expect((await reservaDe(local.owner.id, local.id)).claimed).toBe(false);
 
     const basico = await crearLocal("basic");
-    expect((await reservar(basico.owner.db, basico.id)).error?.code).toBe("42501");
+    expect((await reservar(basico.owner.id, basico.id)).error?.code).toBe("42501");
   });
 
   it("en «solo lectura» reserva (como la analítica); suspendida no", async () => {
     const local = await crearLocal();
     await setSubscription(service, local.id, { finEnMs: -10 * DIA_MS });
-    expect((await reservaDe(local.owner.db, local.id)).claimed).toBe(true);
+    expect((await reservaDe(local.owner.id, local.id)).claimed).toBe(true);
     await setSubscription(service, local.id, { finEnMs: -30 * DIA_MS });
-    expect((await reservar(local.owner.db, local.id, 7)).error?.code).toBe("42501");
+    expect((await reservar(local.owner.id, local.id, 7)).error?.code).toBe("42501");
   });
 
   it("parámetros inválidos y sucursal ajena se rechazan sin reservar nada", async () => {
     const local = await crearLocal();
     const otro = await crearLocal();
-    expect((await reservar(local.owner.db, local.id, 14)).error?.code).toBe("22023");
-    expect((await reservar(local.owner.db, local.id, 30, undefined, 0)).error?.code).toBe("22023");
-    expect((await reservar(local.owner.db, local.id, 30, undefined, 61)).error?.code).toBe("22023");
-    expect((await reservar(local.owner.db, local.id, 30, otro.uno)).error?.code).toBe("22023");
+    expect((await reservar(local.owner.id, local.id, 14)).error?.code).toBe("22023");
+    expect((await reservar(local.owner.id, local.id, 30, undefined, 0)).error?.code).toBe("22023");
+    expect((await reservar(local.owner.id, local.id, 30, undefined, 61)).error?.code).toBe("22023");
+    expect((await reservar(local.owner.id, local.id, 30, otro.uno)).error?.code).toBe("22023");
     expect(Number(sql(`select count(*) from public.analytics_summary_claims where organization_id = '${local.id}'`)[0][0])).toBe(0);
   });
 });

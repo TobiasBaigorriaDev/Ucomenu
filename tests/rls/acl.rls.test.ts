@@ -116,8 +116,8 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   owner_sales_overview: [false, true], // analítica de pedidos (ADR 0045): ventas, franjas y control para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   owner_products_performance: [false, true], // analítica de pedidos (ADR 0045): platos más vendidos y sin pedidos para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   save_analytics_summary: [false, false], // resumen con IA de la analítica (ADR 0047): única puerta de escritura de analytics_summaries; solo service_role, desde la acción del servidor con el texto ya validado
-  claim_analytics_summary: [false, true], // resumen con IA (ADR 0047): reserva atómica del período antes de llamar al servicio externo; valida adentro (Dueño con el plan)
-  release_analytics_summary_claim: [false, true], // resumen con IA (ADR 0047): devuelve la reserva si el pedido falló; valida adentro (Dueño con el plan)
+  claim_analytics_summary: [false, false], // resumen con IA (ADR 0047): reserva atómica del período antes de llamar al servicio externo; solo service_role (el Dueño no puede esquivar el tiempo mínimo); valida p_user adentro
+  release_analytics_summary_claim: [false, false], // resumen con IA (ADR 0047): devuelve la reserva si el pedido falló; solo service_role; valida p_user adentro
   owner_account_history: [false, true], // el Dueño lee el historial de cambios de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   owner_payments: [false, true], // el Dueño lee los pagos de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   public_menu_status: [true, true],

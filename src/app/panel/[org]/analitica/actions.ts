@@ -15,8 +15,9 @@ import { createSessionClient } from "@/lib/supabase/server";
  * Lee las ventas con su propia sesión (la base vuelve a comprobar todo), reserva el período en la base (`claim_analytics_summary`:
  * atómico, un pedido a la vez y `SUMMARY_COOLDOWN_MINUTES` entre generaciones), arma los hechos (agregados, sin motivos escritos por
  * el personal ni datos de comensales), se los entrega al servicio de IA, valida la respuesta y la guarda con
- * `save_analytics_summary`, que SOLO ejecuta el servicio técnico: así el Dueño no puede escribir por la API un texto que no pasó la
- * validación. Si algo falla después de reservar, la reserva se devuelve.
+ * `save_analytics_summary`. Las tres funciones (reservar, devolver y guardar) SOLO las ejecuta el servicio técnico, con el id de quien
+ * pidió (que ellas vuelven a comprobar): así el Dueño no puede, por la API, escribir un texto que no pasó la validación ni esquivar el
+ * tiempo mínimo reservando con otro plazo y devolviendo la reserva. Si algo falla después de reservar, la reserva se devuelve.
  */
 export async function generateSummaryAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const slug = formData.get("org");
@@ -45,7 +46,8 @@ export async function generateSummaryAction(_previous: FormState, formData: Form
   }
 
   // Reserva atómica: dos pedidos simultáneos del mismo período y alcance no pasan los dos.
-  const reserved = await db.rpc("claim_analytics_summary", { p_org: orgId, p_days: days, p_cooldown_minutes: SUMMARY_COOLDOWN_MINUTES, ...branchArg });
+  const admin = createAdminClient();
+  const reserved = await admin.rpc("claim_analytics_summary", { p_org: orgId, p_user: user.id, p_days: days, p_cooldown_minutes: SUMMARY_COOLDOWN_MINUTES, ...branchArg });
   const claim = reserved.data as { claimed?: boolean; claim?: string; wait_seconds?: number } | null;
   if (reserved.error || !claim) return { error: "No pudimos reservar el resumen. Probá de nuevo en unos minutos." };
   if (!claim.claimed || typeof claim.claim !== "string") {
@@ -53,7 +55,7 @@ export async function generateSummaryAction(_previous: FormState, formData: Form
     return { error: `Ya generaste este resumen hace poco. Podés actualizarlo en ${minutes} min.` };
   }
   const claimedAt = claim.claim;
-  const release = () => db.rpc("release_analytics_summary_claim", { p_org: orgId, p_days: days, p_claim: claimedAt, ...branchArg });
+  const release = () => admin.rpc("release_analytics_summary_claim", { p_org: orgId, p_user: user.id, p_days: days, p_claim: claimedAt, ...branchArg });
 
   try {
     const facts = buildFacts(sales, products, { timeZone: analyticsTimeZone(branches, branch), allBranches: branch === null });
@@ -69,7 +71,7 @@ export async function generateSummaryAction(_previous: FormState, formData: Form
     }
 
     // Solo el servicio técnico guarda, y solo lo que ya pasó la validación; la función vuelve a comprobar que quien pidió sea Dueño.
-    const saved = await createAdminClient().rpc("save_analytics_summary", {
+    const saved = await admin.rpc("save_analytics_summary", {
       p_org: orgId,
       p_user: user.id,
       p_days: days,
