@@ -30,6 +30,18 @@ const FRESH_MS = 8_000;
 const REQUEST_TIMEOUT_MS = 10_000;
 
 type Connection = "ok" | "offline" | "expired" | "gone";
+/** Cómo se ven las mesas: tarjetas (más aire) o filas (una debajo de otra, más cómodo en el teléfono). Mismos datos. */
+type Layout = "tarjetas" | "filas";
+
+const LAYOUT_KEY = "ucomenu.mesas.vista";
+
+const readLayout = (): Layout => {
+  try {
+    return window.localStorage.getItem(LAYOUT_KEY) === "filas" ? "filas" : "tarjetas";
+  } catch {
+    return "tarjetas"; // sin almacenamiento (ventana privada o bloqueado): la preferencia no se recuerda, la pantalla sigue andando
+  }
+};
 
 const buttonClass =
   "inline-flex min-h-11 items-center justify-center rounded-full border border-ink/50 px-4 py-2 text-base font-medium text-ink hover:bg-ink/5 disabled:opacity-60";
@@ -67,6 +79,7 @@ export function MesasBoard({
   // El sonido vive fuera de la pantalla (módulo compartido con el panel): salir de la sala no lo apaga.
   const alerts = useSoundState();
   const [hadAlerts, setHadAlerts] = useState(false);
+  const [layout, setLayout] = useState<Layout>("tarjetas");
   const [fresh, setFresh] = useState<ReadonlySet<string>>(new Set());
   const [announcement, setAnnouncement] = useState("");
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -121,9 +134,21 @@ export function MesasBoard({
 
   // --- Preferencia de alertas: se recuerda en el dispositivo, pero el audio exige un toque en cada carga.
   useEffect(() => {
-    const timer = setTimeout(() => setHadAlerts(rememberedAlerts()), 0);
+    const timer = setTimeout(() => {
+      setHadAlerts(rememberedAlerts());
+      setLayout(readLayout()); // la vista elegida se recuerda en el dispositivo
+    }, 0);
     return () => clearTimeout(timer);
   }, []);
+
+  function chooseLayout(next: Layout) {
+    setLayout(next);
+    try {
+      window.localStorage.setItem(LAYOUT_KEY, next);
+    } catch {
+      // nada: queda elegida hasta cerrar la pantalla
+    }
+  }
 
   // --- Título de la pestaña.
   useEffect(() => {
@@ -354,8 +379,105 @@ export function MesasBoard({
     );
   }
 
+  /** Los llamados de una mesa, con «Atendido». Iguales en ambas vistas; `compact` solo cambia la disposición. */
+  function renderCalls(card: MesaCard, compact: boolean) {
+    if (card.calls.length === 0) return null;
+    return (
+      <ul className={compact ? "mt-2 space-y-2" : "mt-3 space-y-3"} data-testid="llamados-mesa">
+        {card.calls.map((call) => {
+          const waited = waitingMs(call, now);
+          const callUrgent = isUrgent(waited);
+          const isNew = fresh.has(call.id);
+          const visitAge = visitAgeMs(call);
+          const stale = visitAge !== null && isStaleVisit(visitAge);
+          const attendButton = (
+            <button
+              type="button"
+              onClick={() => attend(card, call)}
+              disabled={busy === call.id}
+              aria-label={`Marcar como atendido: ${callName(card, state.multiBranch)}, ${KIND_LABEL[call.kind].toLowerCase()}`}
+              className={compact ? `${primaryClass} shrink-0` : `${primaryClass} mt-2 w-full sm:w-auto`}
+            >
+              {busy === call.id ? "Guardando…" : "Atendido"}
+            </button>
+          );
+          const info = (
+            <div className="min-w-0">
+              <p className={compact ? "text-base" : "text-lg"} data-testid="espera">
+                <strong>{KIND_LABEL[call.kind]}</strong> · {isNew ? <strong>Nuevo · </strong> : null}
+                {elapsedLabel(waited)}
+                {callUrgent ? <strong className="text-suspended-ink"> · Espera hace rato</strong> : null}
+              </p>
+              {visitAge !== null ? (
+                <p className="mt-1 text-sm text-muted" data-testid="escaneo" data-vieja={stale ? "true" : "false"}>
+                  Escaneó el QR {durationLabel(visitAge)} antes del aviso
+                  {stale ? <strong className="text-ink"> · Hace mucho: confirmá que siga en la mesa</strong> : null}
+                </p>
+              ) : null}
+            </div>
+          );
+          return (
+            <li key={call.id} data-testid="llamado" data-mesa={card.tableLabel} data-kind={call.kind} data-nuevo={isNew ? "true" : "false"} data-urgente={callUrgent ? "true" : "false"}>
+              {compact ? (
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                  {info}
+                  {attendButton}
+                </div>
+              ) : (
+                <>
+                  {info}
+                  {attendButton}
+                </>
+              )}
+              {notes[call.id] ? (
+                <p role="alert" className="mt-2 text-base font-medium text-danger">
+                  {notes[call.id]}
+                </p>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }
+
+  /** El pedido abierto de una mesa (o «Sin pedido abierto»). Los mismos datos en ambas vistas. */
+  function renderOrder(card: MesaCard, compact: boolean) {
+    if (!card.order) {
+      return (
+        <p className={`${compact ? "mt-2" : "mt-3"} text-base text-muted`} data-testid="sin-pedido">
+          Sin pedido abierto.
+        </p>
+      );
+    }
+    const opened = <p className="text-sm text-muted">Abierto hace {durationLabel(Math.max(0, now - Date.parse(card.order.openedAt)))}</p>;
+    const status = (
+      <p className="text-base" data-testid="pedido-estado">
+        {orderStatusText(card.order)}
+      </p>
+    );
+    const total = (
+      <p className={`font-display leading-none ${compact ? "text-2xl" : "mt-1 text-3xl"}`} data-testid="pedido-total" data-centavos={card.order.totalCents}>
+        {formatArs(card.order.totalCents)}
+      </p>
+    );
+    return compact ? (
+      <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1" data-testid="pedido">
+        {status}
+        {total}
+        {opened}
+      </div>
+    ) : (
+      <div className="mt-3" data-testid="pedido">
+        {status}
+        {total}
+        <div className="mt-1">{opened}</div>
+      </div>
+    );
+  }
+
   return (
-    <section aria-label="Mesas" className="mt-6">
+    <section aria-label="Mesas en vivo" className="mt-6">
       {/* Un solo anuncio para lectores de pantalla (esta región viva). El aviso visible de abajo repite el texto SIN ser una región
           viva y queda fuera del árbol de accesibilidad: dos regiones con el mismo texto lo anunciarían dos veces. */}
       <div aria-live="polite" data-testid="anuncio" className="sr-only">
@@ -438,107 +560,76 @@ export function MesasBoard({
         </p>
       ) : null}
 
+      {state.mesas.length > 0 ? (
+        <div role="group" aria-label="Cómo ver las mesas" data-testid="vista-mesas" className="mb-3 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted">Ver como</span>
+          {(["tarjetas", "filas"] as const).map((option) => (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={layout === option}
+              onClick={() => chooseLayout(option)}
+              className={`inline-flex min-h-11 items-center rounded-full px-4 text-base font-medium ${
+                layout === option ? "bg-brand text-white" : "border border-ink/50 text-ink hover:bg-ink/5"
+              }`}
+            >
+              {option === "tarjetas" ? "Tarjetas" : "Filas"}
+            </button>
+          ))}
+        </div>
+      ) : null}
+
       {state.mesas.length === 0 ? (
         <p className="panel-cell font-display text-3xl leading-tight text-muted" data-testid="mesas-vacia">
           No hay mesas para mostrar.
         </p>
       ) : (
-        <ul className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3" data-testid="mesas">
+        <ul className={layout === "filas" ? "space-y-2" : "grid gap-3 sm:grid-cols-2 2xl:grid-cols-3"} data-testid="mesas" data-vista={layout}>
           {state.mesas.map((card) => {
             const band = bandOf(card);
             const urgent = card.calls.some((call) => isUrgent(waitingMs(call, now)));
             const isNewCard = card.calls.some((call) => fresh.has(call.id));
-            return (
-              <li
-                key={card.tableId}
-                data-testid="mesa"
-                data-mesa={card.tableLabel}
-                data-estado={estadoDe(card)}
-                className={`flex flex-col overflow-hidden rounded-3xl bg-white ${
-                  urgent ? "border-4 border-suspended-edge" : isNewCard ? "border-4 border-cobalt" : "border border-ink/15"
-                }`}
+            const border = urgent ? "border-4 border-suspended-edge" : isNewCard ? "border-4 border-cobalt" : "border border-ink/15";
+            const anotar = (
+              <Link
+                href={`/sala/${slug}/mesas/${card.tableId}/anotar`}
+                data-testid="anotar"
+                aria-label={`${card.order ? "Ver pedido y anotar" : "Anotar pedido"}: ${card.tableLabel}`}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-ink/50 px-5 py-2 text-base font-medium text-ink hover:bg-ink/5"
               >
+                {card.order ? "Ver pedido y anotar" : "Anotar pedido"}
+              </Link>
+            );
+
+            if (layout === "filas") {
+              return (
+                <li key={card.tableId} data-testid="mesa" data-mesa={card.tableLabel} data-estado={estadoDe(card)} className={`flex overflow-hidden rounded-2xl bg-white ${border}`}>
+                  <div aria-hidden="true" className={`w-2 shrink-0 ${band.className}`} />
+                  <div className="min-w-0 flex-1 px-3 py-3">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <p className="font-display text-3xl leading-none break-words">{card.tableLabel}</p>
+                      <span className={`rounded-full px-3 py-0.5 text-sm font-semibold ${band.className}`}>{band.label}</span>
+                      {state.multiBranch ? <span className="text-sm text-muted">Sucursal {card.branchName}</span> : null}
+                    </div>
+                    {renderCalls(card, true)}
+                    {renderOrder(card, true)}
+                    <div className="mt-3">{anotar}</div>
+                  </div>
+                </li>
+              );
+            }
+
+            return (
+              <li key={card.tableId} data-testid="mesa" data-mesa={card.tableLabel} data-estado={estadoDe(card)} className={`flex flex-col overflow-hidden rounded-3xl bg-white ${border}`}>
                 <div className={`px-5 py-2.5 ${band.className}`}>
                   <p className="text-lg font-semibold">{band.label}</p>
                 </div>
                 <div className="flex flex-1 flex-col p-5">
                   <p className="font-display text-[2.75rem] leading-none break-words">{card.tableLabel}</p>
                   {state.multiBranch ? <p className="mt-2 text-sm text-muted">Sucursal {card.branchName}</p> : null}
-
-                  {card.calls.length > 0 ? (
-                    <ul className="mt-3 space-y-3" data-testid="llamados-mesa">
-                      {card.calls.map((call) => {
-                        const waited = waitingMs(call, now);
-                        const callUrgent = isUrgent(waited);
-                        const isNew = fresh.has(call.id);
-                        const visitAge = visitAgeMs(call);
-                        const stale = visitAge !== null && isStaleVisit(visitAge);
-                        return (
-                          <li
-                            key={call.id}
-                            data-testid="llamado"
-                            data-mesa={card.tableLabel}
-                            data-kind={call.kind}
-                            data-nuevo={isNew ? "true" : "false"}
-                            data-urgente={callUrgent ? "true" : "false"}
-                          >
-                            <p className="text-lg" data-testid="espera">
-                              <strong>{KIND_LABEL[call.kind]}</strong> · {isNew ? <strong>Nuevo · </strong> : null}
-                              {elapsedLabel(waited)}
-                              {callUrgent ? <strong className="text-suspended-ink"> · Espera hace rato</strong> : null}
-                            </p>
-                            {visitAge !== null ? (
-                              <p className="mt-1 text-sm text-muted" data-testid="escaneo" data-vieja={stale ? "true" : "false"}>
-                                Escaneó el QR {durationLabel(visitAge)} antes del aviso
-                                {stale ? <strong className="text-ink"> · Hace mucho: confirmá que siga en la mesa</strong> : null}
-                              </p>
-                            ) : null}
-                            <button
-                              type="button"
-                              onClick={() => attend(card, call)}
-                              disabled={busy === call.id}
-                              aria-label={`Marcar como atendido: ${callName(card, state.multiBranch)}, ${KIND_LABEL[call.kind].toLowerCase()}`}
-                              className={`${primaryClass} mt-2 w-full sm:w-auto`}
-                            >
-                              {busy === call.id ? "Guardando…" : "Atendido"}
-                            </button>
-                            {notes[call.id] ? (
-                              <p role="alert" className="mt-2 text-base font-medium text-danger">
-                                {notes[call.id]}
-                              </p>
-                            ) : null}
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : null}
-
-                  {card.order ? (
-                    <div className="mt-3" data-testid="pedido">
-                      <p className="text-base" data-testid="pedido-estado">
-                        {orderStatusText(card.order)}
-                      </p>
-                      <p className="mt-1 font-display text-3xl leading-none" data-testid="pedido-total" data-centavos={card.order.totalCents}>
-                        {formatArs(card.order.totalCents)}
-                      </p>
-                      <p className="mt-1 text-sm text-muted">Abierto hace {durationLabel(Math.max(0, now - Date.parse(card.order.openedAt)))}</p>
-                    </div>
-                  ) : (
-                    <p className="mt-3 text-base text-muted" data-testid="sin-pedido">
-                      Sin pedido abierto.
-                    </p>
-                  )}
-
-                  <div className="mt-auto pt-4">
-                    <Link
-                      href={`/sala/${slug}/mesas/${card.tableId}/anotar`}
-                      data-testid="anotar"
-                      aria-label={`${card.order ? "Ver pedido y anotar" : "Anotar pedido"}: ${card.tableLabel}`}
-                      className="inline-flex min-h-11 items-center justify-center rounded-full border border-ink/50 px-5 py-2 text-base font-medium text-ink hover:bg-ink/5"
-                    >
-                      {card.order ? "Ver pedido y anotar" : "Anotar pedido"}
-                    </Link>
-                  </div>
+                  {renderCalls(card, false)}
+                  {renderOrder(card, false)}
+                  <div className="mt-auto pt-4">{anotar}</div>
                 </div>
               </li>
             );

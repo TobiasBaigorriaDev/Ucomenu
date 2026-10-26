@@ -66,9 +66,9 @@ test.describe("vista Mesas", () => {
     await abrir(page, l.t.staff, l.t, "");
     // /sala/{slug} (el manifiesto, las notificaciones y los favoritos) entra directo en Mesas, que es la única pantalla de servicio.
     await expect(page).toHaveURL(new RegExp(`/sala/${l.t.slug}/mesas$`));
-    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas en vivo", level: 1 })).toBeVisible();
     const nav = page.getByRole("navigation", { name: "Secciones de la sala" });
-    await expect(nav.getByRole("link")).toHaveText(["Mesas", "Panel"]);
+    await expect(nav.getByRole("link")).toHaveText(["Mesas en vivo", "Volver al panel principal"]);
 
     const m1 = mesaCard(page, "Mesa 1");
     await expect(m1).toHaveAttribute("data-estado", "pedido");
@@ -134,6 +134,61 @@ test.describe("vista Mesas", () => {
     await abrir(dueno, l.t.owner, l.t, "/mesas");
     await expect(dueno.getByTestId("mesas-deshabilitada")).toContainText("plan Pro");
     await ctxDueno.close();
+  });
+
+  test("«Filas» muestra las mismas mesas con los mismos datos, se atiende desde la fila y la elección se recuerda", async ({ browser }) => {
+    const l = await nuevoLocal("mesas-filas");
+    await anotar(l.t.owner, l, l.mesas[0], 2);
+    await llamar(l.mesas[1].qr_token, "waiter");
+    await llamar(l.mesas[2].qr_token, "bill");
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    await abrir(page, l.t.staff, l.t, "/mesas");
+    const lista = page.getByTestId("mesas");
+    const vista = (nombre: string) => page.getByTestId("vista-mesas").getByRole("button", { name: nombre, exact: true });
+    await expect(lista).toHaveAttribute("data-vista", "tarjetas");
+    await expect(vista("Tarjetas")).toHaveAttribute("aria-pressed", "true");
+
+    // Lo que se ve de cada mesa: estado, llamados, pedido y total (en centavos). Las dos vistas tienen que decir lo mismo.
+    const datos = () =>
+      page.locator('[data-testid="mesa"]').evaluateAll((mesas) =>
+        mesas.map((m) => ({
+          mesa: m.getAttribute("data-mesa"),
+          estado: m.getAttribute("data-estado"),
+          llamados: [...m.querySelectorAll('[data-testid="llamado"]')].map((c) => c.getAttribute("data-kind")),
+          pedido: m.querySelector('[data-testid="pedido-estado"]')?.textContent ?? null,
+          total: m.querySelector('[data-testid="pedido-total"]')?.getAttribute("data-centavos") ?? null,
+          sinPedido: m.querySelector('[data-testid="sin-pedido"]') !== null,
+          anotar: m.querySelector('[data-testid="anotar"]')?.getAttribute("href") ?? null,
+        })),
+      );
+    const enTarjetas = await datos();
+    expect(enTarjetas.map((m) => m.mesa)).toEqual(["Mesa 3", "Mesa 2", "Mesa 1"]);
+
+    await vista("Filas").click();
+    await expect(lista).toHaveAttribute("data-vista", "filas");
+    await expect(vista("Filas")).toHaveAttribute("aria-pressed", "true");
+    expect(await datos()).toEqual(enTarjetas);
+    await expectNoHorizontalOverflow(page);
+    const fila = mesaCard(page, "Mesa 1");
+    await expect(fila).toContainText("Con pedido");
+    await expect(fila.getByTestId("pedido-estado")).toHaveText("2 platos · 2 anotados");
+    await expect(fila.getByTestId("anotar")).toBeVisible();
+    for (const control of [vista("Tarjetas"), vista("Filas"), page.getByRole("button", { name: /Marcar como atendido/ }).first(), fila.getByTestId("anotar")]) {
+      expect((await control.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    }
+
+    // Atender desde la fila, y la elección sobrevive a una recarga (queda en el dispositivo).
+    await mesaCard(page, "Mesa 2").getByRole("button", { name: /Marcar como atendido/ }).click();
+    await expect(page.getByTestId("nota-sala")).toContainText("Mesa 2: marcado como atendido");
+    await expect(page.locator('[data-testid="llamado"][data-mesa="Mesa 2"]')).toHaveCount(0);
+    await page.reload();
+    await expect(lista).toHaveAttribute("data-vista", "filas");
+    await vista("Tarjetas").click();
+    await expect(lista).toHaveAttribute("data-vista", "tarjetas");
+    await page.reload();
+    await expect(lista).toHaveAttribute("data-vista", "tarjetas");
+    await ctx.close();
   });
 
   test("una mesa dada de baja con un llamado pendiente sigue a la vista hasta que el llamado venza", async ({ browser }) => {

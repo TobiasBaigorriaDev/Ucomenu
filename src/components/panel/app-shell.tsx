@@ -54,8 +54,8 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
       }
       items.push({ href: `/sala/${org.slug}/mesas`, label: "Sala en vivo", icon: "sala", group: "Servicio", alertOnCalls: true });
     } else {
-      items.push({ href: `/sala/${org.slug}/mesas`, label: "Mesas", icon: "mesas" });
-      items.push({ href: `/panel/${org.slug}`, label: "Panel", icon: "panel" });
+      items.push({ href: `/sala/${org.slug}/mesas`, label: "Mesas en vivo", icon: "mesas" });
+      items.push({ href: `/panel/${org.slug}`, label: "Volver al panel principal", icon: "panel" });
     }
   } else if (area === "admin") {
     items.push({ href: "/admin", label: "Organizaciones", exact: true, icon: "organizaciones" });

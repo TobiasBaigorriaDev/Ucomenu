@@ -106,7 +106,7 @@ test.describe("precuenta", () => {
     await page.emulateMedia({ media: "print" });
     await expect(page.getByTestId("imprimir")).toBeHidden();
     await expect(page.getByRole("link", { name: "← Volver al pedido" })).toBeHidden();
-    await expect(page.getByRole("link", { name: "Mesas", exact: true })).toBeHidden();
+    await expect(page.getByRole("link", { name: "Mesas en vivo", exact: true })).toBeHidden();
     await expect(page.getByTestId("precuenta-leyenda")).toBeVisible();
     await expect(page.getByTestId("precuenta-total")).toBeVisible();
     await ctx.close();

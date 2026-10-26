@@ -6,7 +6,7 @@ import { createSessionClient } from "@/lib/supabase/server";
 import { MesasBoard } from "./mesas-board";
 import { ResetAllButton } from "./reset-all-button";
 
-export const metadata: Metadata = { title: "Mesas" };
+export const metadata: Metadata = { title: "Mesas en vivo" };
 
 export default async function SalaMesasPage({ params }: PageProps<"/sala/[org]/mesas">) {
   const { org } = await params;
@@ -17,7 +17,7 @@ export default async function SalaMesasPage({ params }: PageProps<"/sala/[org]/m
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
-      <h1 className="font-display text-4xl leading-tight">Mesas</h1>
+      <h1 className="font-display text-4xl leading-tight">Mesas en vivo</h1>
       <ResetAllButton slug={membership.org.slug} />
       <MesasBoard slug={membership.org.slug} initial={initial} isOwner={membership.role === "owner"} pushPublicKey={vapidPublicKey()} />
     </main>

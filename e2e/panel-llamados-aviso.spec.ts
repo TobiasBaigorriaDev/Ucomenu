@@ -93,7 +93,7 @@ test.describe("cartel de llamados en el panel", () => {
     await llamar(mesas[0].qr_token);
     await expect(page.getByTestId("llamados-aviso-titulo")).toBeVisible({ timeout: 12_000 });
     await page.getByRole("link", { name: "Ir a la sala en vivo" }).click();
-    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas en vivo", level: 1 })).toBeVisible();
     await expect(page.getByTestId("llamados-aviso")).toHaveCount(0);
     await context.close();
   });
@@ -130,7 +130,7 @@ test.describe("sonido de los llamados fuera de la sala", () => {
 
     // A otra pantalla del panel SIN recargar (el módulo del sonido sigue vivo).
     await llamar(mesas[0].qr_token); // ya pendiente cuando llega el cartel: no debe sonar
-    await page.getByRole("link", { name: "Panel", exact: true }).click();
+    await page.getByRole("link", { name: "Volver al panel principal", exact: true }).click();
     await page.getByRole("link", { name: "Carta" }).first().click();
     await expect(page).toHaveURL(new RegExp(`/panel/${t.slug}/carta`));
     await expect(page.getByTestId("llamados-aviso-titulo")).toBeVisible({ timeout: 12_000 });

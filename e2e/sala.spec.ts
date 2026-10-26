@@ -48,7 +48,7 @@ async function abrirSala(context: BrowserContext, persona: Person, t: Tenant) {
   await login(page, persona.email, persona.password);
   await page.goto(`/sala/${t.slug}`);
   await expect(page).toHaveURL(new RegExp(`/sala/${t.slug}/mesas$`)); // /sala/{slug} redirige a Mesas
-  await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mesas en vivo", level: 1 })).toBeVisible();
   return page;
 }
 
@@ -76,7 +76,7 @@ test.describe("llamados en vivo", () => {
       await expect(c).toContainText(/hace \d+ s/);
       await expect(c).toHaveAttribute("data-nuevo", "true");
       await expect(page.getByTestId("aviso-nuevo")).toContainText("Nuevo llamado: Mesa 2");
-      await expect(page).toHaveTitle("(1) Mesas");
+      await expect(page).toHaveTitle("(1) Mesas en vivo");
     }
     await expect(staff.locator('[data-testid="llamado"]')).toHaveCount(1); // el de otro local no llega
     await ctxDueno.close();
@@ -108,7 +108,7 @@ test.describe("llamados en vivo", () => {
     // Llamados nuevos: resaltan, suman al título y suenan.
     await llamar(mesas[1].qr_token);
     await expect(tarjeta(page, "Mesa 2")).toBeVisible({ timeout: 12_000 });
-    await expect(page).toHaveTitle("(2) Mesas");
+    await expect(page).toHaveTitle("(2) Mesas en vivo");
     await expect.poll(() => pitidos(page)).toBe(2);
     await llamar(mesas[2].qr_token, "bill");
     await expect(tarjeta(page, "Mesa 3")).toBeVisible({ timeout: 12_000 });
@@ -238,8 +238,8 @@ test.describe("vista por sucursal", () => {
     await expect(dueno.locator('[data-testid="llamado"]')).toHaveCount(2, { timeout: 12_000 });
     await expect(staff.locator('[data-testid="llamado"]')).toHaveCount(1, { timeout: 12_000 });
     await expect(staff.locator('[data-testid="mesa"][data-estado="cuenta"]')).toContainText("Norte");
-    await expect(dueno).toHaveTitle("(2) Mesas");
-    await expect(staff).toHaveTitle("(1) Mesas");
+    await expect(dueno).toHaveTitle("(2) Mesas en vivo");
+    await expect(staff).toHaveTitle("(1) Mesas en vivo");
     // El anuncio del Personal es solo de Norte; no se entera de lo de Centro (pero sabe que existe).
     await expect(staff.getByTestId("anuncio")).toHaveText("Nuevo llamado: Mesa 1, sucursal Norte, pide la cuenta.");
     await expect(staff.getByTestId("otras-sucursales")).toContainText("Hay 1 llamado pendiente en otra sucursal");
@@ -694,7 +694,7 @@ test.describe("acceso", () => {
     expect(ajeno.status()).toBe(404);
     expect(inexistente.status()).toBe(404);
     expect(await ajeno.json()).toEqual(await inexistente.json());
-    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas en vivo", level: 1 })).toBeVisible();
     await ctx.close();
   });
 

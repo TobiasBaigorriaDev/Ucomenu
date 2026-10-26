@@ -29,7 +29,7 @@ test.afterAll(async () => {
 async function abrirSala(page: Page, t: Tenant, persona: Tenant["staff"] = t.staff) {
   await login(page, persona.email, persona.password);
   await page.goto(`/sala/${t.slug}`);
-  await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Mesas en vivo", level: 1 })).toBeVisible();
 }
 
 const activar = (page: Page) => page.getByRole("button", { name: "Avisarme aunque cierre la sala" });
@@ -80,7 +80,7 @@ test.describe("aviso con la pestaña cerrada", () => {
     await expect(page.getByTestId("push-activo")).toBeVisible();
 
     await page.goto(`/sala/${b.slug}`);
-    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas en vivo", level: 1 })).toBeVisible();
     await expect(activar(page)).toBeVisible(); // mismo dispositivo y suscripción, pero este local no lo tiene registrado
     await context.close();
   });
