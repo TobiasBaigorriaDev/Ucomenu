@@ -3,8 +3,9 @@ import { conDobles, pitidos, wakeLocks } from "./audio-doble";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Estado, type Person, type Tenant } from "./support";
 
 /**
- * Panel de sala (ficha panel-de-sala): llamados pendientes en vivo por sondeo (~3 s), alerta sonora y visual, atender,
- * recuperación al reconectar y límites de acceso, contra el build y el Supabase local, a 390 px.
+ * Llamados en vivo (fichas panel-de-sala y mesas-con-llamados): los llamados pendientes aparecen en las tarjetas de «Mesas» por
+ * sondeo (~3 s), con alerta sonora y visual, atender, recuperación al reconectar y límites de acceso, contra el build y el Supabase
+ * local, a 390 px.
  */
 
 const MIN = 60_000;
@@ -46,11 +47,14 @@ async function abrirSala(context: BrowserContext, persona: Person, t: Tenant) {
   const page = await context.newPage();
   await login(page, persona.email, persona.password);
   await page.goto(`/sala/${t.slug}`);
-  await expect(page.getByRole("heading", { name: "Sala en vivo" })).toBeVisible();
+  await expect(page).toHaveURL(new RegExp(`/sala/${t.slug}/mesas$`)); // /sala/{slug} redirige a Mesas
+  await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
   return page;
 }
 
 const tarjeta = (page: Page, mesa: string) => page.locator(`[data-testid="llamado"][data-mesa="${mesa}"]`);
+/** Sin llamados pendientes: ninguna fila de llamado (las mesas libres se siguen viendo). */
+const sinLlamados = (page: Page) => expect(page.locator('[data-testid="llamado"]')).toHaveCount(0, { timeout: 12_000 });
 
 test.describe("llamados en vivo", () => {
   test("un llamado aparece solo, en pocos segundos, en la sala del Staff y del Dueño; el de otro local no", async ({ browser }) => {
@@ -60,7 +64,7 @@ test.describe("llamados en vivo", () => {
     const ctxStaff = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const dueno = await abrirSala(ctxDueno, t.owner, t);
     const staff = await abrirSala(ctxStaff, t.staff, t);
-    await expect(staff.getByTestId("sala-vacia")).toBeVisible();
+    await sinLlamados(staff);
     await expectNoHorizontalOverflow(staff);
 
     await llamar(otro.mesas[0].qr_token);
@@ -72,7 +76,7 @@ test.describe("llamados en vivo", () => {
       await expect(c).toContainText(/hace \d+ s/);
       await expect(c).toHaveAttribute("data-nuevo", "true");
       await expect(page.getByTestId("aviso-nuevo")).toContainText("Nuevo llamado: Mesa 2");
-      await expect(page).toHaveTitle("(1) Sala en vivo");
+      await expect(page).toHaveTitle("(1) Mesas");
     }
     await expect(staff.locator('[data-testid="llamado"]')).toHaveCount(1); // el de otro local no llega
     await ctxDueno.close();
@@ -104,7 +108,7 @@ test.describe("llamados en vivo", () => {
     // Llamados nuevos: resaltan, suman al título y suenan.
     await llamar(mesas[1].qr_token);
     await expect(tarjeta(page, "Mesa 2")).toBeVisible({ timeout: 12_000 });
-    await expect(page).toHaveTitle("(2) Sala en vivo");
+    await expect(page).toHaveTitle("(2) Mesas");
     await expect.poll(() => pitidos(page)).toBe(2);
     await llamar(mesas[2].qr_token, "bill");
     await expect(tarjeta(page, "Mesa 3")).toBeVisible({ timeout: 12_000 });
@@ -114,7 +118,7 @@ test.describe("llamados en vivo", () => {
     await page.getByRole("button", { name: "Silenciar alertas" }).click();
     await expect(page.getByRole("button", { name: "Activar alertas" })).toBeVisible();
     await service().from("waiter_calls").update({ status: "attended" }).eq("organization_id", t.orgId);
-    await expect(page.getByTestId("sala-vacia")).toBeVisible({ timeout: 12_000 });
+    await sinLlamados(page);
     await llamar(mesas[0].qr_token, "bill");
     await expect(tarjeta(page, "Mesa 1")).toBeVisible({ timeout: 12_000 });
     await expect(tarjeta(page, "Mesa 1")).toHaveAttribute("data-nuevo", "true");
@@ -153,8 +157,8 @@ test.describe("llamados en vivo", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await abrirSala(ctx, t.owner, t);
     await expect(page.locator('[data-testid="llamado"]')).toHaveCount(2);
-    await expect(page.getByText("Sucursal Norte")).toBeVisible();
-    await expect(page.getByText("Sucursal Centro", { exact: false })).toBeVisible();
+    await expect(page.locator('[data-testid="mesa"][data-estado="cuenta"]')).toContainText("Sucursal Norte");
+    await expect(page.locator('[data-testid="mesa"][data-estado="llama"]')).toContainText("Sucursal Centro");
     await ctx.close();
   });
 });
@@ -166,7 +170,7 @@ test.describe("anuncios con varias sucursales", () => {
     const mesa1 = (branch: string) => mesas.find((m) => m.branch_id === branch && m.label === "Mesa 1")!;
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await abrirSala(ctx, t.owner, t);
-    await expect(page.getByTestId("sala-vacia")).toBeVisible();
+    await sinLlamados(page);
     const anuncio = page.getByTestId("anuncio");
 
     await llamar(mesa1(branchIds[0]).qr_token);
@@ -233,9 +237,9 @@ test.describe("vista por sucursal", () => {
     await llamar(mesa1(mesas, branchIds[1]).qr_token, "bill"); // Norte
     await expect(dueno.locator('[data-testid="llamado"]')).toHaveCount(2, { timeout: 12_000 });
     await expect(staff.locator('[data-testid="llamado"]')).toHaveCount(1, { timeout: 12_000 });
-    await expect(staff.locator('[data-testid="llamado"]')).toContainText("Norte");
-    await expect(dueno).toHaveTitle("(2) Sala en vivo");
-    await expect(staff).toHaveTitle("(1) Sala en vivo");
+    await expect(staff.locator('[data-testid="mesa"][data-estado="cuenta"]')).toContainText("Norte");
+    await expect(dueno).toHaveTitle("(2) Mesas");
+    await expect(staff).toHaveTitle("(1) Mesas");
     // El anuncio del Personal es solo de Norte; no se entera de lo de Centro (pero sabe que existe).
     await expect(staff.getByTestId("anuncio")).toHaveText("Nuevo llamado: Mesa 1, sucursal Norte, pide la cuenta.");
     await expect(staff.getByTestId("otras-sucursales")).toContainText("Hay 1 llamado pendiente en otra sucursal");
@@ -325,7 +329,7 @@ test.describe("vista por sucursal", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await abrirSala(ctx, t.owner, t);
     // El sondeo tarda: entre guardar la primera elección y que el servidor la devuelva, la pantalla todavía trae la vista vieja.
-    await page.route("**/sala/*/estado", async (route) => {
+    await page.route("**/sala/*/mesas/estado", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 2_500));
       await route.continue();
     });
@@ -338,7 +342,7 @@ test.describe("vista por sucursal", () => {
     await expect(chip(page, "Centro")).toHaveAttribute("aria-pressed", "false");
     await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "false");
     await expect(chip(page, "Norte")).toBeEnabled();
-    await page.unroute("**/sala/*/estado");
+    await page.unroute("**/sala/*/mesas/estado");
     await page.reload();
     await expect(chip(page, "Norte")).toHaveAttribute("aria-pressed", "true");
     await expect(chip(page, "Todas")).toHaveAttribute("aria-pressed", "false");
@@ -403,15 +407,15 @@ test.describe("vista por sucursal", () => {
     const page = await abrirSala(ctx, t.owner, t);
     await page.goto(`/panel/${t.slug}/analitica`);
     const filtro = page.getByTestId("analitica-sucursales");
-    await expect(filtro.getByRole("link", { name: "Norte" })).toHaveAttribute("href", /sucursal=todas$/); // la sucursal sí se llama «todas»
+    await expect(filtro.getByRole("link", { name: "Norte" })).toHaveAttribute("href", /sucursal=todas(&|$)/); // la sucursal sí se llama «todas»
 
     // Se espera la navegación (el estado de antes de navegar también tiene «Todas» activa).
     await filtro.getByRole("link", { name: "Norte" }).click();
-    await expect(page).toHaveURL(/sucursal=todas$/);
+    await expect(page).toHaveURL(/sucursal=todas(&|$)/);
     await expect(filtro.getByRole("link", { name: "Norte" })).toHaveAttribute("aria-current", "page"); // elegible por su propio nombre
 
     await filtro.getByRole("link", { name: "Todas las sucursales" }).click();
-    await expect(page).toHaveURL(/sucursal=_todas$/); // el valor reservado, que no puede ser un slug
+    await expect(page).toHaveURL(/sucursal=_todas(&|$)/); // el valor reservado, que no puede ser un slug
     await expect(filtro.getByRole("link", { name: "Todas las sucursales" })).toHaveAttribute("aria-current", "page");
     await expect(filtro.getByRole("link", { name: "Norte" })).not.toHaveAttribute("aria-current", "page");
     await ctx.close();
@@ -443,7 +447,7 @@ test.describe("vista por sucursal", () => {
     const { t } = await nuevoLocal("sala-vista-una");
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await abrirSala(ctx, t.staff, t);
-    await expect(page.getByTestId("sala-vacia")).toBeVisible();
+    await sinLlamados(page);
     await expect(page.getByTestId("selector-sucursal")).toHaveCount(0);
     await ctx.close();
   });
@@ -533,7 +537,7 @@ test.describe("consultas en vuelo", () => {
     let liberar!: () => void;
     const liberada = new Promise<void>((resolve) => (liberar = resolve));
     let armada = true;
-    await page.route("**/sala/*/estado", async (route) => {
+    await page.route("**/sala/*/mesas/estado", async (route) => {
       if (!armada) return route.continue();
       armada = false;
       const respuesta = await route.fetch();
@@ -591,7 +595,7 @@ test.describe("conexión", () => {
     const page = await abrirSala(ctx, t.staff, t);
     await ctx.clearCookies();
     await expect(page.getByTestId("sesion-vencida")).toBeVisible({ timeout: 12_000 });
-    await expect(page.getByRole("link", { name: "Ingresar de nuevo" })).toHaveAttribute("href", `/login?next=${encodeURIComponent(`/sala/${t.slug}`)}`);
+    await expect(page.getByRole("link", { name: "Ingresar de nuevo" })).toHaveAttribute("href", `/login?next=${encodeURIComponent(`/sala/${t.slug}/mesas`)}`);
 
     let consultas = 0;
     page.on("request", (r) => r.url().includes("/estado") && consultas++);
@@ -610,7 +614,7 @@ test.describe("plan y cuenta", () => {
     await expect(tarjeta(page, "Mesa 1")).toBeVisible();
 
     await service().from("subscriptions").update({ plan_code: "basic" }).eq("organization_id", t.orgId);
-    await expect(page.getByTestId("sala-deshabilitada")).toBeVisible({ timeout: 8_000 });
+    await expect(page.getByTestId("mesas-deshabilitada")).toBeVisible({ timeout: 8_000 });
 
     let consultas = 0;
     page.on("request", (r) => r.url().includes("/estado") && consultas++);
@@ -626,13 +630,13 @@ test.describe("plan y cuenta", () => {
 
     const ctxD = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const dueno = await abrirSala(ctxD, t.owner, t);
-    await expect(dueno.getByTestId("sala-deshabilitada")).toContainText("plan Pro");
-    await expect(dueno.getByTestId("llamados")).toHaveCount(0);
+    await expect(dueno.getByTestId("mesas-deshabilitada")).toContainText("plan Pro");
+    await expect(dueno.getByTestId("mesas")).toHaveCount(0);
 
     const ctxS = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const staff = await abrirSala(ctxS, t.staff, t);
-    await expect(staff.getByTestId("sala-deshabilitada")).toContainText("Avisale al dueño");
-    await expect(staff.getByTestId("sala-deshabilitada")).not.toContainText(/plan|pro\b/i);
+    await expect(staff.getByTestId("mesas-deshabilitada")).toContainText("Avisale al dueño");
+    await expect(staff.getByTestId("mesas-deshabilitada")).not.toContainText(/plan|pro\b/i);
 
     let consultas = 0;
     staff.on("request", (r) => r.url().includes("/estado") && consultas++);
@@ -647,7 +651,7 @@ test.describe("plan y cuenta", () => {
       const { t, mesas } = await nuevoLocal(`sala-${estado.replace("_", "")}`, { estado });
       const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
       const page = await abrirSala(ctx, t.staff, t);
-      await expect(page.getByTestId("sala-deshabilitada")).toBeVisible();
+      await expect(page.getByTestId("mesas-deshabilitada")).toBeVisible();
       await expect(page.locator('[data-testid="llamado"]')).toHaveCount(0);
       expect(mesas.length).toBeGreaterThan(0);
       await ctx.close();
@@ -690,7 +694,7 @@ test.describe("acceso", () => {
     expect(ajeno.status()).toBe(404);
     expect(inexistente.status()).toBe(404);
     expect(await ajeno.json()).toEqual(await inexistente.json());
-    await expect(page.getByRole("heading", { name: "Sala en vivo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
     await ctx.close();
   });
 

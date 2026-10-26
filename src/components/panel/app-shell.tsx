@@ -52,9 +52,8 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
         items.push({ href: `/panel/${org.slug}/suscripcion`, label: "Suscripción", icon: "suscripcion", group: "Gestión" });
         items.push({ href: `/panel/${org.slug}/personal`, label: "Personal", icon: "personal", group: "Gestión" });
       }
-      items.push({ href: `/sala/${org.slug}`, label: "Sala en vivo", icon: "sala", group: "Servicio", alertOnCalls: true });
+      items.push({ href: `/sala/${org.slug}/mesas`, label: "Sala en vivo", icon: "sala", group: "Servicio", alertOnCalls: true });
     } else {
-      items.push({ href: `/sala/${org.slug}`, label: "Sala en vivo", exact: true, icon: "sala" });
       items.push({ href: `/sala/${org.slug}/mesas`, label: "Mesas", icon: "mesas" });
       items.push({ href: `/panel/${org.slug}`, label: "Panel", icon: "panel" });
     }

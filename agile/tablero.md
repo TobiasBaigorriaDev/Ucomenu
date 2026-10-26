@@ -76,6 +76,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 - [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta» → [ficha](cambios/sala-mesas-y-total.md) (hecho en local, 2026-10-24)
 - [M] Pantalla «Anotar» en la Sala: elegir plato con variantes, cantidad y observación → [ficha](cambios/sala-anotar-pedido.md) (hecho, en staging, 2026-10-24)
 - [M] Operar el pedido desde la Sala: cambiar estados, modificar y cancelar líneas, cerrar y anular → [ficha](cambios/sala-operar-pedido.md) (hecho, en staging, 2026-10-24)
+- [M] Llamados dentro de «Mesas»: una sola pantalla para el mozo (se elimina la lista aparte de «Sala en vivo») → [ficha](cambios/mesas-con-llamados.md) (hecho en local, 2026-10-26)
 - [M] Precuenta «no válida como factura», imprimible y sin observaciones → [ficha](cambios/sala-precuenta.md) (hecho, en staging, 2026-10-24)
 - [C] Retención de pedidos (2 años desde el cierre, a confirmar con el contador) y su purga por lotes (`service_role`) → [ficha](cambios/retencion-de-pedidos.md) (hecho, revisado por Codex y migración en staging, 2026-10-24; sin programar; la purga con la organización ya estaba hecha)
 - [C] Analítica de pedidos para el Dueño (rework Pro/Premium: resumen con comparación, ventas por día, franjas, platos, categorías y anulaciones) → [ficha](cambios/analitica-de-pedidos.md) · ADR 0045 (hecho, revisado por Codex en 3 rondas, aprobado por el usuario y desplegado en staging, Fly v54, 2026-10-25)

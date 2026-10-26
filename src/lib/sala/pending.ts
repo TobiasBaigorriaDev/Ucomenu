@@ -3,8 +3,9 @@ import { parseEntitlements } from "@/lib/entitlements";
 import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { asUuid } from "@/lib/carta/validation";
-import { readBranchView, splitByView } from "@/lib/sucursales/vista";
+import { readBranchView } from "@/lib/sucursales/vista";
 import type { MesaOrder } from "./mesas";
+import { loadPendingCalls } from "./llamados-loader";
 import { loadOpenOrders } from "./mesas-loader";
 import { EXPIRY_MS, sortOldestFirst, type SalaCall, type SalaState } from "./types";
 
@@ -42,30 +43,12 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
 
   if (!enabled) return { serverNow, enabled: false, multiBranch, branches: branchList, view, othersPending: 0, calls: [] };
 
-  const since = new Date(now.getTime() - EXPIRY_MS).toISOString();
-  // Por páginas y por clave (id): los pendientes de 30 minutos de varias sucursales pueden pasar de 1000 y PostgREST corta cada
-  // lectura sin avisar. Por clave, un llamado atendido a mitad de lectura no corre las páginas ni esconde otro. El orden
-  // «del más antiguo al más nuevo» lo pone `sortOldestFirst` al final.
-  const pending = await readAllByKey((after, limit) => {
-    const query = db
-      .from("waiter_calls")
-      .select("id, kind, table_id, branch_id, created_at, visit_started_at")
-      .eq("organization_id", orgId)
-      .eq("status", "pending")
-      .gt("created_at", since);
-    return (after ? query.gt("id", after) : query).order("id").limit(limit);
-  });
-  if (pending.error) throw new Error(`No se pudieron leer los llamados: ${pending.error.message}`);
-  const pendingRows = pending.data ?? [];
-
-  // Los pendientes de sucursales activas y de un tipo conocido; los de la vista de la persona se muestran y de los demás solo se
-  // cuenta la cantidad (no suenan ni se anuncian: la persona eligió no mirarlos).
+  // Los pendientes de las sucursales activas que la persona mira se muestran; de los demás solo se cuenta la cantidad.
   const branchName = new Map(branchRows.map((branch) => [branch.id, branch.name]));
-  const known = pendingRows.filter((call) => (call.kind === "waiter" || call.kind === "bill") && branchName.has(call.branch_id));
-  const { shown: inView, others } = splitByView(known.map((call) => ({ call, branchId: call.branch_id })), view);
+  const { inView, othersPending } = await loadPendingCalls(db, orgId, new Set(branchName.keys()), view, now);
 
   // `in (...)` va en la URL: se pide de a TABLE_CHUNK ids (cada pedido devuelve a lo sumo ese tanto de filas).
-  const tableIds = [...new Set(inView.map(({ call }) => call.table_id))];
+  const tableIds = [...new Set(inView.map((call) => call.table_id))];
   const tableLabel = new Map<string, string>();
   for (let i = 0; i < tableIds.length; i += TABLE_CHUNK) {
     const chunk = await db.from("tables").select("id, label").eq("organization_id", orgId).in("id", tableIds.slice(i, i + TABLE_CHUNK));
@@ -75,26 +58,21 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
 
   // «Pide la cuenta» muestra al mozo el total del pedido abierto de esa mesa (ADR 0041). Si esa lectura falla, el llamado se muestra igual,
   // sin total: lo que importa de la sala es que el aviso llegue.
-  const billTables = [...new Set(inView.filter(({ call }) => call.kind === "bill").map(({ call }) => call.table_id))];
+  const billTables = [...new Set(inView.filter((call) => call.kind === "bill").map((call) => call.table_id))];
   const accounts = await loadOpenOrders(db, orgId, { tableIds: billTables }).catch(() => new Map<string, MesaOrder>());
 
-  const calls: SalaCall[] = inView.flatMap(({ call }) => {
-    if (call.kind !== "waiter" && call.kind !== "bill") return [];
-    return [
-      {
-        id: call.id,
-        kind: call.kind,
-        tableLabel: tableLabel.get(call.table_id) ?? "Mesa",
-        branchName: branchName.get(call.branch_id) ?? "",
-        createdAt: call.created_at,
-        visitStartedAt: call.visit_started_at,
-        // Solo viaja en un «Pide la cuenta» con pedido: el resto de los llamados conserva exactamente su forma de siempre.
-        ...(call.kind === "bill" ? accountEntry(accounts.get(call.table_id)) : {}),
-      },
-    ];
-  });
+  const calls: SalaCall[] = inView.map((call) => ({
+    id: call.id,
+    kind: call.kind,
+    tableLabel: tableLabel.get(call.table_id) ?? "Mesa",
+    branchName: branchName.get(call.branch_id) ?? "",
+    createdAt: call.created_at,
+    visitStartedAt: call.visit_started_at,
+    // Solo viaja en un «Pide la cuenta» con pedido: el resto de los llamados conserva exactamente su forma de siempre.
+    ...(call.kind === "bill" ? accountEntry(accounts.get(call.table_id)) : {}),
+  }));
 
-  return { serverNow, enabled: true, multiBranch, branches: branchList, view, othersPending: others.length, calls: sortOldestFirst(calls) };
+  return { serverNow, enabled: true, multiBranch, branches: branchList, view, othersPending, calls: sortOldestFirst(calls) };
 }
 
 export type AttendResult =

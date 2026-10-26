@@ -136,14 +136,14 @@ export function LlamadosBanner({ slug }: { slug: string }) {
             {watching.length > 0 ? (
               <p className="basis-full text-sm" data-testid="llamados-aviso-vista">
                 Mostrando: {watching.join(", ")} ·{" "}
-                <Link href={`/sala/${slug}`} className="font-medium underline underline-offset-2">
+                <Link href={`/sala/${slug}/mesas`} className="font-medium underline underline-offset-2">
                   Cambiar
                 </Link>
               </p>
             ) : null}
             <div className="flex flex-wrap gap-2">
               <Link
-                href={`/sala/${slug}`}
+                href={`/sala/${slug}/mesas`}
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-ink px-5 py-2 text-base font-medium text-white"
               >
                 Ir a la sala en vivo

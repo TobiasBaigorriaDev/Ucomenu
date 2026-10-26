@@ -84,7 +84,7 @@ test.describe("cartel de llamados en el panel", () => {
     await context.close();
   });
 
-  test("el enlace del cartel lleva a la sala en vivo, que no repite el cartel", async ({ browser }) => {
+  test("el enlace del cartel lleva a Mesas (la sala en vivo), que no repite el cartel", async ({ browser }) => {
     const { t, mesas } = await nuevoLocal("panel-aviso-enlace");
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
@@ -93,7 +93,7 @@ test.describe("cartel de llamados en el panel", () => {
     await llamar(mesas[0].qr_token);
     await expect(page.getByTestId("llamados-aviso-titulo")).toBeVisible({ timeout: 12_000 });
     await page.getByRole("link", { name: "Ir a la sala en vivo" }).click();
-    await expect(page.getByRole("heading", { name: "Sala en vivo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
     await expect(page.getByTestId("llamados-aviso")).toHaveCount(0);
     await context.close();
   });

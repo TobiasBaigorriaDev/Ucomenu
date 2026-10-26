@@ -78,7 +78,7 @@ test.describe("aviso de llamados desde el panel", () => {
     await expect(page.getByTestId("push-activo")).toBeVisible();
 
     await page.goto(`/sala/${a.slug}`);
-    await expect(page.getByRole("heading", { name: "Sala en vivo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
     await expect(page.getByTestId("push-activo")).toContainText("aunque cierres la sala");
 
     await page.goto(`/panel/${b.slug}`);

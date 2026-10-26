@@ -5,7 +5,7 @@
  * Los importes viajan en CENTAVOS ENTEROS. Una línea copia al anotarla el precio efectivo y las diferencias de sus opciones: el total
  * de un pedido es la suma de `cantidad × (precio efectivo + opciones)` de las líneas NO canceladas. No es una factura.
  */
-import type { CallKind, SalaBranch } from "./types";
+import type { CallKind, SalaBranch, SalaCall } from "./types";
 
 /** Estados de una línea (ADR 0041, decisión 3). */
 export type LineStatus = "noted" | "in_kitchen" | "delivered" | "cancelled";
@@ -31,7 +31,13 @@ export type MesaOrder = {
   totalCents: number;
 };
 
-export type MesaCall = { kind: CallKind; createdAt: string };
+export type MesaCall = {
+  id: string;
+  kind: CallKind;
+  createdAt: string;
+  /** ISO 8601: cuándo abrió el comensal la carta (ticket de visita). `null` si no se sabe (informativo). */
+  visitStartedAt: string | null;
+};
 
 export type MesaCard = {
   tableId: string;
@@ -51,6 +57,8 @@ export type MesasState = {
   branches: SalaBranch[];
   /** Vista efectiva de la persona (ids de las sucursales que mira; vacío = todas). */
   view: string[];
+  /** Pendientes de las sucursales que la persona NO mira (se informa la cantidad, sin detalle: no suena ni avisa). */
+  othersPending: number;
   mesas: MesaCard[];
 };
 
@@ -114,6 +122,25 @@ export function sortMesas(mesas: readonly MesaCard[]): MesaCard[] {
   });
 }
 
+/**
+ * Los llamados pendientes de todas las mesas, con la forma que usan el anuncio y el sonido (`SalaCall`): el más viejo primero. Es el
+ * mismo orden de la lista de llamados que reemplazó esta pantalla.
+ */
+export function flattenCalls(mesas: readonly MesaCard[]): SalaCall[] {
+  return mesas
+    .flatMap((card) =>
+      card.calls.map((call) => ({
+        id: call.id,
+        kind: call.kind,
+        tableLabel: card.tableLabel,
+        branchName: card.branchName,
+        createdAt: call.createdAt,
+        visitStartedAt: call.visitStartedAt,
+      })),
+    )
+    .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.tableLabel.localeCompare(b.tableLabel, "es-AR", { numeric: true }));
+}
+
 /** «3 platos · 1 anotado · 1 en cocina · 1 entregado» (sin los estados en cero). */
 export function orderStatusText(order: MesaOrder): string {
   const parts = [order.dishes === 1 ? "1 plato" : `${order.dishes} platos`];
@@ -141,8 +168,10 @@ function parseCard(raw: unknown): MesaCard | null {
   if (typeof tableId !== "string" || typeof tableLabel !== "string" || typeof branchName !== "string" || !Array.isArray(calls)) return null;
   const parsedCalls: MesaCall[] = [];
   for (const call of calls) {
-    if (!isRecord(call) || (call.kind !== "waiter" && call.kind !== "bill") || !isIso(call.createdAt)) return null;
-    parsedCalls.push({ kind: call.kind, createdAt: call.createdAt });
+    if (!isRecord(call) || typeof call.id !== "string" || (call.kind !== "waiter" && call.kind !== "bill") || !isIso(call.createdAt)) return null;
+    // Opcional: sin la clave, nula o ilegible es «no se sabe» (la tarjeta no muestra nada).
+    const visit = isIso(call.visitStartedAt) ? call.visitStartedAt : null;
+    parsedCalls.push({ id: call.id, kind: call.kind, createdAt: call.createdAt, visitStartedAt: visit });
   }
   const parsedOrder = parseOrder(order);
   if (parsedOrder === undefined) return null;
@@ -152,12 +181,13 @@ function parseCard(raw: unknown): MesaCard | null {
 /** Lee la respuesta de la ruta de consulta. Cualquier forma inesperada es `null` (la pantalla lo trata como error). */
 export function parseMesasState(raw: unknown): MesasState | null {
   if (!isRecord(raw)) return null;
-  const { serverNow, enabled, multiBranch, branches, view, mesas } = raw;
+  const { serverNow, enabled, multiBranch, branches, view, othersPending, mesas } = raw;
   if (!isIso(serverNow) || typeof enabled !== "boolean" || typeof multiBranch !== "boolean") return null;
   if (!Array.isArray(branches) || !Array.isArray(view) || !view.every((id) => typeof id === "string") || !Array.isArray(mesas)) return null;
+  if (typeof othersPending !== "number" || !Number.isInteger(othersPending) || othersPending < 0) return null;
   const parsedBranches = branches.map((branch) => (isRecord(branch) && typeof branch.id === "string" && typeof branch.name === "string" ? { id: branch.id, name: branch.name } : null));
   if (parsedBranches.some((branch) => branch === null)) return null;
   const parsed = mesas.map(parseCard);
   if (parsed.some((card) => card === null)) return null;
-  return { serverNow, enabled, multiBranch, branches: parsedBranches as SalaBranch[], view: view as string[], mesas: parsed as MesaCard[] };
+  return { serverNow, enabled, multiBranch, branches: parsedBranches as SalaBranch[], view: view as string[], othersPending, mesas: parsed as MesaCard[] };
 }

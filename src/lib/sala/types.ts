@@ -178,7 +178,7 @@ export function nextPollDelay(visible: boolean, failures: number): number {
   return Math.min(MAX_BACKOFF_MS, Math.max(base, base * 2 ** Math.min(failures, 4)));
 }
 
-/** Texto del título de la pestaña: «(2) Sala en vivo» con pendientes, «Sala en vivo» sin ellos. */
+/** Texto del título de la pestaña: «(2) Mesas» con llamados pendientes, «Mesas» sin ellos. */
 export function pageTitle(count: number): string {
-  return count > 0 ? `(${count}) Sala en vivo` : "Sala en vivo";
+  return count > 0 ? `(${count}) Mesas` : "Mesas";
 }

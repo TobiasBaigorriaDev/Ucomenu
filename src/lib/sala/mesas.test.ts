@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  flattenCalls,
   lineCents,
   orderCents,
   orderStatusText,
@@ -64,6 +65,7 @@ describe("resumen del pedido abierto", () => {
 });
 
 const carta = (label: string, over: Partial<MesaCard> = {}): MesaCard => ({ tableId: label, tableLabel: label, branchName: "Centro", calls: [], order: null, ...over });
+const llamado = (kind: "waiter" | "bill", createdAt: string, id = `${kind}-${createdAt}`) => ({ id, kind, createdAt, visitStartedAt: null });
 const pedido = (openedAt: string) => ({ openedAt, dishes: 1, noted: 1, inKitchen: 0, delivered: 0, totalCents: 1000 });
 
 describe("orden de las mesas", () => {
@@ -73,10 +75,10 @@ describe("orden de las mesas", () => {
       carta("Mesa 2"),
       carta("Mesa 3", { order: pedido("2026-10-24T11:00:00.000Z") }),
       carta("Mesa 4", { order: pedido("2026-10-24T09:00:00.000Z") }),
-      carta("Mesa 5", { calls: [{ kind: "waiter", createdAt: "2026-10-24T11:50:00.000Z" }] }),
-      carta("Mesa 6", { calls: [{ kind: "bill", createdAt: "2026-10-24T11:55:00.000Z" }], order: pedido("2026-10-24T10:00:00.000Z") }),
-      carta("Mesa 7", { calls: [{ kind: "bill", createdAt: "2026-10-24T11:40:00.000Z" }] }),
-      carta("Mesa 8", { calls: [{ kind: "waiter", createdAt: "2026-10-24T11:45:00.000Z" }] }),
+      carta("Mesa 5", { calls: [llamado("waiter", "2026-10-24T11:50:00.000Z")] }),
+      carta("Mesa 6", { calls: [llamado("bill", "2026-10-24T11:55:00.000Z")], order: pedido("2026-10-24T10:00:00.000Z") }),
+      carta("Mesa 7", { calls: [llamado("bill", "2026-10-24T11:40:00.000Z")] }),
+      carta("Mesa 8", { calls: [llamado("waiter", "2026-10-24T11:45:00.000Z")] }),
     ];
     expect(sortMesas(mesas).map((m) => m.tableLabel)).toEqual(["Mesa 7", "Mesa 6", "Mesa 8", "Mesa 5", "Mesa 4", "Mesa 3", "Mesa 2", "Mesa 10"]);
   });
@@ -94,17 +96,32 @@ const estado = (over: Record<string, unknown> = {}) => ({
   multiBranch: false,
   branches: [{ id: "b1", name: "Centro" }],
   view: [],
+  othersPending: 0,
   mesas: [
     {
       tableId: "t1",
       tableLabel: "Mesa 1",
       branchName: "Centro",
-      calls: [{ kind: "bill", createdAt: "2026-10-24T11:58:00.000Z" }],
+      calls: [{ id: "c1", kind: "bill", createdAt: "2026-10-24T11:58:00.000Z", visitStartedAt: "2026-10-24T11:20:00.000Z" }],
       order: { openedAt: "2026-10-24T11:00:00.000Z", dishes: 3, noted: 1, inKitchen: 1, delivered: 1, totalCents: 450000 },
     },
     { tableId: "t2", tableLabel: "Mesa 2", branchName: "Centro", calls: [], order: null },
   ],
   ...over,
+});
+
+describe("los llamados de todas las mesas", () => {
+  it("salen en una sola lista, el que más espera primero, con la mesa y la sucursal de su tarjeta", () => {
+    const mesas = [
+      carta("Mesa 2", { calls: [llamado("waiter", "2026-10-24T11:50:00.000Z", "a")], branchName: "Norte" }),
+      carta("Mesa 1", { calls: [llamado("bill", "2026-10-24T11:40:00.000Z", "b"), llamado("waiter", "2026-10-24T11:55:00.000Z", "c")] }),
+      carta("Mesa 3"),
+    ];
+    const lista = flattenCalls(mesas);
+    expect(lista.map((call) => call.id)).toEqual(["b", "a", "c"]);
+    expect(lista[1]).toMatchObject({ tableLabel: "Mesa 2", branchName: "Norte", kind: "waiter", visitStartedAt: null });
+    expect(flattenCalls([carta("Mesa 9")])).toEqual([]);
+  });
 });
 
 describe("respuesta de la ruta de consulta", () => {
@@ -113,6 +130,16 @@ describe("respuesta de la ruta de consulta", () => {
     expect(leido.mesas).toHaveLength(2);
     expect(leido.mesas[0].order?.totalCents).toBe(450000);
     expect(leido.mesas[1].order).toBeNull();
+    expect(leido.mesas[0].calls[0]).toEqual({ id: "c1", kind: "bill", createdAt: "2026-10-24T11:58:00.000Z", visitStartedAt: "2026-10-24T11:20:00.000Z" });
+    expect(leido.othersPending).toBe(0);
+  });
+
+  it("el escaneo del QR es opcional: ausente o ilegible es «no se sabe»", () => {
+    const sinEscaneo = estado();
+    delete (sinEscaneo.mesas[0].calls[0] as { visitStartedAt?: string }).visitStartedAt;
+    expect(parseMesasState(sinEscaneo)?.mesas[0].calls[0].visitStartedAt).toBeNull();
+    (sinEscaneo.mesas[0].calls[0] as { visitStartedAt: string }).visitStartedAt = "ayer";
+    expect(parseMesasState(sinEscaneo)?.mesas[0].calls[0].visitStartedAt).toBeNull();
   });
 
   it("cualquier forma inesperada es nula (la pantalla lo trata como error)", () => {
@@ -122,6 +149,11 @@ describe("respuesta de la ruta de consulta", () => {
     expect(parseMesasState(estado({ enabled: "sí" }))).toBeNull();
     expect(parseMesasState(estado({ view: [1] }))).toBeNull();
     expect(parseMesasState(estado({ branches: [{ id: 1 }] }))).toBeNull();
+    expect(parseMesasState(estado({ othersPending: -1 }))).toBeNull();
+    expect(parseMesasState(estado({ othersPending: "2" }))).toBeNull();
+    const sinId = estado();
+    delete (sinId.mesas[0].calls[0] as { id?: string }).id;
+    expect(parseMesasState(sinId)).toBeNull();
     expect(parseMesasState(estado({ mesas: [{ tableId: "t" }] }))).toBeNull();
     const malaCuenta = estado();
     (malaCuenta.mesas[0].order as { totalCents: number }).totalCents = -5;

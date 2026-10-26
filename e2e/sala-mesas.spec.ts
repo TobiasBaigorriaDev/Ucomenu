@@ -58,16 +58,17 @@ test.afterAll(async () => {
 });
 
 test.describe("vista Mesas", () => {
-  test("el Staff ve las mesas con su pedido y el total, el enlace está en la Sala y la página se actualiza sola", async ({ browser }) => {
+  test("el Staff ve las mesas con su pedido y el total, la Sala entra directo en Mesas y la página se actualiza sola", async ({ browser }) => {
     const l = await nuevoLocal("mesas-vista");
     await anotar(l.t.owner, l, l.mesas[0], 2);
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await abrir(page, l.t.staff, l.t, "");
-    await expect(page.getByRole("heading", { name: "Sala en vivo" })).toBeVisible();
-    await page.getByRole("link", { name: "Mesas", exact: true }).click();
+    // /sala/{slug} (el manifiesto, las notificaciones y los favoritos) entra directo en Mesas, que es la única pantalla de servicio.
     await expect(page).toHaveURL(new RegExp(`/sala/${l.t.slug}/mesas$`));
-    await expect(page.getByRole("heading", { name: "Mesas" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
+    const nav = page.getByRole("navigation", { name: "Secciones de la sala" });
+    await expect(nav.getByRole("link")).toHaveText(["Mesas", "Panel"]);
 
     const m1 = mesaCard(page, "Mesa 1");
     await expect(m1).toHaveAttribute("data-estado", "pedido");
@@ -88,19 +89,23 @@ test.describe("vista Mesas", () => {
     await ctx.close();
   });
 
-  test("«Pide la cuenta» en la Sala de llamados muestra el total del pedido; atender el llamado no cierra el pedido", async ({ browser }) => {
+  test("«Pide la cuenta» se atiende en la tarjeta de la mesa, junto al total del pedido; atender el llamado no cierra el pedido", async ({ browser }) => {
     const l = await nuevoLocal("mesas-cuenta");
     await anotar(l.t.owner, l, l.mesas[1], 3);
     await llamar(l.mesas[1].qr_token, "bill");
     await llamar(l.mesas[0].qr_token, "bill"); // sin pedido
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
-    await abrir(page, l.t.staff, l.t, "");
+    await abrir(page, l.t.staff, l.t, "/mesas");
 
     const conPedido = page.locator('[data-testid="llamado"][data-mesa="Mesa 2"]');
-    await expect(conPedido.getByTestId("cuenta")).toContainText("Cuenta: $ 300 · 3 platos");
-    await expect(conPedido.getByTestId("cuenta")).toHaveAttribute("data-centavos", "30000");
-    await expect(page.locator('[data-testid="llamado"][data-mesa="Mesa 1"]').getByTestId("cuenta")).toHaveCount(0);
+    await expect(conPedido).toContainText("Pide la cuenta");
+    await expect(mesaCard(page, "Mesa 2").getByTestId("pedido-estado")).toHaveText("3 platos · 3 anotados");
+    await expect(mesaCard(page, "Mesa 2").getByTestId("pedido-total")).toHaveAttribute("data-centavos", "30000");
+    // Sin pedido, la mesa que pide la cuenta lo dice y no inventa un total.
+    await expect(mesaCard(page, "Mesa 1")).toHaveAttribute("data-estado", "cuenta");
+    await expect(mesaCard(page, "Mesa 1").getByTestId("sin-pedido")).toBeVisible();
+    await expect(mesaCard(page, "Mesa 1").getByTestId("pedido-total")).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
 
     await conPedido.getByRole("button", { name: /Marcar como atendido/ }).click();
@@ -118,7 +123,7 @@ test.describe("vista Mesas", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await abrir(page, l.t.staff, l.t, "/mesas");
-    await expect(page.getByTestId("mesas-deshabilitada")).toContainText("Los pedidos no están disponibles");
+    await expect(page.getByTestId("mesas-deshabilitada")).toContainText("Las mesas y los pedidos no están disponibles");
     await expect(page.getByTestId("mesas-deshabilitada")).toContainText("Avisale al dueño");
     await expect(page.getByTestId("mesa")).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
@@ -129,6 +134,23 @@ test.describe("vista Mesas", () => {
     await abrir(dueno, l.t.owner, l.t, "/mesas");
     await expect(dueno.getByTestId("mesas-deshabilitada")).toContainText("plan Pro");
     await ctxDueno.close();
+  });
+
+  test("una mesa dada de baja con un llamado pendiente sigue a la vista hasta que el llamado venza", async ({ browser }) => {
+    const l = await nuevoLocal("mesas-baja");
+    await llamar(l.mesas[0].qr_token, "waiter");
+    const baja = await service().from("tables").update({ is_active: false }).eq("id", l.mesas[0].id);
+    expect(baja.error).toBeNull();
+    const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await ctx.newPage();
+    await abrir(page, l.t.staff, l.t, "/mesas");
+    await expect(mesaCard(page, "Mesa 1")).toHaveAttribute("data-estado", "llama");
+    await expect(mesaCard(page, "Mesa 1").getByRole("button", { name: /Marcar como atendido/ })).toBeVisible();
+    await mesaCard(page, "Mesa 1").getByRole("button", { name: /Marcar como atendido/ }).click();
+    await expect(page.getByTestId("nota-sala")).toContainText("marcado como atendido");
+    // Sin llamado y de baja, sale en el siguiente ciclo.
+    await expect(mesaCard(page, "Mesa 1")).toHaveCount(0, { timeout: 12_000 });
+    await ctx.close();
   });
 
   test("la ruta de consulta responde como la de la Sala: sin sesión 401, de otro local 404, del local 200 sin caché", async ({ browser, request }) => {
@@ -144,12 +166,19 @@ test.describe("vista Mesas", () => {
     await login(page, otro.t.staff.email, otro.t.staff.password);
     const ajeno = await page.request.get(`/sala/${l.t.slug}/mesas/estado`);
     expect(ajeno.status()).toBe(404);
+    await llamar(otro.mesas[0].qr_token, "bill");
     const propio = await page.request.get(`/sala/${otro.t.slug}/mesas/estado`);
     expect(propio.status()).toBe(200);
     expect(propio.headers()["cache-control"]).toContain("no-store");
     const cuerpo = await propio.json();
     expect(cuerpo).toMatchObject({ enabled: true });
     expect(cuerpo.mesas).toHaveLength(3);
+    // Cada mesa lleva sus llamados (id, tipo, hora y escaneo del QR) y se informa cuántos hay en las sucursales que no se miran.
+    expect(Object.keys(cuerpo).sort()).toEqual(["branches", "enabled", "mesas", "multiBranch", "othersPending", "serverNow", "view"]);
+    expect(cuerpo.othersPending).toBe(0);
+    expect(cuerpo.mesas[0].calls).toHaveLength(1);
+    expect(Object.keys(cuerpo.mesas[0].calls[0]).sort()).toEqual(["createdAt", "id", "kind", "visitStartedAt"]);
+    expect(JSON.stringify(cuerpo)).not.toContain(otro.mesas[0].qr_token);
     await ctx.close();
   });
 });

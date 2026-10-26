@@ -99,13 +99,13 @@ describe("buildGuide: todo hecho", () => {
   it("con llamado al mozo en el plan suma el enlace a la sala", () => {
     const guide = build(FULL, PRO);
     if (guide?.kind !== "ready") throw new Error("se esperaba el resumen");
-    expect(guide.links.map((l) => l.href)).toContain("/sala/cafe");
+    expect(guide.links.map((l) => l.href)).toContain("/sala/cafe/mesas");
   });
 
   it("no ofrece la sala si la cuenta no deja operar", () => {
     const guide = build(FULL, { ...PRO, canWrite: false, state: "read_only" });
     if (guide?.kind !== "ready") throw new Error("se esperaba el resumen");
-    expect(guide.links.map((l) => l.href)).not.toContain("/sala/cafe");
+    expect(guide.links.map((l) => l.href)).not.toContain("/sala/cafe/mesas");
   });
 
   it("sugiere fotos sin impedir que la guía esté completa", () => {

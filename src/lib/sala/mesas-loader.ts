@@ -4,7 +4,7 @@ import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { readBranchView } from "@/lib/sucursales/vista";
 import { isLineStatus, sortMesas, summarizeOrder, type MesaCall, type MesaCard, type MesaOrder, type MesasState, type OrderLine } from "./mesas";
-import { EXPIRY_MS } from "./types";
+import { loadPendingCalls } from "./llamados-loader";
 
 type Db = SupabaseClient<Database>;
 
@@ -67,15 +67,19 @@ export async function loadOpenOrders(db: Db, orgId: string, scope: { tableIds: r
 
 /**
  * Estado de la vista «Mesas»: las mesas activas de las sucursales que la persona mira, con su pedido abierto y sus llamados
- * pendientes (de menos de 30 minutos, como la Sala de llamados). Si el plan o la cuenta no permiten pedidos (`orders` en las
- * funciones de `org_entitlements`, que ya contempla la mora), no se consulta nada más: `enabled: false`. Lanza si la base falla.
+ * pendientes (de menos de 30 minutos), y cuántos llamados hay en las sucursales que no mira. Si el plan o la cuenta no permiten
+ * pedidos (`orders` en las funciones de `org_entitlements`, que ya contempla la mora), no se consulta nada más: `enabled: false`.
+ * Los llamados se leen solo si además rige `waiter_call` (en Pro y Premium van juntos; una vista previa de pedidos en otro plan
+ * muestra las mesas sin llamados). Lanza si la base falla.
  */
 export async function loadMesas(db: Db, orgId: string, now: Date = new Date()): Promise<MesasState> {
   const serverNow = now.toISOString();
 
   const ent = await db.rpc("org_entitlements", { p_org: orgId });
   if (ent.error) throw new Error(`No se pudo leer el estado de la cuenta: ${ent.error.message}`);
-  const enabled = parseEntitlements(ent.data)?.features.includes("orders") === true;
+  const features = parseEntitlements(ent.data)?.features ?? [];
+  const enabled = features.includes("orders");
+  const callsEnabled = features.includes("waiter_call");
 
   const branches = await readAllByKey((after, limit) => {
     const query = db.from("branches").select("id, name").eq("organization_id", orgId).eq("is_active", true);
@@ -86,12 +90,12 @@ export async function loadMesas(db: Db, orgId: string, now: Date = new Date()): 
   const multiBranch = branchRows.length > 1;
   const branchList = branchRows.map((branch) => ({ id: branch.id, name: branch.name }));
   const view = multiBranch ? await readBranchView(db, orgId) : [];
-  if (!enabled) return { serverNow, enabled: false, multiBranch, branches: branchList, view, mesas: [] };
+  if (!enabled) return { serverNow, enabled: false, multiBranch, branches: branchList, view, othersPending: 0, mesas: [] };
 
   // Las sucursales que la persona mira (vacío = todas las activas; un id que ya no está activo no cuenta).
   const active = new Set(branchRows.map((branch) => branch.id));
   const mirando = view.length === 0 ? [...active] : view.filter((id) => active.has(id));
-  if (mirando.length === 0) return { serverNow, enabled: true, multiBranch, branches: branchList, view, mesas: [] };
+  if (mirando.length === 0) return { serverNow, enabled: true, multiBranch, branches: branchList, view, othersPending: 0, mesas: [] };
   const branchName = new Map(branchRows.map((branch) => [branch.id, branch.name]));
 
   const tables = await readAllByKey((after, limit) => {
@@ -99,26 +103,22 @@ export async function loadMesas(db: Db, orgId: string, now: Date = new Date()): 
     return (after ? query.gt("id", after) : query).order("id").limit(limit);
   });
   if (tables.error) throw new Error(`No se pudieron leer las mesas: ${tables.error.message}`);
-  const tableRows = tables.data ?? [];
+  const tableRows = [...(tables.data ?? [])];
 
-  const since = new Date(now.getTime() - EXPIRY_MS).toISOString();
-  const pending = await readAllByKey((after, limit) => {
-    const query = db
-      .from("waiter_calls")
-      .select("id, kind, table_id, created_at")
-      .eq("organization_id", orgId)
-      .eq("status", "pending")
-      .gt("created_at", since)
-      .in("branch_id", mirando);
-    return (after ? query.gt("id", after) : query).order("id").limit(limit);
-  });
-  if (pending.error) throw new Error(`No se pudieron leer los llamados: ${pending.error.message}`);
+  const pending = callsEnabled ? await loadPendingCalls(db, orgId, active, view, now) : { inView: [], othersPending: 0 };
   const callsByTable = new Map<string, MesaCall[]>();
-  for (const call of pending.data ?? []) {
-    if (call.kind !== "waiter" && call.kind !== "bill") continue;
+  for (const call of pending.inView) {
     const list = callsByTable.get(call.table_id) ?? [];
-    list.push({ kind: call.kind, createdAt: call.created_at });
+    list.push({ id: call.id, kind: call.kind, createdAt: call.created_at, visitStartedAt: call.visit_started_at });
     callsByTable.set(call.table_id, list);
+  }
+
+  // Una mesa dada de baja con un llamado pendiente sigue figurando hasta que el llamado venza (a los 30 minutos): el aviso no se pierde.
+  const listed = new Set(tableRows.map((table) => table.id));
+  for (const ids of chunks([...callsByTable.keys()].filter((id) => !listed.has(id)))) {
+    const extra = await db.from("tables").select("id, label, branch_id").eq("organization_id", orgId).in("id", ids);
+    if (extra.error) throw new Error(`No se pudieron leer las mesas: ${extra.error.message}`);
+    tableRows.push(...extra.data);
   }
 
   const orders = await loadOpenOrders(db, orgId, { branchIds: mirando });
@@ -130,5 +130,5 @@ export async function loadMesas(db: Db, orgId: string, now: Date = new Date()): 
     calls: (callsByTable.get(table.id) ?? []).sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt)),
     order: orders.get(table.id) ?? null,
   }));
-  return { serverNow, enabled: true, multiBranch, branches: branchList, view, mesas: sortMesas(cards) };
+  return { serverNow, enabled: true, multiBranch, branches: branchList, view, othersPending: pending.othersPending, mesas: sortMesas(cards) };
 }

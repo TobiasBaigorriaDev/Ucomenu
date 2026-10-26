@@ -129,7 +129,7 @@ export function buildGuide(input: {
       { href: `${base}/carta`, label: "Ver la carta en el panel" },
     ];
     // El llamado al mozo es de los planes que lo incluyen (Básico no) y la sala solo funciona con la cuenta al día: la guía no lo ofrece donde no aplica.
-    if (canWrite && ent?.features.includes("waiter_call")) links.push({ href: `/sala/${slug}`, label: "Atender llamados en Sala en vivo" });
+    if (canWrite && ent?.features.includes("waiter_call")) links.push({ href: `/sala/${slug}/mesas`, label: "Atender llamados en Sala en vivo" });
     return {
       kind: "ready",
       summary: `Tu local está listo: ${plural(counts.visibleProducts, "plato", "platos")} en la carta y ${plural(counts.activeTables, "mesa activa", "mesas activas")} con su QR.${perBranch ? ` ${perBranch}` : ""}`,

@@ -148,7 +148,7 @@ test.describe("el Staff", () => {
     }
 
     await page.goto("/sala/cafe-ejemplo");
-    await expect(page.getByRole("heading", { name: "Sala en vivo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mesas", level: 1 })).toBeVisible();
   });
 
   test("otro local o uno inexistente responden 404 idéntico", async ({ page }) => {

@@ -1,28 +1,10 @@
-import type { Metadata } from "next";
-import { requireMembership } from "@/lib/auth/session";
-import { vapidPublicKey } from "@/lib/push/config";
-import { loadSala } from "@/lib/sala/pending";
-import { createSessionClient } from "@/lib/supabase/server";
-import { SalaBoard } from "./sala-board";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = { title: "Sala en vivo" };
-
+/**
+ * La lista de llamados vive ahora dentro de «Mesas» (ficha mesas-con-llamados): esta ruta queda para lo que ya apunta acá (el manifiesto
+ * de la app, el enlace de las notificaciones y los favoritos).
+ */
 export default async function SalaPage({ params }: PageProps<"/sala/[org]">) {
   const { org } = await params;
-  const { membership } = await requireMembership(org, `/sala/${org}`);
-
-  // Primera pintura con datos del servidor; después la pantalla sondea `/sala/{slug}/estado` cada ~3 s.
-  const initial = await loadSala(await createSessionClient(), membership.org.id);
-
-  return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
-      <h1 className="font-display text-4xl leading-tight">Sala en vivo</h1>
-      <SalaBoard
-        slug={membership.org.slug}
-        initial={initial}
-        isOwner={membership.role === "owner"}
-        pushPublicKey={vapidPublicKey()}
-      />
-    </main>
-  );
+  redirect(`/sala/${encodeURIComponent(org)}/mesas`);
 }

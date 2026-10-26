@@ -95,8 +95,8 @@ describe("ritmo del sondeo", () => {
 
 describe("título de la pestaña", () => {
   it("lleva la cantidad de pendientes", () => {
-    expect(pageTitle(0)).toBe("Sala en vivo");
-    expect(pageTitle(3)).toBe("(3) Sala en vivo");
+    expect(pageTitle(0)).toBe("Mesas");
+    expect(pageTitle(3)).toBe("(3) Mesas");
   });
 });
 

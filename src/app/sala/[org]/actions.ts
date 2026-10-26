@@ -12,9 +12,9 @@ import { createSessionClient } from "@/lib/supabase/server";
  * (su organización, plan y cuenta al día). La hora y la persona que atiende las pone la base.
  */
 export async function attendCallAction(slug: string, callId: string): Promise<AttendResult> {
-  const { membership } = await requireMembership(slug, `/sala/${slug}`);
+  const { membership } = await requireMembership(slug, `/sala/${slug}/mesas`);
   const result = await attendCall(await createSessionClient(), membership.org.id, callId);
-  if (result.status === "attended") revalidatePath(`/sala/${slug}`);
+  if (result.status === "attended") revalidatePath(`/sala/${slug}/mesas`);
   return result;
 }
 
@@ -24,12 +24,12 @@ export async function attendCallAction(slug: string, callId: string): Promise<At
  * lo que la persona puede leer ni atender.
  */
 export async function setBranchViewAction(slug: string, branchIds: unknown): Promise<SetBranchViewResult> {
-  const { membership } = await requireMembership(slug, `/sala/${slug}`);
+  const { membership } = await requireMembership(slug, `/sala/${slug}/mesas`);
   const ids = parseBranchIds(branchIds);
   if (!ids) return "invalid";
   const result = await setBranchView(await createSessionClient(), membership.org.id, ids);
   if (result === "ok") {
-    revalidatePath(`/sala/${slug}`);
+    revalidatePath(`/sala/${slug}/mesas`);
     revalidatePath(`/panel/${slug}/analitica`);
   }
   return result;
