@@ -1,5 +1,5 @@
 # Cambio: Analítica de pedidos para el Dueño (rework de la analítica Pro/Premium)
-Estado: verificado en local; pendiente de revisión independiente y de tu aprobación
+Estado: verificado en local y aprobado por la revisión independiente; pendiente de tu aprobación para staging
 Nivel: **C** (el tablero lo marcaba M; se sube por criterio: suma dos funciones `SECURITY DEFINER` que **leen ventas de una organización** para su Dueño, y un error de autorización ahí expone el negocio de un local a otro. «Ante duda, subí un nivel». No hay escritura pública ni datos del comensal.)
 
 ## Objetivo
@@ -60,5 +60,5 @@ Ejecutado el 2026-10-25 sobre `main` (base local reseteada con la migración `20
   3. *«Platos sin pedidos» desaparecía si fallaba solo la lectura de ventas:* la decisión de qué secciones se arman pasó a una función pura (`visibleSections`) con prueba: con ventas caídas y platos que sí vendieron se sigue mostrando; sin esa certeza, no se afirma qué no se pidió.
   4. *Sugerencia (mediana vs promedio no distinguidos):* aceptada; caso asimétrico 30/30/300 y mutación detectada.
 - **Ronda 2 (verificación, Codex sobre `2664770`): APROBAR CON CAMBIOS, 1 hallazgo «importante» nuevo, real y corregido:** «Otras categorías» no aparecía si lo recortado tenía unidades pero importe cero (platos a $ 0). Ahora aparece si falta importe **o** unidades; regresión en `ventas.test.ts` (falla con la condición anterior). Confirmó corregidos el teclado, «sin pedidos» con ventas caídas y la mediana.
-- Ronda 3 (verificación): pendiente.
-- Aprobación del usuario: pendiente.
+- **Ronda 3 (verificación, Codex sobre `cfddfad`): APROBAR, sin hallazgos nuevos.** Confirmó corregidos los cuatro hallazgos de la ronda 1 y el de la ronda 2. Sobre el código final: `pnpm test` 1127/1128 (la falla de `idiomas/textos` es la ajena ya anotada), `lint` y `typecheck` OK, build y `e2e` de analítica **21/21**.
+- Aprobación del usuario: pendiente (hace falta antes de aplicar `20261205100000` a staging; el veredicto de Codex no la reemplaza).
