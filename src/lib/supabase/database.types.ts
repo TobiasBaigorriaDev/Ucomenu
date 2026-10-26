@@ -229,14 +229,14 @@ isOneToOne: true
                   ]
                 },"memberships": {
                   Row: {
-                    "created_at": string,"id": string,"organization_id": string,"role": string,"user_id": string
+                    "assigned_branch_ids": (string)[],"created_at": string,"id": string,"organization_id": string,"role": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"organization_id": string,"role": string,"user_id": string
+                    "assigned_branch_ids"?: (string)[],"created_at"?: string,"id"?: string,"organization_id": string,"role": string,"user_id": string
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"organization_id"?: string,"role"?: string,"user_id"?: string
+                    "assigned_branch_ids"?: (string)[],"created_at"?: string,"id"?: string,"organization_id"?: string,"role"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -959,6 +959,9 @@ isOneToOne: false
                            },
 "kitchen_orders":
 { Args: { "p_branch"?: string,"p_org": string }; Returns: Json
+                           },
+"my_branch_access":
+{ Args: { "p_org": string }; Returns: Json
                            },
 "my_branch_view":
 { Args: { "p_org": string }; Returns: (string)[]

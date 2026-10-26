@@ -7,6 +7,7 @@ import { formatArs } from "@/lib/money";
 import { buildPrecuenta, formatLocal, PRECUENTA_LEGEND, statusNotice } from "@/lib/sala/precuenta";
 import { loadPrecuenta } from "@/lib/sala/precuenta-loader";
 import { createSessionClient } from "@/lib/supabase/server";
+import { canSeeBranch, readBranchAccess } from "@/lib/sucursales/vista";
 import { PrintButton } from "./print-button";
 
 export const metadata: Metadata = { title: "Precuenta" };
@@ -17,8 +18,11 @@ export default async function SalaPrecuentaPage({ params }: PageProps<"/sala/[or
   if (!orderId) notFound();
   const { membership } = await requireMembership(org, `/sala/${org}/cuenta/${orderId}`);
 
-  const data = await loadPrecuenta(await createSessionClient(), membership.org.id, orderId);
+  const db = await createSessionClient();
+  const data = await loadPrecuenta(db, membership.org.id, orderId);
   if (!data) notFound();
+  // Un pedido de una sucursal que no tiene asignada no existe para esta persona (ficha personal-por-sucursal).
+  if (!canSeeBranch((await readBranchAccess(db, membership.org.id)).assigned, data.branchId)) notFound();
 
   const body = buildPrecuenta(data.lines);
   const notice = statusNotice(data.status);

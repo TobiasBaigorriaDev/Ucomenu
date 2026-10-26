@@ -70,6 +70,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   is_org_kitchen: [true, false, false], // Dueño, Staff o cocinero (ADR 0048)
   can_kitchen_orders: [true, false, false], // kitchen_*: trabaja en cocina + función `orders` + cuenta al día
   can_set_item_status: [true, false, false], // set_order_item_status: el cocinero solo ready/noted; Dueño y Staff, todo
+  my_assigned_branches: [true, false, false], // personal por sucursal (ficha personal-por-sucursal): sucursales activas asignadas a quien llama; solo la usan funciones de public; sin EXECUTE para la API
   cook_drops_push: [true, false, false], // trigger de memberships: quien pasa a cocinero pierde sus suscripciones push
   can_take_orders: [true, false, false], // la usa add_order_item (ficha pedidos-esquema-y-alta-de-items): miembro + función `orders` en el plan + cuenta al día; sin EXECUTE para la API
   can_manage_promotions: [true, false, true], // usada por las políticas de escritura de promotions y sus tablas (ficha promociones-y-precio-efectivo): Dueño + función en el plan + cuenta al día
@@ -139,6 +140,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   personnel_remove_member: [false, false], // personal: quita la membresía y reserva el borrado de la cuenta si corresponde; solo service_role
   my_guide_dismissed: [false, true], // guía de primeros pasos (ficha guia-descartable): si quien llama la ocultó; solo lo propio
   set_my_guide_dismissed: [false, true], // guía de primeros pasos: oculta o muestra la guía de quien llama; valida adentro (miembro)
+  my_branch_access: [false, true], // personal por sucursal (ficha personal-por-sucursal): la vista efectiva y las sucursales asignadas de quien llama; solo lo propio
   my_branch_view: [false, true], // vista por sucursal (ficha vista-por-sucursal, ADR 0034): la vista efectiva de quien llama; solo lo propio
   purge_waiter_calls: [false, false], // purga por antigüedad (ADR 0014): solo service_role
   purge_expired_orders: [false, false], // purga de pedidos de más de 2 años (ADR 0043): SECURITY DEFINER, solo service_role

@@ -4,21 +4,19 @@ Actualizado: 2026-10-26 · agente saliente: Claude Code. Historia en Git y ficha
 
 ## Punto de retomada
 
-**Staging está en Fly v61** (imagen `ucomenu-staging:alimentaria-124bbc9`; marcha atrás: `apariencia-6b82cf2`, v60). Sin migraciones. Las tres páginas legales responden 200 y muestran los textos nuevos y los pendientes.
+**Staging sigue en Fly v61** (imagen `ucomenu-staging:alimentaria-124bbc9`; marcha atrás: `apariencia-6b82cf2`, v60). **Lo nuevo no está desplegado.**
 
-**Auditoría legal (nivel M, sin migración):** [ficha](cambios/informacion-alimentaria-y-textos-legales.md). La app no guarda ingredientes ni alérgenos, solo tres etiquetas declaradas por el local; se corrigieron los textos que sugerían lo contrario, se agregaron notas de contacto cruzado y de opciones en el detalle, y el aviso del filtro vacío. Hallazgo importante: cambiar el texto original de un plato, variante o adicional dejaba publicada la traducción vieja; ahora se quita (`src/lib/carta/traducciones-obsoletas.ts`, con prueba que falla sin el arreglo). `/terminos`, `/privacidad` y `/alergenos` se reescribieron; lo que el usuario no decidió aparece en las páginas como «Pendiente de definir antes del lanzamiento».
+**Personal por sucursal, solo pantalla (nivel M):** [ficha](cambios/personal-por-sucursal.md). El Dueño asigna sucursales a un Staff o cocinero desde Personal («Sucursales» en la fila) y esa persona solo ve en pantalla (Mesas, Sala, Cocina, anotar, precuenta y avisos del celular) lo de ellas, sin nombres ni conteos de las demás; el Dueño no se restringe; si se desactivan todas las asignadas no ve nada. Columna `memberships.assigned_branch_ids` y migración `20261208100000` (solo local; **staging no la tiene**). Verificado en local (unitarias, lint, typecheck, RLS y E2E, detalle en la ficha). Está en «Para verificar» en el [tablero](tablero.md): falta tu comprobación manual.
 
-Commit `124bbc9` subido a `origin/main`.
+**Pendiente anotado (nivel C):** la restricción real (RLS de `orders`, `order_items`, `tables`, `waiter_calls` y las funciones que escriben) está en el Backlog. Hoy una llamada directa a la API con ids de otra sucursal sigue funcionando.
 
 ## Límites y bloqueos
 
-- **Producción sigue bloqueada** y ahora además por: abogado argentino, razón social/CUIT/domicilio (`LEGAL_ENTITY` en `src/lib/legal.ts`), correo de contacto, plazos comerciales, proveedor de IA y purgas sin programar. La ficha lista cada pendiente.
-- Decisiones abiertas del usuario: etiquetas por sucursal (hoy de la organización), tratamiento de alergias anotadas en observaciones de pedidos, limpieza exacta de `rate_key` (hoy oportunista).
-- S4 (Clientes recurrentes) sigue para el próximo incremento y conserva el requisito legal.
-- Si Windows repite `0xC0000409` con `forks`, repetir con `--pool=threads`. Si `pnpm build` falla con `EPERM` en `.next`, borrar `.next`. Docker Desktop hay que encenderlo para RLS y E2E.
+- **Producción sigue bloqueada** (abogado, datos de la razón social, correo de contacto, plazos comerciales, proveedor de IA, purgas sin programar); ver la [ficha legal](cambios/informacion-alimentaria-y-textos-legales.md).
+- Decisiones abiertas del usuario: etiquetas por sucursal, alergias en observaciones, limpieza de `rate_key`.
+- `acceso.spec` falla con varios workers por lentitud del ingreso y pasa con `--workers=1`. Si Windows repite `0xC0000409` con `forks`, repetir con `--pool=threads`. Si `pnpm build` falla con `EPERM` en `.next`, borrar `.next`. Docker Desktop encendido para RLS y E2E.
 - Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimiento.
-- Un E2E (`carta.spec` «en gracia se edita con normalidad») falló una vez con 2 workers y pasó solo; ajeno al cambio.
 
 ## Próximo paso
 
-Que el usuario revise la ficha, decida los pendientes y consiga la revisión del abogado. Después, retomar el backlog del [tablero](tablero.md). Siguiente migración libre: `20261208100000`.
+Probar a mano en local: asignar una sucursal a un mozo y a un cocinero y mirar sus pantallas. Si está bien, desplegar con su migración (requiere tu aprobación) y retomar el backlog (S4 Clientes recurrentes, o el [C] de personal por sucursal). Siguiente migración libre: `20261209100000`.

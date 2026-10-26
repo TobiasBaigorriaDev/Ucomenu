@@ -12,6 +12,7 @@ export type PrecuentaData = {
   /** La mesa, si todavía existe (si se borró, el pedido conserva su etiqueta). */
   tableId: string | null;
   tableLabel: string;
+  branchId: string;
   branchName: string;
   /** Zona horaria de la sucursal (la hora de la precuenta es la del local). */
   timeZone: string;
@@ -50,6 +51,7 @@ export async function loadPrecuenta(db: Db, orgId: string, orderId: string): Pro
     status,
     tableId: order.data.table_id,
     tableLabel: order.data.table_label,
+    branchId,
     branchName: branch.name,
     timeZone: branch.timezone,
     multiBranch: (branches.data ?? []).filter((row) => row.is_active).length > 1,

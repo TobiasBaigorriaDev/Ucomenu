@@ -5,6 +5,7 @@ import {
   listMembers,
   removeMember,
   resetMemberPassword,
+  setMemberBranches,
   setMemberRole,
   type PersonnelContext,
 } from "@/lib/personnel";
@@ -40,8 +41,8 @@ const creadosPorElModulo: string[] = []; // ids de cuentas creadas por createMem
 
 const ctx = (user: TestUser): PersonnelContext => ({ session: user.db, admin: service, actorId: user.id });
 
-async function nuevaOrg(etiqueta: string, estado: "active" | "grace" | "read_only" | "suspended" = "active") {
-  const id = await createOrg(service, `tt-per-${etiqueta}-${sufijo}`);
+async function nuevaOrg(etiqueta: string, estado: "active" | "grace" | "read_only" | "suspended" = "active", plan: "basic" | "pro" = "basic") {
+  const id = await createOrg(service, `tt-per-${etiqueta}-${sufijo}`, plan);
   orgs.push(id);
   const finEnMs = { active: 5 * DIA_MS, grace: -3 * DIA_MS, read_only: -10 * DIA_MS, suspended: -20 * DIA_MS }[estado];
   await setSubscription(service, id, { finEnMs });
@@ -314,6 +315,83 @@ describe("cambio de rol", () => {
       const duenos = (await service.from("memberships").select("id").eq("organization_id", org).eq("role", "owner")).data;
       expect(duenos, `ronda ${ronda}`).toHaveLength(1);
     }
+  });
+});
+
+describe("sucursales asignadas al personal (ficha personal-por-sucursal)", () => {
+  async function ramas(org: string) {
+    const r = await service
+      .from("branches")
+      .insert([
+        { organization_id: org, slug: "centro", name: "Centro", is_active: true },
+        { organization_id: org, slug: "norte", name: "Norte", is_active: true },
+        { organization_id: org, slug: "vieja", name: "Vieja", is_active: false },
+      ])
+      .select("id, slug");
+    if (r.error) throw new Error(r.error.message);
+    const por = (slug: string) => r.data.find((x) => x.slug === slug)!.id;
+    return { centro: por("centro"), norte: por("norte"), vieja: por("vieja") };
+  }
+  const asignadas = async (org: string, userId: string) =>
+    (await service.from("memberships").select("assigned_branch_ids").eq("organization_id", org).eq("user_id", userId).single()).data?.assigned_branch_ids;
+
+  it("el Dueño asigna y quita sucursales a un Staff; el listado las devuelve", async () => {
+    const org = await nuevaOrg("suc", "active", "pro");
+    const r = await ramas(org);
+    const dueno = await miembro(org, "suc-d", "owner");
+    const staff = await miembro(org, "suc-s", "staff");
+    const id = (await membresia(org, staff.id))!.id;
+
+    expect((await setMemberBranches(ctx(dueno), org, id, [r.centro])).ok).toBe(true);
+    expect(await asignadas(org, staff.id)).toEqual([r.centro]);
+    const lista = await listMembers(ctx(dueno), org);
+    expect(lista.ok && lista.data.find((m) => m.userId === staff.id)?.assignedBranchIds).toEqual([r.centro]);
+
+    expect((await setMemberBranches(ctx(dueno), org, id, [])).ok).toBe(true);
+    expect(await asignadas(org, staff.id)).toEqual([]);
+  });
+
+  it("no se asignan sucursales inactivas, ajenas o mal formadas, ni a un Dueño", async () => {
+    const org = await nuevaOrg("suc-mal", "active", "pro");
+    const otra = await nuevaOrg("suc-mal-b", "active", "pro");
+    const r = await ramas(org);
+    const ajena = await ramas(otra);
+    const dueno = await miembro(org, "suc-mal-d", "owner");
+    const staff = await miembro(org, "suc-mal-s", "staff");
+    const idStaff = (await membresia(org, staff.id))!.id;
+    const idDueno = (await membresia(org, dueno.id))!.id;
+
+    for (const malas of [[r.vieja], [ajena.centro], [r.centro, ajena.norte], ["no-es-uuid"], "centro", null]) {
+      expect(await setMemberBranches(ctx(dueno), org, idStaff, malas), JSON.stringify(malas)).toEqual({ ok: false, error: "invalid_branches" });
+    }
+    expect(await setMemberBranches(ctx(dueno), org, idDueno, [r.centro])).toEqual({ ok: false, error: "invalid_branches" });
+    expect(await asignadas(org, staff.id)).toEqual([]);
+    expect(await asignadas(org, dueno.id)).toEqual([]);
+  });
+
+  it("el Staff, el Dueño ajeno y una membresía de otro local no pueden asignar", async () => {
+    const org = await nuevaOrg("suc-adv", "active", "pro");
+    const otra = await nuevaOrg("suc-adv-b", "active", "pro");
+    const r = await ramas(org);
+    const staff = await miembro(org, "suc-adv-s", "staff");
+    const ajeno = await miembro(otra, "suc-adv-a", "owner");
+    const idStaff = (await membresia(org, staff.id))!.id;
+
+    expect(await setMemberBranches(ctx(staff), org, idStaff, [r.centro])).toEqual({ ok: false, error: "forbidden" });
+    expect(await setMemberBranches(ctx(ajeno), org, idStaff, [r.centro])).toEqual({ ok: false, error: "forbidden" });
+    // Un Dueño que conoce el id de una membresía de otro local la ve «no encontrada».
+    expect(await setMemberBranches(ctx(ajeno), otra, idStaff, [])).toEqual({ ok: false, error: "not_found" });
+    expect(await asignadas(org, staff.id)).toEqual([]);
+  });
+
+  it("se puede asignar con la cuenta en solo lectura (no es acceso nuevo)", async () => {
+    const org = await nuevaOrg("suc-ro", "read_only", "pro");
+    const r = await ramas(org);
+    const dueno = await miembro(org, "suc-ro-d", "owner");
+    const staff = await miembro(org, "suc-ro-s", "staff");
+    const id = (await membresia(org, staff.id))!.id;
+    expect((await setMemberBranches(ctx(dueno), org, id, [r.norte])).ok).toBe(true);
+    expect(await asignadas(org, staff.id)).toEqual([r.norte]);
   });
 });
 

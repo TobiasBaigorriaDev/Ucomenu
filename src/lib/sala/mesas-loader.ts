@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { parseEntitlements } from "@/lib/entitlements";
 import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
-import { readBranchView } from "@/lib/sucursales/vista";
+import { onlyAssigned, readBranchAccess } from "@/lib/sucursales/vista";
 import { isLineStatus, sortMesas, summarizeOrder, type MesaCall, type MesaCard, type MesaOrder, type MesasState, type OrderLine } from "./mesas";
 import { loadPendingCalls } from "./llamados-loader";
 
@@ -86,10 +86,11 @@ export async function loadMesas(db: Db, orgId: string, now: Date = new Date()): 
     return (after ? query.gt("id", after) : query).order("id").limit(limit);
   });
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
-  const branchRows = branches.data ?? [];
+  // Quien tiene sucursales asignadas (ficha personal-por-sucursal) solo ve esas: ni sus nombres ni sus conteos.
+  const { view, assigned } = await readBranchAccess(db, orgId);
+  const branchRows = onlyAssigned(branches.data ?? [], assigned);
   const multiBranch = branchRows.length > 1;
   const branchList = branchRows.map((branch) => ({ id: branch.id, name: branch.name }));
-  const view = multiBranch ? await readBranchView(db, orgId) : [];
   if (!enabled) return { serverNow, enabled: false, multiBranch, branches: branchList, view, othersPending: 0, mesas: [] };
 
   // Las sucursales que la persona mira (vacío = todas las activas; un id que ya no está activo no cuenta).

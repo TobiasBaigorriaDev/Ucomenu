@@ -14,6 +14,16 @@ export default async function PersonnelPage({ params }: PageProps<"/panel/[org]/
   const { user, membership } = await requireOwner(org, `/panel/${org}/personal`);
   const ent = await getEntitlements(membership.org.id);
 
+  // Sucursales activas para asignarlas a Staff y cocina (ficha personal-por-sucursal). Si no se pueden leer, no se ofrece asignar.
+  const branchRows = await (await createSessionClient())
+    .from("branches")
+    .select("id, name")
+    .eq("organization_id", membership.org.id)
+    .eq("is_active", true)
+    .order("name")
+    .order("id");
+  const branches = branchRows.error ? [] : branchRows.data;
+
   let members = null;
   try {
     const result = await listMembers(
@@ -36,7 +46,7 @@ export default async function PersonnelPage({ params }: PageProps<"/panel/[org]/
         {members ? (
           <ul className="mt-3 panel-list">
             {members.map((member) => (
-              <MemberRow key={member.membershipId} member={member} orgSlug={membership.org.slug} />
+              <MemberRow key={member.membershipId} member={member} orgSlug={membership.org.slug} branches={branches} />
             ))}
           </ul>
         ) : (

@@ -18,7 +18,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## Para verificar
 
-- (vacío)
+- [M] Personal por sucursal, solo pantalla: el Dueño asigna sucursales a un mozo o cocinero desde Personal y ellos solo ven los pedidos, mesas, llamados, avisos y platos de esas sucursales (sin RLS; la restricción real es el ítem [C] del Backlog); implementado y verificado en local (2026-10-26), falta tu comprobación manual → [ficha](cambios/personal-por-sucursal.md)
 
 ## Bloqueado
 
@@ -31,7 +31,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ### Mejoras y decisiones pendientes del MVP
 
-- (vacío)
+- [C] Personal por sucursal con restricción real: que mozo y cocinero solo puedan leer **y escribir** lo de su sucursal (RLS de `orders`, `order_items`, `tables`, `waiter_calls`, cuentas de mesa; `set_order_item_status`, `set_kitchen_availability` y demás funciones del mozo y la cocina). Hoy solo se acota lo que ven en pantalla (ficha M, en «Para verificar») → [ficha M](cambios/personal-por-sucursal.md) · revierte parte de los ADR 0005 y 0034
 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 

@@ -23,7 +23,7 @@ Hasta ahora había dos roles (`owner`, `staff`) y los pedidos tenían el estado 
 ## Alternativas consideradas
 - **Dejar al cocinero como `staff` con otra etiqueta** — descartado: heredaría precios, mesas y pedidos (RLS por `is_org_member`).
 - **Políticas RLS de lectura sobre `orders`/`order_items` para el cocinero** — descartado: RLS es por fila y expondría precios; las funciones devuelven solo lo necesario.
-- **Cocinero atado a una sucursal** — descartado por ahora (columna nueva y pantalla de asignación); ve todas las del local con el selector actual.
+- **Cocinero atado a una sucursal** — descartado por ahora (columna nueva y pantalla de asignación); ve todas las del local con el selector actual. Resuelto después solo en pantalla: ver [personal por sucursal](../../agile/cambios/personal-por-sucursal.md).
 - **Conservar «En cocina»** — descartado por el usuario: flujo más corto.
 
 ## Consecuencias

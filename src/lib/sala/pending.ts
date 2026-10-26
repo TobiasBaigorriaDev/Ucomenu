@@ -3,7 +3,7 @@ import { parseEntitlements } from "@/lib/entitlements";
 import { readAllByKey } from "@/lib/paginar";
 import type { Database } from "@/lib/supabase/database.types";
 import { asUuid } from "@/lib/carta/validation";
-import { readBranchView } from "@/lib/sucursales/vista";
+import { onlyAssigned, readBranchAccess } from "@/lib/sucursales/vista";
 import type { MesaOrder } from "./mesas";
 import { loadPendingCalls } from "./llamados-loader";
 import { loadOpenOrders } from "./mesas-loader";
@@ -35,11 +35,12 @@ export async function loadSala(db: Db, orgId: string, now: Date = new Date()): P
     return (after ? query.gt("id", after) : query).order("id").limit(limit);
   });
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
-  const branchRows = branches.data ?? [];
+  // Lo que mira esta persona (vacío = todas) y lo que tiene asignado (ficha personal-por-sucursal: solo ve esas). Si la lectura
+  // falla, la sala falla: no se filtra «a ciegas».
+  const { view, assigned } = await readBranchAccess(db, orgId);
+  const branchRows = onlyAssigned(branches.data ?? [], assigned);
   const multiBranch = branchRows.length > 1;
   const branchList = branchRows.map((branch) => ({ id: branch.id, name: branch.name }));
-  // Lo que mira esta persona (vacío = todas). Si la lectura falla, la sala falla: no se filtra «a ciegas».
-  const view = multiBranch ? await readBranchView(db, orgId) : [];
 
   if (!enabled) return { serverNow, enabled: false, multiBranch, branches: branchList, view, othersPending: 0, calls: [] };
 

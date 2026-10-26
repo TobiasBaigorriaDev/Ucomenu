@@ -34,6 +34,39 @@ export async function readBranchView(db: Db, orgId: string): Promise<string[]> {
   return Array.isArray(data) ? data.filter((id): id is string => typeof id === "string") : [];
 }
 
+/**
+ * Lo que leen las pantallas de Sala: la vista efectiva y las sucursales que el Dueño le asignó a la persona (vacío = sin restricción;
+ * ficha personal-por-sucursal). Quien tiene asignadas solo ve esas: ni sus nombres ni sus conteos. Es una restricción de PANTALLA,
+ * no de autorización. Lanza si la base falla o responde otra forma (nunca se filtra «a ciegas»).
+ */
+export type BranchAccess = { view: string[]; assigned: string[] };
+
+const isIdList = (value: unknown): value is string[] => Array.isArray(value) && value.every((id) => typeof id === "string");
+
+export function parseBranchAccess(raw: unknown): BranchAccess | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { view, assigned } = raw as Record<string, unknown>;
+  return isIdList(view) && isIdList(assigned) ? { view, assigned } : null;
+}
+
+export async function readBranchAccess(db: Db, orgId: string): Promise<BranchAccess> {
+  const { data, error } = await db.rpc("my_branch_access", { p_org: orgId });
+  if (error) throw new Error(`No se pudo leer la vista por sucursal: ${error.message}`);
+  const access = parseBranchAccess(data);
+  if (!access) throw new Error("La base devolvió una respuesta inesperada para la vista por sucursal.");
+  return access;
+}
+
+/** Deja solo las sucursales asignadas (sin asignación = todas). */
+export function onlyAssigned<T extends { id: string }>(branches: readonly T[], assigned: readonly string[]): T[] {
+  if (assigned.length === 0) return [...branches];
+  const allowed = new Set(assigned);
+  return branches.filter((branch) => allowed.has(branch.id));
+}
+
+/** ¿Puede esta persona ver algo de esa sucursal? Sin asignación, sí. */
+export const canSeeBranch = (assigned: readonly string[], branchId: string): boolean => assigned.length === 0 || assigned.includes(branchId);
+
 /** Guarda la vista de quien llama (vacío = todas). La base valida que sean sucursales activas de ese local. */
 export async function setBranchView(db: Db, orgId: string, branchIds: string[]): Promise<SetBranchViewResult> {
   const { data, error } = await db.rpc("set_my_branch_view", { p_org: orgId, p_branches: branchIds });

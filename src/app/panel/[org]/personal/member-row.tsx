@@ -4,7 +4,7 @@ import { PasswordField } from "@/components/panel/password-field";
 import { dangerButtonClass, secondaryButtonClass } from "@/components/panel/styles";
 import type { Role } from "@/lib/entitlements";
 import type { Member } from "@/lib/personnel";
-import { removeMemberAction, resetPasswordAction, setRoleAction } from "./actions";
+import { removeMemberAction, resetPasswordAction, setBranchesAction, setRoleAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 const summaryClass = `${secondaryButtonClass} ${summaryExtras}`;
@@ -27,8 +27,11 @@ const ROLE_MOVES: Record<Role, { to: Role; label: string }[]> = {
 };
 
 /** Una persona del equipo con sus acciones. Los formularios llaman a server actions que revalidan el rol. */
-export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string }) {
-  const { membershipId, email, role, isSelf, sharedAccount } = member;
+export function MemberRow({ member, orgSlug, branches }: { member: Member; orgSlug: string; branches: { id: string; name: string }[] }) {
+  const { membershipId, email, role, isSelf, sharedAccount, assignedBranchIds } = member;
+  // Solo Staff y cocina, y solo si hay de dónde elegir (ficha personal-por-sucursal).
+  const canAssign = role !== "owner" && branches.length > 1;
+  const assigned = branches.filter((branch) => assignedBranchIds.includes(branch.id));
   const hidden = (
     <>
       <input type="hidden" name="org" value={orgSlug} />
@@ -44,6 +47,12 @@ export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string
         <span className="shrink-0 text-base text-muted">{ROLE_LABEL[role]}</span>
       </div>
 
+      {canAssign ? (
+        <p className="mt-1 text-sm text-muted" data-testid="member-sucursales">
+          {assigned.length === 0 ? "Ve todas las sucursales." : `Solo ve: ${assigned.map((branch) => branch.name).join(", ")}.`}
+        </p>
+      ) : null}
+
       {isSelf ? (
         <p className="mt-1 text-sm text-muted">Esta es tu cuenta. Cambiá tu contraseña desde Mi cuenta.</p>
       ) : (
@@ -55,6 +64,38 @@ export function MemberRow({ member, orgSlug }: { member: Member; orgSlug: string
               <SubmitButton className={secondaryButtonClass}>{move.label}</SubmitButton>
             </ActionForm>
           ))}
+
+          {canAssign ? (
+            <details className="w-full sm:w-auto">
+              <summary className={summaryClass}>Sucursales</summary>
+              <ActionForm action={setBranchesAction} className="mt-3 grid max-w-md gap-3">
+                {hidden}
+                <fieldset className="grid gap-1">
+                  <legend className="text-base leading-relaxed">
+                    Elegí las sucursales que ve en pantalla. Sin ninguna elegida, ve todas.
+                  </legend>
+                  {branches.map((branch) => (
+                    <label key={branch.id} className="flex min-h-11 items-center gap-3 text-base">
+                      <input
+                        type="checkbox"
+                        name="branch"
+                        value={branch.id}
+                        defaultChecked={assignedBranchIds.includes(branch.id)}
+                        className="size-5 accent-cobalt"
+                      />
+                      {branch.name}
+                    </label>
+                  ))}
+                </fieldset>
+                <p className="text-sm text-muted">
+                  Es un límite de lo que ve en las pantallas de sala y cocina y de los avisos del celular, no un permiso de seguridad.
+                </p>
+                <div>
+                  <SubmitButton>Guardar sucursales</SubmitButton>
+                </div>
+              </ActionForm>
+            </details>
+          ) : null}
 
           {role !== "owner" && !sharedAccount ? (
             <details className="w-full sm:w-auto">

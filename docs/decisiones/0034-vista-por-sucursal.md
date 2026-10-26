@@ -16,7 +16,7 @@ Con dos sucursales que reciben llamados a la vez, todo el personal veía y recib
 7. **La analítica** (solo Dueño) abre en la sucursal elegida si es exactamente una; `?sucursal=todas` fuerza «Todas».
 
 ## Alternativas consideradas
-- **El Dueño asigna sucursales a cada Staff, con restricción real** (tabla de asignación y RLS de `waiter_calls`, `tables`, push y analítica): es otro modelo de autorización (revierte decisiones de 0004/0005 y `panel-de-sala`), nivel C completo y bastante más grande. Queda como un cambio aparte; este diseño no lo bloquea (la vista efectiva podría pasar a ser lo asignado).
+- **El Dueño asigna sucursales a cada Staff, con restricción real** (tabla de asignación y RLS de `waiter_calls`, `tables`, push y analítica): es otro modelo de autorización (revierte decisiones de 0004/0005 y `panel-de-sala`), nivel C completo y bastante más grande. Queda como un cambio aparte; este diseño no lo bloquea (la vista efectiva podría pasar a ser lo asignado). Primer paso hecho el 2026-10-26, solo en pantalla y sin RLS: [personal por sucursal](../../agile/cambios/personal-por-sucursal.md); la restricción real sigue pendiente en el tablero.
 - **Guardar la elección en el navegador** (`localStorage`/cookie): no la ve el servidor, que es quien decide a quién mandar el push; y la elección sería distinta en cada dispositivo.
 - **Una columna en `memberships`**: esa tabla solo la escribe el servidor con `service_role`; una tabla propia con función evita darle a la persona escritura sobre su membresía.
 - **Filtrar solo en la pantalla**: el push seguiría avisando de todo, que era parte del problema.

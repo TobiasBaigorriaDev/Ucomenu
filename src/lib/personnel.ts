@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeEmail, validatePassword, type PasswordProblem } from "@/lib/auth/validation";
 import { parseEntitlements, type Role } from "@/lib/entitlements";
 import type { Database } from "@/lib/supabase/database.types";
+import { parseBranchIds } from "@/lib/sucursales/vista";
 
 /**
  * Gestión del personal por el Dueño (nivel C, ficha acceso-del-personal).
@@ -34,6 +35,7 @@ export type PersonnelError =
   | "forbidden" // no es Dueño de la organización
   | "invalid_email"
   | "invalid_role"
+  | "invalid_branches" // sucursales que no son activas de este local, o a alguien que no es Staff ni cocinero
   | "plan_without_orders" // el rol de cocinero necesita pedidos en el plan
   | "email_unavailable" // alta sobre un email ya registrado (mensaje genérico)
   | "read_only" // cuenta en solo lectura o suspendida: no se da acceso nuevo
@@ -57,6 +59,7 @@ export const PERSONNEL_ERROR_MESSAGE: Record<PersonnelError, string> = {
   forbidden: "No tenés permiso para gestionar el personal de este local.",
   invalid_email: "Revisá el email: no parece válido.",
   invalid_role: "Elegí un rol válido.",
+  invalid_branches: "Elegí sucursales activas de este local. Solo se asignan a personal y cocina.",
   plan_without_orders: "El rol de cocina necesita un plan con pedidos (Pro o Premium) y la cuenta al día.",
   email_unavailable: "No se pudo crear la cuenta con ese email.",
   read_only: "La cuenta está en solo lectura o suspendida: no se pueden sumar personas ni dar permisos de Dueño. Sí podés quitar personal y cambiar contraseñas.",
@@ -127,6 +130,8 @@ export type Member = {
   email: string;
   role: Role;
   isSelf: boolean;
+  /** Sucursales que ve en pantalla (Staff y cocina); vacío = todas. Ficha personal-por-sucursal. */
+  assignedBranchIds: string[];
   /** Pertenece también a otra organización o a la plataforma: no se le puede cambiar la contraseña ni borrar la cuenta desde acá. */
   sharedAccount: boolean;
 };
@@ -136,7 +141,7 @@ export async function listMembers(ctx: PersonnelContext, orgId: string): Promise
 
   const { data, error } = await ctx.admin
     .from("memberships")
-    .select("id, user_id, role, created_at")
+    .select("id, user_id, role, created_at, assigned_branch_ids")
     .eq("organization_id", orgId)
     .order("created_at");
   if (error) return fail("unexpected");
@@ -157,6 +162,7 @@ export async function listMembers(ctx: PersonnelContext, orgId: string): Promise
         userId: m.user_id,
         email: user.data.user?.email ?? "(sin email)",
         role: m.role,
+        assignedBranchIds: m.assigned_branch_ids,
         isSelf: m.user_id === ctx.actorId,
         sharedAccount: platformIds.has(m.user_id) || elsewhere === null || elsewhere > 0,
       };
@@ -267,6 +273,30 @@ export async function setMemberRole(
 
   const { error } = await ctx.admin.from("memberships").update({ role }).eq("id", target.id).eq("organization_id", orgId);
   if (isLastOwnerError(error)) return fail("last_owner");
+  return error ? fail("unexpected") : ok(undefined);
+}
+
+/**
+ * Asigna sucursales a un Staff o cocinero (vacío = ve todas; ficha personal-por-sucursal). Es una restricción de PANTALLA, no de
+ * autorización. Las sucursales tienen que ser activas de ESTE local; se comprueban con la clave de servicio acotada a la organización.
+ * Dar o quitar la restricción no es «acceso nuevo»: no exige cuenta al día.
+ */
+export async function setMemberBranches(ctx: PersonnelContext, orgId: string, membershipId: string, branchIds: unknown): Promise<Result> {
+  if (!(await isOwnerOf(ctx, orgId))) return fail("forbidden");
+
+  const ids = parseBranchIds(branchIds);
+  if (!ids) return fail("invalid_branches");
+  const target = await findTarget(ctx, orgId, membershipId);
+  if (!target) return fail("not_found");
+  if (target.role === "owner") return fail("invalid_branches");
+
+  if (ids.length > 0) {
+    const { data, error } = await ctx.admin.from("branches").select("id").eq("organization_id", orgId).eq("is_active", true).in("id", ids);
+    if (error) return fail("unexpected");
+    if (data.length !== ids.length) return fail("invalid_branches");
+  }
+
+  const { error } = await ctx.admin.from("memberships").update({ assigned_branch_ids: ids }).eq("id", target.id).eq("organization_id", orgId);
   return error ? fail("unexpected") : ok(undefined);
 }
 

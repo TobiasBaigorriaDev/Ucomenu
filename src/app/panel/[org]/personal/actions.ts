@@ -8,6 +8,7 @@ import {
   PERSONNEL_ERROR_MESSAGE,
   removeMember,
   resetMemberPassword,
+  setMemberBranches,
   setMemberRole,
   type PersonnelContext,
   type Result,
@@ -69,6 +70,15 @@ export async function setRoleAction(_previous: FormState, formData: FormData): P
   const role = text(formData, "role");
   const result = await setMemberRole(ctx, orgId, text(formData, "membership"), role);
   return outcome(slug, result, role === "owner" ? "Ahora es Dueño." : role === "cook" ? "Ahora es de cocina." : "Ahora es parte del personal.");
+}
+
+export async function setBranchesAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, ctx } = await prepare(formData);
+  if (!ctx) return { error: MISSING_CONFIG };
+
+  const branches = formData.getAll("branch").filter((value): value is string => typeof value === "string");
+  const result = await setMemberBranches(ctx, orgId, text(formData, "membership"), branches);
+  return outcome(slug, result, branches.length === 0 ? "Ahora ve todas las sucursales." : "Listo, solo ve las sucursales elegidas.");
 }
 
 export async function resetPasswordAction(_previous: FormState, formData: FormData): Promise<FormState> {
