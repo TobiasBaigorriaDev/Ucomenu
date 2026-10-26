@@ -920,10 +920,16 @@ isOneToOne: false
               "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string,"voided_at": string
             }[]
                            },
+"owner_products_performance":
+{ Args: { "p_branch"?: string,"p_days"?: number,"p_limit"?: number,"p_org": string }; Returns: Json
+                           },
 "owner_qr_reset_schedules":
 { Args: { "p_org": string }; Returns: {
               "branch_id": string,"reset_times": (string)[]
             }[]
+                           },
+"owner_sales_overview":
+{ Args: { "p_branch"?: string,"p_days"?: number,"p_org": string }; Returns: Json
                            },
 "owner_top_dishes":
 { Args: { "p_branch"?: string,"p_days"?: number,"p_limit"?: number,"p_org": string }; Returns: {

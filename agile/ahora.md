@@ -1,23 +1,23 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-25 · agente saliente: Codex. Historia en Git y fichas.
+Actualizado: 2026-10-25 · agente saliente: Claude. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Reinicios de QR programados y masivos: en staging, Fly v53**, con la migración `20261204100000`. El usuario autorizó aplicar el incremento con «Aplicalo», después de la aprobación de Claude. Rama `main`; implementación `1f82cce`, correcciones `e46a942`, imagen construida desde `9d0091f`. La [ficha](cambios/reinicio-programado-qr.md) concentra aceptación, evidencia local/remota, informes y recuperación.
+**Analítica de pedidos para el Dueño: hecha y verificada en local, sin revisión independiente ni staging todavía.** Es el rework de `/panel/{slug}/analitica` para Pro y Premium: resumen contra el período anterior, ventas por día, mapa de franjas por día y hora, platos que más venden y que no se piden, ventas por categoría y anulaciones con motivos, con período de 7, 30 o 90 días (`?dias=`) y el filtro de sucursal de siempre; conserva platos más vistos y llamados por hora. Nivel **C** (lee ventas por organización). La [ficha](cambios/analitica-de-pedidos.md) concentra decisiones, aceptación, invariantes y evidencia; el motivo duradero está en el [ADR 0045](../docs/decisiones/0045-analitica-de-pedidos.md). Migración `20261205100000` (solo funciones de lectura y un índice), aplicada solo en la base local.
 
-El Dueño configura horarios diarios en Panel → Sucursales, con 05:00 por defecto en la zona de cada sucursal; una lista vacía desactiva el automatismo. Sala → Mesas ofrece a Dueño y Staff reiniciar todas las mesas del local, en todas sus sucursales, con confirmación. El QR impreso y los pedidos se conservan. Los horarios internos solo los lee el Dueño por RPC; el marcador no es público.
-
-La base enlazada sigue siendo el proyecto de staging `oasixhsdyigimwvcxtkx`. Se aplicó únicamente la migración prevista, sin seeds ni cambios de secretos. La aplicación usa la imagen `qr-reset-9d0091f`; no se reconstruyó entre las pruebas y el despliegue. El cron funciona desde PostgreSQL aunque Fly esté apagado. Cambiar horarios, zona o reactivar empieza a contar desde ese momento; tras una interrupción se recupera el último reinicio pendiente.
+Rama `main`; los commits siguen locales, sin push.
 
 ## Límites y bloqueos
 
-- Falta que el usuario pruebe con sesión real de Dueño/Mozo y en teléfono: configurar horarios, reiniciar todas las mesas, recargar una visita anterior y volver a escanear.
-- Si Windows repite `0xC0000409` con `forks`, el pool `threads` funcionó para el archivo afectado; ver la ficha, sin cambiar la configuración global.
-- Los setups pausan y restauran el cron local. Si se mata la suite sin teardown, comprobar `cron.job` o resetear local antes del ensayo manual.
-- Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimiento. Los commits siguen locales, sin push.
+- Falta la **revisión independiente** (`pnpm revision:codex --commit HEAD --ficha agile/cambios/analitica-de-pedidos.md --nivel C`, ver la skill `ciclo-revision-codex`) y **tu aprobación** antes de aplicar la migración a staging.
+- Reinicios de QR (migración `20261204100000`): en staging desde Fly v53; falta tu prueba con sesión real y en teléfono (ver su [ficha](cambios/reinicio-programado-qr.md)).
+- `src/lib/idiomas/textos.test.ts` falla (la clave `feed.dockLink` vale «Menufeed» en los tres idiomas): ajeno a este cambio, sin corregir.
+- Si Windows repite `0xC0000409` con `forks`, repetir ese archivo con `--pool=threads`. Si `pnpm build` falla con `EPERM` dentro de `.next`, borrar `.next` y repetir.
+- Los setups pausan y restauran el cron local; si se mata una suite sin teardown, comprobar `cron.job` o resetear local.
+- Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimiento.
 - Producción continúa bloqueada por dominio, revisión legal y purgas. Rotar la clave legacy de staging sigue pendiente, fuera de alcance.
 
 ## Próximo paso
 
-Recibir la prueba del usuario en staging. Siguiente migración libre: `20261205100000`. Las sugerencias operativas no bloqueantes y los límites de la revisión están en la ficha.
+Correr la revisión independiente y tratar sus hallazgos; con tu aprobación, aplicar `20261205100000` a staging y desplegar. Siguiente migración libre: `20261206100000`. Sin medir: la lectura con miles de pedidos por período.

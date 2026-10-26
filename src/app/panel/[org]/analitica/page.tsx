@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { HoursChart } from "@/components/analitica/hours-chart";
+import {
+  BestProductsSection,
+  CategoriesSection,
+  ControlSection,
+  DailySalesSection,
+  hasOrderData,
+  SlotsSection,
+  SummarySection,
+  UnsoldSection,
+} from "@/components/analitica/secciones";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
-import { loadAnalytics } from "@/lib/analitica/cargar";
+import { loadAnalytics, loadSales } from "@/lib/analitica/cargar";
 import {
   ANALYTICS_DAYS,
   barPercent,
@@ -14,6 +24,7 @@ import {
   type DishViews,
   type HourCalls,
 } from "@/lib/analitica/lectura";
+import { PERIODS, parsePeriod, type PeriodDays } from "@/lib/analitica/ventas";
 import { readBranchView } from "@/lib/sucursales/vista";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -22,10 +33,14 @@ export const metadata: Metadata = { title: "Analítica" };
 /** Valor reservado de `?sucursal=` para «Todas las sucursales» (no es un slug válido: sin guion bajo). */
 const ALL_BRANCHES = "_todas";
 
+/** Zona con la que se rotulan las fechas cuando no hay una sucursal elegida y las sucursales no comparten zona. */
+const DEFAULT_ZONE = "America/Argentina/Buenos_Aires";
+
 /**
- * Analítica básica del local (ficha analitica-basica, ADR 0022): platos más vistos y llamados por hora de los últimos 14
- * días. Solo el Dueño y solo con el plan que incluye `analytics`; la base vuelve a comprobarlo y, si no corresponde, no
- * entrega ni una fila. Los gráficos son barras de CSS con una tabla equivalente para lectores de pantalla.
+ * Analítica del local para su Dueño. Pedidos (ficha analitica-de-pedidos, ADR 0045): resumen, ventas por día, franjas, platos,
+ * categorías y anulaciones de los últimos 7, 30 o 90 días; y lo de la ficha analitica-basica (ADR 0022): platos más vistos y
+ * llamados por hora de los últimos 14 días. Solo el Dueño y solo con el plan que incluye `analytics`; la base vuelve a
+ * comprobarlo y, si no corresponde, no entrega nada. Los gráficos son de CSS con una tabla equivalente para lectores de pantalla.
  */
 export default async function AnalyticsPage({ params, searchParams }: PageProps<"/panel/[org]/analitica">) {
   const { org } = await params;
@@ -34,8 +49,10 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
   const hasAnalytics = ent?.features.includes("analytics") === true;
 
   const db = await createSessionClient();
-  const branches = (await db.from("branches").select("id, slug, name").eq("organization_id", membership.org.id).eq("is_active", true).order("name")).data ?? [];
-  const requested = (await searchParams).sucursal;
+  const branches = (await db.from("branches").select("id, slug, name, timezone").eq("organization_id", membership.org.id).eq("is_active", true).order("name")).data ?? [];
+  const query = await searchParams;
+  const requested = query.sucursal;
+  const days = parsePeriod(query.dias);
   // Sin `?sucursal=`, abre en la sucursal que la persona eligió en la sala si es exactamente una. `?sucursal=_todas` fuerza «Todas»:
   // el guion bajo no puede formar parte de un slug, así que nunca choca con el de una sucursal (que podría llamarse «todas»).
   let branch = typeof requested === "string" ? branches.find((item) => item.slug === requested) ?? null : null;
@@ -44,12 +61,16 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
     if (view.length === 1) branch = branches.find((item) => item.id === view[0]) ?? null;
   }
   const base = `/panel/${membership.org.slug}/analitica`;
+  const zones = new Set(branches.map((item) => item.timezone));
+  const timeZone = branch?.timezone ?? (zones.size === 1 ? [...zones][0] : DEFAULT_ZONE);
+  // El filtro de sucursal viaja en la dirección también al cambiar de período (sin él, vuelve a la elegida en la sala).
+  const branchParam = typeof requested === "string" ? requested : branch && branches.length > 1 ? branch.slug : null;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Analítica</h1>
       <p className="mt-2 max-w-prose text-base text-muted">
-        Qué platos se miran más y a qué horas llaman las mesas, en los últimos {ANALYTICS_DAYS} días.
+        Cómo viene el negocio según los pedidos de tu equipo, qué platos funcionan y a qué horas llaman las mesas.
       </p>
 
       {!ent ? (
@@ -65,7 +86,16 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
           .
         </p>
       ) : (
-        <Content orgId={membership.org.id} branchId={branch?.id ?? null} branches={branches} current={branch?.slug ?? null} base={base} />
+        <Content
+          orgId={membership.org.id}
+          branchId={branch?.id ?? null}
+          branches={branches}
+          current={branch?.slug ?? null}
+          base={base}
+          days={days}
+          branchParam={branchParam}
+          timeZone={timeZone}
+        />
       )}
     </main>
   );
@@ -77,49 +107,75 @@ async function Content({
   branches,
   current,
   base,
+  days,
+  branchParam,
+  timeZone,
 }: {
   orgId: string;
   branchId: string | null;
   branches: { id: string; slug: string; name: string }[];
   current: string | null;
   base: string;
+  days: PeriodDays;
+  branchParam: string | null;
+  timeZone: string;
 }) {
-  const { dishes, calls } = await loadAnalytics(await createSessionClient(), orgId, branchId);
+  const db = await createSessionClient();
+  const [{ dishes, calls }, { sales, products }] = await Promise.all([loadAnalytics(db, orgId, branchId, days), loadSales(db, orgId, days, branchId)]);
+  // Con pedidos confirmados vacíos no se arman secciones de ventas; con la lectura caída sí se muestran los avisos de error.
+  const withOrders = sales !== null && hasOrderData(sales);
+  const periodHref = (value: PeriodDays) => `${base}?${new URLSearchParams({ ...(branchParam ? { sucursal: branchParam } : {}), dias: String(value) })}`;
+  const branchHref = (slug: string | null) => `${base}?${new URLSearchParams({ sucursal: slug ?? ALL_BRANCHES, dias: String(days) })}`;
+  const chip = (active: boolean) =>
+    `inline-flex min-h-11 items-center rounded-full px-4 text-base font-medium ${active ? "bg-brand text-white" : "border border-ink/50 text-ink hover:bg-ink/5"}`;
 
   return (
     <>
+      <nav aria-label="Período" className="mt-6 flex flex-wrap gap-2" data-testid="analitica-periodos">
+        {PERIODS.map((value) => (
+          <Link key={value} href={periodHref(value)} aria-current={value === days ? "page" : undefined} className={chip(value === days)}>
+            Últimos {value} días
+          </Link>
+        ))}
+      </nav>
       {branches.length > 1 ? (
-        <nav aria-label="Filtrar por sucursal" className="mt-6 flex flex-wrap gap-2" data-testid="analitica-sucursales">
-          {[{ slug: null as string | null, name: "Todas las sucursales" }, ...branches].map((item) => {
-            const active = item.slug === current;
-            return (
-              <Link
-                key={item.slug ?? "todas"}
-                href={`${base}?sucursal=${item.slug ?? ALL_BRANCHES}`}
-                aria-current={active ? "page" : undefined}
-                className={`inline-flex min-h-11 items-center rounded-full px-4 text-base font-medium ${
-                  active ? "bg-brand text-white" : "border border-ink/50 text-ink hover:bg-ink/5"
-                }`}
-              >
-                {item.name}
-              </Link>
-            );
-          })}
+        <nav aria-label="Filtrar por sucursal" className="mt-3 flex flex-wrap gap-2" data-testid="analitica-sucursales">
+          {[{ slug: null as string | null, name: "Todas las sucursales" }, ...branches].map((item) => (
+            <Link key={item.slug ?? "todas"} href={branchHref(item.slug)} aria-current={item.slug === current ? "page" : undefined} className={chip(item.slug === current)}>
+              {item.name}
+            </Link>
+          ))}
         </nav>
       ) : null}
 
-      <TopDishesSection dishes={dishes?.dishes ?? null} total={dishes?.total ?? 0} failed={dishes === null} />
+      <SummarySection sales={sales} />
+      {withOrders ? (
+        <>
+          <DailySalesSection sales={sales} timeZone={timeZone} />
+          <SlotsSection sales={sales} />
+        </>
+      ) : null}
+      {withOrders || sales === null ? <BestProductsSection products={products} days={days} /> : null}
+      {withOrders ? (
+        <>
+          <CategoriesSection sales={sales} />
+          <UnsoldSection products={products} days={days} />
+          <ControlSection sales={sales} />
+        </>
+      ) : null}
+
+      <TopDishesSection dishes={dishes?.dishes ?? null} total={dishes?.total ?? 0} failed={dishes === null} days={days} />
       <CallsSection hours={calls} />
     </>
   );
 }
 
-function TopDishesSection({ dishes, total, failed }: { dishes: DishViews[] | null; total: number; failed: boolean }) {
+function TopDishesSection({ dishes, total, failed, days }: { dishes: DishViews[] | null; total: number; failed: boolean; days: number }) {
   const max = Math.max(0, ...(dishes ?? []).map((dish) => dish.views));
   return (
     <section aria-labelledby="platos-titulo" className="mt-10" data-testid="top-platos">
       <h2 id="platos-titulo" className="font-display text-3xl leading-tight">
-        Platos más vistos
+        Platos más vistos en la carta
       </h2>
       {failed ? (
         <p role="status" className="mt-3 max-w-prose text-base text-muted" data-testid="platos-error">
@@ -132,7 +188,7 @@ function TopDishesSection({ dishes, total, failed }: { dishes: DishViews[] | nul
       ) : (
         <>
           <p className="mt-1 text-base text-muted" data-testid="platos-total">
-            {plural(total, "vista", "vistas")} en los últimos {ANALYTICS_DAYS} días, en total.
+            {plural(total, "vista", "vistas")} en los últimos {days} días, en total.
           </p>
           <ol className="mt-4 panel-list" data-testid="platos-lista">
             {dishes.map((dish, index) => (

@@ -112,6 +112,8 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   org_entitlements: [false, true],
   owner_calls_by_hour: [false, true], // analítica básica (ADR 0022): llamados por hora para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   owner_top_dishes: [false, true], // analítica básica (ADR 0022): platos más vistos para el Dueño con el plan; vuelve a comprobar todo; solo lectura
+  owner_sales_overview: [false, true], // analítica de pedidos (ADR 0045): ventas, franjas y control para el Dueño con el plan; vuelve a comprobar todo; solo lectura
+  owner_products_performance: [false, true], // analítica de pedidos (ADR 0045): platos más vendidos y sin pedidos para el Dueño con el plan; vuelve a comprobar todo; solo lectura
   owner_account_history: [false, true], // el Dueño lee el historial de cambios de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   owner_payments: [false, true], // el Dueño lee los pagos de su cuenta (ADR 0021): vuelve a comprobar que sea Dueño; solo lectura
   public_menu_status: [true, true],

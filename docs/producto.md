@@ -106,7 +106,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Platos activos | hasta 80 | hasta 200 | sin límite |
 | Menú digital + QR por mesa + identidad visual | ✔ | ✔ | ✔ |
 | Llamado al mozo / pedir la cuenta + panel de sala | — | ✔ | ✔ |
-| Analítica básica (posterior al MVP) | — | ✔ | ✔ |
+| Analítica (vistas de platos, llamados y pedidos) | — | ✔ | ✔ |
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
 | Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
 | Invitación a reseñar en Google | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
@@ -120,7 +120,7 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 - **Límites:** son techos para *crear* y para *activar* (no se puede superar el tope). Los platos se cuentan solo si están activos (`is_active`): con el tope alcanzado se bloquea tanto crear un plato activo como pasar uno inactivo a activo; pasar un plato de activo a inactivo siempre se permite, para que el local pueda acomodarse a su cupo. Misma regla para sucursales y mesas. *(Confirmado 2026-10-14.)*
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.
 - En el MVP se venden **Básico y Pro**. Premium se habilita cuando se entregue lo que incluye (feed de videos en la fase 2, fidelización en la fase 3); venderlo antes solo con el feed sería una decisión comercial aparte.
-- **Analítica básica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). **Implementada** (ficha `analitica-basica`, ADR 0022): `/panel/{slug}/analitica`, solo Dueño, con los platos más vistos (aperturas del detalle, contadores por día) y los llamados por hora de los últimos 14 días.
+- **Analítica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). **Implementada** (ficha `analitica-basica`, ADR 0022): `/panel/{slug}/analitica`, solo Dueño, con los platos más vistos (aperturas del detalle, contadores por día) y los llamados por hora de los últimos 14 días. **Analítica de pedidos** (ficha `analitica-de-pedidos`, ADR 0045; mismo plan y misma pantalla): resumen de ventas anotadas contra el período anterior (7, 30 o 90 días), ventas por día, mapa de franjas por día y hora, platos que más venden y que no se piden, ventas por categoría y anulaciones con sus motivos; sale de los pedidos cerrados, en el horario de cada sucursal.
 
 ### Mora y suspensión (degradación progresiva)
 Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Supuesto (nuevo)*):
