@@ -145,6 +145,15 @@ test.describe("pantalla de cocina", () => {
     await expect(page.getByTestId("anuncio")).toContainText("Listo para entregar: Mesa 1");
     await expectNoHorizontalOverflow(page);
 
+    // Si la cocina se equivoca, lo deshace y lo vuelve a marcar, el mozo se entera otra vez (el aviso no se pierde).
+    await expect(page.getByTestId("aviso-nuevo")).toBeVisible();
+    await expect(page.getByTestId("aviso-nuevo")).toBeHidden({ timeout: 15_000 });
+    expect((await cocina.rpc("set_order_item_status", { p_item: item, p_status: "noted" })).error).toBeNull();
+    await expect(mesa).toHaveAttribute("data-estado", "pedido", { timeout: 15_000 });
+    expect((await cocina.rpc("set_order_item_status", { p_item: item, p_status: "ready" })).error).toBeNull();
+    await expect(mesa).toHaveAttribute("data-estado", "listo", { timeout: 15_000 });
+    await expect(page.getByTestId("aviso-nuevo")).toBeVisible();
+
     // El mozo lo entrega desde el pedido de la mesa (ya no hay «En cocina»).
     await page.goto(`/sala/${l.t.slug}/mesas/${l.mesas[0].id}/anotar`);
     const fila = page.locator('[data-testid="linea"]').filter({ hasText: "Bife" });

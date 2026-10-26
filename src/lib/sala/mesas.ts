@@ -150,6 +150,9 @@ export function flattenCalls(mesas: readonly MesaCard[]): SalaCall[] {
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.tableLabel.localeCompare(b.tableLabel, "es-AR", { numeric: true }));
 }
 
+/** Ids de las líneas listas de todas las mesas. Lo que la pantalla da por visto en cada respuesta: se REEMPLAZA, no se acumula. */
+export const readyLineIds = (mesas: readonly MesaCard[]): string[] => mesas.flatMap((card) => card.order?.readyIds ?? []);
+
 /**
  * Las mesas con algún plato que la cocina marcó listo y la pantalla todavía no había visto (por id de línea, no por contador: entregar
  * un plato y que la cocina marque otro entre dos consultas deja el contador igual y el plato nuevo es noticia igual).

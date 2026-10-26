@@ -7,6 +7,7 @@ import {
   parseMesasState,
   sortMesas,
   summarizeOrder,
+  readyLineIds,
   tablesWithNewReady,
   type MesaCard,
   type MesasState,
@@ -92,6 +93,18 @@ describe("platos nuevos listos", () => {
     const seen = new Set(["a"]);
     // Antes: «a» listo (contador 1). Ahora: «a» ya se entregó y «b» está listo (contador 1).
     expect(tablesWithNewReady(seen, [conListos("Mesa 1", ["b"])]).map((m) => m.tableLabel)).toEqual(["Mesa 1"]);
+  });
+
+  it("si la cocina deshace un «listo» y lo vuelve a marcar, el segundo es otra vez noticia (lo visto se reemplaza, no se acumula)", () => {
+    const listo = [conListos("Mesa 1", ["a"])];
+    const deshecho = [carta("Mesa 1", { order: pedido("2026-10-24T10:00:00.000Z") })];
+    let visto = new Set(readyLineIds(listo));
+    expect(tablesWithNewReady(visto, listo)).toEqual([]);
+    // Sondeo con la línea vuelta a «anotada»: ya no está lista.
+    expect(tablesWithNewReady(visto, deshecho)).toEqual([]);
+    visto = new Set(readyLineIds(deshecho));
+    // La cocina la marca de nuevo: el mismo id vuelve a ser un plato listo nuevo.
+    expect(tablesWithNewReady(visto, listo).map((m) => m.tableLabel)).toEqual(["Mesa 1"]);
   });
 
   it("lo que ya se vio no vuelve a avisar, y las mesas sin listos o sin pedido tampoco", () => {

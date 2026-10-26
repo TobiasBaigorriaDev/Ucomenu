@@ -152,6 +152,11 @@ describe("cerrado por defecto: el cocinero no hereda lo del Staff", () => {
     expect((await service.from("waiter_calls").insert({ organization_id: l.id, branch_id: l.branch, table_id: l.table, kind: "waiter" })).error).toBeNull();
     expect((await service.from("products").update({ price_cents: 12345 }).eq("id", l.product)).error).toBeNull();
     ok(await staff.db.rpc("set_my_branch_view", { p_org: l.id, p_branches: [l.branch] }));
+    const sub = (await service.from("subscriptions").select("id").eq("organization_id", l.id).single()).data!.id;
+    sql(
+      `insert into public.payments (organization_id, subscription_id, plan_code, billing_cycle, amount_cents, currency, method, paid_on, previous_period_end, covers_until, registered_by) ` +
+        `values ('${l.id}', '${sub}', 'pro', 'monthly', 1234, 'ARS', 'cash', '2026-03-05', '2026-03-01', '2026-04-01', '${owner.id}')`,
+    );
 
     // Cada tabla se siembra y se comprueba PRIMERO que quien corresponde la ve: sin eso, «vacío» no probaría nada.
     const tablas = [
@@ -175,6 +180,8 @@ describe("cerrado por defecto: el cocinero no hereda lo del Staff", () => {
     expect(vista.error !== null || (Array.isArray(vista.data) && vista.data.length === 0)).toBe(true);
     // Pagos y auditoría no los lee nadie por la API (ni el Dueño): el cocinero tampoco, y no llega a lo que el Dueño ve por sus funciones.
     for (const tabla of ["payments", "audit_log"] as const) await sinFilas(cook.db.from(tabla).select("*").eq("organization_id", l.id));
+    // Hay un pago sembrado: el Dueño lo ve por su función; el cocinero, nada (ni por la función ni por la tabla).
+    expect(ok<unknown[]>(await owner.db.rpc("owner_payments", { p_org: l.id } as never)).length).toBeGreaterThan(0);
     await sinFilas(cook.db.rpc("owner_payments", { p_org: l.id } as never).then((r) => ({ data: r.data, error: r.error })));
     await sinFilas(cook.db.from("branches").select("id").eq("organization_id", l.id).eq("is_active", false));
   });

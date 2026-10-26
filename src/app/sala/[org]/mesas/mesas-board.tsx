@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatArs } from "@/lib/money";
-import { flattenCalls, orderStatusText, parseMesasState, sortMesas, tablesWithNewReady, type MesaCall, type MesaCard, type MesasState } from "@/lib/sala/mesas";
+import { flattenCalls, orderStatusText, parseMesasState, readyLineIds, sortMesas, tablesWithNewReady, type MesaCall, type MesaCard, type MesasState } from "@/lib/sala/mesas";
 import {
   announceableCalls,
   callName,
@@ -68,9 +68,6 @@ function bandOf(card: MesaCard): { className: string; label: string } {
 const estadoDe = (card: MesaCard) =>
   card.calls.some((c) => c.kind === "bill") ? "cuenta" : card.calls.length > 0 ? "llama" : card.order && card.order.ready > 0 ? "listo" : card.order ? "pedido" : "libre";
 
-/** Ids de las líneas listas de todas las mesas: sirve para enterarse de CADA plato nuevo que la cocina marca listo (no del contador neto). */
-const readyLineIds = (mesas: readonly MesaCard[]): string[] => mesas.flatMap((card) => card.order?.readyIds ?? []);
-
 export function MesasBoard({
   slug,
   initial,
@@ -110,7 +107,7 @@ export function MesasBoard({
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
   const offset = useRef(0);
   const seen = useRef<Set<string>>(new Set(flattenCalls(initial.mesas).map((call) => call.id)));
-  // Líneas que ya se vieron listas: una que aparece listo sin estar acá es un plato nuevo (solo lo que pasa después de cargar suena y se anuncia).
+  // Líneas listas en la última respuesta: una que aparece lista sin estar acá es un plato nuevo (solo lo que pasa después de cargar suena y se anuncia).
   const seenReady = useRef<Set<string>>(new Set(readyLineIds(initial.mesas)));
   // Qué sucursales miraba la última respuesta: si cambia (la persona eligió otras), lo que ya estaba pendiente no suena ni se anuncia.
   const lastView = useRef(initial.view.join(","));
@@ -189,7 +186,8 @@ export function MesasBoard({
 
     // Con otra vista, lo que aparece ahora ya estaba listo (la vista anterior lo ocultaba): es base, sin sonido ni anuncio.
     const justReady = viewChanged ? [] : tablesWithNewReady(seenReady.current, next.mesas);
-    for (const id of readyLineIds(next.mesas)) seenReady.current.add(id);
+    // Se REEMPLAZA por lo que está listo ahora: si la cocina deshace un «listo» y lo vuelve a marcar, vuelve a ser un plato nuevo.
+    seenReady.current = new Set(readyLineIds(next.mesas));
 
     if (incoming.length === 0 && justReady.length === 0) return;
     const ids = incoming.map((call) => call.id);

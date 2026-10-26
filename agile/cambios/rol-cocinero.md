@@ -45,7 +45,10 @@ Cocinero atado a una sucursal; tiempos de preparación o estados intermedios; im
 3. *Registro push en carrera con el cambio a cocinero* — real: el registro revalida el rol tras el candado, el trigger toma el mismo candado y `push_targets_for_call` filtra por rol actual. Prueba de carrera nueva; falla sin las defensas (queda 1 suscripción viva).
 4. *Se pierde el aviso de un plato nuevo listo si el contador no cambia* — real: la pantalla compara ids de líneas listas (`readyIds`, `tablesWithNewReady`). Pruebas unitarias nuevas, entre ellas el escenario «se entrega uno y se marca otro».
 5. *Prueba de aislamiento con tablas vacías* — cierto: ahora se siembra cada tabla y se comprueba que quien corresponde la ve antes de comprobar que el cocinero no.
-Falta la ronda de verificación.
+**Ronda 2 (verificación de Codex, commit `8ad8a71`): RECHAZAR** con 2 hallazgos nuevos sobre las correcciones:
+- *Deshacer y volver a marcar «Listo» pierde el aviso* — real, regresión de mi corrección del hallazgo 4 (`seenReady` acumulaba ids). Ahora se reemplaza por lo que está listo en cada respuesta. Prueba unitaria nueva y E2E del escenario (deshacer y remarcar); el E2E falla con el comportamiento anterior.
+- *Pagos sin datos en la prueba de aislamiento* — cierto: se siembra un pago, se comprueba que el Dueño lo ve por `owner_payments` y que el cocinero no.
+Falta la ronda 3 de verificación (la última: si no aprueba, se consulta antes de seguir).
 
 ## Evidencia
 Sobre el diff sin commitear de `main` (2026-10-26):
