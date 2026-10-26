@@ -200,7 +200,7 @@ Sello (el personal escanea el QR del pase en /sala)
 ## Entornos
 - **Desarrollo:** Supabase local (Docker) + Next.js local, con datos semilla ficticios.
 - **Prueba (staging):** proyecto Supabase gratuito y aparte, en una organización de Supabase distinta, con datos ficticios, y su propia app en Fly (`fly.staging.toml`); ahí se ensaya `docs/produccion.md` completo.
-- **Producción:** proyecto Supabase propio (Free al inicio, el mismo proyecto sube a Pro) y dominio definitivo (todavía no comprado).
+- **Producción:** proyecto Supabase propio (Free al inicio, el mismo proyecto sube a Pro) y dominio definitivo `ucomenu.com` (del usuario; DNS en Cloudflare, sin apuntar a la app todavía).
 - Los entornos de desarrollo y prueba **nunca** usan datos reales. Las migraciones se versionan en el repo y se aplican en orden; las destructivas requieren aprobación.
 
 > Decisiones duraderas con motivo y alternativas → `docs/decisiones/`.

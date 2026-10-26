@@ -29,3 +29,6 @@ El ADR 0001 fijó Next.js en Vercel y Supabase. Al preparar la salida a producci
 - **Sin respaldos de Supabase mientras sea Free:** la recuperación depende de `pnpm respaldo`. Hay que correrlo y ensayar la restauración; el respaldo es un dato personal (correos y hashes de contraseña) y no incluye `waiter_calls`, para no extender el plazo de 14 días.
 - **Enmienda al ADR 0001:** Vercel deja de ser el hosting por defecto y pasa a ser Fly.io (contenedor). Supabase y Next.js se mantienen.
 - Nada de lo decidido se ejecutó: crear cuentas y proyectos, comprar el dominio, instalar herramientas y desplegar siguen requiriendo aprobación (`AGENTS.md`).
+
+## Enmienda (2026-10-26): dominio confirmado
+El usuario confirmó que **`ucomenu.com` es su dominio definitivo**; ya no hay que elegirlo ni comprarlo (sus servidores de nombres son de Cloudflare y no apunta a ninguna app). Queda pendiente solo apuntarlo a la app de producción cuando exista (`docs/produccion.md`, sección 5). El resto de la decisión no cambia.

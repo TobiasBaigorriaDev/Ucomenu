@@ -7,7 +7,7 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 ## 0. Antes de empezar (el usuario)
 - **Hosting:** decidido (Fly.io, contenedor en São Paulo). La cuenta y `flyctl` ya existen (staging).
 - **Un proyecto de Supabase por entorno, no por cliente:** UcoMenu es multi-inquilino (organizaciones y sucursales en las mismas tablas, aisladas por RLS). Cada negocio nuevo se da de alta desde `/admin`; no se crea ningún proyecto. En total: staging y producción.
-- **Dominio:** **pospuesto** (2026-10-16: el usuario no está seguro de `ucomenu.com`; está en el backlog). Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción sí: hay que definirlo **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
+- **Dominio:** **`ucomenu.com`, confirmado como definitivo por el usuario (2026-10-26)**; ya es suyo y su DNS está en Cloudflare. Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción lo usa como `NEXT_PUBLIC_SITE_URL=https://ucomenu.com`; hay que apuntarlo (sección 5) **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
 - **Legal** (ficha `agile/cambios/textos-legales.md`): revisión profesional de `/terminos`, `/privacidad` y `/alergenos`, identidad del operador y correo real de contacto.
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
 
@@ -163,10 +163,13 @@ select cron.schedule(
 ```
 Si el atraso creciera (más de 45 000 pedidos vencidos por día), subir el lote (hasta 5000) o la frecuencia; no convertirlo en un bucle. Para dar de baja: `select cron.unschedule('purge-expired-orders');`. `pg_cron` guarda en `cron.job_run_details` el **estado** de cada ejecución (`succeeded` o `failed`, con el error si falló) pero **no el JSON que devuelve la función**: los conteos de lo borrado (pedidos, líneas, opciones y eventos) no quedan registrados por la tarea. Se ven ejecutando la función a mano (`select public.purge_expired_orders(interval '2 years', 500)` devuelve los conteos del lote) y el estado de la purga se verifica con las consultas de abajo. Comprobación después de una ejecución real: estado `succeeded`, `select count(*) from public.orders where status <> 'open' and closed_at < now() - interval '2 years'` igual a 0 y `select tgenabled from pg_trigger where tgname = 'order_events_no_update_delete'` igual a `O` (encendido). Para probar con datos ficticios en staging: crear un pedido, cerrarlo, envejecer su `closed_at` como `postgres` (con `set session_replication_role = replica`) y ejecutar `select public.purge_expired_orders(interval '2 years', 500)` a mano. **El borrado es irreversible** (solo el respaldo, paso 6).
 
-## 5. Dominio (aprobación: compra y DNS)
-1. Con el dominio ya elegido y comprado (pospuesto), agregarlo a Fly (`fly certs add <dominio>`); apuntar el DNS como indique Fly. Esperar el certificado HTTPS (`fly certs show <dominio>`).
-2. Confirmar que `NEXT_PUBLIC_SITE_URL` coincide y volver a desplegar si se cambió.
-3. Imprimir los QR **después** de este paso: cada QR codifica `{NEXT_PUBLIC_SITE_URL}/t/{token}`.
+## 5. Dominio (aprobación: DNS y app de producción)
+`ucomenu.com` ya es del usuario (DNS en Cloudflare). Este paso se hace cuando exista la app de producción en Fly (`fly.toml`, hoy plantilla):
+1. Agregar el dominio a Fly: `fly certs add ucomenu.com -c fly.toml` (y `www.ucomenu.com` si se quiere; redirigirlo al raíz). `fly certs show ucomenu.com -c fly.toml` indica los registros exactos.
+2. En Cloudflare (DNS), crear lo que indique Fly: para el raíz, los registros `A` y `AAAA` con las IP de la app (`fly ips list`), o un `CNAME` al `<app>.fly.dev` (Cloudflare lo aplana en el raíz). Dejar los registros en **«Solo DNS»** (nube gris) hasta que Fly emita el certificado; si después se activa el proxy de Cloudflare, usar cifrado **Full (strict)**.
+3. Esperar el certificado HTTPS (`fly certs show`) y confirmar que `NEXT_PUBLIC_SITE_URL=https://ucomenu.com` coincide con lo usado al construir la imagen (se incrusta al construir: si se cambió, volver a desplegar).
+4. Imprimir los QR **después** de este paso: cada QR codifica `{NEXT_PUBLIC_SITE_URL}/t/{token}`.
+5. Correo de contacto: `NEXT_PUBLIC_CONTACT_EMAIL` tiene que ser una casilla real del dominio (p. ej. con *Email Routing* de Cloudflare reenviando a un correo del usuario); decidir cuál antes de publicar `/privacidad`.
 
 ## 6. Respaldos (antes de cargar datos reales)
 Correr `pnpm respaldo` contra el proyecto y **ensayar la restauración en staging** (`docs/operacion.md`, sección 2). Definir quién lo corre y con qué frecuencia. El plan Free no hace respaldos.

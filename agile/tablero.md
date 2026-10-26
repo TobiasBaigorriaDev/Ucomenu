@@ -6,7 +6,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
-Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las comprobaciones manuales pendientes se listan aparte. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
+Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el usuario confirmó todas las comprobaciones de «Para verificar» (2026-10-26). Producción sigue bloqueada aunque un cambio esté desplegado en staging.
 
 ## En curso
 
@@ -18,21 +18,11 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ## Para verificar
 
-- [C] Rol de cocinero (pantalla `/cocina`: pedidos con «Listo», platos agotados por sucursal; Pro y Premium; flujo anotado → listo → entregado; sin precios ni acceso a Sala y panel): implementado, verificado, aprobado por Codex en 3 rondas y por el usuario; migración aplicada y en staging (Fly v59, 2026-10-26); **falta tu prueba en staging con un cocinero real y teléfono** → [ficha](cambios/rol-cocinero.md) · [ADR 0048](../docs/decisiones/0048-rol-cocinero.md)
-- [C] Resumen de la analítica con IA (botón «Generar resumen» en `/panel/{slug}/analitica`: párrafo, hallazgos y acciones sobre las cifras del período; Gemini gratis con datos ficticios y Claude antes de usar ventas reales): implementado, verificado, aprobado por Codex en 3 rondas y por el usuario; migración aplicada y en staging (Fly v56, 2026-10-26); falta tu prueba con un Dueño → [ficha](cambios/resumen-de-analitica-con-ia.md) · ADR 0047
-- [M] Sugerencia de traducciones con IA (botón «Sugerir con IA» en las traducciones de la carta; Gemini con clave gratuita en local y staging, Claude en producción): implementada, verificada y probada por el usuario con la clave real de Gemini en local; en staging (Fly v55, 2026-10-26); falta probar el botón con sesión ahí → [ficha](cambios/traduccion-automatica.md) · ADR 0046
-- [C] Reinicio de QR programado por sucursal y masivo por el mozo — aprobado por Claude y por el usuario; en staging (Fly v53), pendiente prueba en teléfono → [ficha](cambios/reinicio-programado-qr.md)
-- [C] Turno de mesa (rota al cerrar, anular o reiniciar; el QR impreso no cambia) y cuenta del comensal («Ver mi cuenta» tras pedir la cuenta): implementados en local y aprobados por Codex; **en staging (Fly v51, migraciones hasta `20261202100000` aplicadas el 2026-10-25); el usuario ya los probó y su feedback (llamados tras reiniciar, cuenta con paletas oscuras) está corregido y desplegado; falta que lo vuelva a probar** → [turno](cambios/turno-de-mesa.md) · [cuenta](cambios/cuenta-del-comensal.md) · [ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)
-- [M] Estilo de carta «Afiche» (Big Shoulders, bandas de color, platos numerados): aprobado por el usuario y en staging (Fly v44, migración aplicada); falta probarlo con un local real en staging → [ficha](cambios/estilo-afiche.md)
-- [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas: implementada, aprobada por Codex (sin hallazgos) y por el usuario, y en staging con su migración (Fly versión 33, 2026-10-23); falta probarla con sesión de SuperAdmin y de Dueño en staging → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
-
-- [S] Comprobar con sesión staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — pendiente devolución del usuario → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
-- [S] Probar en un Android real la subida de videos desde el panel y el feed (también en Firefox y en Safari de escritorio) — sin resultado; el feed se probó en Chrome y en el teléfono del usuario → [ficha](cambios/feed-de-videos.md)
-- [S] Ticket de visita en teléfono real: volver a la carta tras más de 3 h con la pantalla apagada y comprobar nuevo escaneo y recuperación de pestañas descartadas — sin resultado registrado del ensayo iniciado el 2026-10-19 → [ficha](cambios/ticket-de-visita.md)
+- (vacío)
 
 ## Bloqueado
 
-- [M] Salida a producción — preparación y staging hechos; faltan dominio, proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
+- [M] Salida a producción — preparación y staging hechos; dominio `ucomenu.com` confirmado (falta apuntarlo a la app); faltan proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
 - [S] Spike descartable de Apple Wallet y Google Wallet con ubicaciones — bloqueado por cuentas de Apple Developer y emisor de Google Wallet, aprobación y pago; valida ADR 0003 → [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md)
 
 ## Backlog
@@ -41,7 +31,7 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 ### Mejoras y decisiones pendientes del MVP
 
-- [S] Dominio: elegir nombre definitivo y autorizar la compra — pospuesto por el usuario; bloquea producción y QR definitivos → [procedimiento](../docs/produccion.md)
+- (vacío)
 
 ### Fase 2 — Feed de videos cortos (plan Premium)
 
@@ -53,36 +43,10 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 > Descartada de este incremento por decisión del usuario (2026-10-23): el sistema de fidelización va en otro incremento. Los ítems (programa de sellos, Apple Wallet, Google Wallet, recordatorio por cercanía y promociones por pase) se detallarán cuando ese incremento se abra; el contexto técnico sigue en el [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md).
 
-### Incremento «Salón y crecimiento» (diseño aprobado por el usuario el 2026-10-23)
+### Próximo incremento — S4: Clientes recurrentes
 
-> Reglas en `docs/producto.md` (módulos 7 a 10 y sucursal adicional) y motivos en los ADR 0039 a 0042. Orden recomendado: S1 → S2 → S3 → S4. Promociones va antes que Pedidos porque los pedidos copian el precio efectivo; Clientes depende de Pedidos y de la revisión legal. Dentro de cada fase, el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
+> Pospuesto al próximo incremento por decisión del usuario (2026-10-26). S1–S3 de «Salón y crecimiento» están en «Hecho». Reglas en `docs/producto.md` (módulo 10) y [ADR 0042](../docs/decisiones/0042-clientes-recurrentes.md); se mantiene la revisión legal como requisito previo.
 
-**S1 — Ingresos y confianza**
-- [C] Sucursal adicional: ver «Para verificar»
-- [M] Enlace de reseñas de Google por sucursal: hecho en local (2026-10-23), ver «Hecho»
-- [M] Invitación a reseñar en la carta: hecho (2026-10-23), ver «Hecho»
-- [C] Vistas previas de funciones por organización: hecho (2026-10-23), ver «Hecho»
-
-**S2 — Promociones programadas (Happy Hour)**
-- [M] Zona horaria por sucursal: hecho en local (2026-10-23), ver «Hecho»
-- [C] Promociones y función de precio efectivo: hecho, ver «Hecho»
-- [M] Panel de promociones del Dueño: hecho en local (2026-10-23), ver «Hecho»
-- [M] Carta con precio promocional en vivo: hecho en local (2026-10-23), ver «Hecho»
-- [S] Pantalla del historial de promociones: hecho en local (2026-10-23), ver «Hecho»
-
-**S3 — Pedidos del mozo** (desbloqueado: la función de precio efectivo está hecha)
-- [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base → [ficha](cambios/pedidos-esquema-y-alta-de-items.md) (hecho, en staging)
-- [C] Variantes, adicionales y observaciones con validación de mínimos y máximos → [ficha](cambios/pedidos-variantes-adicionales-observaciones.md) (hecho, en staging)
-- [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora → [ficha](cambios/pedidos-estados-y-registro.md) (hecho, en staging)
-- [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta» → [ficha](cambios/sala-mesas-y-total.md) (hecho en local, 2026-10-24)
-- [M] Pantalla «Anotar» en la Sala: elegir plato con variantes, cantidad y observación → [ficha](cambios/sala-anotar-pedido.md) (hecho, en staging, 2026-10-24)
-- [M] Operar el pedido desde la Sala: cambiar estados, modificar y cancelar líneas, cerrar y anular → [ficha](cambios/sala-operar-pedido.md) (hecho, en staging, 2026-10-24)
-- [M] Llamados dentro de «Mesas»: una sola pantalla para el mozo (se elimina la lista aparte de «Sala en vivo») → [ficha](cambios/mesas-con-llamados.md) (hecho en local, 2026-10-26)
-- [M] Precuenta «no válida como factura», imprimible y sin observaciones → [ficha](cambios/sala-precuenta.md) (hecho, en staging, 2026-10-24)
-- [C] Retención de pedidos (2 años desde el cierre, a confirmar con el contador) y su purga por lotes (`service_role`) → [ficha](cambios/retencion-de-pedidos.md) (hecho, revisado por Codex y migración en staging, 2026-10-24; sin programar; la purga con la organización ya estaba hecha)
-- [C] Analítica de pedidos para el Dueño (rework Pro/Premium: resumen con comparación, ventas por día, franjas, platos, categorías y anulaciones) → [ficha](cambios/analitica-de-pedidos.md) · ADR 0045 (hecho, revisado por Codex en 3 rondas, aprobado por el usuario y desplegado en staging, Fly v54, 2026-10-25)
-
-**S4 — Clientes recurrentes** (bloqueado por: pedidos y revisión legal)
 - [S] Texto de consentimiento y privacidad revisado por un abogado (rol de encargado, inscripción ante la AAIP) — bloqueado por: abogado
 - [C] `customers` y alta por el personal con consentimiento; búsqueda por teléfono exacto, enmascarado para el Staff
 - [C] Vincular cliente a pedido e historial de visitas (nunca a la mesa)
@@ -99,23 +63,47 @@ Actualizado: 2026-10-23. «Hecho» indica alcance implementado e integrado; las 
 
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
+- [S] Dominio: `ucomenu.com` confirmado como definitivo por el usuario (2026-10-26; ya es suyo, DNS en Cloudflare); procedimiento de apuntarlo a Fly y a Cloudflare documentado → [procedimiento](../docs/produccion.md) · [ADR 0015](../docs/decisiones/0015-estrategia-de-lanzamiento.md)
+
+- [C] Rol de cocinero (pantalla `/cocina`: pedidos con «Listo», platos agotados por sucursal; Pro y Premium; flujo anotado → listo → entregado; sin precios ni acceso a Sala y panel) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/rol-cocinero.md) · [ADR 0048](../docs/decisiones/0048-rol-cocinero.md)
+- [C] Resumen de la analítica con IA (botón «Generar resumen» en `/panel/{slug}/analitica`: párrafo, hallazgos y acciones sobre las cifras del período; Gemini gratis con datos ficticios y Claude antes de usar ventas reales) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/resumen-de-analitica-con-ia.md) · ADR 0047
+- [M] Sugerencia de traducciones con IA (botón «Sugerir con IA» en las traducciones de la carta; Gemini con clave gratuita en local y staging, Claude en producción) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/traduccion-automatica.md) · ADR 0046
+- [C] Reinicio de QR programado por sucursal y masivo por el mozo — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/reinicio-programado-qr.md)
+- [C] Turno de mesa (rota al cerrar, anular o reiniciar; el QR impreso no cambia) y cuenta del comensal («Ver mi cuenta» tras pedir la cuenta) — comprobación manual confirmada por el usuario (2026-10-26) → [turno](cambios/turno-de-mesa.md) · [cuenta](cambios/cuenta-del-comensal.md) · [ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)
+- [M] Estilo de carta «Afiche» (Big Shoulders, bandas de color, platos numerados) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/estilo-afiche.md)
+- [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
+- [S] Comprobación con sesión en staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — comprobación manual confirmada por el usuario (2026-10-26) → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
+- [S] Prueba en un Android real de la subida de videos desde el panel y el feed (también en Firefox y en Safari de escritorio) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/feed-de-videos.md)
+- [S] Ticket de visita en teléfono real: volver a la carta tras más de 3 h con la pantalla apagada y comprobar nuevo escaneo y recuperación de pestañas descartadas — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/ticket-de-visita.md)
+
+- [C] Esquema de pedidos y alta de ítems sin opciones, con precio calculado por la base → [ficha](cambios/pedidos-esquema-y-alta-de-items.md) (hecho, en staging)
+- [C] Variantes, adicionales y observaciones con validación de mínimos y máximos → [ficha](cambios/pedidos-variantes-adicionales-observaciones.md) (hecho, en staging)
+- [C] Estados, modificar y cancelar con registro de solo-agregado; cerrar y anular sin bloqueo por mora → [ficha](cambios/pedidos-estados-y-registro.md) (hecho, en staging)
+- [M] Vista «Mesas» en la Sala: pedido abierto + llamados por mesa y total en «Pedir la cuenta» → [ficha](cambios/sala-mesas-y-total.md) (hecho en local, 2026-10-24)
+- [M] Pantalla «Anotar» en la Sala: elegir plato con variantes, cantidad y observación → [ficha](cambios/sala-anotar-pedido.md) (hecho, en staging, 2026-10-24)
+- [M] Operar el pedido desde la Sala: cambiar estados, modificar y cancelar líneas, cerrar y anular → [ficha](cambios/sala-operar-pedido.md) (hecho, en staging, 2026-10-24)
+- [M] Llamados dentro de «Mesas»: una sola pantalla para el mozo (se elimina la lista aparte de «Sala en vivo») → [ficha](cambios/mesas-con-llamados.md) (hecho en local, 2026-10-26)
+- [M] Precuenta «no válida como factura», imprimible y sin observaciones → [ficha](cambios/sala-precuenta.md) (hecho, en staging, 2026-10-24)
+- [C] Retención de pedidos (2 años desde el cierre, a confirmar con el contador) y su purga por lotes (`service_role`) → [ficha](cambios/retencion-de-pedidos.md) (hecho, revisado por Codex y migración en staging, 2026-10-24; sin programar; la purga con la organización ya estaba hecha)
+- [C] Analítica de pedidos para el Dueño (rework Pro/Premium: resumen con comparación, ventas por día, franjas, platos, categorías y anulaciones) → [ficha](cambios/analitica-de-pedidos.md) · ADR 0045 (hecho, revisado por Codex en 3 rondas, aprobado por el usuario y desplegado en staging, Fly v54, 2026-10-25)
+
 - [S] Pantalla del historial de promociones: `/panel/{slug}/promociones/historial`, Dueño y Staff, de a 50, con el detalle en palabras y las mismas reglas de «quién» que el historial de precios; implementada, verificada y en staging (2026-10-23) → [ficha](cambios/historial-de-promociones.md)
 - [M] Carta con precio promocional en vivo: la carta y el feed leen `effective_prices` fuera de la caché y muestran el precio de lista tachado, el promocional y hasta cuándo, en es/en/pt; falla cerrado; sin medir el LCP; implementada, verificada y en staging (Fly versión 40, 2026-10-23) → [ficha](cambios/carta-con-precio-promocional.md)
 - [M] Panel de promociones del Dueño: crear, editar, pausar, duplicar y borrar con guardado atómico (`save_promotion`), aviso de superposición y vista previa por día y hora; el Staff las ve; implementado y verificado, migración `20261124100000` y app en staging (Fly versión 40, 2026-10-23) → [ficha](cambios/panel-de-promociones.md)
 - [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` (única autoridad del precio) y paridad con la réplica en TypeScript con casos de medianoche y horario de verano; aprobado por Codex (3 rondas) y por el usuario; migración en staging y app en Fly versión 38 (2026-10-23) → [ficha](cambios/promociones-y-precio-efectivo.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
 - [M] Zona horaria por sucursal: `branches.timezone` (lista cerrada de 22 zonas, Buenos Aires por defecto), editable solo por el Dueño; la facturación y la mora no cambian; migración en staging y app en Fly versión 38 (2026-10-23) → [ficha](cambios/zona-horaria-por-sucursal.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
-- [C] Vistas previas de funciones por organización: tabla auditada con fin de hasta 90 días, `plan_grants` = plan ∪ vistas previas vigentes y bloque plegable en la ficha del SuperAdmin; aprobadas por Codex y por el usuario, con migración y app en staging (Fly versión 37, 2026-10-23); sin probar aún con sesión real de SuperAdmin → [ficha](cambios/vistas-previas-de-funciones.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
-- [M] Invitación a reseñar en la carta: enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» (dock de llamados, Pro o superior), una vez al día por dispositivo, textos fijos es/en/pt; en `origin/main` y en staging, sin probar con un teléfono (2026-10-23) → [ficha](cambios/invitacion-a-resenar.md)
+- [C] Vistas previas de funciones por organización: tabla auditada con fin de hasta 90 días, `plan_grants` = plan ∪ vistas previas vigentes y bloque plegable en la ficha del SuperAdmin; aprobadas por Codex y por el usuario, con migración y app en staging (Fly versión 37, 2026-10-23) → [ficha](cambios/vistas-previas-de-funciones.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
+- [M] Invitación a reseñar en la carta: enlace en el pie para todos los planes e invitación tras «Pedir la cuenta» (dock de llamados, Pro o superior), una vez al día por dispositivo, textos fijos es/en/pt; en `origin/main` y en staging (2026-10-23) → [ficha](cambios/invitacion-a-resenar.md)
 - [M] Enlace de reseñas de Google por sucursal: columna validada con hosts exactos de Google (`CHECK` espejo de la validación local), editable solo por el Dueño con la cuenta al día y legible por la carta pública mientras la sucursal esté activa y publicada; implementado y verificado en local, y en staging con su migración (2026-10-23); la carta lo muestra desde la [invitación](cambios/invitacion-a-resenar.md) → [ficha](cambios/enlace-de-resenas-de-google.md)
 - [M] Guía de primeros pasos descartable por cuenta (preferencia guardada en la base, con renglón para volver a mostrarla) y resumen por sucursal cuando hay varias; en `origin/main` y en staging (2026-10-23) → [ficha](cambios/guia-descartable.md)
 - [C] Cuentas de Auth sin ningún local: se conservan y SuperAdmin las lista en `/admin/cuentas` y borra una a mano (email escrito, motivo, reserva de la cuenta y constancia sin el email); aprobado por Codex (3 rondas), en `origin/main` y en staging (2026-10-23) → [ficha](cambios/cuentas-sin-local.md) · [ADR 0032](../docs/decisiones/0032-reserva-de-cuentas-globales.md)
 - [C] Escrituras públicas de la mesa solo desde el servidor: `create_waiter_call`, `set_video_like` y `submit_video_comment` las ejecuta únicamente `service_role` y la acción de servidor verifica antes ticket y conexión; cierra el límite aceptado de llamado, likes y comentarios; aprobado por Codex, en `origin/main` y en staging (2026-10-23) → [ficha](cambios/escrituras-publicas-solo-servidor.md) · [ADR 0038](../docs/decisiones/0038-escrituras-publicas-solo-servidor.md)
 - [S] Variantes y adicionales: las seis decisiones conservadoras quedan confirmadas por el usuario sin cambios de código (2026-10-23) → [ficha](cambios/variantes-y-adicionales.md#confirmadas-por-el-usuario-el-2026-10-23-decisiones-conservadoras-tomadas-sin-poder-preguntar)
 - [S] Textos legales de los comentarios: `/privacidad` y `/terminos` explican aprobación previa, qué se guarda, plazos de borrado (7 y 30 días), cómo pedir que se quite uno y las reglas para comensales y locales (2026-10-23); falta la revisión de un abogado → [ficha](cambios/textos-legales.md#ampliación--comentarios-del-feed-2026-10-23)
-- [C] Comentarios con aprobación previa: `submit_video_comment` (única puerta; nace pendiente), hoja de comentarios en el feed, cola de moderación para Dueño y Staff en `/panel/{slug}/comentarios`, rechazados 7 días y pendientes 30 (purga `purge_video_comments`, sin programar); implementado y verificado en local; aprobado por Codex con el límite de la función pública aceptado por el usuario como excepción (3 rondas, 2026-10-23); en `origin/main` y en staging (2026-10-23); aprobado por el usuario (2026-10-23); sin probar en teléfono → [ficha](cambios/comentarios-del-feed.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
-- [C] Likes anónimos desde la mesa: `set_video_like` (única puerta), un like por dispositivo y video con código aleatorio en el navegador, conteo público y límite por conexión; `/privacidad` actualizada; aprobado por Codex (2 rondas, 2026-10-22); en `origin/main` y en staging (2026-10-22); aprobado por el usuario (2026-10-23); sin probar en teléfono → [ficha](cambios/likes-del-feed.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
-- [C] Feed vertical de videos en la carta, también desde la mesa (`/t/{token}/videos`, con la barra de llamado): lectura pública por política de base, `hls.js` con fallback; aprobado por Codex (5 rondas), en staging y probado por el usuario (2026-10-22); sin probar en Firefox, Safari de escritorio ni Android → [ficha](cambios/feed-de-videos.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
-- [C] Carga y publicación de videos desde el panel con Mux: hecho (partes A y B aprobadas por Codex, en staging, Fly v21; probado con un iPhone 16 y un `.mov` HEVC; Android sin probar) → [parte A](cambios/videos-del-panel-base.md) · [parte B](cambios/videos-mux-parte-b.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [C] Comentarios con aprobación previa: `submit_video_comment` (única puerta; nace pendiente), hoja de comentarios en el feed, cola de moderación para Dueño y Staff en `/panel/{slug}/comentarios`, rechazados 7 días y pendientes 30 (purga `purge_video_comments`, sin programar); implementado y verificado en local; aprobado por Codex con el límite de la función pública aceptado por el usuario como excepción (3 rondas, 2026-10-23); en `origin/main` y en staging (2026-10-23); aprobado por el usuario (2026-10-23) → [ficha](cambios/comentarios-del-feed.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [C] Likes anónimos desde la mesa: `set_video_like` (única puerta), un like por dispositivo y video con código aleatorio en el navegador, conteo público y límite por conexión; `/privacidad` actualizada; aprobado por Codex (2 rondas, 2026-10-22); en `origin/main` y en staging (2026-10-22); aprobado por el usuario (2026-10-23) → [ficha](cambios/likes-del-feed.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [C] Feed vertical de videos en la carta, también desde la mesa (`/t/{token}/videos`, con la barra de llamado): lectura pública por política de base, `hls.js` con fallback; aprobado por Codex (5 rondas), en staging y probado por el usuario (2026-10-22) → [ficha](cambios/feed-de-videos.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
+- [C] Carga y publicación de videos desde el panel con Mux: hecho (partes A y B aprobadas por Codex, en staging, Fly v21; probado con un iPhone 16 y un `.mov` HEVC) → [parte A](cambios/videos-del-panel-base.md) · [parte B](cambios/videos-mux-parte-b.md) · [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)
 - [C] Catálogo del feed: WebAR y `models_3d` retirados, contratos resueltos y SuperAdmin adaptado; `video_feed` en Premium y cupo de 10 publicados — aprobado, en `origin/main`, migración y app en staging (2026-10-21) → [ficha](cambios/catalogo-video-feed.md) · ADR 0031
 - [M] Edición de plato por tareas: datos y foto juntos en PC, pestañas y borradores conservados — hecho (desplegado en staging, Fly v18, 2026-10-21) → [ficha](cambios/editor-plato-ux.md)
 - [M] Selector de Sala: cambio directo de sucursal y selección múltiple explícita — hecho (desplegado en staging, Fly v18, 2026-10-21) → [ficha](cambios/selector-sucursal-directo.md)

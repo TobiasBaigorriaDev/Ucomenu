@@ -7,7 +7,7 @@ Los restaurantes, bares y cafeterías dependen de cartas impresas o PDF que no s
 
 UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscripción (SaaS), que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, en el nivel superior, un feed de videos cortos del local y una tarjeta de fidelidad en la billetera del teléfono.
 
-- **Nombre comercial:** UcoMenu. **Dominio:** `ucomenu.com` (elegido pero **todavía no comprado**: falta comprobar disponibilidad y precio; se define antes de imprimir los QR definitivos).
+- **Nombre comercial:** UcoMenu. **Dominio:** `ucomenu.com`, propiedad del usuario (confirmado 2026-10-26; DNS en Cloudflare). Los QR definitivos codifican este dominio.
 - **Mercado inicial:** Argentina (es-AR). Precios de catálogo en USD; el cobro manual se hace en el equivalente en ARS.
 
 ## Usuarios
