@@ -74,13 +74,8 @@ test.describe("anotar un pedido", () => {
     await expect(page.getByTestId("sin-lineas")).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
-    // Ambos accesos abren la misma carta; el superior acompaña al regreso a Mesas.
-    await page.getByTestId("abrir-carta-arriba").click();
-    await expect(page.getByTestId("hoja-carta")).toBeVisible();
-    await page.getByTestId("carta-listo").click();
-    const back = await page.getByRole("link", { name: "Volver a mesas" }).boundingBox();
-    const add = await page.getByTestId("abrir-carta-arriba").boundingBox();
-    expect(Math.abs(back!.y - add!.y)).toBeLessThan(5);
+    // Un solo acceso para anotar, en la barra inferior.
+    await expect(page.getByRole("button", { name: "Anotar plato", exact: true })).toHaveCount(1);
     await page.screenshot({ path: "output/playwright/acciones-pedido-mobile.png", fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
     await expectNoHorizontalOverflow(page);

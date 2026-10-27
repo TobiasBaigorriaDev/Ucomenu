@@ -23,6 +23,7 @@ import { AvisoPush } from "@/components/push/aviso-push";
 import { activateSound, beepIfOn, rememberedAlerts, silenceSound, useSoundState } from "@/components/panel/sonido-llamados";
 import { attendCallAction, setBranchViewAction } from "../actions";
 import { SelectorDeSucursal } from "../selector-sucursal";
+import { dangerPrimaryClass } from "./[mesa]/anotar/ui";
 
 /** Cuánto dura el resaltado de un llamado nuevo. */
 const FRESH_MS = 8_000;
@@ -644,7 +645,7 @@ export function MesasBoard({
                     <div className="mt-3 flex flex-wrap gap-2">
                       {anotar}
                       {card.order ? (
-                        <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={buttonClass}>
+                        <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={dangerPrimaryClass}>
                           Cerrar o anular pedido…
                         </Link>
                       ) : null}
@@ -667,7 +668,7 @@ export function MesasBoard({
                   <div className="mt-auto flex flex-wrap gap-2 pt-4">
                     {anotar}
                     {card.order ? (
-                      <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={buttonClass}>
+                      <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={dangerPrimaryClass}>
                         Cerrar o anular pedido…
                       </Link>
                     ) : null}

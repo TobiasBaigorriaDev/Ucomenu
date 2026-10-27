@@ -4,14 +4,14 @@ Nivel: M. Estado: desplegado en staging Fly v67; pendiente comprobación manual 
 
 ## Alcance y decisiones
 - Mesas en vivo ofrece «Cerrar o anular pedido…» cuando muestra un pedido, tanto en tarjetas como en filas. Lleva al detalle con la confirmación existente abierta, con datos frescos del servidor.
-- El detalle ofrece «Anotar plato» junto a «Volver a mesas» y conserva el botón inferior; se retira el cierre de la barra inferior.
+- El detalle conserva «Anotar plato» en la barra inferior; se retira el cierre de esa barra. El segundo acceso superior implementado inicialmente se quitó por pedido posterior del usuario (2026-10-27).
 - Se conserva acceso de cierre en el detalle para pedidos sin platos vigentes o con el plan deshabilitado: esos casos no aparecen como pedidos operables en el tablero.
 - Solo navegación y presentación: no cambian acciones, permisos, importes ni reglas de cierre/anulación. Cancelar la confirmación abierta desde Mesas vuelve al tablero.
 
 ## Aceptación
 - [x] Acceso de cierre en ambas vistas solo para mesas con pedido; abrirlo no cierra ni anula.
 - [x] Cerrar y anular conservan resumen, advertencias, motivo obligatorio y retorno al tablero.
-- [x] Ambos botones de anotar abren la misma carta; móvil sin desborde.
+- [x] Un único botón «Anotar plato» en la barra inferior (ajuste posterior S); E2E actualizado para comprobarlo.
 - [x] Se mantienen los accesos excepcionales indicados arriba.
 
 ## Evidencia
@@ -29,3 +29,8 @@ Nivel: M. Estado: desplegado en staging Fly v67; pendiente comprobación manual 
 - HTTP: inicio y login 200; sala sin sesión 307, sondeo 401. Ambos bundles nuevos responden 200 y contienen los accesos `cerrar-desde-mesas`, `abrir-carta-arriba` y la navegación `accion=cerrar`.
 - Sin cambios de base, secretos ni producción. No se repitieron suites locales sin cambios de código. Falta comprobación manual con sesión real. Sin push a origin.
 - Rollback: imagen `registry.fly.io/ucomenu-staging:mesas-300a9d7-git` (v66), sin operaciones de base.
+
+## Ajuste posterior S (2026-10-27)
+- Pedido del usuario: quitar el botón superior duplicado. Se elimina únicamente ese botón; queda «Anotar plato» abajo y «Volver a mesas» arriba. Diff local desde `28ffabc`, todavía sin desplegar.
+- Segundo pedido: «Cerrar o anular pedido…» con fondo rojo y texto blanco, reutilizando `dangerPrimaryClass` en tarjetas, filas y acceso excepcional del detalle. Sin cambios de comportamiento.
+- E2E existente actualizado: conserva el recorrido de anotación y comprueba un único botón. Verificación del ajuste: lint focalizado y revisión del diff; no se repiten build, RLS ni E2E para esta eliminación de presentación sin cambios de tipos o lógica.

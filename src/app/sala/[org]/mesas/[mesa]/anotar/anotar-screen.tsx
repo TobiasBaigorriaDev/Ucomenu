@@ -12,7 +12,7 @@ import { CloseSheet } from "./close-sheet";
 import { DishSheet } from "./dish-sheet";
 import { LineCard } from "./line-card";
 import { ResetSheet } from "./reset-sheet";
-import { buttonClass, primaryClass } from "./ui";
+import { buttonClass, dangerPrimaryClass, primaryClass } from "./ui";
 
 /** Al volver a la pestaña se recarga el pedido y la carta; no más seguido que esto. */
 const REFRESH_MIN_MS = 3_000;
@@ -66,11 +66,6 @@ export function AnotarScreen({ slug, data, isOwner, openClose = false }: { slug:
           </svg>
           Volver a mesas
         </Link>
-        {data.enabled ? (
-          <button type="button" data-testid="abrir-carta-arriba" onClick={() => { setNotice(null); setCartaOpen(true); }} className={`${primaryClass} min-h-12`}>
-            Anotar plato
-          </button>
-        ) : null}
       </div>
       <h1 className="mt-3 font-display text-4xl leading-tight break-words" data-testid="anotar-mesa">
         {data.table.label}
@@ -121,7 +116,7 @@ export function AnotarScreen({ slug, data, isOwner, openClose = false }: { slug:
             </>
           )}
           {data.orderId && (!data.enabled || !summary) ? (
-            <button type="button" data-testid="abrir-cierre" onClick={() => setCloseOpen(true)} className={`${buttonClass} mt-3`}>
+            <button type="button" data-testid="abrir-cierre" onClick={() => setCloseOpen(true)} className={`${dangerPrimaryClass} mt-3`}>
               Cerrar o anular pedido…
             </button>
           ) : null}
