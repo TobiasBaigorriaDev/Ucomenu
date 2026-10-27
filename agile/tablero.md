@@ -18,6 +18,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## Para verificar
 
+- [M] Audios de notificación para mozo y cocina; aviso al completar el pedido — verificado en local, falta escucha manual y despliegue → [ficha](cambios/audios-notificaciones.md)
 - [C] Propina sugerida por sucursal — aprobada por Claude, en staging Fly v64 y subida a main; falta comprobación manual del usuario → [ficha](cambios/propina-sugerida.md)
 - [M] Personal por sucursal, solo pantalla: el Dueño asigna sucursales a un mozo o cocinero desde Personal y ellos solo ven los pedidos, mesas, llamados, avisos y platos de esas sucursales (sin RLS; la restricción real es el ítem [C] del Backlog); implementado, verificado en local y desplegado en staging (Fly v62, 2026-10-26), falta tu comprobación manual → [ficha](cambios/personal-por-sucursal.md)
 

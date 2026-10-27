@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { formatArs } from "@/lib/money";
-import { flattenCalls, orderStatusText, parseMesasState, readyLineIds, sortMesas, tablesWithNewReady, type MesaCall, type MesaCard, type MesasState } from "@/lib/sala/mesas";
+import { flattenCalls, hasCompletedKitchenOrder, orderStatusText, parseMesasState, readyLineIds, sortMesas, tablesWithNewReady, type MesaCall, type MesaCard, type MesasState } from "@/lib/sala/mesas";
 import {
   announceableCalls,
   callName,
@@ -205,7 +205,8 @@ export function MesasBoard({
           ? `Listo para entregar: ${callName(justReady[0], next.multiBranch)}.`
           : `Hay platos listos para entregar en ${justReady.length} mesas.`;
     setAnnouncement([incoming.length > 0 ? newCallsAnnouncement(incoming, next.multiBranch) : "", readyText].filter(Boolean).join(" "));
-    beepIfOn();
+    if (hasCompletedKitchenOrder(justReady)) beepIfOn("ready");
+    else if (incoming.length > 0) beepIfOn();
   }, []);
 
   // --- Sondeo: la tabla es la fuente de verdad; cada respuesta reemplaza la lista entera.

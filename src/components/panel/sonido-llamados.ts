@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { createBeeper, type Beeper } from "@/lib/sala/beep";
+import { createBeeper, type Beeper, type NotificationSound } from "@/lib/sala/beep";
 
 /**
  * Sonido de los llamados, compartido por la sala en vivo y el panel (ficha aviso-push-desde-el-panel). Vive a nivel de
@@ -40,7 +40,7 @@ function remember(on: boolean) {
   }
 }
 
-/** Desbloquea el audio (hay que llamarla desde un toque) y lo deja activado. `confirm` hace sonar un pitido de prueba. */
+/** Desbloquea el audio (hay que llamarla desde un toque) y lo deja activado. `confirm` reproduce el aviso de prueba. */
 export async function activateSound(confirm = true): Promise<boolean> {
   beeper ??= createBeeper();
   const unlocked = await beeper.unlock();
@@ -55,13 +55,14 @@ export async function activateSound(confirm = true): Promise<boolean> {
 }
 
 export function silenceSound() {
+  beeper?.stop();
   set("off");
   remember(false);
 }
 
-/** Un doble pitido si el sonido está activado. */
-export function beepIfOn() {
-  if (state === "on") beeper?.beep();
+/** Reproduce el aviso elegido si el sonido está activado. */
+export function beepIfOn(sound: NotificationSound = "notification") {
+  if (state === "on") beeper?.beep(sound);
 }
 
 /**

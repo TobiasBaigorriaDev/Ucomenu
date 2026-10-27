@@ -2,9 +2,12 @@ import type { BrowserContext, Page } from "@playwright/test";
 
 /** Sustituye Web Audio y Wake Lock por dobles que cuentan: el sonido real no se puede oír en una prueba. */
 export async function conDobles(context: BrowserContext) {
+  await context.route("**/notificacion*.mp3", (route) => route.fulfill({
+    contentType: "audio/mpeg", body: Buffer.from([route.request().url().includes("plato-listo") ? 2 : 1]),
+  }));
   await context.addInitScript(() => {
     const w = window as unknown as Record<string, unknown>;
-    w.__osciladores = 0;
+    w.__audios = [];
     w.__wake = 0;
     class FakeContext {
       state = "running";
@@ -16,19 +19,21 @@ export async function conDobles(context: BrowserContext) {
       close() {
         return Promise.resolve();
       }
-      createGain() {
-        return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect: (n: unknown) => n };
+      async decodeAudioData(bytes: ArrayBuffer) {
+        return { sound: new Uint8Array(bytes)[0] === 2 ? "ready" : "notification" };
       }
-      createOscillator() {
-        return {
-          frequency: { value: 0 },
-          type: "",
-          connect: (n: unknown) => n,
+      createBufferSource() {
+        const source = {
+          buffer: null as { sound: string } | null,
+          connect() {},
+          disconnect() {},
+          onended: null,
           start() {
-            (window as unknown as { __osciladores: number }).__osciladores += 1;
+            (window as unknown as { __audios: string[] }).__audios.push(source.buffer!.sound);
           },
           stop() {},
         };
+        return source;
       }
     }
     w.AudioContext = FakeContext;
@@ -44,6 +49,7 @@ export async function conDobles(context: BrowserContext) {
   });
 }
 
-/** Cada pitido son dos osciladores. */
-export const pitidos = async (page: Page) => (await page.evaluate(() => (window as unknown as { __osciladores: number }).__osciladores)) / 2;
+export const sonidos = (page: Page) => page.evaluate(() => (window as unknown as { __audios: string[] }).__audios);
+/** Cantidad de avisos, conservando el nombre usado por las pruebas de sala y panel. */
+export const pitidos = async (page: Page) => (await sonidos(page)).length;
 export const wakeLocks = (page: Page) => page.evaluate(() => (window as unknown as { __wake: number }).__wake);

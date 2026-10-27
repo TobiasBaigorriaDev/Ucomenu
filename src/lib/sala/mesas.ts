@@ -161,6 +161,11 @@ export function tablesWithNewReady(seen: ReadonlySet<string>, mesas: readonly Me
   return mesas.filter((card) => (card.order?.readyIds ?? []).some((id) => !seen.has(id)));
 }
 
+/** Audio de pedido completo: queda algo listo para llevar y cocina no tiene platos pendientes. */
+export function hasCompletedKitchenOrder(newReady: readonly MesaCard[]): boolean {
+  return newReady.some(({ order }) => order !== null && order.ready > 0 && order.noted === 0 && order.inKitchen === 0);
+}
+
 /** «3 platos · 1 anotado · 1 listo · 1 entregado» (sin los estados en cero). */
 export function orderStatusText(order: MesaOrder): string {
   const parts = [order.dishes === 1 ? "1 plato" : `${order.dishes} platos`];

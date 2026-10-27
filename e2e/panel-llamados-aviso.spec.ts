@@ -126,7 +126,7 @@ test.describe("sonido de los llamados fuera de la sala", () => {
     await page.goto(`/sala/${t.slug}`);
     await page.getByRole("button", { name: "Activar alertas" }).click();
     await expect(page.getByTestId("alertas-activas")).toBeVisible();
-    expect(await pitidos(page)).toBe(1); // el de confirmación
+    expect(await pitidos(page)).toBe(1); // el audio de confirmación
 
     // A otra pantalla del panel SIN recargar (el módulo del sonido sigue vivo).
     await llamar(mesas[0].qr_token); // ya pendiente cuando llega el cartel: no debe sonar

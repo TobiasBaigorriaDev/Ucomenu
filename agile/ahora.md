@@ -4,19 +4,18 @@ Actualizado: 2026-10-26 · agente saliente: Codex. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Propina sugerida por sucursal (C):** implementada en `ad2e3cb`, revisada y aprobada por Claude. El usuario autorizó push y staging; rama integrada por fast-forward a `main` y publicada hasta `83c488d`, incluidos los commits previos de personal que estaban pendientes de subir. Alcance, decisiones, revisión, evidencia y recuperación en la [ficha](cambios/propina-sugerida.md). La configuración está en Sucursales, solo para el Dueño; cuenta del cliente y precuenta imprimible separan consumo y sugerencia opcional. Falta la comprobación manual del usuario con sesión real en staging.
+**Audios de avisos para mozo y cocina (M):** rama `feat/audios-notificaciones`, desde `e98a02a`; incremento local verificado. El usuario aportó dos MP3 en `public` y pidió reemplazar el pitido habitual y distinguir el pedido terminado por cocina. Se usa `notificacion.mp3` para llamados y platos nuevos, y `notificacion-plato-listo.mp3` cuando al pedido no le quedan platos pendientes de cocina. Alcance, decisiones y evidencia en la [ficha](cambios/audios-notificaciones.md). El cambio conserva los avisos visuales por plato y las preferencias de alertas del dispositivo. Falta escucha manual en los dispositivos del usuario. No se pidió publicar este nuevo cambio.
 
-**Staging está en Fly v64**, imagen `propina-83c488d-git`, construida desde el snapshot Git exacto de `83c488d`. La migración `20261209100000` está aplicada en Supabase staging. Los resultados de las comprobaciones están en la ficha, no se duplican acá. Marcha atrás: imagen `personal-sucursal-a14dded` (v62), conservando la migración aditiva. Se mantuvieron los secretos y la configuración pública previa; producción no se tocó.
+Los dos MP3 pasan a formar parte del incremento porque ahora el usuario autorizó expresamente su uso. No modificarlos ni reemplazarlos por sonidos generados. `tools/escenarios-locales.mjs` sigue ajeno y sin seguimiento.
 
-**Personal por sucursal, solo pantalla (M):** sigue pendiente la comprobación manual con sesiones reales en staging; ver [ficha](cambios/personal-por-sucursal.md) y [tablero](tablero.md). El aislamiento real por RLS permanece en Backlog: las asignaciones filtran las pantallas y una llamada directa todavía puede operar con ids de otra sucursal de la organización.
+**Staging permanece en Fly v64**, imagen `propina-83c488d-git`, desde un snapshot Git de `83c488d`, con migración `20261209100000`. La propina fue revisada y desplegada con autorización; ver [ficha](cambios/propina-sugerida.md). El registro está en `e98a02a`, subido a origin/main. Staging todavía no incluye estos audios. Se mantiene pendiente la comprobación manual de propina por el usuario con sesión real.
+
+**Personal por sucursal, solo pantalla:** también espera comprobación manual; ver [ficha](cambios/personal-por-sucursal.md). La restricción real por RLS está en Backlog: hoy las asignaciones filtran pantallas, sin impedir llamadas directas entre sucursales de la organización.
 
 ## Límites y bloqueos
 
-- Producción continúa bloqueada por revisión legal y preparación operativa; ver [ficha legal](cambios/informacion-alimentaria-y-textos-legales.md).
-- Siguen abiertas etiquetas por sucursal, alergias en observaciones y limpieza de `rate_key`.
-- Preservar los archivos ajenos sin seguimiento: `tools/escenarios-locales.mjs`, `public/notificacion.mp3` y `public/notificacion-plato-listo.mp3`. Los audios aparecieron durante el despliegue; la imagen final los excluye.
-- Para desplegar, usar snapshot Git; para RLS/E2E, base local y corridas separadas. Siguiente migración libre: `20261210100000`.
+Producción continúa bloqueada por revisión legal y preparación operativa; ver [ficha legal](cambios/informacion-alimentaria-y-textos-legales.md). Siguen abiertas etiquetas por sucursal, alergias en observaciones y limpieza de `rate_key`. Usar snapshot Git para desplegar. RLS y E2E comparten base local y deben ejecutarse separados. Siguiente migración libre: `20261210100000`; este cambio no necesita esquema nuevo.
 
 ## Próximo paso
 
-Probar la propina en Sucursales, pedir la cuenta desde el QR y comparar con la precuenta. Retomar después la comprobación de personal o el backlog.
+Escuchar los avisos en los dispositivos del usuario, con las alertas activadas. Si se autoriza después, subir y desplegar el commit con ambos MP3 incluidos. Mantener las comprobaciones manuales pendientes del tablero.

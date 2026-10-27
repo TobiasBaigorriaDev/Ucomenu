@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
+import { conDobles, sonidos } from "./audio-doble";
 import { createPerson, createTenant, deleteAccountsByEmail, expectNoHorizontalOverflow, login, service, TEST_PASSWORD, type Person, type Tenant } from "./support";
 
 /**
@@ -110,14 +111,18 @@ test.describe("pantalla de cocina", () => {
   test("lo que anota el mozo aparece solo y suena como plato nuevo; lo cerrado desaparece", async ({ browser }) => {
     const l = await nuevoLocal("cocina-vivo");
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    await conDobles(ctx);
     const page = await ctx.newPage();
     await login(page, l.cook.email, l.cook.password);
     await expect(page.getByTestId("sin-pedidos")).toBeVisible();
+    await page.getByTestId("activar-sonido-cocina").click();
+    await expect.poll(() => sonidos(page)).toEqual(["notification"]);
 
     const item = await anotar(l, l.bife, 1);
     await expect(linea(page, "Bife")).toBeVisible({ timeout: 15_000 });
     await expect(linea(page, "Bife")).toHaveAttribute("data-nuevo", "true");
     await expect(page.getByTestId("anuncio-cocina")).toContainText("Plato nuevo en cocina");
+    await expect.poll(() => sonidos(page)).toEqual(["notification", "notification"]);
 
     const staff = await sesion(l.t.staff);
     const cerrado = await staff.rpc("set_order_item_status", { p_item: item, p_status: "delivered" });
@@ -195,6 +200,48 @@ test.describe("pantalla de cocina", () => {
     await expect(page.getByTestId("plato-cocina")).toHaveCount(1);
     await ctx.close();
   });
+});
+
+test("los MP3 aportados se sirven y decodifican en el navegador", async ({ page }) => {
+  await page.goto("/login");
+  const durations = await page.evaluate(async () => {
+    const audio = new AudioContext();
+    try {
+      return await Promise.all(["/notificacion.mp3", "/notificacion-plato-listo.mp3"].map(async (url) => {
+        const response = await fetch(url);
+        if (!response.ok || !response.headers.get("content-type")?.includes("audio/mpeg")) throw new Error(`Audio no disponible: ${url}`);
+        return (await audio.decodeAudioData(await response.arrayBuffer())).duration;
+      }));
+    } finally { await audio.close(); }
+  });
+  expect(durations).toHaveLength(2);
+  for (const duration of durations) expect(duration).toBeGreaterThan(0);
+});
+
+test("el mozo oye plato listo solo cuando cocina completa todo el pedido, sin repetir en cada sondeo", async ({ browser }) => {
+  const l = await nuevoLocal("cocina-audio-completo");
+  const bife = await anotar(l, l.bife);
+  const flan = await anotar(l, l.flan);
+  const ctx = await browser.newContext();
+  await conDobles(ctx);
+  const page = await ctx.newPage();
+  await login(page, l.t.staff.email, l.t.staff.password);
+  await page.goto(`/sala/${l.t.slug}/mesas`);
+  await page.getByRole("button", { name: "Activar alertas", exact: true }).click();
+  await expect.poll(() => sonidos(page)).toEqual(["notification"]);
+  const cocina = await sesion(l.cook);
+  expect((await cocina.rpc("set_order_item_status", { p_item: bife, p_status: "ready" })).error).toBeNull();
+  await expect(page.getByTestId("anuncio")).toContainText("Listo para entregar: Mesa 1", { timeout: 15_000 });
+  expect(await sonidos(page)).toEqual(["notification"]);
+  expect((await cocina.rpc("set_order_item_status", { p_item: flan, p_status: "ready" })).error).toBeNull();
+  await expect.poll(() => sonidos(page), { timeout: 15_000 }).toEqual(["notification", "ready"]);
+  await page.waitForResponse((response) => response.url().endsWith("/mesas/estado") && response.ok());
+  expect(await sonidos(page)).toEqual(["notification", "ready"]);
+  await page.reload();
+  await page.getByRole("button", { name: "Activar alertas", exact: true }).click();
+  await page.waitForResponse((response) => response.url().endsWith("/mesas/estado") && response.ok());
+  expect(await sonidos(page)).toEqual(["notification"]); // Solo la confirmación; el pedido ya estaba listo al cargar.
+  await ctx.close();
 });
 
 test.describe("el cocinero no sale de su pantalla", () => {

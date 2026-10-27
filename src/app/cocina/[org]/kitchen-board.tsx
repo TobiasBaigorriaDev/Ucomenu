@@ -239,12 +239,12 @@ export function KitchenBoard({ slug, initial }: { slug: string; initial: Kitchen
         )}
         <p className="max-w-prose text-sm text-muted">
           {sound === "on"
-            ? "Suena un pitido cuando entra un plato nuevo, mientras tengas esta pantalla abierta."
+            ? "Suena un aviso cuando entra un plato nuevo, mientras tengas esta pantalla abierta."
             : sound === "blocked"
               ? "Tu navegador no dejó activar el sonido: vas a ver los platos nuevos resaltados."
               : hadAlerts
                 ? "Vas a volver a tenerlo con tu próximo toque en esta pantalla, o tocá para activarlo ahora."
-                : "Un pitido avisa cuando entra un plato nuevo."}
+                : "Activá el sonido para oír los platos nuevos."}
         </p>
       </div>
 

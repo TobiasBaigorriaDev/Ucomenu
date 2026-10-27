@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   flattenCalls,
+  hasCompletedKitchenOrder,
   lineCents,
   orderCents,
   orderStatusText,
@@ -16,6 +17,24 @@ import {
 import { parseSalaState } from "./types";
 
 const linea = (over: Partial<OrderLine> = {}): OrderLine => ({ status: "noted", quantity: 1, unitPriceCents: 1000, optionsCents: 0, ...over });
+
+describe("audio al completar la cocina", () => {
+  const card = (lines: OrderLine[]): MesaCard => ({ tableId: "mesa", tableLabel: "Mesa 1", branchName: "Centro", calls: [], order: summarizeOrder("2026-10-26T20:00:00Z", lines) });
+  it("no suena por un plato parcial, ni por entregados, cancelados o ausencia de novedades", () => {
+    for (const pending of ["noted", "in_kitchen"] as const) {
+      expect(hasCompletedKitchenOrder([card([linea({ status: "ready" }), linea({ status: pending })])])).toBe(false);
+    }
+    expect(hasCompletedKitchenOrder([card([linea({ status: "delivered" })])])).toBe(false);
+    expect(hasCompletedKitchenOrder([card([linea({ status: "cancelled" })])])).toBe(false);
+    expect(hasCompletedKitchenOrder([])).toBe(false);
+  });
+  it("suena al completar lo pendiente, aunque ya haya entregados o cancelados", () => {
+    const mesa = card([linea({ id: "a", status: "ready" }), linea({ status: "delivered" }), linea({ status: "cancelled" })]);
+    expect(hasCompletedKitchenOrder(tablesWithNewReady(new Set(), [mesa]))).toBe(true);
+    expect(hasCompletedKitchenOrder(tablesWithNewReady(new Set(["a"]), [mesa]))).toBe(false);
+    expect(hasCompletedKitchenOrder([card([linea({ status: "ready", quantity: 3 })])])).toBe(true);
+  });
+});
 
 describe("total del pedido", () => {
   it("una línea vale cantidad por (precio efectivo + opciones)", () => {

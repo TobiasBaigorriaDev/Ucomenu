@@ -18,7 +18,7 @@ Hasta ahora había dos roles (`owner`, `staff`) y los pedidos tenían el estado 
 5. **Plan y mora:** las acciones del cocinero exigen `orders` en el plan y la cuenta al día (igual que cambiar estados hoy); agotar un plato exige cuenta editable. En solo lectura o suspendida el cocinero ve el aviso y no opera.
 6. **Pantalla propia `/cocina/{slug}`** (pedidos y disponibilidad), separada de la Sala y del panel. El cocinero **no entra** a `/panel` ni a `/sala` (redirige a `/cocina`); sus consultas a la Sala dan 404.
 7. **Sin avisos del sistema (push) ni llamados** para el cocinero: al darle el rol se borran sus suscripciones push y no puede registrar otras.
-8. Al mozo, «listo» le llega por el sondeo de Mesas: contador y resaltado «listos para entregar» en la mesa, y anuncio/sonido como un llamado nuevo.
+8. Al mozo, «listo» le llega por el sondeo de Mesas: contador, resaltado y anuncio por cada plato nuevo. Enmienda del usuario (2026-10-26): el sonido de plato listo se reproduce al completar los pendientes del pedido, distinto del audio de llamados y platos nuevos en cocina; ver [ficha de audios](../../agile/cambios/audios-notificaciones.md).
 
 ## Alternativas consideradas
 - **Dejar al cocinero como `staff` con otra etiqueta** — descartado: heredaría precios, mesas y pedidos (RLS por `is_org_member`).

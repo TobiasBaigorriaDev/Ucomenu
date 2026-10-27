@@ -1,19 +1,28 @@
-/**
- * Alerta sonora de la sala: un doble pitido generado con Web Audio (sin archivos). Los navegadores solo dejan sonar
- * después de un gesto del usuario, por eso `unlock()` se llama desde el toque de «Activar alertas». Solo cliente.
- */
+/** Audios de sala y cocina. El contexto se desbloquea desde un gesto de la persona. */
+export type NotificationSound = "notification" | "ready";
+export const SOUND_FILES: Record<NotificationSound, string> = {
+  notification: "/notificacion.mp3",
+  ready: "/notificacion-plato-listo.mp3",
+};
 
 export type Beeper = {
-  /** Crea y reanuda el contexto de audio. Devuelve `false` si el navegador no tiene Web Audio o lo rechaza. */
   unlock(): Promise<boolean>;
-  /** Un doble pitido. No hace nada (ni falla) si el audio no está desbloqueado. */
-  beep(): void;
-  /** Libera el contexto. */
+  beep(sound?: NotificationSound): void;
+  stop(): void;
   close(): void;
 };
 
 export function createBeeper(): Beeper {
   let context: AudioContext | null = null;
+  let buffers: Record<NotificationSound, AudioBuffer> | null = null;
+  let loading: Promise<void> | null = null;
+  let playing: AudioBufferSourceNode | null = null;
+
+  const stop = () => {
+    try { playing?.stop(); } catch { /* El audio ya pudo haber terminado. */ }
+    playing?.disconnect();
+    playing = null;
+  };
 
   return {
     async unlock() {
@@ -21,42 +30,47 @@ export function createBeeper(): Beeper {
         const Ctor = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
         if (!Ctor) return false;
         context ??= new Ctor();
+        // Reanudar antes de esperar la red: todavía estamos dentro del gesto.
         if (context.state === "suspended") await context.resume();
-        return context.state === "running";
+        const audio = context;
+        if (!buffers) {
+          loading ??= Promise.all(Object.entries(SOUND_FILES).map(async ([name, url]) => {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error("No se pudo cargar el audio.");
+            return [name, await audio.decodeAudioData(await response.arrayBuffer())] as const;
+          })).then((entries) => { buffers = Object.fromEntries(entries) as Record<NotificationSound, AudioBuffer>; });
+          try { await loading; } finally { loading = null; }
+        }
+        return context?.state === "running";
       } catch {
         return false;
       }
     },
 
-    beep() {
+    beep(sound = "notification") {
       try {
-        if (!context || context.state !== "running") return;
-        const start = context.currentTime;
-        for (const [offset, frequency] of [[0, 880], [0.22, 1175]] as const) {
-          const oscillator = context.createOscillator();
-          const gain = context.createGain();
-          oscillator.type = "sine";
-          oscillator.frequency.value = frequency;
-          // Entra y sale suave para que no «chasquee».
-          gain.gain.setValueAtTime(0.0001, start + offset);
-          gain.gain.exponentialRampToValueAtTime(0.4, start + offset + 0.02);
-          gain.gain.exponentialRampToValueAtTime(0.0001, start + offset + 0.2);
-          oscillator.connect(gain).connect(context.destination);
-          oscillator.start(start + offset);
-          oscillator.stop(start + offset + 0.22);
-        }
+        if (!context || context.state !== "running" || !buffers) return;
+        stop();
+        const source = context.createBufferSource();
+        source.buffer = buffers[sound];
+        source.connect(context.destination);
+        source.onended = () => {
+          source.disconnect();
+          if (playing === source) playing = null;
+        };
+        playing = source;
+        source.start();
       } catch {
         // Un fallo de audio nunca debe romper la pantalla.
       }
     },
 
+    stop,
     close() {
-      try {
-        void context?.close();
-      } catch {
-        // nada
-      }
+      stop();
+      void context?.close().catch(() => {});
       context = null;
+      buffers = null;
     },
   };
 }
