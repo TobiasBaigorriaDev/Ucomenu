@@ -1,5 +1,5 @@
 # Cambio: Propina sugerida por sucursal
-Estado: verificado
+Estado: desplegado en staging (Fly v64); pendiente comprobación manual del usuario
 Nivel: C
 
 ## Objetivo
@@ -21,7 +21,7 @@ El Dueño elige una propina sugerida por sucursal y el cliente ve su porcentaje,
 - [x] Configuración inválida o respuesta inesperada no produce importes inventados.
 
 ## Fuera de alcance
-Cobrar, distribuir o registrar propinas; pagos online; cambios remotos o despliegue.
+Cobrar, distribuir o registrar propinas; pagos online y producción. Push y staging autorizados posteriormente por el usuario.
 
 ## Evidencia
 - Alcance probado y revisado: commit `ad2e3cb`, rama `feat/propina-sugerida`, desde `41c82c2`; preservar `tools/escenarios-locales.mjs` ajeno. Unidad vertical única: configuración más lectura y presentación, sin PR ni publicación remota.
@@ -31,7 +31,17 @@ Cobrar, distribuir o registrar propinas; pagos online; cambios remotos o desplie
 - `pnpm typecheck`, `pnpm lint`, `pnpm build`: pasan. Se corrigió la sintaxis de literales BigInt para el target ES2017; el build inicial que había comenzado antes de esa corrección falló por ese motivo, el build actualizado pasó.
 - Navegador: `pnpm exec playwright test e2e/sucursales.spec.ts e2e/cuenta-del-comensal.spec.ts e2e/sala-precuenta.spec.ts --workers=1`: 16/30 pasan (incluidos ambos casos nuevos), luego el servidor deja de escuchar en 3100; el primer caso afectado vence esperando un aviso y los otros 13 fallan con `ERR_CONNECTION_REFUSED`. Reintento único del mismo comando con `--last-failed`: 14/14 pasan, sin cambios de código. Total: 30 escenarios verificados, sin una corrida única completa verde.
 - Inspección visual de capturas en `output/propina-{cliente-mobile,precuenta-impresion,config-mobile,config-desktop}.png`: importes separados, texto opcional legible, configuración sin desborde; se preservó el diseño existente. El hook de diseño avisó un sidecar de DESIGN.md desactualizado, ajeno al cambio; no se regeneró.
-- No se ejecutaron suites completas de RLS/E2E: se cubrieron las rutas afectadas. No se aplicó nada remoto.
+- No se ejecutaron suites completas de RLS/E2E: se cubrieron las rutas afectadas. La etapa local no modificó entornos remotos.
+
+### Staging y push (2026-10-26)
+- Autorización explícita del usuario: «Realiza el push y el stanging». Rama integrada por fast-forward en `main`; `git push origin main` publicó hasta `83c488d`, incluidos los dos commits anteriores de personal por sucursal que ya estaban desplegados.
+- Destino comprobado: Supabase staging `oasixhsdyigimwvcxtkx`. `db push --linked --dry-run --skip-vault` listó únicamente `20261209100000_propina_sugerida.sql`; aplicada con `db push --linked --skip-vault --yes`, sin seeds ni roles. Dry-run posterior: `upToDate: true`.
+- Consulta de metadatos remota: columna `smallint` nullable, CHECK 1–100, UPDATE para authenticated bajo RLS vigente; anon sin SELECT/UPDATE de la columna; `get_table_account` SECURITY DEFINER, search_path vacío y EXECUTE solo service_role. Token inválido devuelve `not_found`. No se consultaron pedidos ni datos de clientes.
+- Imagen final construida desde `git archive 83c488d`, desplegada con `flyctl deploy -c fly.staging.toml --local-only --depot=false`: **Fly v64**, imagen `registry.fly.io/ucomenu-staging:propina-83c488d-git`, digest `sha256:279a587a9ca0e7782b2305ec37ddb2bdb9afb3647165d2488a9c745fcc7072ee`; máquina `started`, 1 control pasando. Build y tipos en Docker correctos; mismo proyecto, URL pública y correo de prueba que staging previo. No se cambiaron secretos.
+- Incidencias operativas: se interrumpió una construcción inicial para conservar el correo público previo. La imagen intermedia v63 incluyó dos audios sin seguimiento que aparecieron durante la construcción; no estaban referenciados por el código. Se sustituyó por v64 desde snapshot Git, y `ls /app/public` por SSH confirmó su ausencia. Los archivos locales se conservaron.
+- Rollback: desplegar `registry.fly.io/ucomenu-staging:personal-sucursal-a14dded` (v62) y dejar la migración aditiva; volver primero a la app anterior según el procedimiento de recuperación de esta ficha.
+- HTTP final contra v64: `/`, `/login`, `/privacidad` y `/m/la-bestia/centro` 200; `/panel/demo/sucursales` y `/sala/demo/mesas` 307 sin sesión; `/sala/demo/estado` y `/cocina/demo/estado` 401. Privacidad conserva el correo de prueba previo. DNS y smoke/health checks de Fly aprobados.
+- Pendiente: prueba manual con sesión real del usuario. No se repitieron suites locales sin cambios de código; se reconstruyó el artefacto de despliegue. Producción no se tocó.
 
 ## (C) Invariantes
 - El total consumido no incluye propina y nunca cambia por esta configuración.
@@ -47,4 +57,4 @@ Cobrar, distribuir o registrar propinas; pagos online; cambios remotos o desplie
 ## (C) Revisión y aprobación
 - Usuario aprobó desarrollar el alcance propuesto el 2026-10-26. Revisión independiente de Claude sobre `ad2e3cb`: **APROBAR**, informe `output/revisiones/claude-0fb42a42-9bb5-4574-84ae-cf0eaf8cd7bb.md`. Solo lectura, sin suites ni capturas propias del revisor.
 - Se incorporaron sus sugerencias H1 (orden de despliegue y rollback compatible) y H2 (BOM de ahora.md y referencia cruzada desde ADR 0041). Sin cambios funcionales posteriores a la revisión; no amerita otra ronda.
-- No hay aprobación de despliegue ni migración remota.
+- Push y migración/despliegue de staging aprobados posteriormente el 2026-10-26 con el pedido citado arriba; no incluye producción.
