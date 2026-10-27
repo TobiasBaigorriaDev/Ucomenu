@@ -641,7 +641,14 @@ export function MesasBoard({
                     </div>
                     {renderCalls(card, true)}
                     {renderOrder(card, true)}
-                    <div className="mt-3">{anotar}</div>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {anotar}
+                      {card.order ? (
+                        <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={buttonClass}>
+                          Cerrar o anular pedido…
+                        </Link>
+                      ) : null}
+                    </div>
                   </div>
                 </li>
               );
@@ -657,7 +664,14 @@ export function MesasBoard({
                   {state.multiBranch ? <p className="mt-2 text-sm text-muted">Sucursal {card.branchName}</p> : null}
                   {renderCalls(card, false)}
                   {renderOrder(card, false)}
-                  <div className="mt-auto pt-4">{anotar}</div>
+                  <div className="mt-auto flex flex-wrap gap-2 pt-4">
+                    {anotar}
+                    {card.order ? (
+                      <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={buttonClass}>
+                        Cerrar o anular pedido…
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
               </li>
             );

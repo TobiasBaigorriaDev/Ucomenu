@@ -9,8 +9,9 @@ import { AnotarScreen } from "./anotar-screen";
 
 export const metadata: Metadata = { title: "Anotar pedido" };
 
-export default async function SalaAnotarPage({ params }: PageProps<"/sala/[org]/mesas/[mesa]/anotar">) {
+export default async function SalaAnotarPage({ params, searchParams }: PageProps<"/sala/[org]/mesas/[mesa]/anotar">) {
   const { org, mesa } = await params;
+  const openClose = (await searchParams).accion === "cerrar";
   const tableId = asUuid(mesa);
   if (!tableId) notFound();
   const { membership } = await requireMembership(org, `/sala/${org}/mesas/${tableId}/anotar`);
@@ -23,7 +24,7 @@ export default async function SalaAnotarPage({ params }: PageProps<"/sala/[org]/
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-6 sm:px-8 lg:py-10">
-      <AnotarScreen slug={membership.org.slug} data={data} isOwner={membership.role === "owner"} />
+      <AnotarScreen key={`${tableId}:${openClose}`} slug={membership.org.slug} data={data} isOwner={membership.role === "owner"} openClose={openClose} />
     </main>
   );
 }

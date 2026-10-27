@@ -169,6 +169,7 @@ test.describe("operar el pedido", () => {
     await expect(linea(page, "Flan")).toHaveAttribute("data-estado", "cancelled");
     await expect(linea(page, "Flan").getByTestId("linea-estado")).toHaveText("Cancelado · Llegó frío");
     await expect(page.getByTestId("pedido-total")).toHaveAttribute("data-centavos", "0");
+    await expect(page.getByTestId("abrir-cierre")).toBeVisible(); // pedido abierto sin líneas vigentes
 
     const filas = await estados(l);
     expect(filas.map((x) => [x.product_name, x.status, x.cancel_reason])).toEqual([["Bife de chorizo", "cancelled", null], ["Flan casero", "cancelled", "Llegó frío"]]);
@@ -181,8 +182,22 @@ test.describe("operar el pedido", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await abrir(page, l);
-    await page.getByTestId("abrir-cierre").click();
+    await page.getByRole("link", { name: "Volver a mesas" }).click();
+    await expect(page.locator('[data-mesa="Mesa 1"]')).toBeVisible();
+    await expect(page.locator('[data-mesa="Mesa 2"]').getByTestId("cerrar-desde-mesas")).toHaveCount(0);
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: "output/playwright/cierre-mesas-mobile.png", fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: "output/playwright/cierre-mesas-desktop.png", fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.locator('[data-mesa="Mesa 1"]').getByTestId("cerrar-desde-mesas").click();
     const hoja = page.getByTestId("hoja-cierre");
+    await expect(hoja).toBeVisible();
+    await page.getByRole("button", { name: "Cerrar sin cambios" }).click();
+    await expect(page).toHaveURL(new RegExp(`/sala/${l.t.slug}/mesas$`));
+    await expect(page.locator('[data-mesa="Mesa 1"]')).toHaveAttribute("data-estado", "pedido");
+    await page.locator('[data-mesa="Mesa 1"]').getByTestId("cerrar-desde-mesas").click();
     await expect(hoja).toBeVisible();
     await expect(page.getByTestId("cierre-resumen")).toContainText("2 platos");
     await expect(page.getByTestId("cierre-resumen")).toContainText("200");
@@ -210,7 +225,9 @@ test.describe("operar el pedido", () => {
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await ctx.newPage();
     await abrir(page, l, "owner");
-    await page.getByTestId("abrir-cierre").click();
+    await page.getByRole("link", { name: "Volver a mesas" }).click();
+    await page.getByRole("button", { name: "Filas", exact: true }).click();
+    await page.locator('[data-mesa="Mesa 1"]').getByTestId("cerrar-desde-mesas").click();
     await expect(page.getByTestId("sin-entregar")).toHaveCount(0); // todo entregado: nada que avisar
     await page.getByTestId("ir-a-anular").click();
     await expect(page.getByTestId("anular-pedido")).toBeDisabled();

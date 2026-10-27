@@ -19,13 +19,13 @@ const REFRESH_MIN_MS = 3_000;
 
 /**
  * La mesa del mozo: arriba el pedido con lo que se puede hacer con cada línea; abajo una barra fija con el total, «Anotar plato» (abre la
- * carta en una hoja) y «Cerrar / anular». No hay copia local del pedido: el servidor es la fuente y cada acción recarga la pantalla.
+ * carta en una hoja). El cierre se abre desde Mesas. El servidor es la fuente y cada acción recarga la pantalla.
  */
-export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: AnotarData; isOwner: boolean }) {
+export function AnotarScreen({ slug, data, isOwner, openClose = false }: { slug: string; data: AnotarData; isOwner: boolean; openClose?: boolean }) {
   const router = useRouter();
   const [cartaOpen, setCartaOpen] = useState(false);
   const [dish, setDish] = useState<string | null>(null);
-  const [closeOpen, setCloseOpen] = useState(false);
+  const [closeOpen, setCloseOpen] = useState(openClose);
   const [resetOpen, setResetOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const lastRefresh = useRef(0);
@@ -56,15 +56,22 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
 
   return (
     <>
-      <Link
-        href={`/sala/${slug}/mesas`}
-        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-base font-semibold text-white hover:bg-brand-deep"
-      >
-        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0">
-          <path d="m12 19-7-7 7-7M5 12h14" />
-        </svg>
-        Volver a mesas
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link
+          href={`/sala/${slug}/mesas`}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-base font-semibold text-white hover:bg-brand-deep"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0">
+            <path d="m12 19-7-7 7-7M5 12h14" />
+          </svg>
+          Volver a mesas
+        </Link>
+        {data.enabled ? (
+          <button type="button" data-testid="abrir-carta-arriba" onClick={() => { setNotice(null); setCartaOpen(true); }} className={`${primaryClass} min-h-12`}>
+            Anotar plato
+          </button>
+        ) : null}
+      </div>
       <h1 className="mt-3 font-display text-4xl leading-tight break-words" data-testid="anotar-mesa">
         {data.table.label}
       </h1>
@@ -113,6 +120,11 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
               ) : null}
             </>
           )}
+          {data.orderId && (!data.enabled || !summary) ? (
+            <button type="button" data-testid="abrir-cierre" onClick={() => setCloseOpen(true)} className={`${buttonClass} mt-3`}>
+              Cerrar o anular pedido…
+            </button>
+          ) : null}
         </section>
       ) : null}
 
@@ -137,11 +149,6 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
                 className={`${primaryClass} min-w-0 flex-1`}
               >
                 Anotar plato
-              </button>
-            ) : null}
-            {data.orderId ? (
-              <button type="button" data-testid="abrir-cierre" onClick={() => setCloseOpen(true)} className={`${buttonClass} min-h-12 min-w-0 flex-1 text-lg`}>
-                Cerrar / anular
               </button>
             ) : null}
           </div>
@@ -180,7 +187,7 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
           slug={slug}
           orderId={data.orderId}
           summary={{ dishes: summary?.dishes ?? 0, totalCents: total, undelivered: undeliveredUnits(data.lines) }}
-          onClose={() => setCloseOpen(false)}
+          onClose={() => { setCloseOpen(false); if (openClose) router.replace(`/sala/${slug}/mesas`); }}
           onStale={refresh}
           onDone={() => router.push(`/sala/${slug}/mesas`)}
         />

@@ -74,6 +74,19 @@ test.describe("anotar un pedido", () => {
     await expect(page.getByTestId("sin-lineas")).toBeVisible();
     await expectNoHorizontalOverflow(page);
 
+    // Ambos accesos abren la misma carta; el superior acompaña al regreso a Mesas.
+    await page.getByTestId("abrir-carta-arriba").click();
+    await expect(page.getByTestId("hoja-carta")).toBeVisible();
+    await page.getByTestId("carta-listo").click();
+    const back = await page.getByRole("link", { name: "Volver a mesas" }).boundingBox();
+    const add = await page.getByTestId("abrir-carta-arriba").boundingBox();
+    expect(Math.abs(back!.y - add!.y)).toBeLessThan(5);
+    await page.screenshot({ path: "output/playwright/acciones-pedido-mobile.png", fullPage: true });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await expectNoHorizontalOverflow(page);
+    await page.screenshot({ path: "output/playwright/acciones-pedido-desktop.png", fullPage: true });
+    await page.setViewportSize({ width: 390, height: 844 });
+
     // La carta de la sucursal (en su hoja): lo oculto no está, lo agotado no se puede tocar.
     await abrirCarta(page);
     await expect(plato(page, "Plato oculto")).toHaveCount(0);
@@ -137,7 +150,7 @@ test.describe("anotar un pedido", () => {
     await expect(page.getByTestId("hoja-carta")).toHaveCount(0);
     await expect(page.getByTestId("linea")).toHaveCount(2);
     await expect(page.getByTestId("pedido-total")).toHaveAttribute("data-centavos", "28000");
-    await page.getByRole("link", { name: "← Mesas" }).click();
+    await page.getByRole("link", { name: "Volver a mesas" }).click();
     const mesa1 = page.locator('[data-testid="mesa"][data-mesa="Mesa 1"]');
     await expect(mesa1.getByTestId("pedido-estado")).toHaveText("3 platos · 3 anotados");
     await expect(mesa1.getByTestId("pedido-total")).toHaveAttribute("data-centavos", "28000");

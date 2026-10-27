@@ -4,11 +4,13 @@ Actualizado: 2026-10-26 · agente saliente: Codex. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Volver a mesas (S):** commit local `300a9d7` sobre `main`, desplegado en staging con autorización del usuario. En `src/app/sala/[org]/mesas/[mesa]/anotar/anotar-screen.tsx`, el enlace «← Mesas» ahora es un botón verde «Volver a mesas», con flecha SVG y altura mínima de 48 px. Conserva destino y navegación. Evidencia sobre ese commit: lint focalizado y typecheck correctos; build y tipos en Docker correctos. HTTP: inicio y login 200; sala sin sesión 307 y sondeo 401. El bundle publicado responde 200 y contiene el texto y tamaño nuevos. Falta comprobación visual con sesión de mozo; no se ejecutaron RLS ni E2E para este ajuste de presentación.
+**Acciones del pedido desde Mesas (M):** implementado en local sobre `main`, desde `62c5ca8`. Alcance, aceptación y evidencia en la [ficha](cambios/acciones-pedido-desde-mesas.md). Mesas ofrece «Cerrar o anular pedido…» en tarjetas y filas con pedido. Abre la confirmación existente desde el detalle, con datos frescos; no ejecuta operaciones al navegar. El detalle agrega «Anotar plato» junto a «Volver a mesas» y conserva el acceso inferior. El cierre sale de la barra inferior; queda disponible en el detalle para los casos excepcionales descritos en la ficha. No cambian reglas de negocio ni permisos.
+
+Este incremento está pendiente de publicación. El botón verde «Volver a mesas», implementado antes en `300a9d7`, ya está en staging. Sin push a origin. Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimiento; no incluirlo en snapshots ni commits.
 
 **Audios de avisos para mozo y cocina (M):** implementación `1de1e22`, integrada y subida a `main`. Alcance y evidencia en la [ficha](cambios/audios-notificaciones.md). Falta escucha manual en los dispositivos del usuario, con sesión real y las alertas activadas.
 
-Conservar los MP3 aportados por el usuario. `tools/escenarios-locales.mjs` sigue ajeno y sin seguimiento.
+Conservar los MP3 aportados por el usuario.
 
 **Staging está en Fly v66**, imagen `mesas-300a9d7-git`, desde snapshot Git de `300a9d7`: máquina started, control passing, smoke y DNS correctos. Sin cambios de base ni secretos. Migración más reciente: `20261209100000`. Rollback: imagen `audios-1de1e22-git` (v65). La [propina](cambios/propina-sugerida.md) espera comprobación manual.
 
@@ -20,4 +22,4 @@ Producción continúa bloqueada por revisión legal y preparación operativa; ve
 
 ## Próximo paso
 
-Recargar staging y comprobar el botón de regreso en móvil y escritorio. El commit de interfaz sigue sin push a origin. Mantener las comprobaciones de audios, propina y personal del tablero.
+Si el usuario autoriza publicar el nuevo incremento, construir desde un snapshot Git y verificar staging. Mantener las comprobaciones de audios, propina y personal del tablero. Producción sigue fuera del alcance autorizado.
