@@ -1,6 +1,6 @@
 # Acciones del pedido desde Mesas
 
-Nivel: M. Estado: desplegado en staging Fly v67; pendiente comprobación manual del usuario.
+Nivel: M (ajustes posteriores S). Estado: desplegado en staging Fly v68; pendiente comprobación manual del usuario.
 
 ## Alcance y decisiones
 - Mesas en vivo ofrece «Cerrar o anular pedido…» cuando muestra un pedido, tanto en tarjetas como en filas. Lleva al detalle con la confirmación existente abierta, con datos frescos del servidor.
@@ -34,3 +34,9 @@ Nivel: M. Estado: desplegado en staging Fly v67; pendiente comprobación manual 
 - Pedido del usuario: quitar el botón superior duplicado. Se elimina únicamente ese botón; queda «Anotar plato» abajo y «Volver a mesas» arriba. Diff local desde `28ffabc`, todavía sin desplegar.
 - Segundo pedido: «Cerrar o anular pedido…» con fondo rojo y texto blanco, reutilizando `dangerPrimaryClass` en tarjetas, filas y acceso excepcional del detalle. Sin cambios de comportamiento.
 - E2E existente actualizado: conserva el recorrido de anotación y comprueba un único botón. Verificación del ajuste: lint focalizado y revisión del diff; no se repiten build, RLS ni E2E para esta eliminación de presentación sin cambios de tipos o lógica.
+
+## Despliegue de ajustes S (2026-10-27)
+- Autorizado por el usuario con «despliega». Commit `de80fd1`, snapshot limpio de Git, excluyendo el archivo ajeno. Lint de ambos componentes y del test actualizado correcto. Build y tipos en Docker correctos; no se repitieron RLS/E2E para estos cambios de presentación.
+- Fly **v68 complete**, imagen `registry.fly.io/ucomenu-staging:botones-de80fd1-git`, digest `sha256:bdc42e238fb917680b848981b0241c0f239be550099824c19a19afaeb85611ee`; máquina started, control passing, smoke y DNS correctos.
+- HTTP: inicio/login 200, sala sin sesión 307, sondeo 401. Los dos bundles nuevos responden 200; incluyen el cierre, su estilo `bg-danger` y el acceso inferior `abrir-carta`, sin `abrir-carta-arriba`.
+- Sin cambios en base, secretos o producción. Sin push a origin. Falta comprobación visual con sesión real. Rollback: imagen `registry.fly.io/ucomenu-staging:pedidos-d146c2e-git` (v67), sin operaciones de base.

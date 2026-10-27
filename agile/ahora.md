@@ -4,7 +4,7 @@ Actualizado: 2026-10-27 · agente saliente: Codex. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Ajustes visuales (S):** diff local sobre `main`, desde `28ffabc`, todavía sin desplegar. Se elimina «Anotar plato» del encabezado; se conserva en la barra inferior. «Cerrar o anular pedido…» usa fondo rojo y texto blanco en tarjetas, filas y detalle, reutilizando el estilo de peligro. El E2E existente comprueba un único acceso de anotación. Evidencia en el apartado posterior de la [ficha](cambios/acciones-pedido-desde-mesas.md).
+**Ajustes visuales (S):** commit `de80fd1` sobre `main`, desplegado en staging con autorización explícita del usuario. Se elimina «Anotar plato» del encabezado; se conserva en la barra inferior. «Cerrar o anular pedido…» usa fondo rojo y texto blanco en tarjetas, filas y detalle, reutilizando el estilo de peligro. El E2E existente se actualizó para comprobar un único acceso de anotación, pero no se repitió para estos ajustes S. Evidencia en la [ficha](cambios/acciones-pedido-desde-mesas.md).
 
 **Acciones del pedido desde Mesas (M):** implementado en `d146c2e`, desplegado en staging con autorización del usuario. Alcance y aceptación en la misma ficha. Mesas ofrece «Cerrar o anular pedido…» en tarjetas y filas con pedido. Abre la confirmación existente desde el detalle, con datos frescos; no ejecuta operaciones al navegar. El cierre sale de la barra inferior; queda disponible en el detalle para los casos excepcionales descritos en la ficha. No cambian reglas de negocio ni permisos.
 
@@ -14,7 +14,7 @@ Sin push a origin. Preservar `tools/escenarios-locales.mjs`, ajeno y sin seguimi
 
 Conservar los MP3 aportados por el usuario.
 
-**Staging está en Fly v67**, imagen `pedidos-d146c2e-git`, desde snapshot Git de `d146c2e`. Sin cambios de base ni secretos. Migración más reciente: `20261209100000`. Rollback: imagen `mesas-300a9d7-git` (v66). La [propina](cambios/propina-sugerida.md) espera comprobación manual.
+**Staging está en Fly v68**, imagen `botones-de80fd1-git`, desde snapshot Git de `de80fd1`. Sin cambios de base ni secretos. Migración más reciente: `20261209100000`. Rollback: imagen `pedidos-d146c2e-git` (v67). La [propina](cambios/propina-sugerida.md) espera comprobación manual.
 
 **Personal por sucursal, solo pantalla:** también espera comprobación manual; ver [ficha](cambios/personal-por-sucursal.md). La restricción real por RLS está en Backlog: hoy las asignaciones filtran pantallas, sin impedir llamadas directas entre sucursales de la organización.
 
@@ -24,4 +24,4 @@ Producción continúa bloqueada por revisión legal y preparación operativa; ve
 
 ## Próximo paso
 
-Publicar el ajuste S cuando el usuario autorice. Comprobar cierre desde Mesas y el único acceso de anotar. Mantener las comprobaciones de audios, propina y personal. Producción sigue fuera del alcance autorizado.
+Recargar staging y comprobar visualmente el cierre rojo desde Mesas y el único acceso de anotar, con sesión real de mozo. Mantener las comprobaciones de audios, propina y personal. Producción sigue fuera del alcance autorizado.
