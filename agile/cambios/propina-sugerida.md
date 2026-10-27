@@ -1,5 +1,5 @@
 # Cambio: Propina sugerida por sucursal
-Estado: en curso
+Estado: verificado
 Nivel: C
 
 ## Objetivo
@@ -24,7 +24,7 @@ El Dueño elige una propina sugerida por sucursal y el cliente ve su porcentaje,
 Cobrar, distribuir o registrar propinas; pagos online; cambios remotos o despliegue.
 
 ## Evidencia
-- Alcance: diff de `feat/propina-sugerida` contra el punto de partida `41c82c2`; preservar `tools/escenarios-locales.mjs` ajeno. Unidad vertical única: configuración más lectura y presentación, sin PR ni publicación remota.
+- Alcance probado y revisado: commit `ad2e3cb`, rama `feat/propina-sugerida`, desde `41c82c2`; preservar `tools/escenarios-locales.mjs` ajeno. Unidad vertical única: configuración más lectura y presentación, sin PR ni publicación remota.
 - `pnpm db:start`, `pnpm db:reset`, `pnpm db:types`: migración `20261209100000` aplicada en local y tipos regenerados. `pnpm exec supabase db lint --local --level error`: sin errores de esquema.
 - `pnpm test`: 77 archivos, 1209/1209 casos. Las pruebas enfocadas de cuenta, precuenta, propina e idiomas: 108/108. Se corrigió una coincidencia literal es/pt en el texto nuevo.
 - `pnpm test:rls tests/rls/propina-sugerida.rls.test.ts tests/rls/cuenta-del-comensal.rls.test.ts tests/rls/sucursales.rls.test.ts`: 31/31. Primera corrida: una lista blanca de respuesta desactualizada; se agregó el campo nuevo y se repitió. Comprueba API directa, mora, aislamiento, límites, turnos y paridad cuenta/precuenta.
@@ -41,7 +41,10 @@ Cobrar, distribuir o registrar propinas; pagos online; cambios remotos o desplie
 
 ## (C) Fallos y recuperación
 - Fallo de guardado o cero filas: informar error, sin confirmar éxito. Fallo de lectura: error existente, sin inventar porcentaje.
-- Desactivar por sucursal quita inmediatamente la sugerencia al volver a consultar. Reversión de código puede dejar la columna aditiva sin uso; restaurar cuerpo anterior de `get_table_account` si se revierte su contrato. Local: revertir incremento y reset de base de pruebas.
+- Desactivar por sucursal quita inmediatamente la sugerencia al volver a consultar. Orden de despliegue autorizado en el futuro: aplicar la migración primero y desplegar la app después; el código nuevo contra una base vieja falla cerrado al consultar la cuenta.
+- Rollback operativo: volver primero a la imagen anterior de la app y conservar la columna y función aditivas; el código anterior ignora el campo nuevo. No restaurar el cuerpo antiguo de `get_table_account` mientras se sirva código nuevo. No hace falta borrar datos ni columnas. Local: revertir incremento y reset de base de pruebas.
 
 ## (C) Revisión y aprobación
-- Usuario aprobó desarrollar el alcance propuesto. Pendiente revisión independiente de Claude tras verificar. No hay aprobación de despliegue ni migración remota.
+- Usuario aprobó desarrollar el alcance propuesto el 2026-10-26. Revisión independiente de Claude sobre `ad2e3cb`: **APROBAR**, informe `output/revisiones/claude-0fb42a42-9bb5-4574-84ae-cf0eaf8cd7bb.md`. Solo lectura, sin suites ni capturas propias del revisor.
+- Se incorporaron sus sugerencias H1 (orden de despliegue y rollback compatible) y H2 (BOM de ahora.md y referencia cruzada desde ADR 0041). Sin cambios funcionales posteriores a la revisión; no amerita otra ronda.
+- No hay aprobación de despliegue ni migración remota.

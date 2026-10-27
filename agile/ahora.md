@@ -1,10 +1,10 @@
-﻿# Ahora (handoff)
+# Ahora (handoff)
 
 Actualizado: 2026-10-26 · agente saliente: Codex. Historia en Git y fichas.
 
 ## Punto de retomada
 
-**Propina sugerida por sucursal (nivel C):** rama `feat/propina-sugerida`, desde `41c82c2`. El usuario aprobó desarrollar la propuesta: configuración en Sucursales por el Dueño, porcentaje y desglose opcional en la cuenta del cliente y en la precuenta imprimible. Alcance, decisiones y evidencia en la [ficha](cambios/propina-sugerida.md). La migración `20261209100000` está aplicada únicamente en la base local. Falta cerrar la revisión independiente de Claude; no se autorizó desplegar ni aplicar migraciones remotas. El consumo y la analítica conservan sus importes originales.
+**Propina sugerida por sucursal (nivel C):** rama `feat/propina-sugerida`, implementación `ad2e3cb`, desde `41c82c2`. El usuario aprobó desarrollar la propuesta: configuración en Sucursales por el Dueño, porcentaje y desglose opcional en la cuenta del cliente y en la precuenta imprimible. Alcance, decisiones, revisión aprobada por Claude y evidencia en la [ficha](cambios/propina-sugerida.md). La migración `20261209100000` está aplicada únicamente en la base local. No se autorizó desplegar ni aplicar migraciones remotas. El consumo y la analítica conservan sus importes originales. Disponible para comprobar por el usuario en local.
 
 **Staging permanece en Fly v62**, imagen `personal-sucursal-a14dded`, migración `20261208100000`; esta sesión no cambió su estado. El último registro de despliegue es `41c82c2`. No se subieron commits a origin durante esta sesión.
 
@@ -19,4 +19,4 @@ Actualizado: 2026-10-26 · agente saliente: Codex. Historia en Git y fichas.
 
 ## Próximo paso
 
-Cerrar la revisión de propina y registrar el veredicto en su ficha. Después queda disponible para probar o desplegar en staging con autorización explícita. Mantener pendiente la comprobación manual de personal por sucursal y la decisión de subir cambios a origin.
+Probar la propina en local o, con autorización explícita, aplicar primero su migración y después desplegar la app en staging. La ficha explica el rollback compatible. Mantener pendiente la comprobación manual de personal por sucursal y la decisión de subir cambios a origin.

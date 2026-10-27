@@ -12,7 +12,7 @@
 3. **Estados:** pedido abierto → cerrado | anulado; ítem anotado → en cocina → entregado | cancelado (con motivo si ya se entregó). «En cocina» es manual: no hay pantalla de cocina en esta etapa. Toda acción queda en un registro de solo-agregado. *(Enmienda 2026-10-26, [ADR 0048](0048-rol-cocinero.md): hay pantalla de cocina para un rol propio y el estado «listo» reemplaza a «En cocina» en la pantalla del mozo.)*
 4. **Solo por mesa** en la primera entrega (sin mostrador ni para llevar).
 5. **Mora:** en solo lectura o suspendida no se abren pedidos ni se agregan ítems, pero **cerrar y anular nunca se bloquean**.
-6. **No fiscal:** el cierre muestra una precuenta con la leyenda «no válida como factura». Sin cobro, propinas, división de cuenta ni impresión de comandas.
+6. **No fiscal:** el cierre muestra una precuenta con la leyenda «no válida como factura». Sin cobro, propinas, división de cuenta ni impresión de comandas. *(Enmienda 2026-10-26, [ADR 0044, enmienda 4](0044-turno-de-mesa-y-cuenta-del-comensal.md#enmienda-4-2026-10-26-sugerencia-opcional-de-propina): se admite sugerir una propina opcional por sucursal, separada del consumo, sin registrarla como cobrada.)*
 7. **«Pedir la cuenta» sigue siendo un llamado:** la Sala muestra el total del pedido de esa mesa; atenderlo no cierra el pedido.
 8. **Retención:** 2 años desde el cierre, a confirmar con el contador; la purga del registro va con el borrado de la organización.
 9. Plan **Pro y Premium** (necesita la Sala).
