@@ -56,8 +56,14 @@ export function AnotarScreen({ slug, data, isOwner }: { slug: string; data: Anot
 
   return (
     <>
-      <Link href={`/sala/${slug}/mesas`} className="text-base font-medium underline underline-offset-2">
-        ← Mesas
+      <Link
+        href={`/sala/${slug}/mesas`}
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand px-5 py-3 text-base font-semibold text-white hover:bg-brand-deep"
+      >
+        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 shrink-0">
+          <path d="m12 19-7-7 7-7M5 12h14" />
+        </svg>
+        Volver a mesas
       </Link>
       <h1 className="mt-3 font-display text-4xl leading-tight break-words" data-testid="anotar-mesa">
         {data.table.label}
