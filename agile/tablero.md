@@ -10,7 +10,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## En curso
 
-- (vacío)
+- [C] Propina sugerida por sucursal, cuenta del cliente y precuenta imprimible — implementación y verificación local → [ficha](cambios/propina-sugerida.md)
 
 ## Seleccionado
 

@@ -1,6 +1,7 @@
 /**
  * Precuenta de un pedido (ficha sala-precuenta, ADR 0041, decisión 6): lo que el mozo le muestra o imprime al cliente antes de cerrar la
- * mesa. NO es una factura ni un comprobante: lleva siempre la leyenda y no registra cobro, propina ni división de cuenta. Reglas puras,
+ * mesa. NO es una factura ni un comprobante: lleva siempre la leyenda y no registra cobro, propina ni división de cuenta. La sugerencia
+ * opcional se calcula aparte con `suggestedTip`, sin alterar el consumo. Reglas puras,
  * sin dependencias de servidor; se prueban en `precuenta.test.ts`.
  *
  * Los importes salen de lo COPIADO al anotar (precio efectivo y diferencias de las opciones): la precuenta nunca recalcula con el

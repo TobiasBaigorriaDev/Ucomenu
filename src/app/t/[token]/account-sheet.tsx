@@ -6,6 +6,7 @@ import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import { formatArs } from "@/lib/money";
 import { viewAccountAction } from "./actions";
+import { PropinaSugerida } from "@/components/propina-sugerida";
 
 type Load = { phase: "loading" } | { phase: "done"; result: AccountResult };
 
@@ -120,10 +121,11 @@ export function AccountSheet({ token, ticket, lang, onClose, onExpired }: { toke
             </ul>
             <p className="mt-4 flex items-baseline justify-between gap-3 text-lg" data-testid="cuenta-total" data-centavos={result.account.totalCents}>
               <span>
-                {t.total} · {t.dishes(result.account.dishes)}
+                {result.account.tip ? t.consumed : t.total} · {t.dishes(result.account.dishes)}
               </span>
               <strong className="font-display text-3xl leading-none">{formatArs(result.account.totalCents)}</strong>
             </p>
+            <PropinaSugerida tip={result.account.tip} labels={t} />
             <p className="mt-4 rounded-2xl border-2 border-ink px-4 py-2 text-center text-base font-bold tracking-wide uppercase" data-testid="cuenta-leyenda">
               {t.legend}
             </p>

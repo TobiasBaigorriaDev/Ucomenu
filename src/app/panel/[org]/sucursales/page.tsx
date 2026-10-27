@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TipForm } from "./tip-form";
 import Link from "next/link";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { loadSucursales } from "@/lib/sucursales/branches";
@@ -111,6 +112,7 @@ export default async function SucursalesPage({ params }: PageProps<"/panel/[org]
                   />
                 </div>
                 <QrScheduleForm orgSlug={membership.org.slug} id={branch.id} name={branch.name} times={branch.qrResetTimes ?? ["05:00"]} timeZone={branch.timeZone} canWrite={canWrite} />
+                <TipForm orgSlug={membership.org.slug} id={branch.id} name={branch.name} percent={branch.tipPercent} canWrite={canWrite} />
               </li>
             ))}
           </ul>

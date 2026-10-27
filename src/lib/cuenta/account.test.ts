@@ -14,6 +14,7 @@ const OK = {
   ],
   dishes: 3,
   total_cents: 26000,
+  tip_percent: null,
 };
 
 describe("leer la cuenta del comensal", () => {
@@ -32,12 +33,24 @@ describe("leer la cuenta del comensal", () => {
         ],
         dishes: 3,
         totalCents: 26000,
+        tip: null,
       },
     });
   });
 
   it("sin platos vigentes y total cero es una cuenta válida", () => {
     expect(parseAccount({ ...OK, lines: [], dishes: 0, total_cents: 0 })).toMatchObject({ status: "ok", account: { lines: [], totalCents: 0 } });
+  });
+
+  it("expone consumo separado y propina calculada sobre las líneas vigentes", () => {
+    expect(parseAccount({ ...OK, tip_percent: 10 })).toMatchObject({ status: "ok", account: {
+      totalCents: 26000, tip: { percent: 10, cents: 2600, totalCents: 28600 },
+    } });
+    expect(parseAccount({ ...OK, tip_percent: 10, lines: [], dishes: 0, total_cents: 0 }))
+      .toMatchObject({ status: "ok", account: { tip: null } });
+    for (const percent of [undefined, 0, -1, 101, 10.5, "10"]) {
+      expect(parseAccount({ ...OK, tip_percent: percent })).toEqual({ status: "error" });
+    }
   });
 
   it("'empty' es vacío; 'not_found' y 'unavailable' son lo mismo para el comensal: escanear de nuevo", () => {

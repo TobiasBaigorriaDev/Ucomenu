@@ -7,6 +7,7 @@
  * inesperada es un error, nunca un importe inventado.
  */
 import type { Lang } from "@/lib/idiomas/idiomas";
+import { isTipPercent, suggestedTip, type SuggestedTip } from "@/lib/propina";
 
 export type AccountLine = {
   quantity: number;
@@ -28,6 +29,7 @@ export type AccountView = {
   lines: AccountLine[];
   dishes: number;
   totalCents: number;
+  tip: SuggestedTip | null;
 };
 
 export type AccountResult =
@@ -69,7 +71,13 @@ export function parseAccount(raw: unknown): AccountResult {
       const ok = parsed as AccountLine[];
       // Los totales tienen que cerrar con las líneas: si no, no se muestra una cuenta que no suma.
       if (ok.reduce((sum, line) => sum + line.lineCents, 0) !== total || ok.reduce((sum, line) => sum + line.quantity, 0) !== dishes) return { status: "error" };
-      return { status: "ok", account: { orgName, branchName, tableLabel, timeZone, asOf, lines: ok, dishes, totalCents: total } };
+      if (!isTipPercent(raw.tip_percent)) return { status: "error" };
+      try {
+        const tip = suggestedTip(total, raw.tip_percent);
+        return { status: "ok", account: { orgName, branchName, tableLabel, timeZone, asOf, lines: ok, dishes, totalCents: total, tip } };
+      } catch {
+        return { status: "error" };
+      }
     }
     default:
       return { status: "error" };

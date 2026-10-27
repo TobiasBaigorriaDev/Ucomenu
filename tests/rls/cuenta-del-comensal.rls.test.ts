@@ -1,5 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { parseAccount } from "@/lib/cuenta/account";
+import { loadPrecuenta } from "@/lib/sala/precuenta-loader";
+import { buildPrecuenta } from "@/lib/sala/precuenta";
+import { suggestedTip } from "@/lib/propina";
 import {
   addMembership,
   anonClient,
@@ -88,6 +92,21 @@ afterAll(async () => {
 });
 
 describe("lo que ve el comensal", () => {
+  it("porcentaje vigente de su sucursal, con consumo separado y misma sugerencia que precuenta", async () => {
+    const { l, order } = await conCuentaPedida();
+    for (const percent of [null, 10, 15, null]) {
+      expect((await owner.db.from("branches").update({ tip_percent: percent }).eq("id", l.branch)).error).toBeNull();
+      const raw = ok<Record<string, unknown>>(await cuenta(l.token, ahora()));
+      expect(raw).toMatchObject({ status: "ok", total_cents: 26000, tip_percent: percent });
+      const account = parseAccount(raw);
+      expect(account.status).toBe("ok");
+      const precuenta = await loadPrecuenta(owner.db, l.id, order);
+      expect(precuenta).not.toBeNull();
+      const body = buildPrecuenta(precuenta!.lines);
+      expect(body.totalCents).toBe(26000);
+      if (account.status === "ok") expect(account.account.tip).toEqual(suggestedTip(body.totalCents, precuenta!.tipPercent));
+    }
+  });
   it("platos vigentes con opciones, importes copiados y total; sin lo cancelado, sin observaciones y sin ids", async () => {
     const { l } = await conCuentaPedida();
     const r = ok<Record<string, unknown>>(await cuenta(l.token, ahora()));
@@ -101,7 +120,7 @@ describe("lo que ve el comensal", () => {
     ]);
     expect(r).toMatchObject({ org_name: expect.any(String), branch_name: "Principal", table_label: "Mesa 7", time_zone: expect.any(String) });
     // Lista blanca de claves: nada más que esto sale al anónimo.
-    expect(Object.keys(r).sort()).toEqual(["as_of", "branch_name", "dishes", "lines", "org_name", "status", "table_label", "time_zone", "total_cents"]);
+    expect(Object.keys(r).sort()).toEqual(["as_of", "branch_name", "dishes", "lines", "org_name", "status", "table_label", "time_zone", "tip_percent", "total_cents"]);
     const texto = JSON.stringify(r);
     for (const prohibido of ["sin sal", "alérgico", "arrepintió", l.id, l.table, l.token, l.product, owner.id]) expect(texto).not.toContain(prohibido);
   });

@@ -9,6 +9,8 @@ import { loadPrecuenta } from "@/lib/sala/precuenta-loader";
 import { createSessionClient } from "@/lib/supabase/server";
 import { canSeeBranch, readBranchAccess } from "@/lib/sucursales/vista";
 import { PrintButton } from "./print-button";
+import { PropinaSugerida } from "@/components/propina-sugerida";
+import { suggestedTip } from "@/lib/propina";
 
 export const metadata: Metadata = { title: "Precuenta" };
 
@@ -25,6 +27,7 @@ export default async function SalaPrecuentaPage({ params }: PageProps<"/sala/[or
   if (!canSeeBranch((await readBranchAccess(db, membership.org.id)).assigned, data.branchId)) notFound();
 
   const body = buildPrecuenta(data.lines);
+  const tip = data.status === "void" ? null : suggestedTip(body.totalCents, data.tipPercent);
   const notice = statusNotice(data.status);
   const back = data.tableId ? `/sala/${membership.org.slug}/mesas/${data.tableId}/anotar` : `/sala/${membership.org.slug}/mesas`;
 
@@ -74,10 +77,11 @@ export default async function SalaPrecuentaPage({ params }: PageProps<"/sala/[or
         )}
 
         <p className="mt-4 flex items-baseline justify-between gap-3" data-testid="precuenta-total" data-centavos={body.totalCents}>
-          <span className="text-xl font-semibold">Total</span>
+          <span className="text-xl font-semibold">{tip ? "Total consumido" : "Total"}</span>
           <strong className="font-display text-4xl leading-none">{formatArs(body.totalCents)}</strong>
         </p>
         <p className="mt-1 text-sm text-muted">{body.dishes === 1 ? "1 plato" : `${body.dishes} platos`}</p>
+        <PropinaSugerida tip={tip} />
 
         <p data-testid="precuenta-leyenda" className="mt-5 rounded-2xl border-2 border-ink px-4 py-3 text-center text-lg font-bold tracking-wide uppercase">
           {PRECUENTA_LEGEND}

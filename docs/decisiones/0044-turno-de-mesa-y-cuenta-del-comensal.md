@@ -36,6 +36,9 @@ El usuario pide horarios diarios editables por el Dueño, con **05:00** por defe
 El reinicio masivo requiere membresía y confirmación, abarca todas las sucursales del local y conserva el criterio del reinicio individual: sin bloqueo por plan ni mora. Ambos mecanismos terminan visitas y vencen pedidos de cuenta pendientes, sin cambiar el QR impreso ni modificar pedidos. Los permisos, las pruebas y la recuperación están en la [ficha](../../agile/cambios/reinicio-programado-qr.md).
 Reactivar una sucursal empieza a contar desde ese momento, sin ejecutar horarios que pasaron mientras estaba apagada. Los horarios se leen solo por una función del Dueño; el marcador de ejecución no es público.
 
+## Enmienda 4 (2026-10-26): sugerencia opcional de propina
+El usuario aprobó configurar la propina desde Sucursales y mostrarla en la cuenta del cliente y la precuenta imprimible. Se conserva el total consumido separado porque una sugerencia no acredita un cobro ni una venta. Cuenta y precuenta comparten el cálculo y usan la configuración vigente al consultar; no se añade un registro histórico de propina cobrada. El alcance previo «sin propinas» queda matizado únicamente para esta sugerencia visual. Reglas y evidencia en la [ficha](../../agile/cambios/propina-sugerida.md).
+
 ## Consecuencias
 - **Riesgo aceptado por el usuario:** quien escanee el QR durante el turno, estando o no en el local, puede ver el consumo de esa mesa (platos y total, sin datos personales) **después de que se pidió la cuenta**. El turno limita cuánto dura, no quién. Se mitiga con el ticket, el cierre del turno y que el mozo ve cuándo escaneó.
 - La función `get_table_account` y `reset_table_turn` son nuevas superficies; la primera solo `service_role`.

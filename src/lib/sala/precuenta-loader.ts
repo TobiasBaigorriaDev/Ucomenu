@@ -16,6 +16,7 @@ export type PrecuentaData = {
   branchName: string;
   /** Zona horaria de la sucursal (la hora de la precuenta es la del local). */
   timeZone: string;
+  tipPercent: number | null;
   multiBranch: boolean;
   closedAt: string | null;
   lines: AnotarLine[];
@@ -39,7 +40,7 @@ export async function loadPrecuenta(db: Db, orgId: string, orderId: string): Pro
   const { branch_id: branchId, status } = order.data;
 
   const branches = await readAllByKey((after, limit) => {
-    const query = db.from("branches").select("id, name, timezone, is_active").eq("organization_id", orgId);
+    const query = db.from("branches").select("id, name, timezone, is_active, tip_percent").eq("organization_id", orgId);
     return (after ? query.gt("id", after) : query).order("id").limit(limit);
   });
   if (branches.error) throw new Error(`No se pudieron leer las sucursales: ${branches.error.message}`);
@@ -54,6 +55,7 @@ export async function loadPrecuenta(db: Db, orgId: string, orderId: string): Pro
     branchId,
     branchName: branch.name,
     timeZone: branch.timezone,
+    tipPercent: branch.tip_percent,
     multiBranch: (branches.data ?? []).filter((row) => row.is_active).length > 1,
     closedAt: order.data.closed_at,
     lines: await loadOrderLines(db, orgId, order.data.id),

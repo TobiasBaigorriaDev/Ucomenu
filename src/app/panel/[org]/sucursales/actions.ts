@@ -7,6 +7,7 @@ import type { FormState } from "@/lib/form-state";
 import { createBranch, renameBranch, setBranchActive, setBranchReviewLink, setBranchTimeZone, sucursalesErrorMessage, type Result } from "@/lib/sucursales/branches";
 import { createSessionClient } from "@/lib/supabase/server";
 import { parseQrResetTimes } from "@/lib/sucursales/qr-schedule";
+import { parseTipPercent } from "@/lib/propina";
 
 /**
  * Server actions de las sucursales. Cada una vuelve a exigir sesión y rol de DUEÑO del local (`requireOwner`): el `slug`
@@ -92,4 +93,22 @@ export async function setQrResetTimesAction(_previous: FormState, formData: Form
   if (error || data.length !== 1) return { error: "No se guardaron los horarios. Comprobá que seguís siendo Dueño y que la cuenta está al día." };
   revalidatePath(`/panel/${slug}/sucursales`);
   return { ok: true, message: times.length ? "Horarios de reinicio guardados." : "Reinicio automático desactivado." };
+}
+
+export async function setTipPercentAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, db } = await prepare(formData);
+  const id = asUuid(formData.get("id"));
+  const enabled = formData.get("enabled");
+  const percent = enabled === "on" ? parseTipPercent(formData.get("percent")) : null;
+  if (!id || (enabled !== null && enabled !== "on") || (enabled === "on" && percent === null)) {
+    return { error: "Ingresá un porcentaje entero entre 1 y 100." };
+  }
+  const { data, error } = await db.from("branches").update({ tip_percent: percent })
+    .eq("id", id).eq("organization_id", orgId).select("id, tip_percent");
+  if (error || data?.length !== 1 || data[0].tip_percent !== percent) {
+    return { error: "No se guardó la propina. Comprobá que seguís siendo Dueño y que la cuenta está al día." };
+  }
+  revalidatePath(`/panel/${slug}/sucursales`);
+  revalidatePath(`/sala/${slug}`, "layout");
+  return { ok: true, message: percent === null ? "Propina sugerida desactivada." : "Propina sugerida guardada." };
 }

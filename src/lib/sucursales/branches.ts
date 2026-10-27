@@ -41,6 +41,7 @@ export type Sucursal = {
   /** Zona horaria IANA de la sucursal (lista cerrada de `rules.ts`). */
   timeZone: string;
   qrResetTimes?: string[];
+  tipPercent: number | null;
   tables: number;
   activeTables: number;
 };
@@ -50,7 +51,7 @@ const collator = new Intl.Collator("es-AR", { numeric: true, sensitivity: "base"
 /** Las sucursales de la organización, activas e inactivas (orden natural por nombre), con la cantidad de mesas. */
 export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]> {
   const [branches, tables, schedules] = await Promise.all([
-    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url, timezone").eq("organization_id", orgId).order("id").range(from, to)),
+    readAllPages((from, to) => db.from("branches").select("id, slug, name, is_active, google_review_url, timezone, tip_percent").eq("organization_id", orgId).order("id").range(from, to)),
     readAllPages((from, to) => db.from("tables").select("branch_id, is_active").eq("organization_id", orgId).order("id").range(from, to)),
     readAllPages((from, to) => db.rpc("owner_qr_reset_schedules", { p_org: orgId }).order("branch_id").range(from, to)),
   ]);
@@ -68,11 +69,12 @@ export async function loadSucursales(db: Db, orgId: string): Promise<Sucursal[]>
   }
 
   return (branches.data ?? [])
-    .map(({ is_active, google_review_url, timezone, ...branch }) => ({
+    .map(({ is_active, google_review_url, timezone, tip_percent, ...branch }) => ({
       ...branch,
       isActive: is_active,
       reviewUrl: google_review_url,
       timeZone: timezone || DEFAULT_BRANCH_TIME_ZONE,
+      tipPercent: tip_percent,
       qrResetTimes: resetTimes.get(branch.id)?.map((time) => time.slice(0, 5)),
       ...(counts.get(branch.id) ?? { tables: 0, activeTables: 0 }),
     }))

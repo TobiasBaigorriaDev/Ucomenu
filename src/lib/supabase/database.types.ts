@@ -105,14 +105,14 @@ isOneToOne: false
                   ]
                 },"branches": {
                   Row: {
-                    "created_at": string,"google_review_url": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"qr_reset_after": string,"qr_reset_times": (string)[],"slug": string,"slug_aliases": (string)[],"timezone": string,"waiter_call_cooldown_seconds": number
+                    "created_at": string,"google_review_url": string | null,"id": string,"is_active": boolean,"name": string,"organization_id": string,"qr_reset_after": string,"qr_reset_times": (string)[],"slug": string,"slug_aliases": (string)[],"timezone": string,"tip_percent": number | null,"waiter_call_cooldown_seconds": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"qr_reset_after"?: string,"qr_reset_times"?: (string)[],"slug": string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name": string,"organization_id": string,"qr_reset_after"?: string,"qr_reset_times"?: (string)[],"slug": string,"slug_aliases"?: (string)[],"timezone"?: string,"tip_percent"?: number | null,"waiter_call_cooldown_seconds"?: number
                   }
                   Update: {
-                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"qr_reset_after"?: string,"qr_reset_times"?: (string)[],"slug"?: string,"slug_aliases"?: (string)[],"timezone"?: string,"waiter_call_cooldown_seconds"?: number
+                    "created_at"?: string,"google_review_url"?: string | null,"id"?: string,"is_active"?: boolean,"name"?: string,"organization_id"?: string,"qr_reset_after"?: string,"qr_reset_times"?: (string)[],"slug"?: string,"slug_aliases"?: (string)[],"timezone"?: string,"tip_percent"?: number | null,"waiter_call_cooldown_seconds"?: number
                   }
                   Relationships: [
                     {

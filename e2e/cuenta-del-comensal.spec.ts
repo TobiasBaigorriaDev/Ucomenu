@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { randomUUID } from "node:crypto";
 import { expect, test, type Page } from "@playwright/test";
 import { PALETTE_KEYS } from "../src/lib/identidad/palettes";
-import { createTenant, expectNoHorizontalOverflow, service, type Person, type Tenant } from "./support";
+import { createTenant, expectNoHorizontalOverflow, login, service, type Person, type Tenant } from "./support";
 
 /**
  * Cuenta del comensal (ficha cuenta-del-comensal, ADR 0044), contra el build y el Supabase local, a 390 px: tras «Pedir la cuenta» aparece
@@ -58,6 +58,45 @@ async function pedido(l: Local) {
 }
 
 const barra = (page: Page) => page.getByTestId("barra-llamado");
+
+test("propina opcional coincide con la precuenta impresa y se actualiza al desactivarla", async ({ browser }) => {
+  const l = await nuevoLocal("cuenta-propina");
+  const { order } = await pedido(l);
+  expect((await service().from("branches").update({ tip_percent: 10 }).eq("id", l.branch)).error).toBeNull();
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  await page.goto(`/t/${l.mesa.qr_token}`);
+  await pedirCuenta(page).click();
+  await page.getByTestId("ver-cuenta").click();
+  await expect(page.getByTestId("propina-importe")).toContainText("Propina sugerida (10 %)");
+  await expect(page.getByTestId("propina-importe")).toHaveAttribute("data-centavos", "2600");
+  await expect(page.getByTestId("propina-total")).toHaveAttribute("data-centavos", "28600");
+  await expect(page.getByTestId("cuenta-total")).toContainText("Total consumido");
+  await expect(page.getByTestId("cuenta-total")).toHaveAttribute("data-centavos", "26000");
+  await expect(page.getByTestId("propina-sugerida")).toContainText("La propina es opcional");
+  await expectNoHorizontalOverflow(page);
+  await page.screenshot({ path: "output/propina-cliente-mobile.png", fullPage: true });
+
+  const staffCtx = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  const staffPage = await staffCtx.newPage();
+  await login(staffPage, l.t.staff.email, l.t.staff.password);
+  await staffPage.goto(`/sala/${l.t.slug}/cuenta/${order}`);
+  await expect(staffPage.getByTestId("propina-total")).toHaveAttribute("data-centavos", "28600");
+  await expect(staffPage.getByTestId("precuenta-total")).toHaveAttribute("data-centavos", "26000");
+  await staffPage.emulateMedia({ media: "print" });
+  await expect(staffPage.getByTestId("propina-sugerida")).toBeVisible();
+  await expect(staffPage.getByTestId("propina-sugerida")).toContainText("La propina es opcional");
+  await staffPage.screenshot({ path: "output/propina-precuenta-impresion.png", fullPage: true });
+
+  expect((await service().from("branches").update({ tip_percent: null }).eq("id", l.branch)).error).toBeNull();
+  await page.getByTestId("cuenta-actualizar").click();
+  await expect(page.getByTestId("propina-sugerida")).toHaveCount(0);
+  await expect(page.getByTestId("cuenta-total")).toHaveAttribute("data-centavos", "26000");
+  await staffPage.reload();
+  await expect(staffPage.getByTestId("propina-sugerida")).toHaveCount(0);
+  await staffCtx.close();
+  await ctx.close();
+});
 const pedirCuenta = (page: Page) => barra(page).getByRole("button", { name: "Pedir la cuenta" });
 
 test.afterAll(async () => {

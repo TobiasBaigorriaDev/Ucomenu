@@ -75,6 +75,10 @@ export type Textos = {
   };
   /** Cuenta del comensal (ficha cuenta-del-comensal): lo que ve quien pidió la cuenta. No es una factura. */
   account: {
+    consumed: string;
+    tipSuggested: string;
+    tipTotal: string;
+    tipOptional: string;
     view: string;
     title: string;
     loading: string;
@@ -219,6 +223,10 @@ const es: Textos = {
     error: "No pudimos mostrar tu cuenta. Pedísela al mozo.",
     empty: "Todavía no hay platos anotados en tu mesa.",
     total: "Total hasta ahora",
+    consumed: "Total consumido",
+    tipSuggested: "Propina sugerida",
+    tipTotal: "Total con propina sugerida",
+    tipOptional: "La propina es opcional",
     dishes: (n) => (n === 1 ? "1 plato" : `${n} platos`),
     each: (price) => `${price} c/u`,
     legend: "No válida como factura",
@@ -356,6 +364,10 @@ const en: Textos = {
     error: "We couldn't show your check. Please ask your waiter.",
     empty: "Nothing has been added to your table yet.",
     total: "Total so far",
+    consumed: "Consumption total",
+    tipSuggested: "Suggested tip",
+    tipTotal: "Total with suggested tip",
+    tipOptional: "Tipping is optional",
     dishes: (n) => (n === 1 ? "1 dish" : `${n} dishes`),
     each: (price) => `${price} each`,
     legend: "Not valid as an invoice",
@@ -493,6 +505,10 @@ const pt: Textos = {
     error: "Não conseguimos mostrar a sua conta. Peça ao garçom.",
     empty: "Ainda não há pratos anotados na sua mesa.",
     total: "Total até agora",
+    consumed: "Total do consumo",
+    tipSuggested: "Gorjeta sugerida",
+    tipTotal: "Total com gorjeta sugerida",
+    tipOptional: "A gorjeta é opcional",
     dishes: (n) => (n === 1 ? "1 prato" : `${n} pratos`),
     each: (price) => `${price} cada`,
     legend: "Sem valor fiscal",

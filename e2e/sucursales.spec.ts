@@ -8,6 +8,33 @@ import { alerta, createTenant, expectNoHorizontalOverflow, login, service, type 
 
 const tenants: Tenant[] = [];
 
+test("Dueño configura la propina por sucursal, persiste y puede desactivarla", async ({ page }) => {
+  const t = await nuevoLocal("suc-propina");
+  await ingresar(page, t.owner, t);
+  const config = page.getByTestId("propina-config").first();
+  await expect(config.locator("summary")).toContainText("Desactivada");
+  await config.locator("summary").click();
+  await config.getByLabel("Mostrar propina sugerida").check();
+  await config.getByLabel("Porcentaje de propina (%)").fill("15");
+  await config.getByRole("button", { name: "Guardar propina" }).click();
+  await expect(config.getByRole("status")).toHaveText("Propina sugerida guardada.");
+  await expect(config.locator("summary")).toContainText("15 %");
+  await expectNoHorizontalOverflow(page);
+  await page.reload();
+  await config.locator("summary").click();
+  await expect(config.getByLabel("Mostrar propina sugerida")).toBeChecked();
+  await expect(config.getByLabel("Porcentaje de propina (%)")).toHaveValue("15");
+  await config.screenshot({ path: "output/propina-config-mobile.png" });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await expectNoHorizontalOverflow(page);
+  await config.screenshot({ path: "output/propina-config-desktop.png" });
+  await config.getByLabel("Mostrar propina sugerida").uncheck();
+  await config.getByRole("button", { name: "Guardar propina" }).click();
+  await expect(config.getByRole("status")).toHaveText("Propina sugerida desactivada.");
+  await page.reload();
+  await expect(config.locator("summary")).toContainText("Desactivada");
+});
+
 async function nuevoLocal(label: string, opciones: { estado?: Estado; plan?: "basic" | "pro" | "premium" } = {}) {
   const t = await createTenant(label, opciones.estado ?? "active");
   tenants.push(t);
