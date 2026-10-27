@@ -1,6 +1,6 @@
 # Acciones del pedido desde Mesas
 
-Nivel: M. Estado: implementado y verificado en local; pendiente publicación.
+Nivel: M. Estado: desplegado en staging Fly v67; pendiente comprobación manual del usuario.
 
 ## Alcance y decisiones
 - Mesas en vivo ofrece «Cerrar o anular pedido…» cuando muestra un pedido, tanto en tarjetas como en filas. Lleva al detalle con la confirmación existente abierta, con datos frescos del servidor.
@@ -21,3 +21,11 @@ Nivel: M. Estado: implementado y verificado en local; pendiente publicación.
 - Repetición filtrada con `--grep 'el Staff anota un plato|cerrar el pedido avisa' --workers=1`: ambos casos pasan. Incluye apertura desde arriba/abajo, alineación móvil, cierre desde tarjetas, salida sin cambios y resumen. La primera corrida cubre anulación desde filas, motivo, concurrencia, pedido sin platos vigentes y plan deshabilitado.
 - Capturas revisadas a 390 y 1280 px del detalle y tablero, en `output/playwright/acciones-pedido-*.png` y `output/playwright/cierre-mesas-*.png`; sin desbordes. No se ejecutó RLS: sin cambios en base, consultas ni autorización.
 - Recuperación: revertir el incremento de presentación; sin migraciones. Sin push ni despliegue de este incremento.
+
+## Staging (2026-10-27)
+- Usuario autorizó publicar. Snapshot limpio de `git archive d146c2e`, fuera del repositorio y sin el archivo ajeno `tools/escenarios-locales.mjs`.
+- Primer intento falló por TLS handshake timeout de Docker Hub; el siguiente por conexión al descargar fuentes de Google. Se comprobó HTTP 200 a la fuente desde Windows y Docker; reconstrucción posterior correcta, sin modificar código ni configuración.
+- Build y tipos en Docker correctos. `flyctl deploy -c fly.staging.toml --local-only --depot=false`: Fly **v67 complete**, imagen `registry.fly.io/ucomenu-staging:pedidos-d146c2e-git`, digest `sha256:00f6d50da4575faf61dc47a531129009a16e4c282617e8f597e3ff23f51ecdcf`; máquina started, control passing, smoke y DNS correctos.
+- HTTP: inicio y login 200; sala sin sesión 307, sondeo 401. Ambos bundles nuevos responden 200 y contienen los accesos `cerrar-desde-mesas`, `abrir-carta-arriba` y la navegación `accion=cerrar`.
+- Sin cambios de base, secretos ni producción. No se repitieron suites locales sin cambios de código. Falta comprobación manual con sesión real. Sin push a origin.
+- Rollback: imagen `registry.fly.io/ucomenu-staging:mesas-300a9d7-git` (v66), sin operaciones de base.
