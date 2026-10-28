@@ -86,7 +86,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
       >
         Saltar al contenido
       </a>
-      <header className="panel-rail flex flex-wrap items-start justify-between gap-x-4 gap-y-1 border-b border-ink/15 px-4 pt-4 pb-3 lg:sticky lg:top-0 lg:h-screen lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:gap-0 lg:overflow-y-auto lg:border-0 lg:bg-brand-deep lg:p-5 lg:text-white print:hidden">
+      <header className={`panel-rail flex flex-wrap items-start justify-between gap-x-4 gap-y-1 border-b border-ink/15 px-4 pt-4 pb-3 ${area === "panel" ? "sticky top-0 z-30 bg-porcelain" : ""} lg:sticky lg:top-0 lg:h-screen lg:flex-col lg:flex-nowrap lg:items-stretch lg:justify-start lg:gap-0 lg:overflow-y-auto lg:border-0 lg:bg-brand-deep lg:p-5 lg:text-white print:hidden`}>
         <div className="min-w-0 flex-1 lg:flex-none">
           {org ? (
             <div className="flex min-w-0 items-center gap-3 lg:flex-col lg:items-start lg:gap-4">

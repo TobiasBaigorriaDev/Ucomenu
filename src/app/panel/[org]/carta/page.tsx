@@ -35,7 +35,11 @@ function deletionNotice(query: { borrado?: string | string[]; platos?: string | 
 
 export default async function CartaPage({ params, searchParams }: PageProps<"/panel/[org]/carta">) {
   const { org } = await params;
-  const deleted = deletionNotice(await searchParams);
+  const query = await searchParams;
+  const deleted = deletionNotice(query);
+  const search = (Array.isArray(query.buscar) ? query.buscar[0] : query.buscar ?? "").trim();
+  const normalize = (value: string) => value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("es");
+  const matches = (name: string) => normalize(name).includes(normalize(search));
   const { membership } = await requireMembership(org, `/panel/${org}/carta`);
   const db = await createSessionClient();
 
@@ -99,13 +103,27 @@ export default async function CartaPage({ params, searchParams }: PageProps<"/pa
         <CreateCategoryForm orgSlug={membership.org.slug} canWrite={canWrite} />
       </section>
 
+      {carta.length > 0 ? (
+        <form action={`/panel/${membership.org.slug}/carta`} className="mt-8 flex flex-wrap items-end gap-2" role="search">
+          <label className="grid gap-1 text-base font-medium" htmlFor="buscar-plato">
+            Buscar plato por nombre
+            <input id="buscar-plato" name="buscar" type="search" defaultValue={search} placeholder="Nombre del plato" className="min-h-11 w-full max-w-sm rounded-lg border border-ink/40 bg-white px-3 text-ink" />
+          </label>
+          <button type="submit" className={linkButtonClass}>Buscar</button>
+          {search ? <Link href={`/panel/${membership.org.slug}/carta`} className={linkButtonClass}>Limpiar búsqueda</Link> : null}
+        </form>
+      ) : null}
+      {search && !carta.some((category) => category.products.some((product) => matches(product.name))) ? (
+        <p role="status" className="mt-6 text-muted">No encontramos platos con ese nombre. Probá con otro.</p>
+      ) : null}
+
       {carta.length === 0 ? (
         <p className="mt-10 max-w-prose text-lg text-muted" data-testid="carta-vacia">
           Todavía no hay categorías. Creá la primera para empezar a cargar platos.
         </p>
       ) : null}
 
-      {carta.map((category, categoryIndex) => (
+      {carta.map((category, categoryIndex) => search && !category.products.some((product) => matches(product.name)) ? null : (
         <section
           key={category.id}
           aria-labelledby={`cat-${category.id}`}
@@ -152,6 +170,7 @@ export default async function CartaPage({ params, searchParams }: PageProps<"/pa
           {category.products.length > 0 ? (
             <ul className="mt-5 panel-list">
               {category.products.map((product, productIndex) => {
+                if (search && !matches(product.name)) return null;
                 const photo = imageUrl(product.image_path);
                 return (
                   <li key={product.id} className="border-b border-ink/15 py-4 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-center lg:gap-6" data-testid="plato" data-name={product.name}>
