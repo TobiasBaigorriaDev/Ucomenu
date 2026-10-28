@@ -24,6 +24,15 @@ export function cardSpans(products: Pick<MenuProduct, "image_path">[]): CardSpan
   });
 }
 
+/** La última tarjeta completa la fila de tres columnas en escritorio. */
+export function desktopLastSpan(products: Pick<MenuProduct, "image_path">[]): 1 | 2 | 3 {
+  if (products.length < 3) return 1;
+  const featured = Boolean(products[0]?.image_path);
+  const remaining = products.length - (featured ? 3 : 0);
+  const remainder = remaining % 3;
+  return remainder === 1 ? 3 : remainder === 2 ? 2 : 1;
+}
+
 /**
  * Sección de una categoría según el estilo de carta del local. `bento` (el predeterminado) lleva la banda de color pegajosa y la
  * grilla de cards; `clasica` y `minimal` llevan un título simple (la barra de categorías es fija y siempre visible, así que el
@@ -49,6 +58,7 @@ export function MenuSection({
   const { category, products } = section;
   const headingId = `${categoryAnchor(category.id)}-title`;
   const spans = cardSpans(products);
+  const lastDesktopSpan = desktopLastSpan(products);
 
   if (layout === "afiche") {
     // Banda llena con el tono de la categoría (el mismo ciclo que el bento) y el nombre en la condensada, del ancho de la banda.
@@ -112,7 +122,7 @@ export function MenuSection({
       </div>
       <ul className="mt-2 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         {products.map((product, i) => (
-          <DishCard key={product.id} product={product} span={spans[i]} onSelect={onSelect} lang={lang} />
+          <DishCard key={product.id} product={product} span={spans[i]} desktopSpan={i === products.length - 1 ? lastDesktopSpan : 1} onSelect={onSelect} lang={lang} />
         ))}
       </ul>
     </section>

@@ -43,9 +43,12 @@ const PHOTO_SIZES: Record<PhotoShape, string> = {
  * una foto. Solo se confía en `onError`: una imagen diferida (`lazy`) que aún no empezó a cargar figura como `complete` con
  * ancho 0, así que mirar ese estado al hidratar la marcaba como rota por error. El tamaño lo fija la proporción, así que la grilla no salta al cargar. Ver ficha rendimiento-carta-publica.
  */
-export function CardPhoto({ src, name, span, lang }: { src: string; name: string; span: PhotoShape; lang: Lang }) {
+export function CardPhoto({ src, name, span, lang, desktopSpan = 1 }: { src: string; name: string; span: PhotoShape; lang: Lang; desktopSpan?: 1 | 2 | 3 }) {
   const [failed, setFailed] = useState(false);
-  const frame = `relative w-full overflow-hidden bg-[var(--carta-sand)] ${PHOTO_RATIO[span]}`;
+  const ratio = desktopSpan > 1 && span === "tail" ? "aspect-[16/10] md:aspect-[16/7]"
+    : desktopSpan > 1 && span === "normal" ? "aspect-[4/3] md:aspect-[16/7]"
+    : PHOTO_RATIO[span];
+  const frame = `relative w-full overflow-hidden bg-[var(--carta-sand)] ${ratio}`;
 
   if (failed) {
     return (
@@ -65,7 +68,7 @@ export function CardPhoto({ src, name, span, lang }: { src: string; name: string
         alt={TEXTOS[lang].dish.photoAlt(name)}
         width={span === "single" || span === "poster" ? 768 : span === "featured" ? 640 : 384}
         height={span === "single" || span === "poster" ? 512 : span === "featured" ? 400 : 288}
-        sizes={PHOTO_SIZES[span]}
+        sizes={desktopSpan === 3 ? "(min-width: 768px) 80vw, 100vw" : desktopSpan === 2 ? "(min-width: 768px) 66vw, 100vw" : PHOTO_SIZES[span]}
         loading="lazy"
         onError={() => setFailed(true)}
         className="absolute inset-0 size-full object-cover motion-safe:transition-transform motion-safe:duration-500 motion-safe:ease-out group-hover:scale-[1.04]"
@@ -78,7 +81,7 @@ export function CardPhoto({ src, name, span, lang }: { src: string; name: string
  * Card de un plato: foto (o una card tipográfica teñida con la paleta si no hay), nombre en display, precio, descripción
  * corta, etiquetas y opciones. Toda la card abre el detalle: el botón del nombre se estira sobre ella.
  */
-export function DishCard({ product, span, onSelect, lang }: { product: MenuProduct; span: CardSpan; onSelect?: (product: MenuProduct) => void; lang: Lang }) {
+export function DishCard({ product, span, desktopSpan = 1, onSelect, lang }: { product: MenuProduct; span: CardSpan; desktopSpan?: 1 | 2 | 3; onSelect?: (product: MenuProduct) => void; lang: Lang }) {
   const t = TEXTOS[lang].dish;
   const photo = imageUrl(product.image_path);
   // Las cards grandes (destacada y única) llevan el nombre más grande y la descripción completa.
@@ -102,13 +105,13 @@ export function DishCard({ product, span, onSelect, lang }: { product: MenuProdu
   );
 
   return (
-    <li className={SPAN_CLASS[span]}>
+    <li className={`${SPAN_CLASS[span]} ${desktopSpan === 3 ? "md:col-span-3" : desktopSpan === 2 ? "md:col-span-2" : ""}`}>
       <article
         className={`group relative flex h-full flex-col overflow-hidden rounded-3xl ring-1 ring-inset ring-ink/15 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-[var(--carta-terra)] ${
           photo ? "bg-porcelain" : "bg-[var(--carta-sand)]"
         }`}
       >
-        {photo ? <CardPhoto src={photo} name={product.name} span={span} lang={lang} /> : null}
+        {photo ? <CardPhoto src={photo} name={product.name} span={span} lang={lang} desktopSpan={desktopSpan} /> : null}
         {!photo ? (
           // Inicial editorial: llena el espacio de una card sin foto sin sumarle altura ni información (es decorativa).
           <span aria-hidden="true" className="pointer-events-none absolute -right-1 -bottom-4 font-display text-[7rem] leading-none text-[var(--carta-green)]/10 select-none md:text-[9rem]">
