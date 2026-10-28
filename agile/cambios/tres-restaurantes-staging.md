@@ -10,10 +10,10 @@ Estado: preparado para carga. Nivel C por asignación de planes Pro y Premium en
 
 ## Invariantes y recuperación
 
-- El cargador exige que la URL coincida con el proyecto indicado y se ejecuta con `--local` para limitar cada escritura.
+- El cargador exige que la URL coincida con el proyecto indicado y exige `--local` en staging para limitar cada escritura.
 - Los ID y slugs nuevos deben estar libres; si un ID corresponde a otro slug, se aborta antes de escribir. La lectura previa en staging confirmó que los tres están libres.
 - El plan elegido queda explícito en la definición del local. Tras cargar se comprobarán filas, plan, imágenes en Storage y respuesta de la carta.
-- Si falla a mitad de un local, se puede volver a ejecutar para ese slug; antes de cualquier limpieza se comprobará qué filas y archivos alcanzó a crear. No se invoca `--quitar` sobre locales ajenos.
+- Si falla a mitad de un local, se puede volver a ejecutar para ese slug: completa sucursal y mesas faltantes antes de cargar el catálogo. Antes de cualquier limpieza se comprobará qué filas y archivos alcanzó a crear. No se invoca `--quitar` sobre locales ajenos.
 
 ## Evidencia
 

@@ -1,19 +1,17 @@
 #!/usr/bin/env node
 /**
- * Carga los locales de demostración del proyecto de STAGING de Supabase (definidos en `tools/demo/locales-staging.mjs`):
- * «La Bestia Burger & Bar» (estilo Afiche) y «Aurelia Alta Cocina» (estilo Minimal), cada uno con unos 25 platos con foto,
- * variantes y adicionales, etiquetas, un plato agotado, mesas y logo. Datos y fotos ficticios; no toca ninguna otra
- * organización.
+ * Carga un local ficticio de `tools/demo/locales-staging.mjs` en STAGING con catálogo, fotos, mesas y logo.
+ * Cada ejecución remota exige `--local` para limitar la escritura a una organización.
  *
  * Uso (las credenciales van por entorno, nunca por archivo ni argumento posicional; no se imprimen):
  *   NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<clave de servicio> \
  *     node tools/sembrar-demo-staging.mjs --proyecto <ref> [--local <slug>]            # carga (idempotente: la vuelve a dejar igual)
  *     node tools/sembrar-demo-staging.mjs --proyecto <ref> [--local <slug>] --quitar   # quita el catálogo, las fotos y el logo
  *
- * Sin `--local` se hacen todos los locales. Protecciones: exige `--proyecto <ref>` y que la URL sea exactamente
+ * Protecciones: exige `--local <slug>`, `--proyecto <ref>` y que la URL sea exactamente
  * `https://<ref>.supabase.co` (así un cambio de proyecto enlazado no la dirige a otro por accidente). `--prueba-local`
  * (solo con el Supabase local) sirve para ensayarla. Las organizaciones se crean sin ninguna cuenta: quien las edite se suma
- * como Dueño desde SuperAdmin («Sumar un Dueño»). La suscripción queda en plan Pro y vigente por unos 700 días para que la
+ * como Dueño desde SuperAdmin («Sumar un Dueño»). La suscripción queda en el plan definido y vigente por unos 700 días para que la
  * demo no caduque (el alta normal por SuperAdmin acepta hasta 731 días); si hace falta otra, se cambia desde SuperAdmin.
  * Esta herramienta escribe con la clave de servicio y no deja filas en `audit_log`: es una herramienta de demostración, no un
  * alta de cliente. Para producción (datos reales de clientes) no se usa sin una decisión aparte.
@@ -40,6 +38,7 @@ if (pruebaLocal) {
 } else {
   if (!projectRef || !/^[a-z0-9]{20}$/.test(projectRef)) throw new Error("Falta --proyecto <ref> (la referencia de 20 caracteres del proyecto de staging).");
   if (host !== `${projectRef}.supabase.co`) throw new Error(`La URL (${host}) no coincide con --proyecto ${projectRef}.`);
+  if (!soloLocal || soloLocal.startsWith("--")) throw new Error("En staging es obligatorio --local <slug> para limitar la escritura.");
 }
 
 const locales = soloLocal ? LOCALES.filter((l) => l.slug === soloLocal) : LOCALES;
@@ -74,23 +73,25 @@ async function quitarCatalogo(def) {
 }
 
 async function asegurarOrganizacion(def) {
-  const existente = check(await db.from("organizations").select("id").eq("id", def.org).maybeSingle(), "leer la organización");
+  const existente = check(await db.from("organizations").select("id,slug").eq("id", def.org).maybeSingle(), "leer la organización");
   if (existente) {
-    const identidad = check(await db.from("organizations").select("slug").eq("id", def.org).single(), "comprobar la organización");
-    if (identidad.slug !== def.slug) throw new Error(`El identificador de ${def.slug} pertenece a otro local: no se toca.`);
+    if (existente.slug !== def.slug) throw new Error(`El identificador de ${def.slug} pertenece a otro local: no se toca.`);
   }
   if (!existente) {
     const otra = check(await db.from("organizations").select("id").eq("slug", def.slug).maybeSingle(), "comprobar el identificador");
     if (otra) throw new Error(`Ya existe otra organización con el identificador «${def.slug}»: no se toca.`);
     check(await db.from("organizations").insert({ id: def.org, slug: def.slug, name: def.name }), "crear la organización");
-    check(await db.from("branches").insert({ id: def.branch, organization_id: def.org, slug: "centro", name: "Centro" }), "crear la sucursal");
-    const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4"].map((label) => ({ organization_id: def.org, branch_id: def.branch, label }));
-    check(await db.from("tables").insert(mesas), "crear las mesas");
   }
+  const sucursales = check(await db.from("branches").select("id,organization_id,slug").or(`id.eq.${def.branch},and(organization_id.eq.${def.org},slug.eq.centro)`), "comprobar la sucursal");
+  if (sucursales.some((s) => s.id !== def.branch || s.organization_id !== def.org || s.slug !== "centro")) throw new Error(`La sucursal de ${def.slug} tiene un identificador en conflicto: no se toca.`);
+  if (!sucursales.length) check(await db.from("branches").insert({ id: def.branch, organization_id: def.org, slug: "centro", name: "Centro" }), "crear la sucursal");
+  const existentes = check(await db.from("tables").select("label").eq("organization_id", def.org).eq("branch_id", def.branch), "comprobar las mesas");
+  const mesas = ["Mesa 1", "Mesa 2", "Mesa 3", "Mesa 4"].filter((label) => !existentes.some((m) => m.label === label)).map((label) => ({ organization_id: def.org, branch_id: def.branch, label }));
+  if (mesas.length) check(await db.from("tables").insert(mesas), "crear las mesas");
   // Estilo y paleta se reafirman en cada corrida (el Dueño puede haberlos cambiado; la herramienta deja la demo como se diseñó).
   check(await db.from("organizations").update({ menu_layout: def.layout, menu_palette: def.palette }).eq("id", def.org), "dejar estilo y paleta");
   const vencimiento = new Date(Date.now() + 700 * 24 * 3600 * 1000).toISOString();
-  // La prueba gratuita de 14 días la crea el alta; se reemplaza por Pro vigente para que la demo no caduque.
+  // La prueba gratuita de 14 días la crea el alta; se reemplaza por el plan de la demo para que no caduque.
   check(
     await db.from("subscriptions").update({ plan_code: def.plan ?? "pro", billing_cycle: "yearly", current_period_end: vencimiento, trial_ends_at: null }).eq("organization_id", def.org),
     `dejar el plan ${def.plan ?? "pro"} vigente`,

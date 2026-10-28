@@ -1,6 +1,6 @@
 /**
- * Locales de demostración del STAGING (los carga `tools/sembrar-demo-staging.mjs`): una hamburguesería-bar en estilo Afiche y
- * un restaurante de alta cocina en estilo Minimal. Datos ficticios; fotos de Unsplash (ver `catalogo.mjs`). Precios en
+ * Locales de demostración del STAGING (los carga `tools/sembrar-demo-staging.mjs`).
+ * Datos ficticios; fotos de Unsplash (ver `catalogo.mjs`). Precios en
  * centavos de ARS. Los ids de organización y sucursal son fijos para que la carga sea idempotente.
  */
 import { GF, VG, VT } from "./catalogo.mjs";
@@ -145,7 +145,7 @@ export const LOCALES = [
     layout: "bento", palette: "oliva", logo: { fondo: "#3d5f48", trazo: "#f4efe4", glifo: "cloche" },
     categorias: [
       { name: "Para empezar", platos: [
-        { name: "Tostada de campo", desc: "Pan de masa madre, tomate fresco, oliva y albahaca.", price: 790000, foto: "tostado", tags: [VG] },
+        { name: "Tostado de jamón y queso", desc: "Pan dorado con jamón y queso fundido.", price: 790000, foto: "tostado" },
         { name: "Tabla de quesos", desc: "Quesos regionales, nueces y fruta de estación.", price: 1990000, foto: "quesos", tags: [VT] },
         { name: "Ensalada de la huerta", desc: "Hojas verdes, vegetales de estación y vinagreta cítrica.", price: 1190000, foto: "ensaladaMixta", tags: [VG, GF] },
       ] },
@@ -170,9 +170,9 @@ export const LOCALES = [
     layout: "afiche", palette: "carbon", logo: { fondo: "#a43f22", trazo: "#fff2dd", glifo: "llama" },
     categorias: [
       { name: "Al centro", platos: [
-        { name: "Empanadas de carne", desc: "Tres empanadas de carne cortada a cuchillo.", price: 990000, foto: "tacos" },
+        { name: "Tacos de carne", desc: "Tres tacos de carne con vegetales frescos.", price: 990000, foto: "tacos" },
         { name: "Provoleta a las brasas", desc: "Queso fundido, tomate y orégano.", price: 1490000, foto: "quesos", tags: [VT, GF] },
-        { name: "Chorizo de la casa", desc: "Chorizo a la parrilla con chimichurri.", price: 1190000, foto: "asado" },
+        { name: "Asado de tira", desc: "Asado de tira a la parrilla con chimichurri.", price: 1190000, foto: "asado" },
       ] },
       { name: "De la parrilla", platos: [
         { name: "Entraña al fuego", desc: "Entraña a las brasas con papas rústicas.", price: 3590000, foto: "entrana", tags: [GF] },
