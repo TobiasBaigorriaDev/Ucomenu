@@ -64,7 +64,7 @@ export function MenuSection({
     // Banda llena con el tono de la categoría (el mismo ciclo que el bento) y el nombre en la condensada, del ancho de la banda.
     // No es pegajosa: con títulos de este tamaño taparía los platos; la barra fija dice en qué categoría se está.
     return (
-      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="mt-12 scroll-mt-20 first:mt-6 sm:mt-16">
+      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="mt-12 scroll-mt-20 first:mt-0 sm:mt-16">
         <div className={`-mx-4 px-4 pt-4 pb-3 sm:mx-0 sm:px-6 sm:pt-5 ${toneFor(index)}`}>
           <div className="@container">
             <h2 id={headingId} className="font-display leading-[0.85] text-balance [overflow-wrap:anywhere]" style={{ fontSize: posterFontSize(category.name, { min: 2.5, max: 13 }) }}>
@@ -84,7 +84,7 @@ export function MenuSection({
 
   if (layout !== "bento") {
     return (
-      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className={`scroll-mt-20 ${layout === "minimal" ? "mt-16" : "mt-12"}`}>
+      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className={`scroll-mt-20 first:mt-0 ${layout === "minimal" ? "mt-16" : "mt-12"}`}>
         <div className="flex items-baseline justify-between gap-4 border-b-[1.5px] border-ink pb-2">
           <h2 id={headingId} className="min-w-0 font-display text-[2rem] leading-none text-[var(--carta-green)] [overflow-wrap:anywhere] sm:text-4xl">
             {category.name}

@@ -54,7 +54,7 @@ export function CartaPreview({ name, logo, palette, layout, theme = null, testId
             ))}
           </ul>
         )}
-        <div className={`mx-auto px-4 pb-4 sm:px-6 ${layout === "minimal" ? "max-w-2xl" : "max-w-3xl"}`}>
+        <div className={`mx-auto px-4 pb-4 sm:px-6 ${layout !== "bento" ? "mt-6 " : ""}${layout === "minimal" ? "max-w-2xl" : "max-w-3xl"}`}>
           <MenuSection section={SECTIONS[1]} index={1} lang="es" layout={layout} />
         </div>
       </div>
