@@ -138,4 +138,79 @@ export const LOCALES = [
       },
     ],
   },
+  {
+    slug: "patio-oliva", name: "Patio Oliva", plan: "pro",
+    org: "07be1376-5360-4348-aaed-baf605468521", branch: "b3b4d2ce-5202-468e-a0ab-48b384eea3c0",
+    prefix: { cat: "d2", prod: "d3", grp: "d4", opt: "d5" },
+    layout: "bento", palette: "oliva", logo: { fondo: "#3d5f48", trazo: "#f4efe4", glifo: "cloche" },
+    categorias: [
+      { name: "Para empezar", platos: [
+        { name: "Tostada de campo", desc: "Pan de masa madre, tomate fresco, oliva y albahaca.", price: 790000, foto: "tostado", tags: [VG] },
+        { name: "Tabla de quesos", desc: "Quesos regionales, nueces y fruta de estación.", price: 1990000, foto: "quesos", tags: [VT] },
+        { name: "Ensalada de la huerta", desc: "Hojas verdes, vegetales de estación y vinagreta cítrica.", price: 1190000, foto: "ensaladaMixta", tags: [VG, GF] },
+      ] },
+      { name: "Platos de la casa", platos: [
+        { name: "Pasta al pesto", desc: "Pasta fresca con pesto de albahaca y parmesano.", price: 1690000, foto: "tagliatelle", tags: [VT] },
+        { name: "Pizza de estación", desc: "Masa de fermentación lenta, mozzarella y vegetales asados.", price: 1890000, foto: "pizza", tags: [VT] },
+        { name: "Salmón con verdes", desc: "Salmón a la plancha con ensalada y limón.", price: 2990000, foto: "ensaladaSalmon", tags: [GF] },
+        { name: "Bondiola al horno", desc: "Bondiola braseada con papas rústicas y hierbas.", price: 2690000, foto: "bondiola" },
+      ] },
+      { name: "Algo dulce y bebidas", platos: [
+        { name: "Tarta de frambuesa", desc: "Masa crocante, crema suave y frambuesas.", price: 1090000, foto: "tortaFrambuesa", tags: [VT] },
+        { name: "Helado artesanal", desc: "Dos bochas de helado de temporada.", price: 790000, foto: "helado", tags: [VT] },
+        { name: "Limonada fresca", desc: "Limón exprimido, menta y hielo.", price: 590000, foto: "jugo", tags: [VG, GF] },
+        { name: "Copa de Malbec", desc: "Malbec de Mendoza por copa.", price: 890000, foto: "vino", tags: [VG] },
+      ] },
+    ],
+  },
+  {
+    slug: "fuego-andino", name: "Fuego Andino", plan: "pro",
+    org: "e0000000-0000-4000-8000-000000000001", branch: "e1000000-0000-4000-8000-000000000001",
+    prefix: { cat: "e2", prod: "e3", grp: "e4", opt: "e5" },
+    layout: "afiche", palette: "carbon", logo: { fondo: "#a43f22", trazo: "#fff2dd", glifo: "llama" },
+    categorias: [
+      { name: "Al centro", platos: [
+        { name: "Empanadas de carne", desc: "Tres empanadas de carne cortada a cuchillo.", price: 990000, foto: "tacos" },
+        { name: "Provoleta a las brasas", desc: "Queso fundido, tomate y orégano.", price: 1490000, foto: "quesos", tags: [VT, GF] },
+        { name: "Chorizo de la casa", desc: "Chorizo a la parrilla con chimichurri.", price: 1190000, foto: "asado" },
+      ] },
+      { name: "De la parrilla", platos: [
+        { name: "Entraña al fuego", desc: "Entraña a las brasas con papas rústicas.", price: 3590000, foto: "entrana", tags: [GF] },
+        { name: "Costillar lento", desc: "Costillar cocido lentamente, para compartir.", price: 6490000, foto: "costillar", tags: [GF] },
+        { name: "Parrillada andina", desc: "Selección de cortes y achuras para dos.", price: 7990000, foto: "parrillada" },
+        { name: "Ojo de bife", desc: "Corte de 350 g con vegetales grillados.", price: 4490000, foto: "ojoBife", tags: [GF] },
+      ] },
+      { name: "Guarniciones y cierre", platos: [
+        { name: "Papas con parmesano", desc: "Papas doradas con parmesano y perejil.", price: 890000, foto: "papasParmesano", tags: [VT] },
+        { name: "Ensalada criolla", desc: "Tomate, cebolla y pimiento con oliva.", price: 790000, foto: "ensaladaMixta", tags: [VG, GF] },
+        { name: "Panqueques con dulce de leche", desc: "Panqueques tibios y dulce de leche.", price: 1090000, foto: "panqueques", tags: [VT] },
+        { name: "Malbec de la casa", desc: "Copa de vino tinto de Mendoza.", price: 890000, foto: "malbec", tags: [VG] },
+      ] },
+    ],
+  },
+  {
+    slug: "bruma-bistro", name: "Bruma Bistró", plan: "premium",
+    org: "f0000000-0000-4000-8000-000000000001", branch: "f1000000-0000-4000-8000-000000000001",
+    prefix: { cat: "f2", prod: "f3", grp: "f4", opt: "f5" },
+    layout: "minimal", palette: "borgona", logo: { fondo: "#35151f", trazo: "#f2d8ad", glifo: "cloche" },
+    categorias: [
+      { name: "Entradas", platos: [
+        { name: "Langostinos cítricos", desc: "Langostinos sellados con lima y hierbas frescas.", price: 2890000, foto: "langostinos", tags: [GF] },
+        { name: "Quesos de autor", desc: "Selección de quesos y frutas de estación.", price: 2590000, foto: "quesos", tags: [VT] },
+        { name: "Ensalada Bruma", desc: "Hojas tiernas, salmón ahumado y vinagreta de limón.", price: 2290000, foto: "ensaladaSalmon", tags: [GF] },
+      ] },
+      { name: "Principales", platos: [
+        { name: "Lomo con espárragos", desc: "Lomo a la plancha con espárragos y reducción de vino.", price: 5890000, foto: "lomoEsparragos" },
+        { name: "Pesca del día", desc: "Pescado fresco con vegetales de estación.", price: 4690000, foto: "pesca", tags: [GF] },
+        { name: "Arroz de mar", desc: "Arroz meloso con langostinos y mejillones.", price: 5290000, foto: "arrozMariscos" },
+        { name: "Pasta de hongos", desc: "Pasta fresca con hongos salteados y crema suave.", price: 3890000, foto: "penne", tags: [VT] },
+      ] },
+      { name: "Postres y copas", platos: [
+        { name: "Panna cotta", desc: "Vainilla y frutos rojos.", price: 1890000, foto: "pannaCotta", tags: [VT, GF] },
+        { name: "Tiramisú de la casa", desc: "Mascarpone, café y cacao.", price: 1990000, foto: "tiramisu", tags: [VT] },
+        { name: "Espumante rosé", desc: "Copa de espumante de método tradicional.", price: 2490000, foto: "espumante", tags: [VG] },
+        { name: "Cóctel Bruma", desc: "Gin, frutos rojos y hierbas frescas.", price: 2290000, foto: "cocteles" },
+      ] },
+    ],
+  },
 ];

@@ -75,6 +75,10 @@ async function quitarCatalogo(def) {
 
 async function asegurarOrganizacion(def) {
   const existente = check(await db.from("organizations").select("id").eq("id", def.org).maybeSingle(), "leer la organización");
+  if (existente) {
+    const identidad = check(await db.from("organizations").select("slug").eq("id", def.org).single(), "comprobar la organización");
+    if (identidad.slug !== def.slug) throw new Error(`El identificador de ${def.slug} pertenece a otro local: no se toca.`);
+  }
   if (!existente) {
     const otra = check(await db.from("organizations").select("id").eq("slug", def.slug).maybeSingle(), "comprobar el identificador");
     if (otra) throw new Error(`Ya existe otra organización con el identificador «${def.slug}»: no se toca.`);
@@ -88,8 +92,8 @@ async function asegurarOrganizacion(def) {
   const vencimiento = new Date(Date.now() + 700 * 24 * 3600 * 1000).toISOString();
   // La prueba gratuita de 14 días la crea el alta; se reemplaza por Pro vigente para que la demo no caduque.
   check(
-    await db.from("subscriptions").update({ plan_code: "pro", billing_cycle: "yearly", current_period_end: vencimiento, trial_ends_at: null }).eq("organization_id", def.org),
-    "dejar el plan Pro vigente",
+    await db.from("subscriptions").update({ plan_code: def.plan ?? "pro", billing_cycle: "yearly", current_period_end: vencimiento, trial_ends_at: null }).eq("organization_id", def.org),
+    `dejar el plan ${def.plan ?? "pro"} vigente`,
   );
 }
 
@@ -128,7 +132,7 @@ async function sembrar(def) {
   const total = [...bytes.values()].reduce((suma, b) => suma + b.length, 0);
   console.log(
     `${def.slug}: ${categorias.length} categorías, ${platos.length} platos (${conFoto.length} con foto, ${(total / 1024 / 1024).toFixed(1)} MB), ` +
-      `${grupos.length} grupos de opciones, ${agotados.length} agotado, 4 mesas, logo, estilo ${def.layout}, paleta ${def.palette}, plan Pro vigente.`,
+      `${grupos.length} grupos de opciones, ${agotados.length} agotado, 4 mesas, logo, estilo ${def.layout}, paleta ${def.palette}, plan ${def.plan ?? "pro"} vigente.`,
   );
   console.log(`Carta: /m/${def.slug}/centro (en el dominio de la app).`);
 }
