@@ -5,8 +5,8 @@
  *
  * Uso (las credenciales van por entorno, nunca por archivo ni argumento posicional; no se imprimen):
  *   NEXT_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co SUPABASE_SERVICE_ROLE_KEY=<clave de servicio> \
- *     node tools/sembrar-demo-staging.mjs --proyecto <ref> [--local <slug>]            # carga (idempotente: la vuelve a dejar igual)
- *     node tools/sembrar-demo-staging.mjs --proyecto <ref> [--local <slug>] --quitar   # quita el catálogo, las fotos y el logo
+ *     node tools/sembrar-demo-staging.mjs --proyecto <ref> --local <slug>            # carga (idempotente: la vuelve a dejar igual)
+ *     node tools/sembrar-demo-staging.mjs --proyecto <ref> --local <slug> --quitar   # quita el catálogo, las fotos y el logo
  *
  * Protecciones: exige `--local <slug>`, `--proyecto <ref>` y que la URL sea exactamente
  * `https://<ref>.supabase.co` (así un cambio de proyecto enlazado no la dirige a otro por accidente). `--prueba-local`
