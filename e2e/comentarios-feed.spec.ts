@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type Browser, type Page } from "@playwright/test";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Estado } from "./support";
+import { PALETTES } from "../src/lib/identidad/palettes";
 
 /**
  * Comentarios con aprobación previa del feed (nivel C, ficha comentarios-del-feed), contra el servidor de pruebas, a 390 px: el
@@ -90,6 +91,44 @@ async function escribir(page: Page, texto: string, alias = "") {
 }
 
 test.describe("desde la mesa", () => {
+  test("recupera una carga fallida sin cerrar la hoja", async ({ page }) => {
+    await conLocal("coment-reintento", "active", async (t) => {
+      await sembrarVideo(t.orgId);
+      const token = await mesa(t.orgId);
+      await page.goto(`/t/${token}/videos`);
+      const ruta = `**/t/${token}/videos*`;
+      await page.route(ruta, (route) => route.request().method() === "POST" ? route.abort("internetdisconnected") : route.continue());
+      await boton(page).click();
+      await expect(page.getByTestId("feed-comentarios-error-carga")).toBeVisible();
+      await page.unroute(ruta);
+      await page.getByRole("button", { name: "Reintentar", exact: true }).click();
+      await expect(page.getByTestId("feed-comentarios-vacio")).toBeVisible();
+      await expect(page.getByTestId("feed-comentarios-error-carga")).toHaveCount(0);
+    });
+  });
+
+  test("los campos y errores conservan contraste en las cuatro paletas oscuras", async ({ page }) => {
+    await conLocal("coment-contraste", "active", async (t) => {
+      await sembrarVideo(t.orgId);
+      const token = await mesa(t.orgId);
+      for (const palette of ["carbon", "medianoche", "bosque", "borgona"] as const) {
+        expect((await service().from("organizations").update({ menu_palette: palette }).eq("id", t.orgId)).error).toBeNull();
+        await page.goto(`/t/${token}/videos`);
+        await abrir(page);
+        await escribir(page, "Texto legible");
+        for (const field of ["feed-comentarios-alias", "feed-comentarios-texto"]) {
+          const styles = await page.getByTestId(field).evaluate((el) => ({ color: getComputedStyle(el).color, background: getComputedStyle(el).backgroundColor }));
+          const rgb = (hex: string) => `rgb(${[1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).join(", ")})`;
+          expect(styles).toEqual({ color: rgb(PALETTES[palette].ink), background: rgb(PALETTES[palette].background) });
+        }
+        await page.getByTestId("feed-comentarios-texto").fill("a".repeat(281));
+        const color = await page.getByTestId("feed-comentarios-contador").evaluate((el) => getComputedStyle(el).color);
+        const terra = PALETTES[palette].terra;
+        expect(color).toBe(`rgb(${[1, 3, 5].map((i) => parseInt(terra.slice(i, i + 2), 16)).join(", ")})`);
+        if (palette === "carbon") await page.screenshot({ path: "output/ux/comentarios-carbon.png" });
+      }
+    });
+  });
   test("se envía con alias, queda pendiente y no se ve; no guarda nada en el dispositivo", async ({ browser }) => {
     await conLocal("coment-mesa", "active", async (t) => {
       const video = await sembrarVideo(t.orgId);

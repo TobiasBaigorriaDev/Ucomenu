@@ -40,7 +40,7 @@ export function PublicMenuView({
   const theme = menu.organization.theme;
 
   return (
-    <div lang={lang} data-layout={menu.organization.menu_layout} data-tema={theme ?? undefined} className={`${cartaFontClass} ${callBar ? "carta pb-40" : "carta"}`} style={{ ...paletteStyle(menu.organization.menu_palette), ...themeStyle(theme) }}>
+    <div lang={lang} data-layout={menu.organization.menu_layout} data-tema={theme ?? undefined} className={`${cartaFontClass} ${callBar ? "carta carta-con-llamado" : "carta"}`} style={{ ...paletteStyle(menu.organization.menu_palette), ...themeStyle(theme) }}>
       <LanguageSwitcher languages={menu.languages} current={lang} />
       <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} lang={lang} theme={theme} layout={menu.organization.menu_layout} />
       {menu.hasVideos && !callBar ? (

@@ -19,6 +19,8 @@
   --carta-green-deep: #2f4a39;
   --carta-blush: #f3d2c6;
   --carta-terra: #a43f22;
+  /* Los errores deben seguir siendo legibles también en las paletas oscuras. */
+  --danger: var(--carta-terra);
   --carta-sand: #e8dcc2;
   /* Texto sobre el acento y la terracota: blanco en las paletas claras, la tinta del fondo en las oscuras. */
   --on-accent: #ffffff;
@@ -29,6 +31,10 @@
 }
 
 /* `font-display` del tema es global (Young Serif); dentro de la carta manda Gloock, que solo existe en peso normal. */
+.carta-con-llamado {
+  padding-bottom: var(--call-bar-height, 10rem);
+}
+
 .carta .font-display {
   font-family: var(--font-gloock), Georgia, serif;
   font-weight: 400;

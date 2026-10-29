@@ -43,6 +43,43 @@ const mensaje = (page: Page) => page.getByTestId("mensaje-llamado");
 const llamarAlMozo = (page: Page) => barra(page).getByRole("button", { name: "Llamar al mozo" });
 const pedirCuenta = (page: Page) => barra(page).getByRole("button", { name: "Pedir la cuenta" });
 
+test("un corte de conexión conserva la carta y permite reintentar el llamado", async ({ page }) => {
+  const { t, mesa1 } = await nuevoLocal("llamado-sin-red");
+  await page.goto(`/t/${mesa1.qr_token}`);
+  await expect(llamarAlMozo(page)).toBeVisible();
+  const ruta = `**/t/${mesa1.qr_token}*`;
+  await page.route(ruta, (route) => route.request().method() === "POST" ? route.abort("internetdisconnected") : route.continue());
+  await llamarAlMozo(page).click();
+  await expect(mensaje(page)).toContainText(MENSAJE_NO_DISPONIBLE);
+  await expect(mensaje(page)).toHaveAttribute("role", "alert");
+  await expect(llamarAlMozo(page)).toBeEnabled();
+  await expect(page.getByTestId("mesa")).toHaveText("Mesa 1");
+  expect(await llamadosDe(t.orgId)).toHaveLength(0);
+  await page.unroute(ruta);
+  await llamarAlMozo(page).click();
+  await expect(mensaje(page)).toContainText("Avisamos al personal");
+  expect(await llamadosDe(t.orgId)).toHaveLength(1);
+});
+
+test("la barra ampliada con cuenta y reseña no tapa el pie a 320 px", async ({ page }) => {
+  const { t, branch, mesa1 } = await nuevoLocal("llamado-barra-ampliada");
+  await service().from("branches").update({ google_review_url: "https://g.page/r/CabcdEFGH1234/review" }).eq("id", branch);
+  const categoria = await service().from("categories").select("id").eq("organization_id", t.orgId).single();
+  await service().from("products").insert(Array.from({ length: 15 }, (_, i) => ({ organization_id: t.orgId, category_id: categoria.data!.id, name: `Plato ${i}`, price_cents: 10000, sort_order: i })));
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto(`/t/${mesa1.qr_token}`);
+  await pedirCuenta(page).click();
+  await expect(page.getByTestId("invitacion-resenas")).toBeVisible();
+  await expect(page.getByTestId("ver-cuenta")).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "instant" }));
+  await expect.poll(async () => {
+    const pie = await page.locator("footer").boundingBox();
+    const dock = await barra(page).boundingBox();
+    return pie!.y + pie!.height - dock!.y;
+  }).toBeLessThanOrEqual(1);
+  await page.screenshot({ path: "output/ux/barra-despues.png" });
+});
+
 test.describe("el comensal llama desde su mesa", () => {
   test("los botones aparecen, avisan al personal, confirman y no duplican", async ({ page }) => {
     const { t, mesa1 } = await nuevoLocal("llamado-flujo");

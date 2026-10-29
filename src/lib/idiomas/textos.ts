@@ -125,6 +125,7 @@ export type Textos = {
     closeComments: string;
     commentsEmpty: string;
     commentsMore: string;
+    commentsRetry: string;
     commentsLoading: string;
     commentsLoadError: string;
     anonymous: string;
@@ -262,6 +263,7 @@ const es: Textos = {
     closeComments: "Cerrar los comentarios",
     commentsEmpty: "Todavía no hay comentarios.",
     commentsMore: "Ver más comentarios",
+    commentsRetry: "Reintentar",
     commentsLoading: "Cargando…",
     commentsLoadError: "No se pudieron cargar los comentarios. Probá de nuevo en un momento.",
     anonymous: "Anónimo",
@@ -403,6 +405,7 @@ const en: Textos = {
     closeComments: "Close comments",
     commentsEmpty: "No comments yet.",
     commentsMore: "Show more comments",
+    commentsRetry: "Try again",
     commentsLoading: "Loading…",
     commentsLoadError: "We couldn't load the comments. Please try again in a moment.",
     anonymous: "Anonymous",
@@ -544,6 +547,7 @@ const pt: Textos = {
     closeComments: "Fechar os comentários",
     commentsEmpty: "Ainda não há comentários.",
     commentsMore: "Ver mais comentários",
+    commentsRetry: "Tentar novamente",
     commentsLoading: "Carregando…",
     commentsLoadError: "Não foi possível carregar os comentários. Tente novamente em instantes.",
     anonymous: "Anônimo",

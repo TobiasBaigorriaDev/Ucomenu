@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useCallback, useEffect, useState, type ReactNode } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
@@ -148,10 +148,31 @@ export function CallBar({
   reviewUrl?: string | null;
   reviewKey?: string;
 }) {
+  const bar = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    const element = bar.current;
+    const carta = element?.closest<HTMLElement>(".carta");
+    if (!element || !carta) return;
+    const measure = () => carta.style.setProperty("--call-bar-height", `${Math.ceil(element.getBoundingClientRect().height)}px`);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      carta.style.removeProperty("--call-bar-height");
+    };
+  }, []);
   // «Ver mi cuenta» (ADR 0044) sigue ofrecido aunque después se toque «Llamar al mozo» (cada envío reemplaza el estado del anterior).
   const [accountReady, setAccountReady] = useState(false);
   const [state, formAction] = useActionState<CallState & { invite?: boolean }, FormData>(async (previous, formData) => {
-    const next: CallState & { invite?: boolean } = await createWaiterCallAction(previous, formData);
+    let next: CallState & { invite?: boolean };
+    try {
+      next = await createWaiterCallAction(previous, formData);
+    } catch {
+      // Un corte de conexión no debe desmontar la carta ni afirmar que se avisó.
+      // El reintento es manual: el servidor sigue decidiendo si ya hay un llamado.
+      return { tone: "error", message: TEXTOS[lang].call.unavailable };
+    }
     if (next.account) setAccountReady(true);
     // La invitación se ofrece solo tras pedir la cuenta, cuando el pedido se registró de verdad, y una vez al día por dispositivo.
     return reviewUrl && reviewKey && next.kind === "bill" && next.tone === "ok" && claimReviewInvite(reviewKey) ? { ...next, invite: true } : next;
@@ -166,6 +187,7 @@ export function CallBar({
   return (
     <>
     <form
+      ref={bar}
       action={formAction}
       aria-label={TEXTOS[lang].call.form}
       data-testid="barra-llamado"

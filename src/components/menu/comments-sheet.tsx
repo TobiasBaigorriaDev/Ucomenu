@@ -13,7 +13,7 @@ export type CommentAccess = LikeAccess;
 const circle = "grid size-11 shrink-0 place-items-center rounded-full bg-black/55 backdrop-blur-sm";
 const countClass = "text-sm leading-none font-semibold tabular-nums text-white [text-shadow:0_1px_3px_rgb(0_0_0/0.8)]";
 const fieldClass =
-  "w-full rounded-2xl border-[1.5px] border-ink/35 bg-white px-3.5 py-2.5 text-base text-ink placeholder:text-muted/80 focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink";
+  "w-full rounded-2xl border-[1.5px] border-ink/35 bg-porcelain px-3.5 py-2.5 text-base text-ink placeholder:text-muted focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink";
 /** Botones de la hoja: el mismo lenguaje que las celdas de «Llamar al mozo» (radio grande y colores de la paleta del local). */
 const cellBase =
   "inline-flex min-h-12 items-center justify-center rounded-3xl px-5 py-2 text-base font-semibold focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-ink disabled:cursor-not-allowed disabled:opacity-60";
@@ -240,7 +240,11 @@ export function CommentsSheet({ videoId, access, lang, hasBar, onClose }: { vide
             {loadError}
           </p>
         ) : null}
-        {hasMore && !loading ? (
+        {loadError && !loading ? (
+          <button type="button" onClick={() => loadPage(comments.length)} data-testid="feed-comentarios-reintentar" className={`${cellBase} mt-2 min-h-11 border-[1.5px] border-ink/40 text-ink hover:bg-ink/5`}>
+            {t.commentsRetry}
+          </button>
+        ) : hasMore && !loading ? (
           <button type="button" onClick={() => loadPage(comments.length)} data-testid="feed-comentarios-mas" className={`${cellBase} mt-2 min-h-11 border-[1.5px] border-ink/40 text-ink hover:bg-ink/5`}>
             {t.commentsMore}
           </button>

@@ -59,10 +59,9 @@ export function AccountSheet({ token, ticket, lang, onClose, onExpired }: { toke
       aria-labelledby={titleId}
       data-testid="hoja-cuenta"
       onClose={onClose}
-      className="carta-dialog m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto rounded-t-3xl border-0 bg-porcelain p-0 text-ink backdrop:bg-ink/50 sm:m-auto sm:max-w-lg sm:rounded-3xl"
+      className="carta-dialog m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-y-auto overscroll-contain rounded-t-3xl border-0 bg-porcelain p-0 text-ink backdrop:bg-ink/50 sm:m-auto sm:max-w-lg sm:rounded-3xl"
     >
-      <div className="px-5 pt-5 pb-4">
-        <div className="flex items-start justify-between gap-3">
+        <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-ink/10 bg-porcelain px-5 pt-5 pb-3">
           <h2 id={titleId} className="font-display text-3xl leading-tight break-words">
             {t.title}
           </h2>
@@ -75,7 +74,7 @@ export function AccountSheet({ token, ticket, lang, onClose, onExpired }: { toke
             {t.close}
           </button>
         </div>
-
+      <div className="px-5 pb-4">
         {result === null ? (
           <p role="status" className="mt-4 text-lg text-muted" data-testid="cuenta-cargando">
             {t.loading}

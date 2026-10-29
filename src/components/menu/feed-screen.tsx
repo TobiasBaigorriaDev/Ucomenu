@@ -27,7 +27,7 @@ export async function FeedScreen({ menu, lang, backHref, callBar, likes, comment
 
   if (rows.length === 0) {
     return (
-      <div lang={lang} className={`${cartaFontClass} carta ${callBar ? "pb-40" : ""}`} style={palette}>
+      <div lang={lang} className={`${cartaFontClass} carta ${callBar ? "carta-con-llamado" : ""}`} style={palette}>
         <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} logo={logoUrl(menu.organization.logo_path)} lang={lang} />
         <main className="mx-auto max-w-3xl px-4 pb-16 text-center sm:px-6">
           <p className="font-display text-2xl" data-testid="feed-vacio">

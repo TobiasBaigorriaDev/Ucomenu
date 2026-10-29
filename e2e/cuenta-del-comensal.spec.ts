@@ -104,6 +104,28 @@ test.afterAll(async () => {
 });
 
 test.describe("la cuenta del comensal", () => {
+  test("una cuenta larga mantiene Cerrar visible al llegar al final", async ({ page }) => {
+    const l = await nuevoLocal("cuenta-larga-ux");
+    const { db } = await pedido(l);
+    for (let i = 0; i < 18; i++) {
+      const result = await db.rpc("add_order_item", { p_branch: l.branch, p_table: l.mesa.id, p_product: l.bife, p_quantity: 1, p_client_key: randomUUID(), p_note: `Línea ${i}` });
+      expect(result.error).toBeNull();
+    }
+    await page.goto(`/t/${l.mesa.qr_token}`);
+    await pedirCuenta(page).click();
+    const abrir = page.getByTestId("ver-cuenta");
+    await abrir.click();
+    const hoja = page.getByTestId("hoja-cuenta");
+    await expect(page.getByTestId("cuenta")).toBeVisible();
+    expect(await hoja.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeGreaterThan(200);
+    await hoja.evaluate((el) => { el.scrollTop = el.scrollHeight; });
+    const cerrar = hoja.getByRole("button", { name: "Cerrar", exact: true });
+    await expect(cerrar).toBeInViewport({ ratio: 1 });
+    await page.screenshot({ path: "output/ux/cuenta-larga.png" });
+    await cerrar.click();
+    await expect(hoja).toHaveCount(0);
+    await expect(abrir).toBeFocused();
+  });
   test("no se ofrece hasta pedir la cuenta; después muestra lo anotado con total y leyenda, sin lo cancelado ni las observaciones", async ({ browser }) => {
     const l = await nuevoLocal("cuenta-vista");
     await pedido(l);
