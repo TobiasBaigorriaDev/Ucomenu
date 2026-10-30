@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { IMG } from "./imagenes";
 import { Phone } from "./phone";
 
-// El orden empieza con la composición actual: Bruma al centro, la carta PDF a la izquierda y La Bestia a la derecha.
+// El orden empieza con la composición actual: Bruma al centro, la carta Hoja a la izquierda y La Bestia a la derecha.
 const phones = [
   { img: IMG.bruma, desktop: "mk-p-c" },
   { img: IMG.laBestia, desktop: "mk-p-r1" },

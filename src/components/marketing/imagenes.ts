@@ -1,6 +1,6 @@
 /**
  * Capturas REALES del producto que usa la portada (public/portada/*). Las cartas de teléfono son capturas de locales de
- * ejemplo de staging («Bruma Bistró», «Fuego Andino», «La Bestia Burger & Bar», «Patio Oliva», «Aurelia Alta Cocina»); la de «Café Ejemplo» (estilo PDF) es una captura local; las del
+ * ejemplo de staging («Bruma Bistró», «Fuego Andino», «La Bestia Burger & Bar», «Patio Oliva», «Aurelia Alta Cocina»); la de «Café Ejemplo» (estilo Hoja) es una captura local; las del
  * panel son capturas propias de staging (Aurelia y La Bestia); la promoción y la sala salen de la réplica local de «Bruma Bistró» con `tools/demo-portada/capturar-bruma.mjs`. Procedencia en `public/portada/PROCEDENCIA.md`.
  */
 export type Imagen = { src: string; w: number; h: number; alt: string };
@@ -13,7 +13,7 @@ export const IMG = {
   fuegoAndino: carta("carta-fuego-andino", "Carta de Fuego Andino, un local de ejemplo, con el estilo Afiche y la paleta Cacao: título enorme y categorías en bandas de color."),
   laBestia: carta("carta-la-bestia", "Carta de La Bestia Burger & Bar, un local de ejemplo, con el estilo Afiche y la paleta oscura Carbón, abierta desde el QR de la Mesa 1 con los botones Llamar al mozo y Pedir la cuenta."),
   patioOliva: carta("carta-patio-oliva", "Carta de Patio Oliva, un local de ejemplo, con el estilo Bento, la paleta Trattoria y el tema de fecha especial de San Valentín, abierta desde el QR de la Mesa 1 con los botones Llamar al mozo y Pedir la cuenta."),
-  cafePdf: carta("carta-cafe-pdf", "Carta de Café Ejemplo, un local de ejemplo, con el estilo PDF y la paleta Cítrico: la carta entera como una página de PDF, con categorías, precios y etiquetas dietarias en dos columnas y el aviso Pellizcá para ampliar."),
+  cafePdf: carta("carta-cafe-pdf", "Carta de Café Ejemplo, un local de ejemplo, con el estilo Hoja y la paleta Cítrico: la carta entera como una página de PDF, con categorías, precios y etiquetas dietarias en dos columnas y el aviso Pellizcá para ampliar."),
   aurelia: carta("carta-aurelia", "Carta de Aurelia Alta Cocina, un local de ejemplo, con el estilo Minimal y la paleta Monocromo, con los botones Llamar al mozo, Menufeed y Pedir la cuenta."),
   // Más abajo en cada carta (para el pie)
   brumaAbajo: carta("carta-bruma-abajo", "Bruma Bistró, más abajo en la carta: la categoría Principales con la foto de un lomo con espárragos, su precio y su descripción."),

@@ -137,15 +137,15 @@ test("las pestañas de estilo cambian la captura y se manejan con flechas", asyn
   await expect(page.getByRole("tab", { selected: true })).toHaveCount(1);
 });
 
-test("el estilo PDF aparece entre los estilos y en el abanico del inicio", async ({ page }) => {
+test("el estilo Hoja aparece entre los estilos y en el abanico del inicio", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Cinco estilos y doce paletas")).toBeVisible();
   await expect(async () => {
     await page.getByRole("tab", { name: "Café Ejemplo" }).click();
-    await expect(page.locator(".mk-estilo-info h3")).toHaveText("Estilo PDF, paleta Cítrico", { timeout: 2000 });
+    await expect(page.locator(".mk-estilo-info h3")).toHaveText("Estilo Hoja, paleta Cítrico", { timeout: 2000 });
   }).toPass({ timeout: 15_000 });
-  await expect(page.locator(".mk-fan img[alt*='estilo PDF']")).toHaveCount(1);
-  await expect(page.locator(".mk-galeria figure").last()).toContainText("Estilo PDF · Cítrico");
+  await expect(page.locator(".mk-fan img[alt*='estilo Hoja']")).toHaveCount(1);
+  await expect(page.locator(".mk-galeria figure").last()).toContainText("Estilo Hoja · Cítrico");
 });
 
 test("las preguntas se abren y aclaran que la carta es solo de consulta", async ({ page }) => {

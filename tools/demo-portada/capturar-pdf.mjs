@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Saca las capturas de la carta de estilo PDF (`menu_layout = 'hoja'`) para la portada: el inicio (la página entera, como llega al
+ * Saca las capturas de la carta de estilo Hoja (`menu_layout = 'hoja'`) para la portada: el inicio (la página entera, como llega al
  * celular) y una ampliada (como queda al pellizcar). Usa «Café Ejemplo» del Supabase LOCAL. SOLO EN DESARROLLO LOCAL: no toca staging
  * ni ninguna base remota y no necesita credenciales de nadie.
  *
- * Requisitos: Supabase local encendido, «Café Ejemplo» en estilo PDF (`update organizations set menu_layout='hoja' ...`) y la app
+ * Requisitos: Supabase local encendido, «Café Ejemplo» en estilo Hoja (`update organizations set menu_layout='hoja' ...`) y la app
  * construida y sirviendo (`pnpm build` y `pnpm exec next start -p 3300`; PORTADA_BASE, por defecto http://localhost:3300). La carta
  * pública se guarda en caché 60 s: si el servidor ya la tenía, el script recarga y espera hasta que desaparezca el plato oculto.
  * Uso:  node tools/demo-portada/capturar-pdf.mjs
@@ -29,7 +29,7 @@ const nombres = OCULTAR.map((n) => `'${n.replace(/'/g, "''")}'`).join(", ");
 const filtro = `organization_id = (select id from organizations where slug = '${SLUG}') and name in (${nombres})`;
 const OCULTAR_DEV = "nextjs-portal,[data-nextjs-toast],[data-nextjs-dev-tools-button]{display:none!important}";
 
-if (psql(`select menu_layout from organizations where slug = '${SLUG}'`).trim() !== "hoja") throw new Error("«Café Ejemplo» tiene que estar en estilo PDF (menu_layout = 'hoja').");
+if (psql(`select menu_layout from organizations where slug = '${SLUG}'`).trim() !== "hoja") throw new Error("«Café Ejemplo» tiene que estar en estilo Hoja (menu_layout = 'hoja').");
 psql(`update products set is_active = false where ${filtro}`);
 console.log("Platos de prueba ocultos.");
 const browser = await chromium.launch();
