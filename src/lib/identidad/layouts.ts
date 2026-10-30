@@ -8,6 +8,7 @@ export const LAYOUTS = {
   clasica: { name: "Clásica", description: "Categorías en pestañas y platos en lista con precio, como una carta impresa." },
   minimal: { name: "Minimal", description: "Una columna con fotos grandes y mucho aire." },
   afiche: { name: "Afiche", description: "Títulos enormes, platos numerados y bloques de color, como un cartel de bar." },
+  hoja: { name: "Hoja", description: "Toda la carta en una hoja de varias columnas, solo texto: precios y datos al día, sin fotos." },
 } as const;
 
 export type Layout = keyof typeof LAYOUTS;

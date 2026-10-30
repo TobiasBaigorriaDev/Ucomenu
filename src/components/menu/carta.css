@@ -104,6 +104,27 @@
   max-width: none;
 }
 
+/* Estilo «hoja»: una página de ancho fijo sobre un fondo gris de visor de PDF (`SheetFit` la escala). Hasta que se mide el ancho
+   (la hidratación) la página no se ve, para que no salte de tamaño; sin JavaScript, un `noscript` la muestra. */
+.carta .sheet-viewer {
+  background: color-mix(in srgb, var(--ink) 22%, var(--porcelain));
+}
+
+.carta .sheet-paper {
+  padding: 2.25rem;
+  background: var(--porcelain);
+  box-shadow: 0 1px 8px rgb(0 0 0 / 0.3);
+}
+
+.carta .sheet-paper:not([data-fit]) {
+  opacity: 0;
+}
+
+/* Filete discontinuo entre columnas, como una hoja impresa. */
+.carta .sheet-columns {
+  column-rule: 1px dashed color-mix(in srgb, var(--ink) 25%, transparent);
+}
+
 /* Puntos guía de la carta clásica (la clase global es del panel y tiene un color fijo). */
 .carta .leader {
   border-bottom-color: color-mix(in srgb, var(--ink) 40%, transparent);

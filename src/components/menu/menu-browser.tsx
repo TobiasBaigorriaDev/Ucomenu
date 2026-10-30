@@ -11,9 +11,10 @@ import { CategoryBar } from "./category-bar";
 import { CategoryMosaic } from "./category-mosaic";
 import { DishDetail } from "./dish-detail";
 import { MenuSection } from "./menu-section";
+import { SheetView, type SheetTitle } from "./sheet-view";
 import { dishNumbers } from "./poster";
 
-export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { sections: Section[]; branchId: string; lang: Lang; layout?: Layout }) {
+export function MenuBrowser({ sections, branchId, lang, layout = "bento", sheetTitle }: { sections: Section[]; branchId: string; lang: Lang; layout?: Layout; /** Título de la hoja (solo en el estilo «hoja»). */ sheetTitle?: SheetTitle }) {
   const t = TEXTOS[lang];
   const [query, setQuery] = useState("");
   const [tags, setTags] = useState<DietaryTag[]>([]);
@@ -53,9 +54,12 @@ export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { se
   const filtering = Boolean(query.trim()) || tags.length > 0;
   function clear() { setQuery(""); setTags([]); }
 
+  // «Hoja» es un visor de PDF: solo la página, sin buscador, filtros ni barra de categorías (se hace zoom y se recorre) ni detalle de plato: las filas son solo texto.
+  const pdf = layout === "hoja";
+
   return (
     <>
-      <div role="search" aria-label={t.search.region} className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
+      {pdf ? null : <div role="search" aria-label={t.search.region} className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
         <label htmlFor="menu-search" className="block text-base font-medium">{t.search.label}</label>
         <input id="menu-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
           placeholder={t.search.placeholder} autoComplete="off" maxLength={200}
@@ -82,13 +86,13 @@ export function MenuBrowser({ sections, branchId, lang, layout = "bento" }: { se
           <p role="status" aria-live="polite" className="text-sm text-muted">{t.count.status(count, filtering)}</p>
           {filtering ? <button type="button" onClick={clear} className="min-h-11 text-sm font-medium text-[var(--carta-green)] underline underline-offset-4">{t.search.clear}</button> : null}
         </div>
-      </div>
+      </div>}
       {visible.length ? <>
-        {/* Sin mosaico (clásica, minimal y afiche), la barra fija de categorías es siempre visible y hace de índice. */}
+        {/* Sin mosaico (clásica, minimal y afiche; la hoja no lleva barra), la barra fija de categorías es siempre visible y hace de índice. */}
         {layout === "bento" ? <CategoryMosaic sections={visible} lang={lang} /> : null}
-        <CategoryBar sections={visible} lang={lang} />
-        <main className={`mx-auto px-4 pb-12 sm:px-6 ${layout === "bento" ? "max-w-5xl" : layout === "minimal" ? "max-w-2xl" : "max-w-3xl"}`}>
-          {visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={select} lang={lang} layout={layout} numbers={numbers} />)}
+        {pdf ? null : <CategoryBar sections={visible} lang={lang} />}
+        <main className={`mx-auto pb-12 ${pdf ? "max-w-5xl" : `px-4 sm:px-6 ${layout === "bento" ? "max-w-5xl" : layout === "minimal" ? "max-w-2xl" : "max-w-3xl"}`}`}>
+          {pdf ? <SheetView sections={visible} title={sheetTitle} lang={lang} /> : visible.map((section, i) => <MenuSection key={section.category.id} section={section} index={i} onSelect={select} lang={lang} layout={layout} numbers={numbers} />)}
         </main>
       </> : <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
         <h2 className="font-display text-2xl">{t.search.emptyTitle}</h2>

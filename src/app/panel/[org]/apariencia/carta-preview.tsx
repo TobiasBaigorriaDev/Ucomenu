@@ -4,6 +4,7 @@ import { CategoryMosaic } from "@/components/menu/category-mosaic";
 import { cartaFontClass } from "@/components/menu/carta-fonts";
 import { MenuHeader } from "@/components/menu/menu-header";
 import { MenuSection } from "@/components/menu/menu-section";
+import { SheetView } from "@/components/menu/sheet-view";
 import type { Layout } from "@/lib/identidad/layouts";
 import { paletteStyle } from "@/lib/identidad/palettes";
 import { themeStyle, type Theme } from "@/lib/identidad/temas";
@@ -55,7 +56,7 @@ export function CartaPreview({ name, logo, palette, layout, theme = null, testId
           </ul>
         )}
         <div className={`mx-auto px-4 pb-4 sm:px-6 ${layout !== "bento" ? "mt-6 " : ""}${layout === "minimal" ? "max-w-2xl" : "max-w-3xl"}`}>
-          <MenuSection section={SECTIONS[1]} index={1} lang="es" layout={layout} />
+          {layout === "hoja" ? <SheetView sections={SECTIONS} title={{ name, logo }} lang="es" /> : <MenuSection section={SECTIONS[1]} index={1} lang="es" layout={layout} />}
         </div>
       </div>
       <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent" />

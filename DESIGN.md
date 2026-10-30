@@ -692,3 +692,7 @@ Transiciones de 180 ms (chips) a 500 ms (zoom de foto) con `cubic-bezier(0.22, 1
 - **Don't** (portada) mostrar un local, plato o precio de ejemplo sin rotularlo, ni prometer sin «Pronto» funciones sin implementar (pedidos o pagos desde la carta, comisiones, alérgenos por plato).
 - **Don't** (portada) cortar el abanico por los costados dentro de su contenedor ni apilar tarjetas iguales de íconos en lugar de pantallas.
 - **Don't** poner los rombos decorativos del login detrás del titular: el verde vivo no da contraste con texto blanco.
+
+### Estilo de carta «Hoja»
+
+Quinto estilo elegible (`menu_layout = 'hoja'`): la carta como la página de un PDF. Una hoja de **ancho fijo de 560 px** (no se reacomoda) escalada con `zoom` para entrar entera en la pantalla y que el comensal la amplíe con los dedos; fondo gris de visor, barra superior oscura con el nombre del local. Dentro: título grande del local (Gloock, terracota, decorativo), 2 columnas con filete discontinuo, títulos `/// CATEGORÍA` en terracota (Schibsted 800, mayúsculas) con filete fino, platos en 12 px negrita con el precio a la derecha, detalle en 11 px y siglas dietarias (`GF`, `V`, `VG`) en verde con leyenda al pie. Nunca muestra fotos de plato; tampoco buscador, filtros, barra de categorías ni detalle de plato (las filas no se tocan): solo la barra del visor y la página. **The Sheet Rule:** la densidad y el zoom son el punto; no se agranda la letra ni se vuelve responsiva la hoja para parecerse a una carta normal.

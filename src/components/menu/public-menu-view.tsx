@@ -61,7 +61,7 @@ export function PublicMenuView({
         </div>
       ) : null}
       {sections.length > 0 ? (
-        <MenuBrowser sections={sections} branchId={menu.branch.id} lang={lang} layout={menu.organization.menu_layout} />
+        <MenuBrowser sections={sections} branchId={menu.branch.id} lang={lang} layout={menu.organization.menu_layout} sheetTitle={{ name: menu.organization.name, logo: logoUrl(menu.organization.logo_path) }} />
       ) : (
         <main className="mx-auto max-w-3xl px-4 py-12 text-center sm:px-6">
           <p className="font-display text-2xl">{t.emptyTitle}</p>

@@ -16,6 +16,8 @@ export type Textos = {
   unavailableTitle: (organization: string) => string;
   branch: (name: string) => string;
   logoAlt: (organization: string) => string;
+  /** Estilo «hoja»: la carta es una página fija que se amplía con los dedos. */
+  sheetHint: string;
   emptyTitle: string;
   emptyHint: string;
   footerAllergens: string;
@@ -152,6 +154,7 @@ const es: Textos = {
   unavailableTitle: (organization) => `${organization} · Carta no disponible`,
   branch: (name) => `Sucursal ${name}`,
   logoAlt: (organization) => `Logo de ${organization}`,
+  sheetHint: "Pellizcá para ampliar",
   emptyTitle: "Esta carta todavía no tiene platos.",
   emptyHint: "Volvé a mirar en unos minutos.",
   footerAllergens: "Esta carta no informa los alérgenos de cada plato: un plato sin etiqueta no está declarado como apto para ninguna dieta. Si tenés alergia, intolerancia o celiaquía, consultá al personal antes de pedir.",
@@ -295,6 +298,7 @@ const en: Textos = {
   unavailableTitle: (organization) => `${organization} · Menu unavailable`,
   branch: (name) => `Location ${name}`,
   logoAlt: (organization) => `${organization} logo`,
+  sheetHint: "Pinch to zoom",
   emptyTitle: "This menu has no dishes yet.",
   emptyHint: "Check back in a few minutes.",
   footerAllergens: "This menu does not list the allergens of each dish: a dish without a tag is not declared suitable for any diet. If you have an allergy, intolerance or celiac disease, ask the staff before ordering.",
@@ -437,6 +441,7 @@ const pt: Textos = {
   unavailableTitle: (organization) => `${organization} · Cardápio indisponível`,
   branch: (name) => `Unidade ${name}`,
   logoAlt: (organization) => `Logo de ${organization}`,
+  sheetHint: "Pince para ampliar",
   emptyTitle: "Este cardápio ainda não tem pratos.",
   emptyHint: "Volte a conferir em alguns minutos.",
   footerAllergens: "Este cardápio não informa os alérgenos de cada prato: um prato sem etiqueta não está declarado como adequado a nenhuma dieta. Se você tem alergia, intolerância ou doença celíaca, pergunte à equipe antes de pedir.",

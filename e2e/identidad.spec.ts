@@ -98,6 +98,25 @@ test("el Dueño publica colores y logo; persisten en carta y QR sin mezclar loca
   await publicPage.keyboard.press("Escape");
   await publicPage.setViewportSize({ width: 390, height: 844 });
   await expectNoHorizontalOverflow(publicPage);
+  // Hoja: pliego de columnas, solo texto (nunca fotos de plato) y sin detalle de plato.
+  await page.getByRole("radio", { name: "Hoja" }).check();
+  await expect(page.getByTestId("apariencia-preview-estilo")).toHaveAttribute("data-layout", "hoja");
+  await page.getByRole("button", { name: "Guardar estilo" }).click();
+  await expect.poll(async () => (await identity(t)).menu_layout).toBe("hoja");
+  await expect(page.getByRole("button", { name: "Guardar estilo" })).toBeEnabled();
+  expect((await identity(other)).menu_layout).toBe("bento");
+  await publicPage.reload();
+  await expect(publicPage.locator(".carta")).toHaveAttribute("data-layout", "hoja");
+  await expect(publicPage.locator(".sheet-columns")).toHaveCSS("column-count", "2");
+  await expect(publicPage.locator(".sheet-columns img")).toHaveCount(0);
+  // Como un visor de PDF: solo la página, sin buscador ni barra de categorías.
+  await expect(publicPage.getByRole("search")).toHaveCount(0);
+  await expect(publicPage.getByRole("navigation", { name: "Cambiar de categoría" })).toHaveCount(0);
+  await expect(publicPage.getByRole("heading", { name: "De la casa", level: 2 })).toBeVisible();
+  // Las filas son solo texto: no se tocan ni abren el detalle del plato.
+  await expect(publicPage.getByText("Plato del día").first()).toBeVisible();
+  await expect(publicPage.getByRole("button", { name: /Ver detalle/ })).toHaveCount(0);
+  await expectNoHorizontalOverflow(publicPage);
   await page.getByRole("radio", { name: "Bento" }).check();
   await page.getByRole("button", { name: "Guardar estilo" }).click();
   await expect.poll(async () => (await identity(t)).menu_layout).toBe("bento");

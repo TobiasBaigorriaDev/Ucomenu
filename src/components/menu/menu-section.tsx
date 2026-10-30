@@ -6,6 +6,7 @@ import { categoryAnchor } from "./anchors";
 import { DishCard, type CardSpan } from "./dish-card";
 import { DishPosterRow } from "./dish-poster-row";
 import { DishRow } from "./dish-row";
+import { DishSheetRow } from "./dish-sheet-row";
 import { posterFontSize } from "./poster";
 import { toneFor } from "./tones";
 
@@ -59,6 +60,22 @@ export function MenuSection({
   const headingId = `${categoryAnchor(category.id)}-title`;
   const spans = cardSpans(products);
   const lastDesktopSpan = desktopLastSpan(products);
+
+  if (layout === "hoja") {
+    // Título compacto en el color de acento, con el «///» y un filete fino debajo (como las cartas de una hoja impresa); las filas son solo texto. La sección vive dentro de las columnas de
+    // `SheetView`: el título no se separa de su primer plato.
+    return (
+      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="mb-4 scroll-mt-20">
+        <h2 id={headingId} className="mb-1 break-after-avoid border-b border-[var(--carta-terra)] pb-0.5 text-sm leading-tight font-extrabold tracking-[0.04em] text-[var(--carta-terra)] uppercase [overflow-wrap:anywhere]">
+          <span aria-hidden="true">{"/// "}</span>
+          {category.name}
+        </h2>
+        <ul>
+          {products.map((product) => <DishSheetRow key={product.id} product={product} lang={lang} />)}
+        </ul>
+      </section>
+    );
+  }
 
   if (layout === "afiche") {
     // Banda llena con el tono de la categoría (el mismo ciclo que el bento) y el nombre en la condensada, del ancho de la banda.
