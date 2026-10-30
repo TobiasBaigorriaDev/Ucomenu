@@ -115,3 +115,6 @@ Sin commit todavía (árbol de trabajo local, 2026-10-28).
 - Staging v72 aún conserva la URL de demo anterior en sus argumentos de build. Para publicar este cambio, reconstruir con `NEXT_PUBLIC_DEMO_CARTA_PATH=/m/aurelia/centro` o la URL de Aurelia; requiere autorización para despliegue. Antes de producción decidir una demo estable en ese entorno: el valor por defecto actual depende de staging.
 
 - Desplegado con autorización el 2026-10-30: commit `94d91cc` subido a main; Fly v73 imagen `deployment-01M678H1F9X150RFRK8NE8EWCZ`, build y tipos en verde, máquina iniciada y control passing. Portada y carta Aurelia HTTP 200; la portada contiene las referencias a Aurelia. Se configuró la URL de Aurelia al construir; no hubo cambios de base ni de producción. No se escaneó físicamente el QR.
+
+## Acceso en la navegación (2026-10-30)
+El usuario pidió mostrar «Acceder» en el nav. El enlace existente a `/login` ahora también se muestra en móvil; se ajustaron espacios para que entre junto a «Probalo gratis» a 320 px. Verificado con ESLint focalizado, `pnpm build` y Playwright contra `next start` del build: enlace visible, objetivo táctil de 44 px, sin desborde y navegación a login. Una primera prueba contra `next dev` falló porque servía CSS anterior; la prueba del build actualizado pasó. Cambios locales sin despliegue.

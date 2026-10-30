@@ -1,9 +1,7 @@
-import Image from "next/image";
 import { DEMO_CARTA_PATH } from "@/lib/marketing/contacto";
 import Link from "next/link";
 import { IconArrow, IconCheck } from "./icons";
-import { IMG } from "./imagenes";
-import { Phone } from "./phone";
+import { HeroFan } from "./hero-fan";
 import { WhatsappLink } from "./whatsapp-link";
 
 const TILDES = ["14 días gratis con el plan Pro", "Sin tarjeta de crédito", "Sin instalar nada"];
@@ -38,17 +36,7 @@ export function Hero() {
           </Link>
         </div>
       </div>
-      <div className="mk-fan-wrap">
-        <div className="mk-fan">
-          <Phone img={IMG.aurelia} className="mk-p-l2" sizes="(min-width: 1100px) 210px, 20vw" />
-          <Phone img={IMG.patioOliva} className="mk-p-r2" sizes="(min-width: 1100px) 210px, 20vw" />
-          <Phone img={IMG.fuegoAndino} className="mk-p-l1" sizes="(min-width: 1100px) 250px, (min-width: 640px) 24vw, 50vw" />
-          <Phone img={IMG.laBestia} className="mk-p-r1" sizes="(min-width: 1100px) 250px, (min-width: 640px) 24vw, 50vw" />
-          <Phone img={IMG.bruma} className="mk-p-c" sizes="(min-width: 1100px) 300px, (min-width: 640px) 28vw, 62vw" priority />
-          <Image src={IMG.llamadoLlama.src} alt={IMG.llamadoLlama.alt} width={IMG.llamadoLlama.w} height={IMG.llamadoLlama.h} sizes="(min-width: 1100px) 330px, 56vw" className="mk-float mk-float-a" />
-          <Image src={IMG.llamadoCuenta.src} alt={IMG.llamadoCuenta.alt} width={IMG.llamadoCuenta.w} height={IMG.llamadoCuenta.h} sizes="(min-width: 1100px) 330px, 56vw" className="mk-float mk-float-b" />
-        </div>
-      </div>
+      <HeroFan />
       <p className="mk-demo-note mk-wrap">Capturas del producto real con locales de ejemplo: los platos y los precios son ficticios.</p>
     </header>
   );

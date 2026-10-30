@@ -1,6 +1,23 @@
 import { expect, test } from "@playwright/test";
 import { expectNoHorizontalOverflow } from "./support";
 
+test("Acceder está disponible en el nav móvil y lleva al login", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto("/");
+  const nav = page.getByRole("navigation", { name: "Principal" });
+  const acceso = nav.getByRole("link", { name: "Acceder" });
+  await expect(acceso).toBeVisible();
+  await expect(acceso).toHaveAttribute("href", "/login");
+  await expect(nav.getByRole("link", { name: "Probalo gratis" })).toBeVisible();
+  const barra = (await nav.boundingBox())!;
+  const caja = (await acceso.boundingBox())!;
+  expect(caja.height).toBeGreaterThanOrEqual(44);
+  expect(caja.x + caja.width).toBeLessThanOrEqual(barra.x + barra.width);
+  await expectNoHorizontalOverflow(page);
+  await acceso.click();
+  await expect(page).toHaveURL(/\/login$/);
+});
+
 test("la presentación se ofrece con controles y sin reproducirse ni descargarse automáticamente", async ({ page, request }) => {
   const pedidosVideo: string[] = [];
   page.on("request", (req) => { if (req.url().includes("/portada/presentacion.mp4")) pedidosVideo.push(req.url()); });

@@ -12,6 +12,7 @@ import { Nav } from "@/components/marketing/nav";
 import { Pasos } from "@/components/marketing/pasos";
 import { Precios } from "@/components/marketing/precios";
 import { Presentacion } from "@/components/marketing/presentacion";
+import { ScrollReveal } from "@/components/marketing/scroll-reveal";
 import "@/components/marketing/marketing.css";
 
 const TITULO = "UcoMenu · Carta digital con QR y llamado al mozo";
@@ -33,6 +34,7 @@ export const metadata: Metadata = {
 export default function Home() {
   return (
     <div className={`marketing ${marketingFontClass}`}>
+      <ScrollReveal />
       <Nav />
       <main id="contenido">
         <Hero />

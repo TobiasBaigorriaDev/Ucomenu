@@ -29,7 +29,7 @@ export function Nav() {
         </div>
         <div className="mk-nav-end">
           <Link href="/login" className="mk-login">
-            Ingresar
+            Acceder
           </Link>
           <WhatsappLink className="mk-btn mk-btn-sm">Probalo gratis</WhatsappLink>
         </div>
