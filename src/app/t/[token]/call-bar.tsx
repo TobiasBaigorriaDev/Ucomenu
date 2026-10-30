@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
+import { followVisualViewport } from "@/components/menu/zoom-dock";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import { AccountSheet } from "./account-sheet";
@@ -153,12 +154,16 @@ export function CallBar({
     const element = bar.current;
     const carta = element?.closest<HTMLElement>(".carta");
     if (!element || !carta) return;
-    const measure = () => carta.style.setProperty("--call-bar-height", `${Math.ceil(element.getBoundingClientRect().height)}px`);
+    // `offsetHeight` (no `getBoundingClientRect`): no cambia si el dock se contra-escala por el zoom (estilo «hoja»).
+    const measure = () => carta.style.setProperty("--call-bar-height", `${Math.ceil(element.offsetHeight)}px`);
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
+    // La hoja se amplía con los dedos y un dock `fixed` no sigue ese zoom: en ese estilo acompaña al viewport visible.
+    const stopFollowing = carta.dataset.layout === "hoja" ? followVisualViewport(element) : undefined;
     return () => {
       observer.disconnect();
+      stopFollowing?.();
       carta.style.removeProperty("--call-bar-height");
     };
   }, []);
