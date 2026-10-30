@@ -98,8 +98,8 @@ test("el Dueño publica colores y logo; persisten en carta y QR sin mezclar loca
   await publicPage.keyboard.press("Escape");
   await publicPage.setViewportSize({ width: 390, height: 844 });
   await expectNoHorizontalOverflow(publicPage);
-  // Hoja: pliego de columnas, solo texto (nunca fotos de plato) y sin detalle de plato.
-  await page.getByRole("radio", { name: "Hoja" }).check();
+  // PDF (clave hoja): página de columnas, solo texto (nunca fotos de plato) y sin detalle de plato.
+  await page.getByRole("radio", { name: "PDF" }).check();
   await expect(page.getByTestId("apariencia-preview-estilo")).toHaveAttribute("data-layout", "hoja");
   await page.getByRole("button", { name: "Guardar estilo" }).click();
   await expect.poll(async () => (await identity(t)).menu_layout).toBe("hoja");

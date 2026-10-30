@@ -137,6 +137,17 @@ test("las pestañas de estilo cambian la captura y se manejan con flechas", asyn
   await expect(page.getByRole("tab", { selected: true })).toHaveCount(1);
 });
 
+test("el estilo PDF aparece entre los estilos y en el abanico del inicio", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByText("Cinco estilos y doce paletas")).toBeVisible();
+  await expect(async () => {
+    await page.getByRole("tab", { name: "Café Ejemplo" }).click();
+    await expect(page.locator(".mk-estilo-info h3")).toHaveText("Estilo PDF, paleta Cítrico", { timeout: 2000 });
+  }).toPass({ timeout: 15_000 });
+  await expect(page.locator(".mk-fan img[alt*='estilo PDF']")).toHaveCount(1);
+  await expect(page.locator(".mk-galeria figure").last()).toContainText("Estilo PDF · Cítrico");
+});
+
 test("las preguntas se abren y aclaran que la carta es solo de consulta", async ({ page }) => {
   await page.goto("/");
   const pregunta = page.locator(".mk-faq details", { hasText: "pueden pedir y pagar desde la carta" });
@@ -160,10 +171,10 @@ test("no promete pedidos del cliente, pagos online ni comisiones", async ({ page
   expect(texto).not.toContain("pagá desde");
 });
 
-test("el pie muestra las cinco cartas de ejemplo, más abajo, con su estilo y su paleta", async ({ page }) => {
+test("el pie muestra las seis cartas de ejemplo, más abajo, con su estilo y su paleta", async ({ page }) => {
   await page.goto("/");
   const galeria = page.locator(".mk-galeria figure");
-  await expect(galeria).toHaveCount(5);
+  await expect(galeria).toHaveCount(6);
   await expect(galeria.first()).toContainText("Bruma Bistró");
   await expect(galeria.first()).toContainText("Estilo Bento · Oliva");
   await expect(page.locator(".mk-galeria img").first()).toHaveAttribute("alt", /más abajo en la carta/);

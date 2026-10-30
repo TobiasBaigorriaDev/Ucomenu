@@ -1,6 +1,6 @@
 /**
  * Capturas REALES del producto que usa la portada (public/portada/*). Las cartas de teléfono son capturas de locales de
- * ejemplo de staging («Bruma Bistró», «Fuego Andino», «La Bestia Burger & Bar», «Patio Oliva», «Aurelia Alta Cocina»); las del
+ * ejemplo de staging («Bruma Bistró», «Fuego Andino», «La Bestia Burger & Bar», «Patio Oliva», «Aurelia Alta Cocina»); la de «Café Ejemplo» (estilo PDF) es una captura local; las del
  * panel son capturas propias de staging (Aurelia y La Bestia); la promoción y la sala salen de la réplica local de «Bruma Bistró» con `tools/demo-portada/capturar-bruma.mjs`. Procedencia en `public/portada/PROCEDENCIA.md`.
  */
 export type Imagen = { src: string; w: number; h: number; alt: string };
@@ -13,12 +13,14 @@ export const IMG = {
   fuegoAndino: carta("carta-fuego-andino", "Carta de Fuego Andino, un local de ejemplo, con el estilo Afiche y la paleta Cacao: título enorme y categorías en bandas de color."),
   laBestia: carta("carta-la-bestia", "Carta de La Bestia Burger & Bar, un local de ejemplo, con el estilo Afiche y la paleta oscura Carbón, abierta desde el QR de la Mesa 1 con los botones Llamar al mozo y Pedir la cuenta."),
   patioOliva: carta("carta-patio-oliva", "Carta de Patio Oliva, un local de ejemplo, con el estilo Bento, la paleta Trattoria y el tema de fecha especial de San Valentín, abierta desde el QR de la Mesa 1 con los botones Llamar al mozo y Pedir la cuenta."),
+  cafePdf: carta("carta-cafe-pdf", "Carta de Café Ejemplo, un local de ejemplo, con el estilo PDF y la paleta Cítrico: la carta entera como una página de PDF, con categorías, precios y etiquetas dietarias en dos columnas y el aviso Pellizcá para ampliar."),
   aurelia: carta("carta-aurelia", "Carta de Aurelia Alta Cocina, un local de ejemplo, con el estilo Minimal y la paleta Monocromo, con los botones Llamar al mozo, Menufeed y Pedir la cuenta."),
   // Más abajo en cada carta (para el pie)
   brumaAbajo: carta("carta-bruma-abajo", "Bruma Bistró, más abajo en la carta: la categoría Principales con la foto de un lomo con espárragos, su precio y su descripción."),
   fuegoAndinoAbajo: carta("carta-fuego-andino-abajo", "Fuego Andino, más abajo en la carta: platos de la parrilla con foto grande, número, nombre, precio y etiqueta Sin TACC."),
   laBestiaAbajo: carta("carta-la-bestia-abajo", "La Bestia Burger & Bar, más abajo en la carta: la hamburguesa La Bestia con foto, precio, descripción y adicionales con su diferencia de precio."),
   patioOlivaAbajo: carta("carta-patio-oliva-abajo", "Patio Oliva, más abajo en la carta: la categoría Algo dulce y bebidas con tarta de frambuesa, helado artesanal y limonada, con precios."),
+  cafePdfAbajo: carta("carta-cafe-pdf-abajo", "Café Ejemplo ampliada con el zoom de pellizco: la categoría Cafetería con el Espresso, sus tamaños y extras con la diferencia de precio, y la categoría Pastelería."),
   aureliaAbajo: carta("carta-aurelia-abajo", "Aurelia Alta Cocina, más abajo en la carta: platos con foto grande y precio, uno de ellos marcado como agotado."),
   // Promoción y sala de Bruma Bistró (réplica local del local de staging; ver PROCEDENCIA.md)
   cartaPromo: carta("carta-promo", "Carta de Bruma Bistró, un local de ejemplo, con una promoción vigente: la panna cotta muestra el precio anterior tachado, el promocional y hasta qué hora rige el Happy Hour."),
@@ -31,11 +33,12 @@ export const IMG = {
   panelCarta: { src: "/portada/panel-carta-la-bestia.jpg", w: 1894, h: 936, alt: "Panel del Dueño de La Bestia Burger & Bar, pantalla Carta: la categoría Burgers con sus platos, fotos y precios, y el menú lateral con todas las secciones del local." },
 } as const satisfies Record<string, Imagen>;
 
-/** Los cinco locales de ejemplo, con lo que muestra cada captura (para las pestañas de estilo y el pie). */
+/** Los seis locales de ejemplo, con lo que muestra cada captura (para las pestañas de estilo y el pie). */
 export const LOCALES = [
   { id: "bruma", nombre: "Bruma Bistró", paleta: "oliva", estilo: "bento", inicio: IMG.bruma, abajo: IMG.brumaAbajo },
   { id: "fuego-andino", nombre: "Fuego Andino", paleta: "cacao", estilo: "afiche", inicio: IMG.fuegoAndino, abajo: IMG.fuegoAndinoAbajo },
   { id: "la-bestia", nombre: "La Bestia Burger & Bar", paleta: "carbon", estilo: "afiche", inicio: IMG.laBestia, abajo: IMG.laBestiaAbajo },
   { id: "patio-oliva", nombre: "Patio Oliva", paleta: "trattoria", estilo: "bento", inicio: IMG.patioOliva, abajo: IMG.patioOlivaAbajo, nota: "Con el tema de fecha especial de San Valentín: decoración suave y un saludo, sin cambiar los colores ni tapar platos." },
   { id: "aurelia", nombre: "Aurelia Alta Cocina", paleta: "monocromo", estilo: "minimal", inicio: IMG.aurelia, abajo: IMG.aureliaAbajo },
+  { id: "cafe-ejemplo", nombre: "Café Ejemplo", paleta: "citrico", estilo: "hoja", inicio: IMG.cafePdf, abajo: IMG.cafePdfAbajo, nota: "Sin fotos ni pantallas extra, pensada para cartas largas. A diferencia de un PDF suelto, los precios y la disponibilidad se actualizan solos." },
 ] as const;

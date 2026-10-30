@@ -6,7 +6,7 @@ import { LAYOUTS } from "@/lib/identidad/layouts";
 import { PALETTE_KEYS, PALETTES } from "@/lib/identidad/palettes";
 import { LOCALES } from "./imagenes";
 
-// Cinco locales de ejemplo, cada uno con su estilo y su paleta: son capturas del producto real (ver `public/portada/PROCEDENCIA.md`).
+// Seis locales de ejemplo, cada uno con su estilo y su paleta: son capturas del producto real (ver `public/portada/PROCEDENCIA.md`).
 export function Estilos() {
   const base = useId();
   const [actual, setActual] = useState(0);
@@ -30,7 +30,7 @@ export function Estilos() {
           <h2 className="mk-h2 mk-center" id="estilos-titulo">
             Elegí cómo se ve tu carta
           </h2>
-          <p className="mk-lead mk-center">Cuatro estilos y doce paletas. Lo cambiás desde el panel y se ve en todos tus QR.</p>
+          <p className="mk-lead mk-center">Cinco estilos y doce paletas. Lo cambiás desde el panel y se ve en todos tus QR.</p>
         </div>
         <div className="mk-estilos">
           <div className="mk-estilo-phone" role="tabpanel" id={`${base}-panel`} aria-labelledby={`${base}-tab-${v.id}`}>

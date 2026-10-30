@@ -11,7 +11,7 @@ const pro = PLANES[1];
 const INCLUYE: Record<PlanVendido["code"], string[]> = {
   basic: [
     "Carta digital con un QR por cada mesa",
-    "Tu logo, 12 paletas y 4 estilos de carta",
+    "Tu logo, 12 paletas y 5 estilos de carta",
     `${basico.maxSucursales} sucursal`,
     `Hasta ${basico.maxMesasPorSucursal} mesas`,
     `Hasta ${basico.maxPlatosActivos} platos activos`,

@@ -1,7 +1,7 @@
 # Procedencia de las imágenes de la portada
 
 Todas las imágenes de esta carpeta son **capturas del producto real** (la app corriendo), de locales de demostración
-**ficticios**. Nada es de un cliente real. Hay tres orígenes:
+**ficticios**. Nada es de un cliente real. Hay cuatro orígenes:
 
 1. **Cartas de teléfono (`carta-<local>.jpg` y `carta-<local>-abajo.jpg`):** capturas sacadas a mano por el usuario (2026-10-29) de
    los locales de ejemplo de staging, a 390 × 844 con relación de píxeles 2 (780 × 1688). Se convirtieron a JPG (calidad 86) sin
@@ -16,6 +16,11 @@ Todas las imágenes de esta carpeta son **capturas del producto real** (la app c
    locales de ejemplo, una promoción, pedidos y llamados, y los borra al terminar. El logo de esa réplica es el del seed
    (una cloche), no el que cargó el usuario en staging.
 
+4. **Carta de estilo PDF (`carta-cafe-pdf*.jpg`):** sacadas por Claude (2026-10-30) con `node tools/demo-portada/capturar-pdf.mjs` sobre «Café
+   Ejemplo» del Supabase **local** (estilo PDF, paleta Cítrico, 390 × 844 a 2×, JPG calidad 88): una con la página entera y otra
+   ampliada con un zoom de pellizco simulado. Ese local no está en staging. El script oculta un plato de prueba de la base local
+   solo mientras captura y lo restaura. No se tocó ninguna base remota. El local no tiene fotos de platos: el estilo PDF no las muestra.
+
 **Fotos de platos:** son de Unsplash (licencia Unsplash: uso libre, también comercial, sin atribución obligatoria). Los
 identificadores están en `FOTO` de `tools/demo/catalogo.mjs`. Los logos de los locales de ejemplo son insignias dibujadas con
 formas simples o creadas para la demo, sin marcas de terceros.
@@ -27,6 +32,7 @@ formas simples o creadas para la demo, sin marcas de terceros.
 | `carta-la-bestia.jpg`, `carta-la-bestia-abajo.jpg` | La Bestia Burger & Bar: estilo Afiche, paleta Carbón, desde el QR de la Mesa 1 | ídem |
 | `carta-patio-oliva.jpg`, `carta-patio-oliva-abajo.jpg` | Patio Oliva: estilo Bento, paleta Trattoria, tema de San Valentín, desde el QR de la Mesa 1 | ídem |
 | `carta-aurelia.jpg`, `carta-aurelia-abajo.jpg` | Aurelia Alta Cocina: estilo Minimal, paleta Monocromo, con el botón Menufeed | ídem |
+| `carta-cafe-pdf.jpg`, `carta-cafe-pdf-abajo.jpg` | Café Ejemplo: estilo PDF, paleta Cítrico; la página entera como llega al celular y ampliada con zoom 1,9 | captura local (`capturar-pdf.mjs`) |
 | `carta-promo.jpg` | Bruma Bistró con el Happy Hour vigente: precio tachado, promocional y «Hasta las HH:MM» | réplica local |
 | `sala-anotar.jpg` | Pantalla del mozo con el pedido abierto de la Mesa 2 | réplica local |
 | `sala-llamado-llama.png`, `sala-llamado-cuenta.png` | Tarjetas de la sala (Mesa 2 llama al mozo, Mesa 3 pide la cuenta), recortadas hasta «Atendido» | réplica local |

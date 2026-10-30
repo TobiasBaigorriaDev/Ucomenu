@@ -47,7 +47,7 @@ export function Control() {
               <div>
                 <h3 className="mk-h3">Con tu cara</h3>
                 <p className="mk-copy" style={{ marginTop: "0.75rem" }}>
-                  Tu logo, una de 12 paletas de contraste verificado y cuatro estilos de carta. Se ve como tu local, no como el nuestro.
+                  Tu logo, una de 12 paletas de contraste verificado y cinco estilos de carta. Se ve como tu local, no como el nuestro.
                 </p>
                 <ul className="mk-swatches" aria-label="Las 12 paletas de colores disponibles">
                   {PALETTE_KEYS.map((k) => (
