@@ -61,7 +61,7 @@ export default async function VideosPage({ params }: PageProps<"/panel/[org]/vid
         <p className="panel-cell mt-6 max-w-prose text-base" data-testid="videos-sin-plan">
           {ent.state === "suspended"
             ? "La cuenta está suspendida: los videos no se muestran hasta regularizar el pago."
-            : "El feed de videos está incluido en el plan Premium. Tus videos, si tenés, se conservan y vuelven a funcionar al volver a Premium."}
+            : "El feed de videos está incluido en el plan Pro. Tus videos, si tenés, se conservan y vuelven a funcionar al pasar a Pro."}
         </p>
       ) : null}
 

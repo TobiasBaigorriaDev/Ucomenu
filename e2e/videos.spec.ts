@@ -142,16 +142,28 @@ test.describe("videos del panel", () => {
     });
   });
 
-  test("Pro: la pantalla explica que el feed es de Premium y no deja publicar; los videos se conservan", async ({ page }) => {
+  test("Pro tiene el feed (ADR 0049): cupo de 10 y se puede publicar", async ({ page }) => {
     await conLocal("vid-pro", "pro", "active", async (t) => {
-      const id = await sembrar(t.orgId, { title: "De cuando era Premium" });
+      const id = await sembrar(t.orgId, { title: "Terraza en Pro" });
       await login(page, t.owner.email, t.owner.password, lista(t.slug));
-      await expect(page.getByTestId("videos-sin-plan")).toContainText("incluido en el plan Premium");
+      await expect(page.getByTestId("videos-sin-plan")).toHaveCount(0);
+      await expect(page.getByTestId("videos-cupo")).toContainText("0 de 10");
+      await tarjeta(page, id).getByRole("button", { name: /Publicar/ }).click();
+      await expect(tarjeta(page, id).getByTestId("video-estado")).toHaveText("Publicado");
+      await expect(page.getByTestId("videos-cupo")).toContainText("1 de 10");
+    });
+  });
+
+  test("Básico: la pantalla explica que el feed es del plan Pro y no deja publicar; los videos se conservan", async ({ page }) => {
+    await conLocal("vid-basico", "basic", "active", async (t) => {
+      const id = await sembrar(t.orgId, { title: "De cuando tenía el feed" });
+      await login(page, t.owner.email, t.owner.password, lista(t.slug));
+      await expect(page.getByTestId("videos-sin-plan")).toContainText("incluido en el plan Pro");
       await expect(page.getByTestId("videos-cupo")).toHaveCount(0);
-      await expect(tarjeta(page, id).getByTestId("video-titulo")).toHaveText("De cuando era Premium");
+      await expect(tarjeta(page, id).getByTestId("video-titulo")).toHaveText("De cuando tenía el feed");
       await expect(tarjeta(page, id).getByRole("button", { name: /Publicar/ })).toBeDisabled();
       // Renombrar sí se puede: el plan solo cierra la publicación.
-      await tarjeta(page, id).getByLabel("Nombre del video").fill("Renombrado en Pro");
+      await tarjeta(page, id).getByLabel("Nombre del video").fill("Renombrado en Básico");
       await tarjeta(page, id).getByRole("button", { name: "Guardar" }).click();
       await expect(tarjeta(page, id).getByText("Video guardado.")).toBeVisible();
     });

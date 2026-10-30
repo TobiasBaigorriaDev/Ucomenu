@@ -36,7 +36,7 @@ test.describe("add-ons", () => {
       await conPlan(t.orgId, "premium");
       await login(page, ADMIN_EMAIL, SEED_PASSWORD, detalle(t.slug));
       await expect(page.getByTestId("addons-vacio")).toContainText("Hoy no hay otros add-ons a la venta");
-      await expect(page.getByTestId("addons-vacio")).toContainText("Premium");
+      await expect(page.getByTestId("addons-vacio")).toContainText("plan Pro");
       await expect(page.getByTestId("addon")).toHaveCount(0);
       await expect(page.getByRole("button", { name: "Activar add-on" })).toHaveCount(0);
       await expectNoHorizontalOverflow(page);

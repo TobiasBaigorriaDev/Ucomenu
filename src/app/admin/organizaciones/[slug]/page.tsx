@@ -241,7 +241,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         </p>
         {org.addons.length === 0 ? (
           <p className="mt-3 max-w-prose text-base text-muted" data-testid="addons-vacio">
-            Hoy no hay otros add-ons a la venta. Las sucursales adicionales se gestionan en su bloque de arriba; el feed de videos cortos viene incluido en el plan Premium (no se activa acá).
+            Hoy no hay otros add-ons a la venta. Las sucursales adicionales se gestionan en su bloque de arriba; el feed de videos cortos viene incluido en el plan Pro (no se activa acá).
           </p>
         ) : null}
         <ul className="mt-3 divide-y divide-ink/15">

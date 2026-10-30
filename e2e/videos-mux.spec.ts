@@ -262,8 +262,8 @@ test.describe("el webhook: la firma es la única puerta", () => {
 });
 
 test.describe("quién puede subir", () => {
-  test("Pro no tiene el formulario; solo lectura lo muestra apagado con su aviso", async ({ page }) => {
-    await conLocal("vmux-pro", "pro", "active", async (t) => {
+  test("Básico no tiene el formulario; solo lectura lo muestra apagado con su aviso", async ({ page }) => {
+    await conLocal("vmux-basico", "basic", "active", async (t) => {
       await login(page, t.owner.email, t.owner.password, lista(t.slug));
       await expect(formulario(page)).toHaveCount(0);
     });

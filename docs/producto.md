@@ -5,7 +5,7 @@
 ## Problema
 Los restaurantes, bares y cafeterías dependen de cartas impresas o PDF que no se actualizan, no muestran bien el producto y no generan ningún vínculo con el cliente. En el salón, el comensal pierde tiempo esperando que el mozo lo vea para pedir algo o la cuenta. Y una vez que se va, el local no tiene forma barata de hacerlo volver.
 
-UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscripción (SaaS), que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, en el nivel superior, un feed de videos cortos del local y una tarjeta de fidelidad en la billetera del teléfono.
+UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscripción (SaaS), que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo, un feed de videos cortos del local (desde el plan Pro) y, más adelante, una tarjeta de fidelidad en la billetera del teléfono.
 
 - **Nombre comercial:** UcoMenu. **Dominio:** `ucomenu.com`, propiedad del usuario (confirmado 2026-10-26; DNS en Cloudflare). Los QR definitivos codifican este dominio.
 - **Mercado inicial:** Argentina (es-AR). Precios de catálogo en USD; el cobro manual se hace en el equivalente en ARS.
@@ -45,11 +45,11 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 - **Panel de sala** para el personal: lista en vivo con número de mesa, tipo de llamado y tiempo transcurrido, con alerta sonora y visual; el Staff marca «atendido».
 - Anti-spam: cooldown por mesa y un único llamado pendiente por tipo.
 
-### 3. Feed de videos cortos — plan Premium, fase 2
+### 3. Feed de videos cortos — plan Pro, fase 2
 Reemplaza a la realidad aumentada (WebAR), descartada el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)).
 - Un **feed de videos cortos con scroll vertical** (estilo Reels) dentro de la carta pública: el local publica videos del restaurante, del ambiente y de la preparación o presentación de sus platos.
 - El comensal los mira deslizando; desde el **QR de una mesa** puede darles **like** y **comentarlos**. Los comentarios se publican solo cuando el local los aprueba.
-- Incluido en el plan **Premium** y habilitado por *feature flag* según la suscripción de la organización.
+- Incluido en el plan **Pro** (y en Premium) y habilitado por *feature flag* según la suscripción de la organización. *Pasó de Premium a Pro el 2026-10-29: [ADR 0049](decisiones/0049-feed-de-videos-en-pro.md).*
 - *Implementado:* el catálogo (`video_feed` y `videos_published` en `plans`, [ficha](../agile/cambios/catalogo-video-feed.md)) y la base y el panel de videos —tabla `menu_videos`, estados, cupo al publicar, borrado en dos pasos y la pantalla `/panel/{slug}/videos` para Dueño y Staff, [ficha](../agile/cambios/videos-del-panel-base.md)—. La subida y el procesamiento con Mux están implementados en local ([ficha](../agile/cambios/videos-mux-parte-b.md)): el navegador sube el archivo directo a Mux y el estado llega por webhook. El **feed vertical en la carta** está implementado y probado en staging ([ficha](../agile/cambios/feed-de-videos.md)): enlace «Ver videos» solo si hay publicados (en la carta de una mesa lleva al feed de esa mesa, que **conserva la barra de llamado al mozo**), un video a la vez, mudo y en bucle, sonido con un botón, y «Ver plato» (nombre, precio y descripción) solo si el plato sigue visible en esa sucursal. Se puede ver también desde el link directo, sin interactuar. Los **likes** están implementados ([ficha](../agile/cambios/likes-del-feed.md)): un corazón con el conteo en cada video; desde la mesa es un botón (da o quita el like, uno por dispositivo y video), y sin mesa solo se ve el conteo (nada si es 0). Los **comentarios** están implementados ([ficha](../agile/cambios/comentarios-del-feed.md)): un botón con el conteo de aprobados abre una hoja con los comentarios publicados; desde la mesa trae el formulario (alias opcional + comentario) y lo enviado queda **pendiente** hasta que el Dueño o el Staff lo aprueben en `/panel/{slug}/comentarios` (aprobar, rechazar, retirar y recuperar). Sin mesa se leen los publicados, sin formulario.
 
 ### 4. Fidelización con Wallet y recordatorio por cercanía — fase 3
@@ -98,9 +98,9 @@ Diseño aprobado por el usuario (decisiones D1–D14 de la exploración); fases 
 - Es la base del programa de fidelización (módulo 4).
 
 ## Modelo de suscripción
-Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y suspende planes y registra los pagos; el pago se acuerda por fuera (transferencia o link de pago). El cobro automático es posterior. **Precios y límites son parametrizables en la base de datos**, no están escritos en el código.
+Tres niveles en el modelo (hoy se ofrecen dos: Básico y Pro; Premium se conserva sin venderse, [ADR 0049](decisiones/0049-feed-de-videos-en-pro.md)), con **cobro manual** en el MVP: el SuperAdmin activa, cambia y suspende planes y registra los pagos; el pago se acuerda por fuera (transferencia o link de pago). El cobro automático es posterior. **Precios y límites son parametrizables en la base de datos**, no están escritos en el código.
 
-| | Básico | Pro | Premium |
+| | Básico | Pro | Premium *(no se ofrece por ahora)* |
 | --- | :---: | :---: | :---: |
 | **Precio mensual** | USD 20 | USD 40 | USD 70 |
 | **Precio anual** | USD 190 | USD 380 | USD 670 |
@@ -111,18 +111,18 @@ Tres niveles, con **cobro manual** en el MVP: el SuperAdmin activa, cambia y sus
 | Llamado al mozo / pedir la cuenta + panel de sala | — | ✔ | ✔ |
 | Analítica (vistas de platos, llamados y pedidos) | — | ✔ | ✔ |
 | Fidelización por sellos en Apple/Google Wallet + recordatorio por cercanía | — | — | ✔ |
-| Feed de videos cortos con likes y comentarios | — | — | ✔ (hasta 10 videos publicados) |
+| Feed de videos cortos con likes y comentarios | — | ✔ (hasta 10 videos publicados) | ✔ (hasta 10 videos publicados) |
 | Invitación a reseñar en Google | ✔ (pie de la carta) | ✔ (+ tras «Pedir la cuenta») | ✔ |
 | Promociones programadas / Happy Hour *(implementadas el 2026-10-23)* | — | ✔ | ✔ |
 | Pedidos que anota el mozo y pantalla de cocina con rol de cocinero | — | ✔ | ✔ |
 | Clientes recurrentes (*sin implementar*) | — | — | ✔ |
 
-- **Feed de videos cortos:** incluido en Premium, con un cupo de **10 videos publicados** (parametrizable en la base). Reemplaza al add-on WebAR (+USD 25/mes, cupo de 15 platos 3D y packs de +10), que se descartó el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); hoy no hay ningún add-on a la venta.
+- **Feed de videos cortos:** incluido en Pro y en Premium, con un cupo de **10 videos publicados** (parametrizable en la base). Reemplaza al add-on WebAR (+USD 25/mes, cupo de 15 platos 3D y packs de +10), que se descartó el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); hoy no hay ningún add-on a la venta.
 - **Sucursal adicional** *(implementada el 2026-10-23; [ADR 0039](decisiones/0039-sucursal-adicional-y-vistas-previas.md))*: solo plan Pro, **ARS 12.000/mes** por sucursal (precio en pesos, parametrizable en la base), hasta 3 adicionales. Se cobra junto con la suscripción y sigue su ciclo y su mora. Al cancelarla, el SuperAdmin desactiva con el Dueño las sucursales que excedan el tope (desactivar es reversible); no quedan sucursales activas sin pagar.
-- **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito. Toda organización nueva arranca con esta prueba a partir de su fecha de alta, sin intervención de nadie. *(Confirmado 2026-10-14.)*
+- **Período de prueba:** **14 días gratis del plan Básico**, sin tarjeta de crédito. Toda organización nueva arranca con esta prueba a partir de su fecha de alta, sin intervención de nadie. *(Confirmado 2026-10-14.)* **Oferta comercial de la portada (2026-10-28):** la prueba que se ofrece es de **14 días del plan Pro**; el SuperAdmin da de alta el local (tras el contacto por WhatsApp) eligiendo plan Pro y vencimiento a 14 días. El trigger automático de Básico no cambia. Ficha: [portada-ucomenu](../agile/cambios/portada-ucomenu.md).
 - **Límites:** son techos para *crear* y para *activar* (no se puede superar el tope). Los platos se cuentan solo si están activos (`is_active`): con el tope alcanzado se bloquea tanto crear un plato activo como pasar uno inactivo a activo; pasar un plato de activo a inactivo siempre se permite, para que el local pueda acomodarse a su cupo. Misma regla para sucursales y mesas. *(Confirmado 2026-10-14.)*
 - **Cambio de plan:** bajar de plan desactiva funciones pero **no borra datos**; si lo existente supera el nuevo límite, se conserva y solo se bloquea crear más.
-- En el MVP se venden **Básico y Pro**. Premium se habilita cuando se entregue lo que incluye (feed de videos en la fase 2, fidelización en la fase 3); venderlo antes solo con el feed sería una decisión comercial aparte.
+- En el MVP se venden **Básico y Pro**. Premium **no se ofrece** por ahora (decisión del usuario, 2026-10-29, [ADR 0049](decisiones/0049-feed-de-videos-en-pro.md)): sigue en la base, sin venderse ni mostrarse, y se retoma cuando se entregue lo que se le sume (juegos, más cupo de videos, fidelización con Wallet, clientes recurrentes).
 - **Analítica** (platos más vistos, llamados por franja): incluida **desde el plan Pro** (Pro y Premium). **Implementada** (ficha `analitica-basica`, ADR 0022): `/panel/{slug}/analitica`, solo Dueño, con los platos más vistos (aperturas del detalle, contadores por día) y los llamados por hora de los últimos 14 días. **Analítica de pedidos** (ficha `analitica-de-pedidos`, ADR 0045; mismo plan y misma pantalla): resumen de ventas anotadas contra el período anterior (7, 30 o 90 días), ventas por día, mapa de franjas por día y hora, platos que más venden y que no se piden, ventas por categoría y anulaciones con sus motivos; sale de los pedidos cerrados, en el horario de cada sucursal. **Resumen con IA** (ficha `resumen-de-analitica-con-ia`, ADR 0047): un botón redacta, con un servicio externo, un párrafo, hallazgos y acciones para probar a partir de las cifras del período (nunca motivos escritos por el personal ni datos de comensales); mínimo de 5 pedidos, se guarda el último por período y alcance y no se regenera antes de 10 minutos.
 
 ### Mora y suspensión (degradación progresiva)
@@ -210,13 +210,13 @@ Hay tres roles dentro de una organización; **no existe rol intermedio de encarg
 
 ### Feed de videos cortos (fase 2)
 Decidido por el usuario el 2026-10-21 ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)); reemplaza a las reglas de WebAR.
-- El feed aparece solo si el plan de la organización es **Premium** y la carta está publicada (cuenta no suspendida). Likes, comentarios y carga exigen además la cuenta en gracia o al día. Todo se verifica en el servidor, no solo ocultando botones.
+- El feed aparece solo si el plan de la organización concede `video_feed` (**Pro** y Premium) y la carta está publicada (cuenta no suspendida). Likes, comentarios y carga exigen además la cuenta en gracia o al día. Todo se verifica en el servidor, no solo ocultando botones.
 - **Videos:** hasta **30 segundos** y **50 MB** por archivo subido, en vertical 9:16. No puede haber más de **10 videos publicados** por organización (parametrizable en `plans`); con el tope alcanzado se puede guardar un borrador, pero no publicarlo.
 - **Like y comentario solo desde el QR de una mesa**, con el ticket de visita vigente (3 horas, como el llamado); desde el link directo el feed se ve, pero no se interactúa. Un like por dispositivo y video, sin guardar datos del comensal: el navegador guarda, solo al primer «me gusta», un código aleatorio y los videos marcados (la política de privacidad lo dice); el servidor guarda únicamente un resultado de un solo sentido de ese código, sin la mesa ni la IP (un valor derivado de la IP se borra a la hora y solo sirve para limitar abusos: 60 «me gusta» nuevos cada 10 minutos por conexión).
 - **Comentarios con aprobación previa:** alias opcional, sin datos personales; quedan pendientes y no se ven en la carta hasta que el local los aprueba.
 - *Supuesto (nuevo):* suben, publican y borran videos el **Dueño y el Staff** (como la carta), y los dos moderan los comentarios.
 - *Supuesto (nuevo):* un video puede enlazarse a un plato de forma opcional («Ver plato»).
-- *Supuesto (nuevo):* en **solo lectura** los videos publicados se siguen viendo, pero se apagan los likes, los comentarios y la carga; en **suspendida** no se ve nada. Bajar de Premium no borra videos ni comentarios: el feed deja de mostrarse.
+- *Supuesto (nuevo):* en **solo lectura** los videos publicados se siguen viendo, pero se apagan los likes, los comentarios y la carga; en **suspendida** no se ve nada. Bajar a un plan sin el feed (Básico) no borra videos ni comentarios: el feed deja de mostrarse.
 - Comentarios de hasta **280 caracteres** y alias de hasta **30**, en un solo renglón y como texto plano. Límite de **10 envíos por conexión cada 10 minutos** (un reenvío idéntico no duplica) y tope de **100 pendientes por local**. Aprobar exige la cuenta al día; **rechazar o retirar nunca se bloquea por mora**.
 - **Retención (decidida al implementarlos, [ficha](../agile/cambios/comentarios-del-feed.md)):** los comentarios **rechazados se borran a los 7 días** de rechazados (hasta entonces se pueden recuperar) y los **pendientes sin moderar a los 30 días**; los publicados viven con el video. La purga (`purge_video_comments`) existe pero hay que programarla para producción (`docs/produccion.md`).
 - **Almacenamiento y reproducción en Mux Video** ([ADR 0031](decisiones/0031-feed-de-videos-cortos.md)): subida directa desde el panel, conversión automática de formatos de iPhone (`.mov` HEVC) y Android, entrega adaptativa HLS (hasta 1080p) y póster automático, sin consumir almacenamiento ni transferencia de Supabase.

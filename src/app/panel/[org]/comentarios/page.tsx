@@ -53,7 +53,7 @@ export default async function CommentsPage({ params }: PageProps<"/panel/[org]/c
         <p className="panel-cell mt-6 max-w-prose text-base" data-testid="comentarios-sin-plan">
           {ent.state === "suspended"
             ? "La cuenta está suspendida: los videos y sus comentarios no se muestran hasta regularizar el pago."
-            : "El feed de videos y sus comentarios están incluidos en el plan Premium. Lo que ya recibiste se conserva y vuelve a verse al volver a Premium."}
+            : "El feed de videos y sus comentarios están incluidos en el plan Pro. Lo que ya recibiste se conserva y vuelve a verse al pasar a Pro."}
         </p>
       ) : !canApprove ? (
         <p className="panel-cell mt-6 max-w-prose text-base" data-testid="comentarios-solo-lectura">

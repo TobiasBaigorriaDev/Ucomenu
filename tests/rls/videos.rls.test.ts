@@ -134,8 +134,8 @@ describe("crear un video: quién puede", () => {
     }
   });
 
-  it("Básico y Pro no crean: el feed no está en su plan", async () => {
-    for (const plan of ["basic", "pro"] as const) {
+  it("Básico no crea: el feed no está en su plan", async () => {
+    for (const plan of ["basic"] as const) {
       const local = await crearLocal(plan);
       for (const usuario of [local.owner, local.staff]) {
         const r = await usuario.db.from("menu_videos").insert({ organization_id: local.id, title: "x" });
@@ -143,6 +143,20 @@ describe("crear un video: quién puede", () => {
       }
       expect(await totalDe(local.id)).toBe(0);
     }
+  });
+
+  it("Pro tiene el feed (ADR 0049): el Dueño y el Staff crean borradores y el cupo es de 10, como en Premium", async () => {
+    const local = await crearLocal("pro");
+    for (const usuario of [local.owner, local.staff]) {
+      const r = await usuario.db.from("menu_videos").insert({ organization_id: local.id, title: `de ${usuario.email}` }).select("id, status");
+      expect(r.error).toBeNull();
+      expect(r.data).toEqual([expect.objectContaining({ status: "draft" })]);
+    }
+    expect(await totalDe(local.id)).toBe(2);
+    await sembrar(local.id, 8, { status: "published" });
+    expect((await service.from("menu_videos").insert(filasDeServidor(local.id, 2, { status: "published" }))).error).toBeNull(); // el 10.º entra
+    expect((await service.from("menu_videos").insert(filasDeServidor(local.id, 1, { status: "published" }))).error?.code).toBe(LIMIT_EXCEEDED);
+    expect(await publicados(local.id)).toBe(10);
   });
 
   it("quien no es miembro, y anon, no crean ni leen", async () => {
@@ -273,11 +287,11 @@ describe("las reglas de fondo valen también para el servidor (CHECK)", () => {
     expect(once.error?.code).toBe(LIMIT_EXCEEDED);
     expect(await publicados(premium.id)).toBe(10);
 
-    const pro = await crearLocal("pro");
-    const sinPlan = await service.from("menu_videos").insert(filasDeServidor(pro.id, 1, { status: "published" }));
+    const basico = await crearLocal("basic");
+    const sinPlan = await service.from("menu_videos").insert(filasDeServidor(basico.id, 1, { status: "published" }));
     expect(sinPlan.error?.code).toBe(INSUFFICIENT_PRIVILEGE);
     expect(sinPlan.error?.message).toContain("feature_unavailable:video_feed");
-    expect(await totalDe(pro.id)).toBe(0);
+    expect(await totalDe(basico.id)).toBe(0);
   });
 
   it("un alta en bloque que se pasa del cupo se rechaza entera", async () => {
@@ -392,11 +406,11 @@ describe("publicar: estado de procesamiento y cupo del plan", () => {
     }
   });
 
-  it("bajar de Premium no borra nada: los publicados quedan, no se publica otro y sí se despublica", async () => {
+  it("bajar de plan, a Básico (sin feed), no borra nada: los publicados quedan, no se publica otro y sí se despublica", async () => {
     const local = await crearLocal("premium");
     const [uno, dos, tres] = await sembrar(local.id, 3);
     for (const id of [uno, dos]) expect((await publicar(local.owner, id)).error).toBeNull();
-    await setSubscription(service, local.id, { plan: "pro" });
+    await setSubscription(service, local.id, { plan: "basic" });
 
     expect(await publicados(local.id)).toBe(2);
     const bloqueado = await publicar(local.owner, tres);

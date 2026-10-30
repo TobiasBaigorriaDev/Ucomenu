@@ -41,7 +41,7 @@ test("el Dueño publica colores y logo; persisten en carta y QR sin mezclar loca
   await expect(page.getByTestId("apariencia-preview")).toHaveCSS("background-color", "rgb(251, 243, 232)");
   await page.getByRole("button", { name: "Guardar colores" }).click();
   await expect(page.getByRole("status")).toContainText("Colores guardados.");
-  await expect(page.locator("html")).toHaveCSS("background-color", "rgb(241, 244, 240)");
+  await expect(page.locator("html")).toHaveCSS("background-color", "rgb(246, 245, 240)");
   await page.reload();
   await expect(page.getByRole("radio", { name: "Vino", exact: true })).toBeChecked();
   expect((await identity(other)).menu_palette).toBe("oliva");

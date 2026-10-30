@@ -131,14 +131,16 @@ describe("qué ve un anónimo", () => {
 });
 
 describe("plan, mora, suspensión y baja: se ocultan en el acto", () => {
-  it("Básico y Pro no muestran nada aunque tengan videos publicados; volver a Premium los muestra otra vez", async () => {
+  it("Básico no muestra nada aunque tenga videos publicados; Pro y Premium sí", async () => {
     const local = await crearLocal("premium");
     await sembrar(local.id, { title: "de cuando era Premium" });
     expect(await publicos(local.id)).toHaveLength(1);
-    for (const plan of ["pro", "basic"] as const) {
+    for (const plan of ["basic"] as const) {
       await setSubscription(service, local.id, { plan });
       expect(await publicos(local.id), plan).toEqual([]);
     }
+    await setSubscription(service, local.id, { plan: "pro" }); // desde el ADR 0049 el feed también está en Pro
+    expect(await publicos(local.id)).toHaveLength(1);
     await setSubscription(service, local.id, { plan: "premium" });
     expect(await publicos(local.id)).toHaveLength(1);
   });

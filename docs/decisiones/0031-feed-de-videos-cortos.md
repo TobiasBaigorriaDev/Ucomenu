@@ -3,6 +3,7 @@
 - Estado: aceptada
 - Fecha: 2026-10-21
 - Reemplaza a: [0002 — WebAR sin app](0002-webar-sin-app.md) (descartada)
+- **Enmendada por [0049](0049-feed-de-videos-en-pro.md) (2026-10-29):** el feed pasa al plan Pro (cupo de 10) y Premium deja de ofrecerse por ahora; lo demás sigue vigente.
 
 > El modelo de producto, de negocio (plan Premium, interacción desde la mesa, aprobación previa, límites) y el **almacenamiento y reproducción en Mux Video** están **aceptados por el usuario** (2026-10-21).
 

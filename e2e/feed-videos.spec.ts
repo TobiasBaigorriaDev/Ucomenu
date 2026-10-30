@@ -116,18 +116,20 @@ test.describe("la carta y el acceso al feed", () => {
     });
   });
 
-  test("Pro, Básico o cuenta suspendida: no hay enlace y el feed no muestra videos", async ({ page }) => {
-    await conLocal("feed-pro", "premium", "active", async (t) => {
-      await sembrar(t.orgId, { title: "De cuando era Premium", playback: "pb-pro" });
-      await conPlan(t.orgId, "pro");
+  test("Básico o cuenta suspendida: no hay enlace y el feed no muestra videos; Pro y Premium sí lo muestran", async ({ page }) => {
+    await conLocal("feed-basico", "premium", "active", async (t) => {
+      await sembrar(t.orgId, { title: "De cuando tenía el feed", playback: "pb-basico" });
+      await conPlan(t.orgId, "basic");
       await page.goto(carta(t.slug));
       await expect(page.getByTestId("ver-videos")).toHaveCount(0);
       await page.goto(feed(t.slug));
       await expect(page.getByTestId("feed-vacio")).toBeVisible();
       await expect(page.getByTestId("feed-video")).toHaveCount(0);
-      await conPlan(t.orgId, "premium");
-      await page.goto(carta(t.slug));
-      await expect(page.getByTestId("ver-videos")).toBeVisible();
+      for (const plan of ["pro", "premium"] as const) {
+        await conPlan(t.orgId, plan);
+        await page.goto(carta(t.slug));
+        await expect(page.getByTestId("ver-videos"), plan).toBeVisible();
+      }
     });
     await conLocal("feed-susp", "premium", "active", async (t) => {
       await sembrar(t.orgId, { title: "Suspendida", playback: "pb-susp" });

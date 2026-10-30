@@ -5,11 +5,12 @@
  * (`lib/identidad/palettes.ts`) pueda sobrescribirlos en la carta y en su panel sin tocar los componentes.
  */
 :root {
-  --porcelain: #f1f4f0;
-  --ink: #1b2a28;
-  --muted: #566562;
-  --cobalt: #2646c4;
-  --tile: #d6dff3;
+  /* Colores de UcoNext (los mismos de `PLATFORM_PALETTE`). El nombre `--cobalt` quedó de la marca azul anterior: hoy es el verde de la plataforma. */
+  --porcelain: #f6f5f0;
+  --ink: #242621;
+  --muted: #5c5f55;
+  --cobalt: #155b20;
+  --tile: #dcebd3;
   /* Avisos de la cuenta (panel): fondo, texto y borde por gravedad. Texto sobre fondo > 7:1. */
   --grace-bg: #f6ecc4;
   --grace-ink: #4a3a00;

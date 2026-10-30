@@ -523,7 +523,7 @@ describe("empezar una subida", () => {
   });
 
   it("lo que la base o el módulo rechazan no llega a Mux: plan sin feed, solo lectura, nombre inválido, plato ajeno, origen vacío", async () => {
-    const pro = await crearLocal("pro");
+    const basico = await crearLocal("basic");
     const lectura = await crearLocal("premium", -9 * DIA_MS);
     const a = await crearLocal();
     const b = await crearLocal();
@@ -533,14 +533,14 @@ describe("empezar una subida", () => {
     const fake = fakeMux();
     const entrada = { title: "ok", productId: null, corsOrigin: CORS };
 
-    expect(await startVideoUpload(pro.owner.db, service, fake.mux, pro.id, entrada)).toEqual({ ok: false, error: "feature" });
+    expect(await startVideoUpload(basico.owner.db, service, fake.mux, basico.id, entrada)).toEqual({ ok: false, error: "feature" });
     expect(await startVideoUpload(lectura.owner.db, service, fake.mux, lectura.id, entrada)).toEqual({ ok: false, error: "blocked_read_only" });
     expect(await startVideoUpload(a.owner.db, service, fake.mux, a.id, { ...entrada, title: "   " })).toEqual({ ok: false, error: "title_blank" });
     expect(await startVideoUpload(a.owner.db, service, fake.mux, a.id, { ...entrada, title: "x".repeat(81) })).toEqual({ ok: false, error: "title_too_long" });
     expect(await startVideoUpload(a.owner.db, service, fake.mux, a.id, { ...entrada, productId: platoAjeno })).toEqual({ ok: false, error: "product_invalid" });
     expect(await startVideoUpload(a.owner.db, service, fake.mux, a.id, { ...entrada, corsOrigin: null })).toEqual({ ok: false, error: "unexpected" });
     expect(fake.createdUploads).toEqual([]);
-    for (const l of [pro, lectura, a]) expect(await totalDe(l.id)).toBe(0);
+    for (const l of [basico, lectura, a]) expect(await totalDe(l.id)).toBe(0);
   });
 
   it("con el tope de 50 videos no se pide nada a Mux", async () => {

@@ -230,13 +230,15 @@ describe("disponibilidad en vivo", () => {
     expect(await dar({ token: local.token, video })).toMatchObject({ status: "ok", count: 2 });
   });
 
-  it("Básico y Pro no dan likes aunque haya videos; volver a Premium los devuelve", async () => {
+  it("Básico no da likes aunque haya videos; Pro y Premium sí", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
-    for (const plan of ["pro", "basic"] as const) {
+    for (const plan of ["basic"] as const) {
       await setSubscription(service, local.id, { plan });
       expect(await dar({ token: local.token, video }), plan).toEqual(UNAVAILABLE);
     }
+    await setSubscription(service, local.id, { plan: "pro" }); // desde el ADR 0049 el feed también está en Pro
+    expect(await dar({ token: local.token, video })).toMatchObject({ status: "ok" });
     await setSubscription(service, local.id, { plan: "premium" });
     expect(await dar({ token: local.token, video })).toMatchObject({ status: "ok" });
   });
@@ -298,8 +300,10 @@ describe("disponibilidad en vivo", () => {
     const habilitado = async (token: string) => ((await anon.rpc("resolve_table_qr", { p_token: token })).data as { likes_enabled: boolean }).likes_enabled;
     const local = await crearLocal();
     expect(await habilitado(local.token)).toBe(true);
-    await setSubscription(service, local.id, { plan: "pro" });
+    await setSubscription(service, local.id, { plan: "basic" });
     expect(await habilitado(local.token)).toBe(false);
+    await setSubscription(service, local.id, { plan: "pro" });
+    expect(await habilitado(local.token)).toBe(true);
     await setSubscription(service, local.id, { plan: "premium", finEnMs: -9 * DIA_MS });
     expect(await habilitado(local.token)).toBe(false);
     await setSubscription(service, local.id, { finEnMs: 5 * DIA_MS });

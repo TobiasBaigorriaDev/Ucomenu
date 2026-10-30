@@ -160,7 +160,7 @@ describe("publicar y despublicar", () => {
     for (const id of ids.slice(0, 10)) expect((await setVideoPublished(a.owner.db, a.id, id, true)).ok).toBe(true);
     expect(await setVideoPublished(a.owner.db, a.id, ids[10], true)).toEqual({ ok: false, error: "limit" });
 
-    await setSubscription(service, a.id, { plan: "pro" });
+    await setSubscription(service, a.id, { plan: "basic" });
     await setVideoPublished(a.owner.db, a.id, ids[0], false);
     expect(await setVideoPublished(a.owner.db, a.id, ids[0], true)).toEqual({ ok: false, error: "feature" });
     expect((await fila(ids[10]))?.status).toBe("draft");

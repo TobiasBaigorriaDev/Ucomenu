@@ -267,7 +267,7 @@ describe("features por plan y estado (feed de videos, ADR 0031)", () => {
 
   const casosFeatures: Caso[] = [
     { etiqueta: "Básico al día", plan: "basic", finEnMs: 3 * DIA_MS, features: ["menu"], videosPublished: 0 },
-    { etiqueta: "Pro al día", plan: "pro", finEnMs: 3 * DIA_MS, features: ["analytics", "menu", "orders", "promotions", "waiter_call"], videosPublished: 0 },
+    { etiqueta: "Pro al día", plan: "pro", finEnMs: 3 * DIA_MS, features: ["analytics", "menu", "orders", "promotions", "video_feed", "waiter_call"], videosPublished: 10 },
     {
       etiqueta: "Premium al día",
       plan: "premium",
@@ -276,11 +276,11 @@ describe("features por plan y estado (feed de videos, ADR 0031)", () => {
       videosPublished: 10,
     },
     {
-      etiqueta: "Pro en gracia: todo lo suyo sigue, sin video",
+      etiqueta: "Pro en gracia: todo sigue, también el feed",
       plan: "pro",
       finEnMs: -2 * DIA_MS,
-      features: ["analytics", "menu", "orders", "promotions", "waiter_call"],
-      videosPublished: 0,
+      features: ["analytics", "menu", "orders", "promotions", "video_feed", "waiter_call"],
+      videosPublished: 10,
     },
     {
       etiqueta: "Premium en gracia: todo sigue",
@@ -297,11 +297,11 @@ describe("features por plan y estado (feed de videos, ADR 0031)", () => {
       videosPublished: 10,
     },
     {
-      etiqueta: "Pro en solo lectura: sin video",
+      etiqueta: "Pro en solo lectura: el feed se sigue viendo, se apagan las interactivas",
       plan: "pro",
       finEnMs: -(9 * DIA_MS),
-      features: ["analytics", "menu"],
-      videosPublished: 0,
+      features: ["analytics", "menu", "video_feed"],
+      videosPublished: 10,
     },
     {
       etiqueta: "Premium suspendida: nada",
@@ -322,12 +322,12 @@ describe("features por plan y estado (feed de videos, ADR 0031)", () => {
     expect(staff.data).toMatchObject({ features });
   });
 
-  it("el catálogo: video_feed y 10 videos publicados solo en Premium, promotions y orders en Pro y Premium; Básico y Pro, sin cupo de videos", async () => {
+  it("el catálogo: video_feed, promotions y orders en Pro y Premium, con 10 videos publicados (ADR 0049); Básico, sin cupo de videos", async () => {
     const planes = await service.from("plans").select("code, features, max_videos_published").order("code");
     expect(planes.data).toEqual([
       { code: "basic", features: ["menu"], max_videos_published: 0 },
       { code: "premium", features: ["menu", "waiter_call", "analytics", "loyalty", "video_feed", "promotions", "orders"], max_videos_published: 10 },
-      { code: "pro", features: ["menu", "waiter_call", "analytics", "promotions", "orders"], max_videos_published: 0 },
+      { code: "pro", features: ["menu", "waiter_call", "analytics", "promotions", "orders", "video_feed"], max_videos_published: 10 },
     ]);
   });
 
@@ -335,6 +335,8 @@ describe("features por plan y estado (feed de videos, ADR 0031)", () => {
     await setSubscription(service, orgId, { plan: "premium", finEnMs: -(30 * DIA_MS) });
     expect(sql(`select private.org_limit('${orgId}', 'videos_published')`)[0][0]).toBe("10");
     await setSubscription(service, orgId, { plan: "pro", finEnMs: 3 * DIA_MS });
+    expect(sql(`select private.org_limit('${orgId}', 'videos_published')`)[0][0]).toBe("10");
+    await setSubscription(service, orgId, { plan: "basic", finEnMs: 3 * DIA_MS });
     expect(sql(`select private.org_limit('${orgId}', 'videos_published')`)[0][0]).toBe("0");
     // Sin suscripción no hay cupo (falla cerrado), igual que los otros topes.
     expect(sql(`select private.org_limit('${randomUUID()}', 'videos_published')`)[0][0]).toBe("0");
@@ -506,7 +508,7 @@ describe("tablas de planes y suscripciones", () => {
     expect(planes.data).toEqual([
       { code: "basic", max_videos_published: 0 },
       { code: "premium", max_videos_published: 10 },
-      { code: "pro", max_videos_published: 0 },
+      { code: "pro", max_videos_published: 10 },
     ]);
     // `addons-y-baja.rls` siembra un add-on de ensayo `tt_*` mientras corre; el catálogo real tiene solo la sucursal adicional.
     expect(addons.error).toBeNull();
@@ -533,7 +535,7 @@ describe("tablas de planes y suscripciones", () => {
     }
     const intacto = await service.from("plans").select("max_active_products").eq("code", "basic").single();
     expect(intacto.data?.max_active_products).toBe(80);
-    expect((await service.from("plans").select("max_videos_published").eq("code", "pro").single()).data?.max_videos_published).toBe(0);
+    expect((await service.from("plans").select("max_videos_published").eq("code", "pro").single()).data?.max_videos_published).toBe(10);
   });
 
   it("la organización morosa del seed sigue suspendida y con sus datos", async () => {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-17T18:00:00.000Z",
+  "generatedAt": "2026-10-28T12:00:00.000Z",
   "title": "Design System: UcoMenu, carta pública y panel",
   "extensions": {
     "colorMeta": {
@@ -218,6 +218,11 @@
         "role": "functional",
         "displayName": "Suspensión, borde",
         "canonical": "#b3261e"
+      },
+      "phone-frame": {
+        "role": "neutral",
+        "displayName": "Marco de teléfono (portada)",
+        "canonical": "#15170f"
       }
     },
     "typographyMeta": {
@@ -268,6 +273,38 @@
       "panel-control": {
         "displayName": "Control",
         "purpose": "Texto de botones y campos del panel; 1rem 500."
+      },
+      "portada-h1": {
+        "displayName": "Titular de la portada",
+        "purpose": "h1 centrado; Schibsted Grotesk 800, clamp(2.5rem, 1.2rem + 5.6vw, 5rem)."
+      },
+      "portada-h2": {
+        "displayName": "Título de sección de la portada",
+        "purpose": "h2 800, clamp(2rem, 1.1rem + 3.6vw, 3.75rem)."
+      },
+      "portada-h3": {
+        "displayName": "Subtítulo de la portada",
+        "purpose": "h3 800, clamp(1.5rem, 1.1rem + 1.4vw, 2.125rem)."
+      },
+      "portada-cell-title": {
+        "displayName": "Título de celda",
+        "purpose": "h3 de celdas del bento; 1.5rem 800."
+      },
+      "portada-lead": {
+        "displayName": "Subtítulo largo",
+        "purpose": "Lead en gris, hasta 44rem."
+      },
+      "portada-copy": {
+        "displayName": "Texto de la portada",
+        "purpose": "1.0625rem, 1.55, hasta 34rem."
+      },
+      "portada-price": {
+        "displayName": "Precio de plan",
+        "purpose": "800, tabular, clamp(2.5rem, 2rem + 2vw, 3.5rem)."
+      },
+      "portada-button": {
+        "displayName": "Texto de botón",
+        "purpose": "700, 1.0625rem."
       }
     },
     "shadows": [
@@ -285,6 +322,11 @@
         "name": "cell-hairline",
         "value": "inset 0 0 0 1px color-mix(in srgb, var(--ink) 15%, transparent)",
         "purpose": "Filete interior de .panel-cell y .panel-list; el panel no tiene sombras."
+      },
+      {
+        "name": "portada-float",
+        "value": "0 10px 28px -10px rgb(0 0 0 / 0.4)",
+        "purpose": "Única sombra de la portada: tarjetas que flotan sobre los teléfonos (misma del dock)."
       }
     ],
     "motion": [
@@ -297,6 +339,11 @@
         "name": "ease-panel-nav",
         "value": "180ms cubic-bezier(0.22, 1, 0.36, 1)",
         "purpose": "Fondo y color de chips y enlaces del riel; solo con prefers-reduced-motion: no-preference."
+      },
+      {
+        "name": "ease-portada",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Botones y pestañas 180 ms, signo de preguntas 220 ms, entrada del abanico 1100 ms; abanico solo con prefers-reduced-motion: no-preference."
       }
     ],
     "breakpoints": [
@@ -311,6 +358,10 @@
       {
         "name": "lg (riel)",
         "value": "64rem"
+      },
+      {
+        "name": "portada escritorio",
+        "value": "900px"
       }
     ]
   },
@@ -434,6 +485,70 @@
       "description": "Campo de 44 px, radio 8 px, borde ink/60, fondo blanco.",
       "html": "<label class=\"ds-fl\" for=\"ds-f\">Nombre del plato</label><input id=\"ds-f\" class=\"ds-fi\" type=\"text\" placeholder=\"Milanesa napolitana\">",
       "css": ".ds-fl{--ink:#2a2622;font-family:Schibsted Grotesk,system-ui,sans-serif;display:block;color:var(--ink);font-size:14px;font-weight:500}.ds-fi{--ink:#2a2622;--cobalt:#3d5f48;font-family:Schibsted Grotesk,system-ui,sans-serif;display:block;box-sizing:border-box;width:100%;min-height:44px;margin-top:4px;padding:8px 12px;border:1px solid rgb(42 38 34/.6);border-radius:8px;background:#fff;color:var(--ink);font-size:16px}.ds-fi::placeholder{color:rgb(101 93 82/.7)}.ds-fi:focus-visible{outline:2px solid var(--cobalt);outline-offset:2px}"
+    },
+    {
+      "name": "Botón píldora de la portada",
+      "kind": "button",
+      "refersTo": "portada-button",
+      "description": "Píldora de 56 px, verde con blanco; hover verde profundo y flecha que se corre.",
+      "html": "<a class=\"ds-mkb\" href=\"#\">Probalo 14 días gratis <svg viewBox=\"0 0 24 24\" width=\"20\" height=\"20\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14M13 6l6 6-6 6\"/></svg></a>",
+      "css": ".ds-mkb{font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:56px;padding:12px 28px;border-radius:9999px;background:#155b20;color:#fff;font-weight:700;font-size:17px;letter-spacing:-.01em;text-decoration:none;transition:background-color 180ms cubic-bezier(.22,1,.36,1)}.ds-mkb:hover{background:#0f4318}.ds-mkb:hover svg{transform:translateX(3px)}.ds-mkb svg{transition:transform 180ms cubic-bezier(.22,1,.36,1)}.ds-mkb:focus-visible{outline:3px solid #155b20;outline-offset:3px}"
+    },
+    {
+      "name": "Barra píldora de la portada",
+      "kind": "nav",
+      "refersTo": "portada-nav",
+      "description": "Barra fija arriba en papel con filete; enlaces de 44 px y botón pequeño.",
+      "html": "<nav class=\"ds-mkn\"><a class=\"ds-mkn-b\" href=\"#\">UcoMenu</a><a class=\"ds-mkn-l\" href=\"#\">Precios</a><a class=\"ds-mkn-l\" href=\"#\">Preguntas</a><a class=\"ds-mkn-c\" href=\"#\">Probalo gratis</a></nav>",
+      "css": ".ds-mkn{font-family:Schibsted Grotesk,system-ui,sans-serif;display:flex;align-items:center;gap:8px;max-width:640px;padding:8px 8px 8px 20px;border-radius:9999px;background:#f6f5f0;box-shadow:inset 0 0 0 1px rgb(36 38 33/.14);color:#242621}.ds-mkn-b{margin-right:auto;color:#155b20;font-weight:800;font-size:22px;letter-spacing:-.03em;text-decoration:none}.ds-mkn-l{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:9999px;color:#242621;font-weight:500;text-decoration:none}.ds-mkn-l:hover{background:#dcebd3}.ds-mkn-c{display:inline-flex;align-items:center;min-height:44px;padding:8px 20px;border-radius:9999px;background:#155b20;color:#fff;font-weight:700;font-size:15px;text-decoration:none}.ds-mkn-c:hover{background:#0f4318}.ds-mkn a:focus-visible{outline:3px solid #155b20;outline-offset:3px}"
+    },
+    {
+      "name": "Celdas de la portada",
+      "kind": "card",
+      "refersTo": "portada-cell-sand",
+      "description": "Celdas de 24 px: arena con filete, menta plana y verde profundo.",
+      "html": "<div class=\"ds-mkc ds-mkc-s\"><h3>Llamá al mozo</h3><p>El cliente toca un botón y la sala lo ve.</p></div><div class=\"ds-mkc ds-mkc-m\"><h3>Tu carta</h3><p>Se edita en minutos.</p></div><div class=\"ds-mkc ds-mkc-d\"><h3>Sala en vivo</h3><p>Pedidos de atención a la vista.</p></div>",
+      "css": ".ds-mkc{font-family:Schibsted Grotesk,system-ui,sans-serif;width:260px;box-sizing:border-box;margin-bottom:12px;padding:28px;border-radius:24px;color:#242621}.ds-mkc h3{margin:0 0 8px;font-weight:800;font-size:24px;line-height:1.08;letter-spacing:-.025em}.ds-mkc p{margin:0;font-size:16px;line-height:1.5;color:#5c5f55}.ds-mkc-s{background:#e8e6dc;box-shadow:inset 0 0 0 1px rgb(36 38 33/.14)}.ds-mkc-m{background:#dcebd3}.ds-mkc-d{background:#0f4318;color:#fff}.ds-mkc-d p{color:rgb(255 255 255/.82)}"
+    },
+    {
+      "name": "Teléfono con marco CSS",
+      "kind": "custom",
+      "refersTo": "portada-phone",
+      "description": "Marco medido en em del ancho, con la captura real arriba; aquí un fondo arena de muestra.",
+      "html": "<div class=\"ds-mkp\"><div class=\"ds-mkp-s\"></div></div>",
+      "css": ".ds-mkp{width:160px;font-size:1.6px;padding:2.6em;border-radius:11em;background:#15170f;box-shadow:inset 0 0 0 .35em rgb(255 255 255/.1);box-sizing:content-box}.ds-mkp-s{overflow:hidden;border-radius:8.6em;background:#e8e6dc;aspect-ratio:390/844}"
+    },
+    {
+      "name": "Tarjeta flotante",
+      "kind": "card",
+      "refersTo": "portada-cell-sand",
+      "description": "Captura corta que flota sobre un teléfono; única sombra de la portada.",
+      "html": "<div class=\"ds-mkf\">Mesa 7 llama al mozo</div>",
+      "css": ".ds-mkf{font-family:Schibsted Grotesk,system-ui,sans-serif;display:inline-block;padding:14px 20px;border-radius:16px;background:#fff;color:#242621;font-weight:700;rotate:-3deg;box-shadow:0 10px 28px -10px rgb(0 0 0/.4)}"
+    },
+    {
+      "name": "Pestaña de estilo",
+      "kind": "chip",
+      "refersTo": "portada-tab",
+      "description": "Píldora de 44 px; la seleccionada va en verde con blanco.",
+      "html": "<div class=\"ds-mkt\"><button type=\"button\" aria-selected=\"true\">Bento</button><button type=\"button\" aria-selected=\"false\">Afiche</button><button type=\"button\" aria-selected=\"false\">Clásica</button></div>",
+      "css": ".ds-mkt{display:flex;gap:8px}.ds-mkt button{font-family:Schibsted Grotesk,system-ui,sans-serif;min-height:44px;padding:0 18px;border:0;border-radius:9999px;background:transparent;box-shadow:inset 0 0 0 1.5px rgb(36 38 33/.35);color:#242621;font-size:16px;font-weight:600;cursor:pointer}.ds-mkt button:hover{background:rgb(36 38 33/.06)}.ds-mkt button[aria-selected=true]{background:#155b20;box-shadow:none;color:#fff}.ds-mkt button:focus-visible{outline:3px solid #155b20;outline-offset:3px}"
+    },
+    {
+      "name": "Selector mensual/anual",
+      "kind": "custom",
+      "refersTo": "portada-periodo",
+      "description": "Grupo píldora arena; el botón presionado va en verde.",
+      "html": "<div class=\"ds-mkq\"><button type=\"button\" aria-pressed=\"true\">Mensual</button><button type=\"button\" aria-pressed=\"false\">Anual</button></div>",
+      "css": ".ds-mkq{display:inline-flex;gap:4px;padding:4px;border-radius:9999px;background:#e8e6dc}.ds-mkq button{font-family:Schibsted Grotesk,system-ui,sans-serif;min-height:44px;padding:0 20px;border:0;border-radius:9999px;background:transparent;color:#242621;font-size:16px;font-weight:600;cursor:pointer}.ds-mkq button[aria-pressed=true]{background:#155b20;color:#fff}.ds-mkq button:focus-visible{outline:3px solid #155b20;outline-offset:3px}"
+    },
+    {
+      "name": "Pregunta frecuente",
+      "kind": "custom",
+      "refersTo": "portada-faq-row",
+      "description": "Fila arena en details; el signo más gira 45 grados al abrir.",
+      "html": "<details class=\"ds-mkd\" open><summary>¿Cobran comisión por pedido?<svg viewBox=\"0 0 24 24\" width=\"24\" height=\"24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14M5 12h14\"/></svg></summary><p>No: la carta no toma pedidos ni pagos.</p></details>",
+      "css": ".ds-mkd{font-family:Schibsted Grotesk,system-ui,sans-serif;width:420px;border-radius:20px;background:#e8e6dc;color:#242621}.ds-mkd summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:56px;padding:12px 20px;font-weight:700;font-size:18px;letter-spacing:-.01em;cursor:pointer;list-style:none}.ds-mkd summary::-webkit-details-marker{display:none}.ds-mkd summary svg{color:#155b20;transition:rotate 220ms cubic-bezier(.22,1,.36,1)}.ds-mkd[open] summary svg{rotate:45deg}.ds-mkd p{margin:0;padding:0 20px 20px;line-height:1.55;color:#5c5f55}.ds-mkd summary:focus-visible{outline:3px solid #155b20;outline-offset:3px;border-radius:8px}"
     }
   ],
   "narrative": {
@@ -446,7 +561,8 @@
       "Número de índice repetido en la celda del bento y en la banda de su sección",
       "Funciona con y sin fotos y con y sin logo",
       "Celdas de 24 px con filete ink/15 también en el panel, sin sombras",
-      "Panel con riel verde profundo en escritorio y chips en celular, en una sola nav"
+      "Panel con riel verde profundo en escritorio y chips en celular, en una sola nav",
+      "Portada (.marketing): mundo propio con paleta UcoNext, Schibsted Grotesk 800 apretada, capturas reales en teléfonos con marco CSS y abanico que sangra a los costados"
     ],
     "rules": [
       {
@@ -493,6 +609,36 @@
         "name": "The One Nav Rule",
         "body": "Cada área tiene un solo nav; celular y escritorio son la misma lista con otro estilo.",
         "section": "layout"
+      },
+      {
+        "name": "The Fixed Field Rule",
+        "body": "La portada no cambia con la paleta de ningún local: verde y menta son el campo y las cartas fotografiadas aportan el resto del color. Sin degradados.",
+        "section": "colors"
+      },
+      {
+        "name": "The No Eyebrow Rule",
+        "body": "Ninguna sección de la portada lleva rótulo, kicker ni sobretítulo sobre el titular; las etiquetas «Pro» y «Pronto» son insignias de plan.",
+        "section": "typography"
+      },
+      {
+        "name": "The Bleed Fan Rule",
+        "body": "El abanico del hero sangra a los costados y recorta por abajo.",
+        "section": "layout"
+      },
+      {
+        "name": "The Floating Cards Only Rule",
+        "body": "Solo lo que flota sobre un teléfono lleva sombra; todo lo apoyado en la página se separa con color o filete.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Real Screens Rule",
+        "body": "Cada sección muestra capturas del producto real y todo local que aparece se rotula como «local de ejemplo».",
+        "section": "components"
+      },
+      {
+        "name": "The Pronto Label Rule",
+        "body": "Una función no implementada se muestra con la insignia «Pronto».",
+        "section": "components"
       }
     ],
     "dos": [
@@ -503,7 +649,11 @@
       "Do mantener 44 px de objetivo táctil mínimo y tabular-nums en importes.",
       "Do probar con y sin foto, con y sin logo y con nombres largos.",
       "Do teñir el panel del Dueño con paletteStyle() y SuperAdmin con platformStyle(); una pantalla nueva usa .panel-cell y las clases de styles.ts.",
-      "Do dejar planas las listas dentro de una celda y mantener un solo nav por área."
+      "Do dejar planas las listas dentro de una celda y mantener un solo nav por área.",
+      "Do (portada) escribir los colores como variables --mk-* y titular en Schibsted Grotesk 800 apretada con text-wrap: balance.",
+      "Do (portada) mostrar el producto con capturas reales en marco de teléfono CSS, rotuladas «local de ejemplo», y medir el marco en em de su ancho.",
+      "Do (portada) usar celdas de 24 px con filete, bloques de 40 px para escenario, demo y cierre, y botones píldora de 56 px (44 px en la barra).",
+      "Do (portada) dejar sangrar el abanico a los costados, recortarlo por abajo y probar 390 px, donde quedan tres teléfonos y una tarjeta."
     ],
     "donts": [
       "Don't usar sombras fuera del dock de llamado.",
@@ -513,7 +663,11 @@
       "Don't reordenar los platos ni dejar huecos en las grillas.",
       "Don't usar el verde vivo de la plataforma (#4a9e38) como fondo de texto: no alcanza AA con blanco.",
       "Don't teñir con la paleta del local los avisos de mora, solo lectura, suspensión ni el botón de peligro.",
-      "Don't extender este sistema al login ni a rutas que no cuelguen de .carta o .panel."
+      "Don't extender este sistema a rutas que no cuelguen de .carta, .panel ni .marketing sin decidirlo: los textos legales siguen con los tokens de globals.css.",
+      "Don't (portada) usar Gloock, Big Shoulders, los roles de la carta ni las paletas de local en .marketing; ni sumar rótulos o sobretítulos sobre los titulares.",
+      "Don't (portada) poner sombra fuera de las tarjetas flotantes, ni degradados, ni el verde vivo fuera de los rombos.",
+      "Don't (portada) mostrar un local, plato o precio de ejemplo sin rotularlo, ni prometer sin «Pronto» funciones sin implementar.",
+      "Don't (portada) cortar el abanico por los costados dentro de su contenedor ni apilar tarjetas iguales de íconos en lugar de pantallas."
     ]
   }
 }

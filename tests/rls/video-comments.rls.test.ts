@@ -329,15 +329,17 @@ describe("lo que ve el público", () => {
     expect(await publico(video)).toHaveLength(1);
   });
 
-  it("sigue el plan y la cuenta como el feed: Básico y Pro no; en solo lectura sí; suspendida no", async () => {
+  it("sigue el plan y la cuenta como el feed: Básico no; Pro y Premium sí; en solo lectura sí; suspendida no", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
     await enviar({ token: local.token, video });
     await moderar(local.owner.db, (await unico(video)).id, "approved");
-    for (const plan of ["pro", "basic"] as const) {
+    for (const plan of ["basic"] as const) {
       await setSubscription(service, local.id, { plan });
       expect(await publico(video), plan).toEqual([]);
     }
+    await setSubscription(service, local.id, { plan: "pro" }); // desde el ADR 0049 el feed también está en Pro
+    expect(await publico(video)).toHaveLength(1);
     await setSubscription(service, local.id, { plan: "premium", finEnMs: -9 * DIA_MS });
     expect(await publico(video)).toHaveLength(1); // solo lectura: los videos y sus comentarios se siguen viendo
     await setSubscription(service, local.id, { finEnMs: -30 * DIA_MS });
@@ -426,14 +428,14 @@ describe("disponibilidad en vivo", () => {
     for (const video of [borrador, borrandose, procesando, ajeno]) expect(await filas(video)).toEqual([]);
   });
 
-  it("Básico y Pro no reciben comentarios aunque haya videos; volver a Premium los devuelve", async () => {
+  it("Básico no recibe comentarios aunque haya videos; Pro sí", async () => {
     const local = await crearLocal();
     const video = await sembrarVideo(local.id);
-    for (const plan of ["pro", "basic"] as const) {
+    for (const plan of ["basic"] as const) {
       await setSubscription(service, local.id, { plan });
       expect(await enviar({ token: local.token, video }), plan).toEqual(UNAVAILABLE);
     }
-    await setSubscription(service, local.id, { plan: "premium" });
+    await setSubscription(service, local.id, { plan: "pro" }); // desde el ADR 0049 el feed también está en Pro
     expect(await enviar({ token: local.token, video })).toEqual(OK);
   });
 
@@ -491,8 +493,10 @@ describe("disponibilidad en vivo", () => {
     const habilitado = async (token: string) => ((await anon.rpc("resolve_table_qr", { p_token: token })).data as { comments_enabled: boolean }).comments_enabled;
     const local = await crearLocal();
     expect(await habilitado(local.token)).toBe(true);
-    await setSubscription(service, local.id, { plan: "pro" });
+    await setSubscription(service, local.id, { plan: "basic" });
     expect(await habilitado(local.token)).toBe(false);
+    await setSubscription(service, local.id, { plan: "pro" });
+    expect(await habilitado(local.token)).toBe(true);
     await setSubscription(service, local.id, { plan: "premium", finEnMs: -9 * DIA_MS });
     expect(await habilitado(local.token)).toBe(false);
     await setSubscription(service, local.id, { finEnMs: 5 * DIA_MS });
