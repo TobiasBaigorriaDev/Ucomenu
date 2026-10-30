@@ -20,3 +20,6 @@ El usuario pidió que las cinco cartas del hero roten en bucle solo en pantallas
 El usuario pidió acelerar la rotación y quitar el botón de pausa: intervalo de 4 a 3 segundos; se conserva movimiento reducido y suspensión fuera de pantalla. La animación ya no tiene control de pausa manual.
 
 - Tras el ajuste: ESLint focalizado y 3/3 pruebas Chromium contra el servidor local; ciclo de tres segundos, sin bot?n, escritorio y movimiento reducido sin avance y suspensi?n fuera de pantalla. No se repiti? build despu?s de este ajuste local.
+
+## Staging (2026-10-30)
+Commit `d9b710e` subido a main; desplegado en Fly v74, imagen `deployment-01M679ZYMKJSMAQXCDNVTQ2KTV`, máquina iniciada y control passing. Chromium en staging comprobó ciclo, escritorio y movimiento reducido; falta prueba en teléfono físico. Sin migración de base: el simulacro informó que staging está al día.

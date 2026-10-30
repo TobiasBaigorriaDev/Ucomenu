@@ -118,3 +118,5 @@ Sin commit todavía (árbol de trabajo local, 2026-10-28).
 
 ## Acceso en la navegación (2026-10-30)
 El usuario pidió mostrar «Acceder» en el nav. El enlace existente a `/login` ahora también se muestra en móvil; se ajustaron espacios para que entre junto a «Probalo gratis» a 320 px. Verificado con ESLint focalizado, `pnpm build` y Playwright contra `next start` del build: enlace visible, objetivo táctil de 44 px, sin desborde y navegación a login. Una primera prueba contra `next dev` falló porque servía CSS anterior; la prueba del build actualizado pasó. Cambios locales sin despliegue.
+
+- El acceso móvil al login se desplegó en staging Fly v74 desde `d9b710e`; comprobado en Chromium a 320 px con navegación a `/login`.

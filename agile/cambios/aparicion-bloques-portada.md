@@ -9,3 +9,6 @@ Al bajar por la portada, los bloques principales aparecen con un movimiento brev
 - Diff local sin commit: `pnpm build` y ESLint de los archivos afectados correctos.
 - Chromium contra `next start` del build: 6/6 pruebas focalizadas (aparición una vez, movimiento reducido, contenido sin JavaScript y regresiones de rotación móvil del hero). Capturas inspeccionadas en `output/ux/` a 390 y 1440 px.
 - No se verificó en teléfono físico ni se desplegó. La comprobación de navegador usó una configuración local sin inicialización de base.
+
+## Staging (2026-10-30)
+Commit `d9b710e` subido a main y desplegado en Fly v74. Chromium en staging comprobó aparición una sola vez, movimiento reducido y contenido sin JavaScript. Falta prueba en teléfono físico. El simulacro de migración indicó que la base ya estaba al día.
