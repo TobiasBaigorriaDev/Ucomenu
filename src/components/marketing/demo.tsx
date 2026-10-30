@@ -13,7 +13,7 @@ export function Demo() {
               Escaneá y mirá una carta de verdad
             </h2>
             <p className="mk-copy">
-              Esta es la carta de un local de ejemplo, la misma que ve un cliente al escanear el QR de su mesa. Los platos y los precios son ficticios.
+              Explorá la carta de un local de ejemplo. Los platos y los precios son ficticios.
             </p>
             <Link href={DEMO_CARTA_PATH} className="mk-btn mk-btn-light">
               Abrir la carta de ejemplo

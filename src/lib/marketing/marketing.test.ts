@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { WHATSAPP_MENSAJE, WHATSAPP_NUMERO, whatsappUrl } from "./contacto";
+import { DEMO_CARTA_PATH, DEMO_CARTA_URL, WHATSAPP_MENSAJE, WHATSAPP_NUMERO, whatsappUrl } from "./contacto";
 import { PLANES, precioArs } from "./planes";
 
 describe("contacto de la portada", () => {
+  it("el enlace y el QR usan la misma carta de Aurelia", () => {
+    expect(DEMO_CARTA_PATH).toBe("https://ucomenu-staging.fly.dev/m/aurelia/centro");
+    expect(DEMO_CARTA_URL).toBe(DEMO_CARTA_PATH);
+  });
   it("arma el enlace de WhatsApp con el mensaje codificado", () => {
     const url = new URL(whatsappUrl());
     expect(url.origin + url.pathname).toBe(`https://wa.me/${WHATSAPP_NUMERO}`);

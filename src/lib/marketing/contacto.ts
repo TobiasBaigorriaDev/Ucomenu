@@ -14,12 +14,12 @@ export function whatsappUrl(mensaje: string = WHATSAPP_MENSAJE): string {
 }
 
 /**
- * Carta pública de ejemplo que abren el botón y el QR de «Probalo vos». En local y en staging es la demo del seed; en producción
- * hay que crear ese local de ejemplo y apuntar acá con NEXT_PUBLIC_DEMO_CARTA_PATH.
+ * Carta pública de ejemplo que abren los botones y los QR. Por decisión del usuario se usa Aurelia de staging;
+ * NEXT_PUBLIC_DEMO_CARTA_PATH permite apuntar a otra carta (ruta local o URL absoluta) al construir.
  */
-export const DEMO_CARTA_PATH = process.env.NEXT_PUBLIC_DEMO_CARTA_PATH ?? "/m/cafe-ejemplo/centro";
+export const DEMO_CARTA_PATH = process.env.NEXT_PUBLIC_DEMO_CARTA_PATH || "https://ucomenu-staging.fly.dev/m/aurelia/centro";
 
 /** Dirección pública de la app: base del QR de la demo (el mismo criterio que los QR de las mesas). */
 export const SITIO_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://ucomenu.com").replace(/\/$/, "");
 
-export const DEMO_CARTA_URL = `${SITIO_URL}${DEMO_CARTA_PATH}`;
+export const DEMO_CARTA_URL = new URL(DEMO_CARTA_PATH, `${SITIO_URL}/`).toString();

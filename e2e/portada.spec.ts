@@ -131,7 +131,7 @@ test("la carta de ejemplo del botón es una carta pública real", async ({ page,
   await page.goto("/");
   const enlace = page.getByRole("link", { name: /Ver una carta de ejemplo/ });
   const href = await enlace.getAttribute("href");
-  expect(href).toMatch(/^\/m\/[\w-]+\/[\w-]+$/);
+  expect(href).toBe("https://ucomenu-staging.fly.dev/m/aurelia/centro");
   expect((await request.get(href!)).status()).toBe(200);
 });
 
