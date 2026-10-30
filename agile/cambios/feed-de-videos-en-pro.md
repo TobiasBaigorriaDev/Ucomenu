@@ -70,3 +70,6 @@ tocó staging ni producción.
 - [x] Revisión independiente en solo lectura del diff (migración, pruebas, textos, portada).
 - [ ] Pasar los locales de demostración que hoy están en Premium a Pro si se quiere mostrar «lo que ve un cliente Pro» (Aurelia y Bruma).
 - [ ] Correr `pnpm build` y los E2E nombrados arriba con un servidor propio.
+
+## Staging (2026-10-29)
+Con autorización del usuario, la migración `20261210100000` se aplicó en staging y la portada y el feed Pro se subieron y desplegaron. Evidencia y versión en la [ficha de portada](portada-ucomenu.md). La funcionalidad pública y la gestión del feed se probaron en local; falta comprobación manual en staging.
