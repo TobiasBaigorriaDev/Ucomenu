@@ -1,6 +1,6 @@
 # Cambio: Estilo de carta «Hoja»
 
-Estado: **implementado en local, sin commit ni despliegue.** Falta la aprobación visual del usuario en un teléfono real.
+Estado: **commit `65b7b85` en `origin/main` y en staging (Fly v75, migración aplicada).** Falta la aprobación visual del usuario en un teléfono real y elegir Hoja con una sesión real en staging.
 Nivel: **M** (amplía el conjunto cerrado de `menu_layout`; sin cambios de permisos, datos de clientes ni dinero). Antecedente: [estilo Afiche](estilo-afiche.md).
 
 ## Objetivo y decisiones
@@ -31,3 +31,6 @@ Quinto estilo (`menu_layout = 'hoja'`): la carta como **la página de un PDF** q
 - Revisión visual con «Aurelia» local a 390 y 1280 px (vuelta a `minimal` al terminar).
 - No corrido: promoción vigente a la vista en la hoja (el seed local no tiene una; sale del mismo `DishPrice`), staging, revisión de Codex (no exigida en M).
 - Contrapartida aceptada: sin buscador ni filtro por dieta, en una carta muy larga hay que recorrer la hoja a mano. `zoom` CSS: Chrome, Safari y Firefox ≥126. No probado con pellizco en un teléfono real (solo escala inicial y clic en la fila).
+- **Staging (2026-10-30):** `supabase db push --dry-run` sobre `ucomenu-staging` mostró solo `20261211100000`; `db push` la aplicó y un nuevo `--dry-run` confirma que está al día. App desplegada desde una copia limpia de `65b7b85` (`git archive`) con `flyctl deploy -c fly.staging.toml --local-only --depot=false --image-label hoja-65b7b85-git` y los cuatro argumentos públicos: **Fly v75 `complete`**, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:hoja-65b7b85-git`. `/`, `/m/aurelia/centro` y `/login` 200, local inexistente 404; el CSS servido incluye `sheet-paper`.
+- Marcha atrás de la app: `flyctl deploy -c fly.staging.toml --image registry.fly.io/ucomenu-staging:deployment-01M679ZYMKJSMAQXCDNVTQ2KTV` (v74). La migración es aditiva; revertirla exige antes pasar a otro estilo a los locales que tengan `hoja`.
+- Suite completa antes de integrar: `tsc` y `eslint` sin errores, `pnpm test` 1230 de 1230, `identidad.spec` 6 de 6 (un worker caído `0xC0000409` en `carta.spec` se repitió y pasó). No corrido: prueba con sesión real en staging eligiendo Hoja.
