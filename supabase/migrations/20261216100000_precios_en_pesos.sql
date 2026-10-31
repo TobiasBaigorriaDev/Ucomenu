@@ -31,7 +31,10 @@ begin;
 
 -- Guarda: el rollback de arriba devuelve valores fijos, así que solo es fiel si los precios de partida son exactamente estos (los del
 -- seed de 20261014003848, confirmados en local y en staging el 2026-10-31). Si alguien los cambió a mano, la migración se detiene
--- en vez de pisarlos sin dejar con qué volver (hallazgo de la revisión de Codex, ronda 1).
+-- en vez de pisarlos sin dejar con qué volver (hallazgo de la revisión de Codex, ronda 1). Se toma antes el bloqueo exclusivo de la
+-- tabla: así nadie puede confirmar un cambio de precio entre la comprobación y el `alter table` (ronda 2).
+lock table public.plans in access exclusive mode;
+
 do $$
 begin
   if (select count(*) from public.plans
