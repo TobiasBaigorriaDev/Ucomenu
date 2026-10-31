@@ -10,7 +10,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## En curso
 
-- [C] Reservas de mesa, fase 1 (reservas manuales y asignación de mesa en la Sala; Pro y Premium; migración `20261215100000` solo en local) — verificada en local, falta la revisión independiente y tu aprobación; fases 2 (formulario público y email) y 3 (disponibilidad automática) en la ficha → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
+- [C] Reservas de mesa, fase 1 (reservas manuales y asignación de mesa en la Sala; Pro y Premium; migración `20261215100000` solo en local) — verificada en local y aprobada por la revisión independiente (Codex, 3 rondas); falta tu aprobación para subirla a staging con su migración; fases 2 (formulario público y email) y 3 (disponibilidad automática) en la ficha → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
 - [M] Alta unificada de platos — en staging Fly v78 (con el selector de idioma y el botón Reiniciar QR en Mesas); falta la prueba manual con sesión real → [ficha](cambios/alta-unificada-de-platos.md)
 
 ## Seleccionado

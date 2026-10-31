@@ -1,5 +1,5 @@
 # Cambio: Reservas de mesa (fase 1: reservas manuales y asignación de mesa)
-Estado: fase 1 implementada y verificada en local; en revisión independiente (nivel C) · [ADR 0051](../../docs/decisiones/0051-reservas.md)
+Estado: fase 1 implementada y verificada en local, revisada y aprobada por Codex (3 rondas, `c7b51f5`); local, sin push ni staging, falta tu aprobación · [ADR 0051](../../docs/decisiones/0051-reservas.md)
 Nivel: **C** (datos personales de comensales: nombre, teléfono y email; los lee solo el personal de la organización)
 
 ## Objetivo
@@ -83,4 +83,6 @@ vuelve a cargar), recordatorios, reservas recurrentes o de grupos con varias mes
 
 **Ronda 2 (Codex, verificación, commit `00e2301`): RECHAZAR por un solo punto.** Confirmó como corregidos los hallazgos 1, 2, 4 y 5. El 3 quedó **parcial**: con la lectura truncada la pantalla avisaba pero seguía ofreciendo mesas calculadas con datos incompletos. Real; corregido: con la lectura incompleta no se ofrece ninguna mesa («Este día tiene demasiadas reservas para saber qué mesas están libres…»). E2E: la reserva visible no tiene opciones ni botón de confirmar (falló contra el código anterior).
 
-**Ronda 3 (verificación del último arreglo):** (pendiente) · Aprobación del usuario antes de subir a staging: (pendiente)
+**Ronda 3 (Codex, verificación, commit `c7b51f5`): APROBAR, sin hallazgos nuevos** y los 5 anteriores corregidos. El informe fue estático (no ejecutó pruebas ni mutaciones; esas las hice yo, arriba). El veredicto de Codex no reemplaza tu aprobación.
+
+**Aprobación del usuario antes de subir a staging (migración incluida): pendiente.**
