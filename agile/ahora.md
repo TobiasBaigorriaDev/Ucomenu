@@ -1,10 +1,12 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-31 · agente saliente: Claude.
+Actualizado: 2026-10-31 · agente saliente: Codex.
 
 ## Punto de retomada
 
-**`main` = `origin/main` en `99794fd` (subido el 2026-10-31).** Desplegado en **staging: Fly v89** (migración `20261216100000` aplicada, la siguiente libre es `20261217100000`). Contiene:
+La lista del plan Pro en la portada menciona la gestión de reservas y la invitación a dejar una reseña en Google (`src/components/marketing/precios.tsx`).
+
+**Staging: Fly v89** antes de publicar el texto de la portada (migración `20261216100000` aplicada, la siguiente libre es `20261217100000`). Consultar Git y Fly para el estado actual. Contiene:
 
 - **Precios en pesos [C]** ([ficha](cambios/precios-en-pesos.md)): catálogo y portada en ARS (Pro anual 278.400; Premium sin precio de lista). Codex lo revisó en 3 rondas (todo atendido) y lo aprobaste vos para staging. Falta ver Suscripción con una sesión real de Dueño y en un teléfono.
 - **Cierre de la revisión [M]** ([ficha](cambios/cierre-revision-de-lanzamiento.md)): textos legales (reservas, Gemini, gracia, baja, plazos), cabeceras de seguridad, `robots.txt`, avisos de `prod:check`, `docs/produccion.md` y la recomendación de respaldos en `docs/operacion.md`.
