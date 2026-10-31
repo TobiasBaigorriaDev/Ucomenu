@@ -1,8 +1,10 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-31 · agente saliente: Claude Code.
+Actualizado: 2026-10-31 · agente saliente: Codex.
 
 ## Punto de retomada
+
+**Aclaración de iOS:** el texto de vibración ahora explica que no funciona en iPhone, incluso con Chrome, y distingue las notificaciones del sistema. Cambio S en `origin/main` (`319cf75`); lint del archivo y 9 pruebas de sonido y vibración en verde. Desplegado en staging (Fly v85) desde el commit confirmado; build y TypeScript correctos, control de salud en verde, portada, login y carta 200, local inexistente 404 y panel sin sesión redirige a login. No se probó el panel con sesión real.
 
 **Tonos de aviso elegibles** (nivel M): el Dueño elige en `/panel/{slug}/llamados` el tono del llamado de mesa y del pedido listo (los MP3 de siempre o cinco sintetizados con Web Audio), con «Escuchar». En `origin/main` (`e028e64`) y **desplegado en staging (Fly v83)** con la migración `20261213100000` (la siguiente libre es `20261214100000`). Evidencia, decisiones y lo no probado en la [ficha](cambios/tonos-de-aviso.md). Falta tu escucha de los cinco tonos en staging con una sesión real.
 
@@ -20,4 +22,4 @@ Actualizado: 2026-10-31 · agente saliente: Claude Code.
 - Pruebas RLS que fallan en mi base local por datos de demo ajenos (`catalog`, `tenancy`, `push`): conviene una base con `pnpm db:reset`, que borra la carga local de Café Ejemplo.
 - Antes de producción: datos legales y su revisión, precios de portada contra el catálogo, demo estable. Ver [producción](../docs/produccion.md) y [tablero](tablero.md).
 
-Próximo paso: probar la vibración en el Android del local (con la sala abierta y con el celular bloqueado); escuchar los tonos y ajustar el volumen relativo si alguno desentona.
+Próximo paso: comprobar el texto en el panel con sesión real y probar la vibración en Android; escuchar los tonos y ajustar el volumen relativo si alguno desentona.
