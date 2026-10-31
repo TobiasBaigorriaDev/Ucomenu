@@ -1,7 +1,9 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { attachOptions, groupMenu, type MenuSection } from "@/lib/menu";
+import { readLook, type Look } from "@/lib/identidad/apariencia";
 import { isLayout, type Layout } from "@/lib/identidad/layouts";
+import { readVoice, type Voice } from "@/lib/identidad/voz";
 import { activeTheme, type Theme } from "@/lib/identidad/temas";
 import { isPalette, type Palette } from "@/lib/identidad/palettes";
 import type { Lang } from "@/lib/idiomas/idiomas";
@@ -16,7 +18,7 @@ import { createPublicClient } from "@/lib/supabase/public-client";
 import { hasPublishedVideos } from "@/lib/videos/feed";
 
 export type PublicMenu = {
-  organization: { id: string; name: string; slug: string; menu_palette: Palette; menu_layout: Layout; /** Tema de fecha especial vigente hoy (en Buenos Aires), o `null`. */ theme: Theme | null; logo_path?: string | null };
+  organization: { id: string; name: string; slug: string; menu_palette: Palette; menu_layout: Layout; look: Look; voice: Voice; /** Tema de fecha especial vigente hoy (en Buenos Aires), o `null`. */ theme: Theme | null; logo_path?: string | null; cover_path?: string | null };
   /** `reviewUrl`: enlace de reseñas de Google de la sucursal (ya comprobado contra los hosts de Google), o `null`. */
   branch: { id: string; name: string; slug: string; reviewUrl: string | null };
   /** Textos originales (en español) con sus traducciones; la página los resuelve al idioma elegido con `localizeSections`. */
@@ -168,7 +170,7 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
 
   const { data: org, error: orgError } = await supabase
     .from("organizations")
-    .select("id, name, slug, menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, branches!inner(id, name, slug, google_review_url, timezone)")
+    .select("id, name, slug, menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, menu_font, menu_shape, menu_density, menu_ambient, menu_tagline, opening_hours, instagram_handle, whatsapp_number, cover_path, branches!inner(id, name, slug, google_review_url, timezone)")
     .eq("slug", orgSlug)
     .or(`slug.eq.${branchSlug},slug_aliases.cs.{${branchSlug}}`, { referencedTable: "branches" })
     .maybeSingle();
@@ -196,8 +198,11 @@ export const getPublicMenu = cache(async (orgSlug: string, branchSlug: string): 
         id: org.id, name: org.name, slug: org.slug,
         menu_palette: isPalette(org.menu_palette) ? org.menu_palette : "oliva",
         menu_layout: isLayout(org.menu_layout) ? org.menu_layout : "bento",
+        look: readLook(org),
+        voice: readVoice(org),
         theme: activeTheme({ theme: org.menu_theme, from: org.menu_theme_from, until: org.menu_theme_until }, new Date()),
         logo_path: org.logo_path,
+        cover_path: org.cover_path,
       },
       branch: { id: branch.id, name: branch.name, slug: branch.slug, reviewUrl: publicReviewUrl(branch.google_review_url) },
       sections,

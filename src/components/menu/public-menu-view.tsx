@@ -7,13 +7,42 @@ import { MenuBrowser } from "@/components/menu/menu-browser";
 import type { Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
 import type { PublicMenu } from "@/lib/public-menu";
-import { logoUrl } from "@/lib/identidad/logos";
+import { AMBIENTS, visibleAmbient } from "@/lib/identidad/ambientes";
+import { lookProps } from "@/lib/identidad/apariencia";
+import { coverUrl, logoUrl } from "@/lib/identidad/logos";
 import { paletteStyle } from "@/lib/identidad/palettes";
 import { themeStyle, THEMES } from "@/lib/identidad/temas";
+import { instagramUrl, whatsappUrl, type Voice } from "@/lib/identidad/voz";
 import { conParametro } from "@/lib/llamados/visita";
 import { videosHref } from "@/lib/videos/feed";
 import { cartaFontClass } from "./carta-fonts";
 import { TemaIcono } from "./tema-icono";
+
+/**
+ * Datos de contacto que publica el local (horarios, Instagram, WhatsApp). Los enlaces los arma el servidor con identificadores ya
+ * validados (`voz.ts`): nunca hay una dirección escrita por la persona.
+ */
+function ContactBlock({ voice, lang }: { voice: Voice; lang: Lang }) {
+  if (!voice.hours && !voice.instagram && !voice.whatsapp) return null;
+  const c = TEXTOS[lang].contact;
+  const link = "carta-chip inline-flex min-h-11 items-center rounded-full border-[1.5px] border-ink px-4 text-sm font-semibold hover:bg-ink/5";
+  return (
+    <section aria-label={c.hours} data-testid="contacto" className="mb-8 text-sm">
+      {voice.hours ? (
+        <p className="leading-relaxed">
+          <span className="font-semibold">{c.hours}: </span>
+          <span className="text-muted [overflow-wrap:anywhere]">{voice.hours}</span>
+        </p>
+      ) : null}
+      {voice.instagram || voice.whatsapp ? (
+        <p className="mt-3 flex flex-wrap justify-center gap-2">
+          {voice.instagram ? <a href={instagramUrl(voice.instagram)} target="_blank" rel="noopener noreferrer" data-testid="contacto-instagram" className={link}>{c.instagram(voice.instagram)}</a> : null}
+          {voice.whatsapp ? <a href={whatsappUrl(voice.whatsapp)} target="_blank" rel="noopener noreferrer" data-testid="contacto-whatsapp" className={link}>{c.whatsapp}</a> : null}
+        </p>
+      ) : null}
+    </section>
+  );
+}
 
 /**
  * Carta pública de una sucursal. La comparten `/m/{org}/{sucursal}` y `/t/{token}` (esta con la etiqueta de la mesa).
@@ -41,11 +70,14 @@ export function PublicMenuView({
   const { sections } = menu;
   const t = TEXTOS[lang];
   const theme = menu.organization.theme;
+  const { attrs, style: lookStyle } = lookProps(menu.organization.look, theme !== null);
+  const ambient = visibleAmbient(menu.organization.look.ambient, theme !== null);
+  const ornaments = ambient ? AMBIENTS[ambient].footer : null;
 
   return (
-    <div lang={lang} data-layout={menu.organization.menu_layout} data-tema={theme ?? undefined} className={`${cartaFontClass} ${callBar ? "carta carta-con-llamado" : "carta"}`} style={{ ...paletteStyle(menu.organization.menu_palette), ...themeStyle(theme) }}>
+    <div lang={lang} data-layout={menu.organization.menu_layout} data-tema={theme ?? undefined} {...attrs} className={`${cartaFontClass} ${callBar ? "carta carta-con-llamado" : "carta"}`} style={{ ...paletteStyle(menu.organization.menu_palette), ...themeStyle(theme), ...lookStyle }}>
       <LanguageSwitcher languages={menu.languages} current={lang} visit={visit} />
-      <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} lang={lang} theme={theme} layout={menu.organization.menu_layout} />
+      <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} lang={lang} theme={theme} layout={menu.organization.menu_layout} tagline={menu.organization.voice.tagline} cover={coverUrl(menu.organization.cover_path)} />
       {menu.hasVideos && !callBar ? (
         // Solo un enlace, SIN precarga: la carta no carga nada del feed (ni video, ni `hls.js`) hasta que se entra (ficha feed-de-videos).
         // Con la barra de llamado (mesa), el acceso es su tercera celda y este enlace no se dibuja.
@@ -77,6 +109,11 @@ export function PublicMenuView({
           <span aria-hidden="true" className="mb-6 flex justify-center gap-3 text-[var(--carta-terra)]">
             {[0, 1, 2].map((i) => <TemaIcono key={i} name={THEMES[theme].motifs[i % THEMES[theme].motifs.length]} className="size-5" />)}
           </span>
+        ) : ornaments ? (
+          // Con una ambientación, los adornos del pie son los suyos.
+          <span aria-hidden="true" className="mb-6 flex justify-center gap-3 text-[var(--carta-terra)]">
+            {ornaments.map((motif, i) => <TemaIcono key={i} name={motif} className="size-5" />)}
+          </span>
         ) : (
           <span aria-hidden="true" className="mb-6 flex justify-center gap-1.5">
             <i className="size-1.5 rotate-45 bg-[var(--carta-terra)]" />
@@ -84,6 +121,7 @@ export function PublicMenuView({
             <i className="size-1.5 rotate-45 bg-[var(--carta-blush)]" />
           </span>
         )}
+        <ContactBlock voice={menu.organization.voice} lang={lang} />
         <p className="text-sm leading-relaxed text-muted">
           {t.footerAllergens}
         </p>

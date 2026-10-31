@@ -3,13 +3,19 @@ import { detectImage } from "@/lib/carta/images";
 import { guard, parseSwap, writeFailure, type CartaError, type Swap } from "@/lib/carta/catalog";
 import type { Database } from "@/lib/supabase/database.types";
 import { isOwnLogoPath, LOGO_BUCKET, MAX_LOGO_BYTES } from "./logos";
+import { isAmbient } from "./ambientes";
+import { isDensity, isShape } from "./formas";
 import { isLayout } from "./layouts";
 import { isPalette } from "./palettes";
 import { isDay, isTheme, NO_THEME } from "./temas";
+import { isFont } from "./tipografias";
+import { validateHours, validateInstagram, validateTagline, validateWhatsapp, type TextProblem } from "./voz";
 
 type Db = SupabaseClient<Database>;
-type Identity = Pick<Database["public"]["Tables"]["organizations"]["Row"], "menu_palette" | "menu_layout" | "menu_theme" | "menu_theme_from" | "menu_theme_until" | "logo_path">;
-export type IdentityError = CartaError | "palette_invalid" | "layout_invalid" | "theme_invalid" | "theme_dates_invalid";
+const IDENTITY_COLUMNS = "menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path, menu_font, menu_shape, menu_density, menu_ambient, menu_tagline, opening_hours, instagram_handle, whatsapp_number, cover_path" as const;
+type Identity = Pick<Database["public"]["Tables"]["organizations"]["Row"], "menu_palette" | "menu_layout" | "menu_theme" | "menu_theme_from" | "menu_theme_until" | "logo_path" | "menu_font" | "menu_shape" | "menu_density" | "menu_ambient" | "menu_tagline" | "opening_hours" | "instagram_handle" | "whatsapp_number" | "cover_path">;
+export type VoiceError = "tagline_invalid" | "tagline_too_long" | "hours_invalid" | "hours_too_long" | "instagram_invalid" | "instagram_too_long" | "whatsapp_invalid" | "whatsapp_too_long";
+export type IdentityError = CartaError | "palette_invalid" | "layout_invalid" | "theme_invalid" | "theme_dates_invalid" | "font_invalid" | "shape_invalid" | "density_invalid" | "ambient_invalid" | VoiceError;
 /** `filesComplete: false` = el logo saliente quedó sin borrar de Storage (registrado en el log); el vigente no se toca. Solo lo informan setLogo y removeLogo. */
 export type Result = { ok: true; filesComplete?: boolean } | { ok: false; error: IdentityError };
 const ok = { ok: true } as const;
@@ -17,7 +23,7 @@ const done = (filesComplete: boolean): Result => ({ ok: true, filesComplete });
 const fail = (error: IdentityError): Result => ({ ok: false, error });
 
 export async function loadIdentity(db: Db, orgId: string): Promise<Identity> {
-  const result = await db.from("organizations").select("menu_palette, menu_layout, menu_theme, menu_theme_from, menu_theme_until, logo_path").eq("id", orgId).single();
+  const result = await db.from("organizations").select(IDENTITY_COLUMNS).eq("id", orgId).single();
   if (result.error) throw new Error(`No se pudo leer la apariencia: ${result.error.message}`);
   return result.data;
 }
@@ -39,6 +45,46 @@ export async function setLayout(db: Db, orgId: string, value: unknown): Promise<
   if (!isLayout(value)) return fail("layout_invalid");
   const blocked = await guard(db, orgId);
   return blocked ? fail(blocked) : save(db, orgId, { menu_layout: value });
+}
+
+export async function setFont(db: Db, orgId: string, value: unknown): Promise<Result> {
+  if (!isFont(value)) return fail("font_invalid");
+  const blocked = await guard(db, orgId);
+  return blocked ? fail(blocked) : save(db, orgId, { menu_font: value });
+}
+
+/** Forma (esquinas y bordes) y densidad se guardan juntas: son un solo formulario y una sola vista previa. */
+export async function setShape(db: Db, orgId: string, shape: unknown, density: unknown): Promise<Result> {
+  if (!isShape(shape)) return fail("shape_invalid");
+  if (!isDensity(density)) return fail("density_invalid");
+  const blocked = await guard(db, orgId);
+  return blocked ? fail(blocked) : save(db, orgId, { menu_shape: shape, menu_density: density });
+}
+
+export async function setAmbient(db: Db, orgId: string, value: unknown): Promise<Result> {
+  if (!isAmbient(value)) return fail("ambient_invalid");
+  const blocked = await guard(db, orgId);
+  return blocked ? fail(blocked) : save(db, orgId, { menu_ambient: value });
+}
+
+const textError = (field: "tagline" | "hours" | "instagram" | "whatsapp", problem: TextProblem): VoiceError => `${field}_${problem}`;
+
+/**
+ * Guarda la voz del local (lema, horarios, Instagram, WhatsApp). Cada campo vacío se quita. Se guardan identificadores validados,
+ * nunca direcciones: el servidor arma los enlaces al mostrarlos (ver `voz.ts`).
+ */
+export async function setVoice(db: Db, orgId: string, input: { tagline: unknown; hours: unknown; instagram: unknown; whatsapp: unknown }): Promise<Result> {
+  const tagline = validateTagline(input.tagline);
+  if (!tagline.ok) return fail(textError("tagline", tagline.problem));
+  const hours = validateHours(input.hours);
+  if (!hours.ok) return fail(textError("hours", hours.problem));
+  const instagram = validateInstagram(input.instagram);
+  if (!instagram.ok) return fail(textError("instagram", instagram.problem));
+  const whatsapp = validateWhatsapp(input.whatsapp);
+  if (!whatsapp.ok) return fail(textError("whatsapp", whatsapp.problem));
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+  return save(db, orgId, { menu_tagline: tagline.value, opening_hours: hours.value, instagram_handle: instagram.value, whatsapp_number: whatsapp.value });
 }
 
 /**
@@ -69,18 +115,23 @@ async function removeObject(db: Db, path: string): Promise<boolean> {
   return false;
 }
 
+/** Los dos archivos gráficos de la marca comparten bucket y mecánica; cada uno tiene su columna y su función de reemplazo. */
+type Asset = { rpc: "replace_organization_logo" | "replace_organization_cover"; column: "logo_path" | "cover_path"; label: string };
+const LOGO: Asset = { rpc: "replace_organization_logo", column: "logo_path", label: "logo" };
+const COVER: Asset = { rpc: "replace_organization_cover", column: "cover_path", label: "portada" };
+
 /**
- * Cambia el logo (`path`) o lo quita (`null`) con UNA llamada que bloquea la fila de la organización y devuelve la referencia
- * que dejó de usarse (`replace_organization_logo`). Se borra esa ruta exacta: con dos reemplazos simultáneos cada uno borra lo
- * que ÉL desplazó, nunca el logo vigente ni la subida del otro. También se escribe al quitar un logo que ya es nulo: un cliente
- * sin permiso no recibe un éxito vacío.
+ * Cambia el archivo (`path`) o lo quita (`null`) con UNA llamada que bloquea la fila de la organización y devuelve la referencia
+ * que dejó de usarse (`replace_organization_logo` / `replace_organization_cover`). Se borra esa ruta exacta: con dos reemplazos
+ * simultáneos cada uno borra lo que ÉL desplazó, nunca el archivo vigente ni la subida del otro. También se escribe al quitar un
+ * archivo que ya es nulo: un cliente sin permiso no recibe un éxito vacío.
  */
-async function swapLogo(db: Db, orgId: string, path: string | null): Promise<Swap> {
-  // `p_path` admite NULL en la base (quita el logo); el tipo generado no distingue argumentos opcionales.
-  return parseSwap(await db.rpc("replace_organization_logo", { p_org: orgId, p_path: path as string }));
+async function swapAsset(db: Db, orgId: string, asset: Asset, path: string | null): Promise<Swap> {
+  // `p_path` admite NULL en la base (quita el archivo); el tipo generado no distingue argumentos opcionales.
+  return parseSwap(await db.rpc(asset.rpc, { p_org: orgId, p_path: path as string }));
 }
 
-async function afterSwap(db: Db, orgId: string, swap: Swap, uploadedPath: string | null): Promise<Result> {
+async function afterSwap(db: Db, orgId: string, asset: Asset, swap: Swap, uploadedPath: string | null): Promise<Result> {
   if (swap.kind === "none") {
     if (uploadedPath) await removeObject(db, uploadedPath);
     return fail((await guard(db, orgId)) ?? "forbidden");
@@ -91,13 +142,13 @@ async function afterSwap(db: Db, orgId: string, swap: Swap, uploadedPath: string
   }
   if (swap.kind === "uncertain") {
     if (uploadedPath) {
-      // Pudo haberse aplicado: se mira el estado real. Si ya apunta al logo nuevo se da por hecho (el saliente no se conoce).
+      // Pudo haberse aplicado: se mira el estado real. Si ya apunta al archivo nuevo se da por hecho (el saliente no se conoce).
       const now = await loadIdentity(db, orgId).catch(() => null);
-      if (now?.logo_path === uploadedPath) {
-        console.error(`El logo ${uploadedPath} quedó aplicado pero no se pudo saber cuál reemplazó: el anterior pudo quedar sin borrar.`);
+      if (now?.[asset.column] === uploadedPath) {
+        console.error(`El archivo ${uploadedPath} (${asset.label}) quedó aplicado pero no se pudo saber cuál reemplazó: el anterior pudo quedar sin borrar.`);
         return done(false);
       }
-      console.error(`No se pudo confirmar si el logo ${uploadedPath} quedó aplicado: no se borra por las dudas.`);
+      console.error(`No se pudo confirmar si el archivo ${uploadedPath} (${asset.label}) quedó aplicado: no se borra por las dudas.`);
     }
     return fail("uncertain");
   }
@@ -108,7 +159,7 @@ async function afterSwap(db: Db, orgId: string, swap: Swap, uploadedPath: string
   return done(true);
 }
 
-export async function setLogo(db: Db, orgId: string, file: File | null): Promise<Result> {
+async function setAsset(db: Db, orgId: string, asset: Asset, file: File | null): Promise<Result> {
   if (!file || file.size === 0) return fail("image_missing");
   if (file.size > MAX_LOGO_BYTES) return fail("image_big");
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -119,11 +170,17 @@ export async function setLogo(db: Db, orgId: string, file: File | null): Promise
   const path = `${orgId}/${crypto.randomUUID()}.${kind.ext}`;
   const uploaded = await db.storage.from(LOGO_BUCKET).upload(path, bytes, { contentType: kind.mime, upsert: false });
   if (uploaded.error) return fail((await guard(db, orgId)) ?? "image_failed");
-  return afterSwap(db, orgId, await swapLogo(db, orgId, path), path);
+  return afterSwap(db, orgId, asset, await swapAsset(db, orgId, asset, path), path);
 }
 
-export async function removeLogo(db: Db, orgId: string): Promise<Result> {
+async function removeAsset(db: Db, orgId: string, asset: Asset): Promise<Result> {
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
-  return afterSwap(db, orgId, await swapLogo(db, orgId, null), null);
+  return afterSwap(db, orgId, asset, await swapAsset(db, orgId, asset, null), null);
 }
+
+export const setLogo = (db: Db, orgId: string, file: File | null): Promise<Result> => setAsset(db, orgId, LOGO, file);
+export const removeLogo = (db: Db, orgId: string): Promise<Result> => removeAsset(db, orgId, LOGO);
+/** La portada (foto de ambiente de la cabecera, ADR 0050) vive en el mismo bucket que el logo, bajo `{org}/{uuid}.{ext}`. */
+export const setCover = (db: Db, orgId: string, file: File | null): Promise<Result> => setAsset(db, orgId, COVER, file);
+export const removeCover = (db: Db, orgId: string): Promise<Result> => removeAsset(db, orgId, COVER);

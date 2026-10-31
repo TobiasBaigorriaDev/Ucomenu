@@ -101,7 +101,7 @@ export function MenuSection({
 
   if (layout !== "bento") {
     return (
-      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className={`scroll-mt-20 first:mt-0 ${layout === "minimal" ? "mt-16" : "mt-12"}`}>
+      <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className={`carta-seccion scroll-mt-20 first:mt-0 ${layout === "minimal" ? "mt-16" : "mt-12"}`}>
         <div className="flex items-baseline justify-between gap-4 border-b-[1.5px] border-ink pb-2">
           <h2 id={headingId} className="min-w-0 font-display text-[2rem] leading-none text-[var(--carta-green)] [overflow-wrap:anywhere] sm:text-4xl">
             {category.name}
@@ -113,7 +113,7 @@ export function MenuSection({
             {products.map((product) => <DishRow key={product.id} product={product} onSelect={onSelect} lang={lang} />)}
           </ul>
         ) : (
-          <ul className="mt-6 grid gap-8">
+          <ul className="carta-grilla-lista mt-6 grid gap-8">
             {products.map((product) => <DishCard key={product.id} product={product} span="single" onSelect={onSelect} lang={lang} />)}
           </ul>
         )}
@@ -122,12 +122,12 @@ export function MenuSection({
   }
 
   return (
-    <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="mt-14 scroll-mt-16 sm:mt-20">
+    <section id={categoryAnchor(category.id)} aria-labelledby={headingId} className="carta-seccion mt-14 scroll-mt-16 sm:mt-20">
       {/* Banda de la sección: queda pegada bajo la barra de categorías mientras se recorren sus platos, con el color de su
           celda en el bento. Así siempre se ve en qué categoría se está. La franja de fondo sólido evita que las cards se
           asomen por las esquinas redondeadas (z-[5]: por encima de las cards, debajo de la barra, que es z-10). */}
       <div className="sticky top-16 z-[5] -mx-4 bg-porcelain px-4 py-2 sm:-mx-6 sm:px-6">
-        <div className={`flex items-baseline gap-3 rounded-2xl px-4 py-2.5 ${toneFor(index)}`}>
+        <div className={`carta-pieza flex items-baseline gap-3 rounded-2xl px-4 py-2.5 ${toneFor(index)}`}>
           <span aria-hidden="true" className="text-sm font-semibold tabular-nums">
             {String(index + 1).padStart(2, "0")}
           </span>
@@ -137,7 +137,7 @@ export function MenuSection({
           <p className="ml-auto shrink-0 text-sm font-medium">{TEXTOS[lang].count.dishes(products.length)}</p>
         </div>
       </div>
-      <ul className="mt-2 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
+      <ul className="carta-grilla mt-2 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3">
         {products.map((product, i) => (
           <DishCard key={product.id} product={product} span={spans[i]} desktopSpan={i === products.length - 1 ? lastDesktopSpan : 1} onSelect={onSelect} lang={lang} />
         ))}

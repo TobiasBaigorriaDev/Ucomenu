@@ -60,3 +60,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0046 | [Sugerencia de traducciones con IA: el servicio propone, el local revisa y publica](0046-sugerencia-de-traducciones-con-ia.md) | aceptada | 2026-10-25 |
 | 0047 | [Resumen de la analítica con IA: el servicio redacta sobre cifras ya calculadas y el Dueño decide qué hacer](0047-resumen-de-analitica-con-ia.md) | aceptada | 2026-10-26 |
 | 0049 | [El feed de videos cortos pasa al plan Pro y Premium deja de ofrecerse por ahora](0049-feed-de-videos-en-pro.md) | aceptada | 2026-10-29 |
+| 0050 | [Personalización ampliada de la carta: opciones curadas, nunca selectores libres](0050-personalizacion-ampliada-de-la-carta.md) | aceptada (sin desplegar) | 2026-10-30 |

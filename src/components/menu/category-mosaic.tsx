@@ -51,7 +51,7 @@ export function CategoryMosaic({ sections, lang }: { sections: MenuSection[]; la
             <li key={category.id} className={SPAN[shapes[i]]}>
               <a
                 href={`#${categoryAnchor(category.id)}`}
-                className={`carta-tile relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-3xl p-4 sm:p-5 ${
+                className={`carta-tile carta-pieza relative flex h-full flex-col justify-between gap-6 overflow-hidden rounded-3xl p-4 sm:p-5 ${
                   photo ? "bg-[var(--carta-green-deep)] text-white" : toneFor(i)
                 }`}
               >
@@ -71,7 +71,7 @@ export function CategoryMosaic({ sections, lang }: { sections: MenuSection[]; la
                 ) : null}
                 <span aria-hidden="true" className="relative flex items-start justify-between">
                   {/* Con foto, el número lleva el tono de su banda de sección: así se reconoce la categoría al bajar. */}
-                  <span className={`text-sm font-semibold tabular-nums ${photo ? `rounded-full px-2.5 py-0.5 ${toneFor(i)}` : ""}`}>
+                  <span className={`text-sm font-semibold tabular-nums ${photo ? `carta-pildora rounded-full px-2.5 py-0.5 ${toneFor(i)}` : ""}`}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <svg viewBox="0 0 24 24" className="size-5 shrink-0" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">

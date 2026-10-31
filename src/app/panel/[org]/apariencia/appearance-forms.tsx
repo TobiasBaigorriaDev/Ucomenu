@@ -5,6 +5,7 @@ import { useActionState, useEffect, useState } from "react";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { dangerButtonClass, inputClass, labelClass } from "@/components/panel/styles";
 import type { FormState } from "@/lib/form-state";
+import type { Look } from "@/lib/identidad/apariencia";
 import { MAX_LOGO_BYTES } from "@/lib/identidad/logos";
 import { isLayout, LAYOUT_KEYS, LAYOUTS, type Layout } from "@/lib/identidad/layouts";
 import { isPalette, PALETTE_KEYS, PALETTES } from "@/lib/identidad/palettes";
@@ -19,7 +20,7 @@ const GROUPS = [
   { scheme: "dark", title: "Oscuras" },
 ] as const;
 
-export function PaletteForm({ orgSlug, canWrite, name, palette, logo, layout }: Props & { palette: string; logo: string | null; layout: Layout }) {
+export function PaletteForm({ orgSlug, canWrite, name, palette, logo, layout, look }: Props & { palette: string; logo: string | null; layout: Layout; look: Look }) {
   const [selected, setSelected] = useState(isPalette(palette) ? palette : "oliva");
   return (
     <ActionForm action={paletteAction} className="mt-5">
@@ -48,14 +49,14 @@ export function PaletteForm({ orgSlug, canWrite, name, palette, logo, layout }: 
           </div>
         ))}
         <p className="mt-5 text-sm text-muted">Así se verá tu carta con la paleta elegida (con platos de ejemplo).</p>
-        <CartaPreview name={name} logo={logo} palette={selected} layout={layout} testId="apariencia-preview" />
+        <CartaPreview name={name} logo={logo} palette={selected} layout={layout} look={look} testId="apariencia-preview" />
         <div className="mt-4"><SubmitButton pendingLabel="Guardando…">Guardar colores</SubmitButton></div>
       </fieldset>
     </ActionForm>
   );
 }
 
-export function LayoutForm({ orgSlug, canWrite, name, palette, logo, layout }: Props & { palette: string; logo: string | null; layout: string }) {
+export function LayoutForm({ orgSlug, canWrite, name, palette, logo, layout, look }: Props & { palette: string; logo: string | null; layout: string; look: Look }) {
   const [selected, setSelected] = useState<Layout>(isLayout(layout) ? layout : "bento");
   return (
     <ActionForm action={layoutAction} className="mt-5">
@@ -74,7 +75,7 @@ export function LayoutForm({ orgSlug, canWrite, name, palette, logo, layout }: P
           ))}
         </div>
         <p className="mt-5 text-sm text-muted">Así se verá tu carta con el estilo elegido (con platos de ejemplo).</p>
-        <CartaPreview name={name} logo={logo} palette={isPalette(palette) ? palette : "oliva"} layout={selected} testId="apariencia-preview-estilo" />
+        <CartaPreview name={name} logo={logo} palette={isPalette(palette) ? palette : "oliva"} layout={selected} look={look} testId="apariencia-preview-estilo" />
         <div className="mt-4"><SubmitButton pendingLabel="Guardando…">Guardar estilo</SubmitButton></div>
       </fieldset>
     </ActionForm>
@@ -94,7 +95,7 @@ function statusText(status: ThemeStatus): string {
   }
 }
 
-export function ThemeForm({ orgSlug, canWrite, name, palette, logo, layout, theme, from, until, status }: Props & { palette: string; logo: string | null; layout: string; theme: string; from: string | null; until: string | null; status: ThemeStatus }) {
+export function ThemeForm({ orgSlug, canWrite, name, palette, logo, layout, look, theme, from, until, status }: Props & { palette: string; logo: string | null; layout: string; look: Look; theme: string; from: string | null; until: string | null; status: ThemeStatus }) {
   const [selected, setSelected] = useState<Theme | typeof NO_THEME>(isTheme(theme) ? theme : NO_THEME);
   const [start, setStart] = useState(from ?? "");
   const [end, setEnd] = useState(until ?? "");
@@ -130,7 +131,7 @@ export function ThemeForm({ orgSlug, canWrite, name, palette, logo, layout, them
           {wrongOrder ? "«Hasta» no puede ser anterior a «Desde»." : "Dentro de esas fechas (inclusive, hora de Argentina) se ve el tema y después la carta vuelve sola a la normal. Sin fechas, queda activo hasta que lo apagues."}
         </p>
         <p className="mt-5 text-sm text-muted">Así se verá tu carta con la fecha elegida (con platos de ejemplo).</p>
-        <CartaPreview name={name} logo={logo} palette={isPalette(palette) ? palette : "oliva"} layout={isLayout(layout) ? layout : "bento"} theme={isTheme(selected) ? selected : null} testId="apariencia-preview-tema" />
+        <CartaPreview name={name} logo={logo} palette={isPalette(palette) ? palette : "oliva"} layout={isLayout(layout) ? layout : "bento"} theme={isTheme(selected) ? selected : null} look={look} testId="apariencia-preview-tema" />
         <div className="mt-4"><SubmitButton pendingLabel="Guardando…">Guardar fecha especial</SubmitButton></div>
       </fieldset>
     </ActionForm>

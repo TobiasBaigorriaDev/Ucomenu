@@ -16,6 +16,8 @@ export type Textos = {
   unavailableTitle: (organization: string) => string;
   branch: (name: string) => string;
   logoAlt: (organization: string) => string;
+  /** Texto alternativo de la foto de portada del local. */
+  coverAlt: (organization: string) => string;
   /** Estilo «hoja»: la carta es una página fija que se amplía con los dedos. */
   sheetHint: string;
   emptyTitle: string;
@@ -24,6 +26,8 @@ export type Textos = {
   /** La versión corta del aviso, dentro del detalle de un plato. */
   detailAllergens: string;
   madeWith: string;
+  /** Pie de la carta: datos de contacto que publica el local (voz del local, ADR 0050). */
+  contact: { hours: string; instagram: (handle: string) => string; whatsapp: string };
   languageLabel: string;
   /** Invitación a reseñar en Google (ficha invitacion-a-resenar): textos fijos, iguales para todos y que el local no edita. */
   review: { footer: string; invite: string; action: string; close: string };
@@ -154,12 +158,14 @@ const es: Textos = {
   unavailableTitle: (organization) => `${organization} · Carta no disponible`,
   branch: (name) => `Sucursal ${name}`,
   logoAlt: (organization) => `Logo de ${organization}`,
+  coverAlt: (organization) => `Foto del ambiente de ${organization}`,
   sheetHint: "Pellizcá para ampliar",
   emptyTitle: "Esta carta todavía no tiene platos.",
   emptyHint: "Volvé a mirar en unos minutos.",
   footerAllergens: "Esta carta no informa los alérgenos de cada plato: un plato sin etiqueta no está declarado como apto para ninguna dieta. Si tenés alergia, intolerancia o celiaquía, consultá al personal antes de pedir.",
   detailAllergens: "Si tenés alergia, intolerancia o celiaquía, consultá al personal antes de pedir. Que un plato no tenga etiqueta no significa que sea apto para vos.",
   madeWith: "Hecho con UcoMenu",
+  contact: { hours: "Horarios", instagram: (handle) => `Instagram de @${handle}`, whatsapp: "Escribinos por WhatsApp" },
   languageLabel: "Idioma",
   review: { footer: "Dejá tu reseña en Google", invite: "Si querés, podés dejar tu reseña de este lugar en Google.", action: "Dejar una reseña", close: "Cerrar" },
   legal: { nav: "Información legal", terms: "Términos de uso", privacy: "Privacidad", allergens: "Aviso de alérgenos" },
@@ -298,12 +304,14 @@ const en: Textos = {
   unavailableTitle: (organization) => `${organization} · Menu unavailable`,
   branch: (name) => `Location ${name}`,
   logoAlt: (organization) => `${organization} logo`,
+  coverAlt: (organization) => `Photo of the atmosphere at ${organization}`,
   sheetHint: "Pinch to zoom",
   emptyTitle: "This menu has no dishes yet.",
   emptyHint: "Check back in a few minutes.",
   footerAllergens: "This menu does not list the allergens of each dish: a dish without a tag is not declared suitable for any diet. If you have an allergy, intolerance or celiac disease, ask the staff before ordering.",
   detailAllergens: "If you have an allergy, intolerance or celiac disease, ask the staff before ordering. A dish without a tag is not necessarily suitable for you.",
   madeWith: "Made with UcoMenu",
+  contact: { hours: "Opening hours", instagram: (handle) => `Follow @${handle} on Instagram`, whatsapp: "Message us on WhatsApp" },
   languageLabel: "Language",
   review: { footer: "Leave a review on Google", invite: "If you'd like, you can leave a review of this place on Google.", action: "Leave a review", close: "Close" },
   legal: { nav: "Legal information", terms: "Terms of use", privacy: "Privacy", allergens: "Allergen notice" },
@@ -441,12 +449,14 @@ const pt: Textos = {
   unavailableTitle: (organization) => `${organization} · Cardápio indisponível`,
   branch: (name) => `Unidade ${name}`,
   logoAlt: (organization) => `Logo de ${organization}`,
+  coverAlt: (organization) => `Foto do ambiente de ${organization}`,
   sheetHint: "Pince para ampliar",
   emptyTitle: "Este cardápio ainda não tem pratos.",
   emptyHint: "Volte a conferir em alguns minutos.",
   footerAllergens: "Este cardápio não informa os alérgenos de cada prato: um prato sem etiqueta não está declarado como adequado a nenhuma dieta. Se você tem alergia, intolerância ou doença celíaca, pergunte à equipe antes de pedir.",
   detailAllergens: "Se você tem alergia, intolerância ou doença celíaca, pergunte à equipe antes de pedir. Um prato sem etiqueta não é necessariamente adequado para você.",
   madeWith: "Feito com UcoMenu",
+  contact: { hours: "Horários", instagram: (handle) => `Siga @${handle} no Instagram`, whatsapp: "Fale conosco no WhatsApp" },
   languageLabel: "Idioma",
   review: { footer: "Deixe sua avaliação no Google", invite: "Se quiser, você pode deixar uma avaliação deste lugar no Google.", action: "Deixar uma avaliação", close: "Fechar" },
   legal: { nav: "Informações legais", terms: "Termos de uso", privacy: "Privacidade", allergens: "Aviso de alérgenos" },

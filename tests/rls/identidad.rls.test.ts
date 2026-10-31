@@ -1,9 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { loadIdentity, removeLogo, setLayout, setLogo, setPalette, setTheme } from "@/lib/identidad/identity";
+import { AMBIENT_KEYS } from "@/lib/identidad/ambientes";
+import { DENSITY_KEYS, SHAPE_KEYS } from "@/lib/identidad/formas";
+import { loadIdentity, removeCover, removeLogo, setAmbient, setCover, setFont, setLayout, setLogo, setPalette, setShape, setTheme, setVoice } from "@/lib/identidad/identity";
 import { LOGO_BUCKET } from "@/lib/identidad/logos";
 import { LAYOUT_KEYS } from "@/lib/identidad/layouts";
 import { PALETTE_KEYS } from "@/lib/identidad/palettes";
 import { THEME_KEYS } from "@/lib/identidad/temas";
+import { FONT_KEYS } from "@/lib/identidad/tipografias";
 import { addMembership, anonClient, createOrg, createUser, deleteOrg, deleteUser, DIA_MS, serviceClient, setSubscription, type Db, type TestUser } from "./helpers";
 
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==", "base64");
@@ -49,7 +52,7 @@ afterAll(async () => {
 
 describe("identidad por organización", () => {
   it("conserva el predeterminado y permite al Dueño guardar colores sin afectar otro local", async () => {
-    expect(await loadIdentity(owner.db, org)).toEqual({ menu_palette: "oliva", menu_layout: "bento", menu_theme: "ninguno", menu_theme_from: null, menu_theme_until: null, logo_path: null });
+    expect(await loadIdentity(owner.db, org)).toEqual({ menu_palette: "oliva", menu_layout: "bento", menu_theme: "ninguno", menu_theme_from: null, menu_theme_until: null, logo_path: null, menu_font: "clasica", menu_shape: "suave", menu_density: "aireada", menu_ambient: "ninguno", menu_tagline: null, opening_hours: null, instagram_handle: null, whatsapp_number: null, cover_path: null });
     // Cada paleta que ofrece la aplicación la acepta la base (el `check` de la migración y `PALETTES` van de la mano).
     for (const key of PALETTE_KEYS) {
       expect(await setPalette(owner.db, org, key)).toEqual({ ok: true });
@@ -85,6 +88,126 @@ describe("identidad por organización", () => {
     expect((await sinApp({ menu_theme_from: "2026-12-26", menu_theme_until: "2026-12-20" })).error?.code).toBe("23514");
     expect((await owner.db.from("organizations").update({ menu_layout: "libre" }).eq("id", org)).error?.code).toBe("23514");
     expect((await owner.db.from("organizations").update({ menu_palette: "libre" }).eq("id", org)).error?.code).toBe("23514");
+  });
+
+  it("tipografía, forma, densidad y ambientación: cada opción se guarda, lo inválido se rechaza y nada se filtra a otro local", async () => {
+    for (const key of FONT_KEYS) {
+      expect(await setFont(owner.db, org, key)).toEqual({ ok: true });
+      expect((await loadIdentity(owner.db, org)).menu_font).toBe(key);
+    }
+    for (const shape of SHAPE_KEYS) for (const density of DENSITY_KEYS) {
+      expect(await setShape(owner.db, org, shape, density)).toEqual({ ok: true });
+      expect(await loadIdentity(owner.db, org)).toMatchObject({ menu_shape: shape, menu_density: density });
+    }
+    for (const key of AMBIENT_KEYS) {
+      expect(await setAmbient(owner.db, org, key)).toEqual({ ok: true });
+      expect((await loadIdentity(owner.db, org)).menu_ambient).toBe(key);
+    }
+    const last = { font: FONT_KEYS.at(-1), shape: SHAPE_KEYS.at(-1), density: DENSITY_KEYS.at(-1), ambient: AMBIENT_KEYS.at(-1) };
+    expect(await setFont(owner.db, org, "__proto__")).toEqual({ ok: false, error: "font_invalid" });
+    expect(await setShape(owner.db, org, "redonda", "aireada")).toEqual({ ok: false, error: "shape_invalid" });
+    expect(await setShape(owner.db, org, "suave", "apretada")).toEqual({ ok: false, error: "density_invalid" });
+    expect(await setAmbient(owner.db, org, "disco")).toEqual({ ok: false, error: "ambient_invalid" });
+    // La base también los rechaza sin pasar por la aplicación.
+    for (const patch of [{ menu_font: "libre" }, { menu_shape: "libre" }, { menu_density: "libre" }, { menu_ambient: "libre" }]) {
+      expect((await owner.db.from("organizations").update(patch).eq("id", org)).error?.code, JSON.stringify(patch)).toBe("23514");
+    }
+    expect(await loadIdentity(service, other)).toMatchObject({ menu_font: "clasica", menu_shape: "suave", menu_density: "aireada", menu_ambient: "ninguno" });
+    // Staff, ajeno y anónimo no los cambian.
+    for (const db of [staff.db, stranger.db]) {
+      expect((await setFont(db, org, "clasica")).ok).toBe(false);
+      expect((await setShape(db, org, "suave", "aireada")).ok).toBe(false);
+      expect((await setAmbient(db, org, "ninguno")).ok).toBe(false);
+    }
+    for (const patch of [{ menu_font: "clasica" }, { menu_shape: "suave" }, { menu_density: "aireada" }, { menu_ambient: "ninguno" }]) {
+      expect((await anonClient().from("organizations").update(patch).eq("id", org)).error?.code, JSON.stringify(patch)).toBe("42501");
+    }
+    expect(await loadIdentity(service, org)).toMatchObject({ menu_font: last.font, menu_shape: last.shape, menu_density: last.density, menu_ambient: last.ambient });
+  });
+
+  it("voz del local: el Dueño guarda lema, horarios, Instagram y WhatsApp; la base solo guarda identificadores", async () => {
+    expect(await setVoice(owner.db, org, { tagline: "  Café de especialidad  ", hours: "Lun a sáb de 8 a 20 hs", instagram: "https://www.instagram.com/milocal/", whatsapp: "+54 9 11 1234-5678" })).toEqual({ ok: true });
+    expect(await loadIdentity(owner.db, org)).toMatchObject({ menu_tagline: "Café de especialidad", opening_hours: "Lun a sáb de 8 a 20 hs", instagram_handle: "milocal", whatsapp_number: "5491112345678" });
+    // Cualquiera que abra la carta lee estos datos con la clave pública.
+    const publicRow = await anonClient().from("organizations").select("menu_tagline, opening_hours, instagram_handle, whatsapp_number").eq("id", org).single();
+    expect(publicRow.data).toEqual({ menu_tagline: "Café de especialidad", opening_hours: "Lun a sáb de 8 a 20 hs", instagram_handle: "milocal", whatsapp_number: "5491112345678" });
+    // Entradas inválidas: la aplicación las rechaza antes de escribir.
+    expect(await setVoice(owner.db, org, { tagline: "a\nb", hours: "", instagram: "", whatsapp: "" })).toEqual({ ok: false, error: "tagline_invalid" });
+    expect(await setVoice(owner.db, org, { tagline: "x".repeat(81), hours: "", instagram: "", whatsapp: "" })).toEqual({ ok: false, error: "tagline_too_long" });
+    expect(await setVoice(owner.db, org, { tagline: "", hours: "", instagram: "https://evil.example/x", whatsapp: "" })).toEqual({ ok: false, error: "instagram_invalid" });
+    expect(await setVoice(owner.db, org, { tagline: "", hours: "", instagram: "", whatsapp: "wa.me/123" })).toEqual({ ok: false, error: "whatsapp_invalid" });
+    // ...y la base las rechaza si alguien escribe sin pasar por la aplicación (espejo de las reglas de `voz.ts`).
+    const raw = (patch: Partial<Record<"menu_tagline" | "opening_hours" | "instagram_handle" | "whatsapp_number", string>>) => owner.db.from("organizations").update(patch).eq("id", org);
+    for (const patch of [
+      { menu_tagline: "" }, { menu_tagline: "x".repeat(81) }, { menu_tagline: "a\nb" }, { menu_tagline: "a‮b" }, { menu_tagline: "a​b" },
+      { opening_hours: "" }, { opening_hours: "x".repeat(161) }, { opening_hours: "a\tb" },
+      { instagram_handle: "https://evil.example" }, { instagram_handle: "mi local" }, { instagram_handle: "a".repeat(31) }, { instagram_handle: "@milocal" },
+      { whatsapp_number: "+5491112345678" }, { whatsapp_number: "1234567" }, { whatsapp_number: "1".repeat(16) }, { whatsapp_number: "wa.me/54911" },
+    ]) expect((await raw(patch)).error?.code, JSON.stringify(patch)).toBe("23514");
+    expect((await raw({ menu_tagline: "x".repeat(80), opening_hours: "x".repeat(160), instagram_handle: "a".repeat(30), whatsapp_number: "1".repeat(15) })).error).toBeNull();
+    // Vacío = quitar.
+    expect(await setVoice(owner.db, org, { tagline: "", hours: "", instagram: "", whatsapp: "" })).toEqual({ ok: true });
+    expect(await loadIdentity(owner.db, org)).toMatchObject({ menu_tagline: null, opening_hours: null, instagram_handle: null, whatsapp_number: null });
+    // Otro local intacto; Staff, ajeno y anónimo no escriben.
+    expect(await loadIdentity(service, other)).toMatchObject({ menu_tagline: null, instagram_handle: null });
+    for (const db of [staff.db, stranger.db]) expect((await setVoice(db, org, { tagline: "Intruso", hours: "", instagram: "", whatsapp: "" })).ok).toBe(false);
+    expect((await anonClient().from("organizations").update({ menu_tagline: "Intruso" }).eq("id", org)).error?.code).toBe("42501");
+    expect((await owner.db.from("organizations").update({ menu_tagline: "Intruso" }).eq("id", other).select("id")).data).toEqual([]);
+    expect((await loadIdentity(service, org)).menu_tagline).toBeNull();
+  });
+
+  it("portada: el Dueño sube, reemplaza y quita la foto; el logo vive aparte y nada cruza entre locales", async () => {
+    expect(await setLogo(owner.db, org, file())).toEqual({ ok: true, filesComplete: true });
+    const logo = (await loadIdentity(owner.db, org)).logo_path!;
+    expect(await setCover(owner.db, org, file())).toEqual({ ok: true, filesComplete: true });
+    const first = (await loadIdentity(owner.db, org)).cover_path!;
+    expect(first).toMatch(new RegExp(`^${org}/[0-9a-f-]{36}\\.png$`));
+    expect(first).not.toBe(logo);
+    expect(await exists(first)).toBe(true);
+    // Reemplazar la portada borra la portada saliente y NO toca el logo.
+    expect(await setCover(owner.db, org, file())).toEqual({ ok: true, filesComplete: true });
+    const second = (await loadIdentity(owner.db, org)).cover_path!;
+    expect(second).not.toBe(first);
+    expect(await exists(first)).toBe(false);
+    expect(await exists(second)).toBe(true);
+    expect(await exists(logo)).toBe(true);
+    expect((await loadIdentity(owner.db, org)).logo_path).toBe(logo);
+    // La base impide que portada y logo sean el mismo archivo (el reemplazo borraría el vigente de la otra).
+    expect((await owner.db.from("organizations").update({ cover_path: logo }).eq("id", org)).error?.code).toBe("23514");
+    expect((await owner.db.from("organizations").update({ logo_path: second }).eq("id", org)).error?.code).toBe("23514");
+    // Rutas ajenas o de forma no permitida.
+    for (const path of [pathFor(other), `${org}/portada.svg`, `${org}/../x.png`, `${org}/x/${crypto.randomUUID()}.png`]) {
+      expect((await owner.db.from("organizations").update({ cover_path: path }).eq("id", org)).error?.code, path).toBe("23514");
+    }
+    // Quitar la portada borra su archivo y deja el logo.
+    expect(await removeCover(owner.db, org)).toEqual({ ok: true, filesComplete: true });
+    expect((await loadIdentity(owner.db, org)).cover_path).toBeNull();
+    expect(await exists(second)).toBe(false);
+    expect(await exists(logo)).toBe(true);
+    expect(await removeLogo(owner.db, org)).toEqual({ ok: true, filesComplete: true });
+    // Formato y tamaño inválidos se rechazan antes de subir nada.
+    expect(await setCover(owner.db, org, null)).toEqual({ ok: false, error: "image_missing" });
+    expect(await setCover(owner.db, org, new File([new Uint8Array(3 * 1024 * 1024)], "grande.png", { type: "image/png" }))).toEqual({ ok: false, error: "image_big" });
+    expect(await setCover(owner.db, org, new File([Buffer.from("<svg xmlns='http://www.w3.org/2000/svg'/>")], "x.svg", { type: "image/svg+xml" }))).toEqual({ ok: false, error: "image_type" });
+    expect((await loadIdentity(service, other)).cover_path).toBeNull();
+  });
+
+  it("portada: Staff, ajeno y anónimo no la cambian ni la quitan, ni llaman a la función de reemplazo", async () => {
+    expect(await setCover(owner.db, org, file())).toEqual({ ok: true, filesComplete: true });
+    const saved = (await loadIdentity(owner.db, org)).cover_path!;
+    for (const db of [staff.db, stranger.db]) {
+      expect((await setCover(db, org, file())).ok).toBe(false);
+      expect((await removeCover(db, org)).ok).toBe(false);
+      const direct = await db.from("organizations").update({ cover_path: pathFor() }).eq("id", org).select("id");
+      expect(direct.data ?? []).toEqual([]);
+    }
+    // El Dueño de otro local tampoco puede tocar la de este.
+    expect((await removeCover(owner.db, other)).ok).toBe(false);
+    expect((await anonClient().from("organizations").update({ cover_path: pathFor() }).eq("id", org)).error?.code).toBe("42501");
+    expect((await anonClient().rpc("replace_organization_cover", { p_org: org, p_path: null as unknown as string })).error).not.toBeNull();
+    expect((await loadIdentity(service, org)).cover_path).toBe(saved);
+    expect(await exists(saved)).toBe(true);
+    expect(await removeCover(owner.db, org)).toEqual({ ok: true, filesComplete: true });
   });
 
   it("Staff, ajeno y anónimo no modifican columnas; manipular otro local tampoco funciona", async () => {

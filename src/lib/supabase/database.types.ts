@@ -451,14 +451,14 @@ isOneToOne: false
                   ]
                 },"organizations": {
                   Row: {
-                    "created_at": string,"id": string,"is_active": boolean,"logo_path": string | null,"menu_layout": string,"menu_palette": string,"menu_theme": string,"menu_theme_from": string | null,"menu_theme_until": string | null,"name": string,"slug": string
+                    "cover_path": string | null,"created_at": string,"id": string,"instagram_handle": string | null,"is_active": boolean,"logo_path": string | null,"menu_ambient": string,"menu_density": string,"menu_font": string,"menu_layout": string,"menu_palette": string,"menu_shape": string,"menu_tagline": string | null,"menu_theme": string,"menu_theme_from": string | null,"menu_theme_until": string | null,"name": string,"opening_hours": string | null,"slug": string,"whatsapp_number": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_layout"?: string,"menu_palette"?: string,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name": string,"slug": string
+                    "cover_path"?: string | null,"created_at"?: string,"id"?: string,"instagram_handle"?: string | null,"is_active"?: boolean,"logo_path"?: string | null,"menu_ambient"?: string,"menu_density"?: string,"menu_font"?: string,"menu_layout"?: string,"menu_palette"?: string,"menu_shape"?: string,"menu_tagline"?: string | null,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name": string,"opening_hours"?: string | null,"slug": string,"whatsapp_number"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"is_active"?: boolean,"logo_path"?: string | null,"menu_layout"?: string,"menu_palette"?: string,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name"?: string,"slug"?: string
+                    "cover_path"?: string | null,"created_at"?: string,"id"?: string,"instagram_handle"?: string | null,"is_active"?: boolean,"logo_path"?: string | null,"menu_ambient"?: string,"menu_density"?: string,"menu_font"?: string,"menu_layout"?: string,"menu_palette"?: string,"menu_shape"?: string,"menu_tagline"?: string | null,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name"?: string,"opening_hours"?: string | null,"slug"?: string,"whatsapp_number"?: string | null
                   }
                   Relationships: [
                     
@@ -1041,6 +1041,9 @@ isOneToOne: false
                            },
 "reorder_siblings":
 { Args: { "p_current": Json,"p_final": (string)[],"p_org": string,"p_scope": string,"p_table": string }; Returns: undefined
+                           },
+"replace_organization_cover":
+{ Args: { "p_org": string,"p_path": string }; Returns: Json
                            },
 "replace_organization_logo":
 { Args: { "p_org": string,"p_path": string }; Returns: Json

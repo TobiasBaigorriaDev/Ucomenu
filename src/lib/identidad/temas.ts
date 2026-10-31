@@ -7,7 +7,7 @@ import type { Lang } from "@/lib/idiomas/idiomas";
  * el patrón toma el color de la paleta del local. Módulo puro, sin dependencias de la base: lo usan el servidor y la vista previa.
  */
 
-export type MotifName = "heart" | "star" | "flower" | "egg" | "tie" | "sun" | "glass" | "pumpkin" | "bat" | "snowflake" | "gift";
+export type MotifName = "heart" | "star" | "flower" | "egg" | "tie" | "sun" | "glass" | "pumpkin" | "bat" | "snowflake" | "gift" | "bean" | "leaf" | "diamond";
 
 type ThemeInfo = {
   name: string;
@@ -94,6 +94,9 @@ export const MOTIFS: Record<MotifName, { filled: boolean; markup: string }> = {
   pumpkin: { filled: false, markup: '<ellipse cx="12" cy="14.2" rx="9" ry="6.8"/><path d="M12 7.4v13.6M8.2 8.4c-2.2 2.2-2.2 8 0 11M15.8 8.4c2.2 2.2 2.2 8 0 11M12 7.4c0-2 1-3.4 3-4.2"/>' },
   bat: { filled: true, markup: '<path d="M12 8.5c-1-2.3-3.2-3.5-6.5-3.5 1 1 1.5 2.1 1.5 3.3-2.3 0-4.2 1.1-5.5 3.2 2-.6 4-.1 5 1.5 1-1 2.6-1.5 5.5-1.5s4.5.5 5.5 1.5c1-1.6 3-2.1 5-1.5-1.3-2.1-3.2-3.2-5.5-3.2 0-1.2.5-2.3 1.5-3.3-3.3 0-5.5 1.2-6.5 3.5z"/>' },
   snowflake: { filled: false, markup: '<path d="M12 2.5v19M3.8 7.2l16.4 9.6M3.8 16.8l16.4-9.6M9.5 4.2L12 6.7l2.5-2.5M9.5 19.8L12 17.3l2.5 2.5"/>' },
+  bean: { filled: false, markup: '<ellipse cx="12" cy="12" rx="5.6" ry="8.6" transform="rotate(35 12 12)"/><path d="M8.6 5.6c4.2 2.6-3.4 5.4 0 8.2s-1.4 3.8 2.6 5.6" transform="rotate(35 12 12)"/>' },
+  leaf: { filled: false, markup: '<path d="M5 19C5 10 10 5 20 4c0 10-5 15-15 15z"/><path d="M5 19L14 10"/>' },
+  diamond: { filled: true, markup: '<path d="M12 3l7 9-7 9-7-9z"/>' },
   gift: { filled: false, markup: '<rect x="4" y="10" width="16" height="10.5" rx="1"/><path d="M3 10h18V6.5H3zM12 6.5v14M12 6.5C10 3 6 3 7 5.5c.5 1 3 1 5 1zM12 6.5c2-3.5 6-3.5 5-1-.5 1-3 1-5 1z"/>' },
 };
 
@@ -108,15 +111,17 @@ const SLOTS = [[8, 10, -14], [56, 30, 12], [24, 62, 6]] as const;
 const TILE = 96;
 const ICON = 22;
 
-/** SVG del mosaico del patrón (solo importa su transparencia: se usa de máscara y el color lo pone la paleta). */
-export function patternSvg(theme: Theme): string {
-  const motifs = THEMES[theme].motifs;
+/** SVG de un mosaico con estos motivos repartidos en diagonal (solo importa su transparencia: se usa de máscara y el color lo pone la paleta). */
+export function scatterSvg(motifs: readonly MotifName[]): string {
   const items = SLOTS.map(([x, y, turn], i) => {
     const name = motifs[i % motifs.length];
     return `<g transform="translate(${x} ${y}) rotate(${turn} ${ICON / 2} ${ICON / 2}) scale(${ICON / 24})" ${motifPaint(name, "#000")}>${MOTIFS[name].markup}</g>`;
   });
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${TILE}" height="${TILE}" viewBox="0 0 ${TILE} ${TILE}">${items.join("")}</svg>`;
 }
+
+/** SVG del mosaico del patrón de un tema de fecha. */
+export const patternSvg = (theme: Theme): string => scatterSvg(THEMES[theme].motifs);
 
 /** Variables CSS que activa el tema dentro de `.carta` (ver `carta.css`): el patrón va inline, sin pedidos de red. */
 export function themeStyle(theme: Theme | null | undefined): CSSProperties {

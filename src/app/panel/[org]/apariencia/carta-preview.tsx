@@ -5,6 +5,7 @@ import { cartaFontClass } from "@/components/menu/carta-fonts";
 import { MenuHeader } from "@/components/menu/menu-header";
 import { MenuSection } from "@/components/menu/menu-section";
 import { SheetView } from "@/components/menu/sheet-view";
+import { DEFAULT_LOOK, lookProps, type Look } from "@/lib/identidad/apariencia";
 import type { Layout } from "@/lib/identidad/layouts";
 import { paletteStyle } from "@/lib/identidad/palettes";
 import { themeStyle, type Theme } from "@/lib/identidad/temas";
@@ -30,7 +31,8 @@ const SECTIONS: Section[] = [
  * Vista previa de la carta con los componentes reales (cabecera, mosaico de categorías, banda de sección y cards) y datos de
  * muestra, dentro de `.carta` con la paleta elegida. Es decorativa: `inert` + `aria-hidden` la sacan del foco y del lector de pantalla.
  */
-export function CartaPreview({ name, logo, palette, layout, theme = null, testId }: { name: string; logo: string | null; palette: string; layout: Layout; theme?: Theme | null; testId: string }) {
+export function CartaPreview({ name, logo, palette, layout, theme = null, look = DEFAULT_LOOK, tagline = null, cover = null, testId }: { name: string; logo: string | null; palette: string; layout: Layout; theme?: Theme | null; look?: Look; tagline?: string | null; cover?: string | null; testId: string }) {
+  const { attrs, style } = lookProps(look, theme !== null);
   return (
     <div className="relative mt-5 overflow-hidden rounded-xl border border-ink/15">
       <div
@@ -39,10 +41,11 @@ export function CartaPreview({ name, logo, palette, layout, theme = null, testId
         data-testid={testId}
         data-tema={theme ?? undefined}
         data-layout={layout}
+        {...attrs}
         className={`${cartaFontClass} carta carta-preview max-h-[34rem] overflow-hidden pb-8 select-none`}
-        style={{ ...paletteStyle(palette), ...themeStyle(theme), minHeight: 0 }}
+        style={{ ...paletteStyle(palette), ...themeStyle(theme), ...style, minHeight: 0 }}
       >
-        <MenuHeader organizationName={name} branchName="Centro" logo={logo} theme={theme} layout={layout} />
+        <MenuHeader organizationName={name} branchName="Centro" logo={logo} theme={theme} layout={layout} tagline={tagline} cover={cover} />
         {layout === "bento" ? (
           <CategoryMosaic sections={SECTIONS} lang="es" />
         ) : (

@@ -34,7 +34,7 @@ export function DishRow({ product, onSelect, lang }: { product: MenuProduct; onS
         <DishPrice product={product} lang={lang} className="shrink-0 text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums" />
       </div>
       <PromoNote promotion={product.promotion} lang={lang} className="mt-1" />
-      {soldOut ? <p className="mt-2 w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p> : null}
+      {soldOut ? <p className="carta-pildora mt-2 w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p> : null}
       {product.description ? <p className="mt-1.5 text-sm leading-relaxed text-muted [overflow-wrap:anywhere]">{product.description}</p> : null}
       <DietaryLabels tags={product.dietary_tags} lang={lang} />
       {product.option_groups && product.option_groups.length > 0 ? (

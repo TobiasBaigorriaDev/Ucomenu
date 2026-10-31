@@ -107,7 +107,7 @@ export function DishCard({ product, span, desktopSpan = 1, onSelect, lang }: { p
   return (
     <li className={`${SPAN_CLASS[span]} ${desktopSpan === 3 ? "md:col-span-3" : desktopSpan === 2 ? "md:col-span-2" : ""}`}>
       <article
-        className={`group relative flex h-full flex-col overflow-hidden rounded-3xl ring-1 ring-inset ring-ink/15 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-[var(--carta-terra)] ${
+        className={`carta-pieza group relative flex h-full flex-col overflow-hidden rounded-3xl ring-1 ring-inset ring-ink/15 has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-3 has-[:focus-visible]:outline-[var(--carta-terra)] ${
           photo ? "bg-porcelain" : "bg-[var(--carta-sand)]"
         }`}
       >
@@ -119,10 +119,10 @@ export function DishCard({ product, span, desktopSpan = 1, onSelect, lang }: { p
           </span>
         ) : null}
         {photo && soldOut ? (
-          <p className="absolute top-3 left-3 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p>
+          <p className="carta-pildora absolute top-3 left-3 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p>
         ) : null}
-        <div className={`flex flex-col gap-2 p-4 ${featured ? "md:flex-none" : "flex-1"}`}>
-          {!photo && soldOut ? <p className="w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p> : null}
+        <div className={`carta-cuerpo flex flex-col gap-2 p-4 ${featured ? "md:flex-none" : "flex-1"}`}>
+          {!photo && soldOut ? <p className="carta-pildora w-fit rounded-full bg-ink px-3 py-1 text-xs font-semibold text-porcelain">{t.soldOut}</p> : null}
           {name}
           <DishPrice product={product} lang={lang} className="text-base font-semibold whitespace-nowrap text-[var(--carta-terra)] tabular-nums" />
           <PromoNote promotion={product.promotion} lang={lang} />

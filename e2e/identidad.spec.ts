@@ -261,3 +261,105 @@ test("rechaza un archivo con tipo fingido sin publicar un logo", async ({ page }
   await expect(alerta(page)).toContainText("Usá un logo PNG, JPEG o WebP");
   expect((await identity(t)).logo_path).toBeNull();
 });
+
+test("el Dueño publica tipografía, forma, ambientación, datos y portada; se ven en la carta y no se mezclan los locales", async ({ page, context }) => {
+  const t = await tenant("personaliza");
+  const other = await tenant("personaliza-otra");
+  const db = service();
+  const category = (await db.from("categories").insert({ organization_id: t.orgId, name: "De la casa" }).select("id").single()).data!;
+  await db.from("products").insert({ organization_id: t.orgId, category_id: category.id, name: "Plato del día", price_cents: 180000 });
+  const publicPage = await context.newPage();
+  await publicPage.goto(`/m/${t.slug}/centro`);
+  const carta = publicPage.locator(".carta");
+  await expect(carta).toHaveAttribute("data-fuente", "clasica");
+  await expect(carta).toHaveAttribute("data-forma", "suave");
+  await expect(carta).not.toHaveAttribute("data-ambiente", /.+/);
+  await editor(page, t);
+  const row = async (x: Tenant) => (await service().from("organizations").select("menu_font, menu_shape, menu_density, menu_ambient, menu_tagline, opening_hours, instagram_handle, whatsapp_number, cover_path").eq("id", x.orgId).single()).data!;
+
+  // Tipografía: solo cambia la fuente de los títulos; la vista previa lo muestra antes de guardar.
+  await page.locator(`input[name="font"][value="bodegon"]`).check();
+  await expect(page.getByTestId("apariencia-preview-fuente")).toHaveAttribute("data-fuente", "bodegon");
+  await page.getByRole("button", { name: "Guardar tipografía" }).click();
+  await expect.poll(async () => (await row(t)).menu_font).toBe("bodegon");
+  await publicPage.reload();
+  await expect(carta).toHaveAttribute("data-fuente", "bodegon");
+  await expect(publicPage.getByRole("heading", { level: 1 })).toHaveCSS("font-family", /Alfa Slab One/);
+  await expect(publicPage.locator(".carta p").first()).not.toHaveCSS("font-family", /Alfa Slab One/);
+  expect((await row(other)).menu_font).toBe("clasica");
+
+  // Forma y densidad: esquinas rectas y menos aire, sin tocar colores.
+  await page.getByRole("radio", { name: "Recta" }).check();
+  await page.getByRole("radio", { name: "Compacta" }).check();
+  await expect(page.getByTestId("apariencia-preview-forma")).toHaveAttribute("data-forma", "recta");
+  await page.getByRole("button", { name: "Guardar forma" }).click();
+  await expect.poll(async () => (await row(t)).menu_shape).toBe("recta");
+  expect((await row(t)).menu_density).toBe("compacta");
+  await publicPage.reload();
+  await expect(carta).toHaveAttribute("data-forma", "recta");
+  await expect(carta).toHaveAttribute("data-densidad", "compacta");
+  await expect(publicPage.locator(".carta-chip").first()).toHaveCSS("border-top-left-radius", "0px");
+
+  // Ambientación: una textura permanente; con un tema de fecha vigente, el tema manda.
+  await page.getByRole("radio", { name: "Cuadros" }).check();
+  await page.getByRole("button", { name: "Guardar ambientación" }).click();
+  await expect.poll(async () => (await row(t)).menu_ambient).toBe("cuadros");
+  await publicPage.reload();
+  await expect(carta).toHaveAttribute("data-ambiente", "cuadros");
+  await expect(carta).toHaveCSS("--ambiente-opacidad", "0.07");
+  await db.from("organizations").update({ menu_theme: "navidad" }).eq("id", t.orgId);
+  await publicPage.reload();
+  await expect(carta).not.toHaveAttribute("data-ambiente", /.+/);
+  await expect(carta).toHaveAttribute("data-tema", "navidad");
+  await db.from("organizations").update({ menu_theme: "ninguno" }).eq("id", t.orgId);
+
+  // Datos del local: lema bajo el nombre y contacto en el pie, con enlaces armados por el servidor.
+  await page.locator("#voz-lema").fill("Café de especialidad desde 2014");
+  await page.locator("#voz-horarios").fill("Lun a sáb de 8 a 20 hs");
+  await page.locator("#voz-instagram").fill("https://www.instagram.com/mi.local/");
+  await page.locator("#voz-whatsapp").fill("+54 9 11 1234-5678");
+  await page.getByRole("button", { name: "Guardar datos del local" }).click();
+  await expect.poll(async () => (await row(t)).instagram_handle).toBe("mi.local");
+  expect(await row(t)).toMatchObject({ menu_tagline: "Café de especialidad desde 2014", opening_hours: "Lun a sáb de 8 a 20 hs", whatsapp_number: "5491112345678" });
+  await publicPage.reload();
+  await expect(publicPage.getByTestId("lema")).toHaveText("Café de especialidad desde 2014");
+  await expect(publicPage.getByTestId("contacto")).toContainText("Lun a sáb de 8 a 20 hs");
+  await expect(publicPage.getByTestId("contacto-instagram")).toHaveAttribute("href", "https://www.instagram.com/mi.local/");
+  await expect(publicPage.getByTestId("contacto-whatsapp")).toHaveAttribute("href", "https://wa.me/5491112345678");
+  await expect(publicPage.getByTestId("contacto-whatsapp")).toHaveAttribute("rel", /noopener/);
+  // Un enlace de otro sitio se rechaza y no se guarda nada.
+  await page.locator("#voz-instagram").fill("https://evil.example/x");
+  await page.getByRole("button", { name: "Guardar datos del local" }).click();
+  await expect(alerta(page)).toContainText("usuario de Instagram");
+  expect((await row(t)).instagram_handle).toBe("mi.local");
+  expect((await row(other)).menu_tagline).toBeNull();
+
+  // Portada: foto arriba de la carta, sin texto encima; la vista previa la muestra antes de guardar; en celular no hay desborde.
+  const png = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 800;
+    canvas.height = 450;
+    const ctx = canvas.getContext("2d")!;
+    ctx.fillStyle = "#8a5a2b";
+    ctx.fillRect(0, 0, 800, 450);
+    return canvas.toDataURL("image/png").split(",")[1];
+  });
+  await page.locator('input[name="cover"]').setInputFiles({ name: "portada.png", mimeType: "image/png", buffer: Buffer.from(png, "base64") });
+  await expect(page.getByTestId("apariencia-preview-portada").locator("img[alt^='Foto del ambiente']")).toBeVisible();
+  await page.getByRole("button", { name: "Guardar portada" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Portada guardada." })).toBeVisible();
+  expect((await row(t)).cover_path).toMatch(new RegExp(`^${t.orgId}/`));
+  expect((await row(other)).cover_path).toBeNull();
+  await publicPage.setViewportSize({ width: 390, height: 844 });
+  await publicPage.reload();
+  const cover = publicPage.locator(`img[alt^="Foto del ambiente de"]`);
+  await expect(cover).toBeVisible();
+  await expect(cover).toHaveAttribute("src", /organization-logos/);
+  await expectNoHorizontalOverflow(publicPage);
+  // Quitar la portada deja la carta como estaba.
+  await page.getByRole("button", { name: "Quitar portada" }).click();
+  await expect(page.getByRole("status").filter({ hasText: "Portada quitada." })).toBeVisible();
+  expect((await row(t)).cover_path).toBeNull();
+  await publicPage.reload();
+  await expect(publicPage.locator(`img[alt^="Foto del ambiente de"]`)).toHaveCount(0);
+});

@@ -8,6 +8,9 @@ export function isOwnLogoPath(path: string, orgId: string): boolean {
   return path.startsWith(`${orgId}/`) && UUID_FILE.test(path.slice(orgId.length + 1));
 }
 
+/** La portada vive en el mismo bucket público que el logo: la dirección se arma igual. */
+export const coverUrl = (path: string | null | undefined): string | null => logoUrl(path);
+
 export function logoUrl(path: string | null | undefined): string | null {
   const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return path && base ? `${base.replace(/\/$/, "")}/storage/v1/object/public/${LOGO_BUCKET}/${path}` : null;
