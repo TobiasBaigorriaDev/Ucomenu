@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { visitInTurn } from "./visit-turn";
-import { conParametro, leerVisitaDeLaUrl, urlConVisita } from "./visita";
+import { conParametro, hrefDeIdioma, leerVisitaDeLaUrl, urlConVisita } from "./visita";
 import { issueVisitTicket, VISIT_TTL_MS } from "./visit-ticket";
 
 const SECRET = "secreto-de-prueba";
@@ -59,6 +59,18 @@ describe("armar las URLs", () => {
     expect(conParametro("/t/abc/videos", "lang", "es")).toBe("/t/abc/videos?lang=es");
     expect(conParametro("/t/abc/videos?v=1.f", "lang", "es")).toBe("/t/abc/videos?v=1.f&lang=es");
     expect(conParametro("/t/abc", "v", "a b&c")).toBe("/t/abc?v=a%20b%26c");
+  });
+
+  it("el enlace del selector de idioma conserva la visita: cambiar de idioma no cuenta como un escaneo nuevo", () => {
+    expect(hrefDeIdioma("en")).toBe("?lang=en");
+    const vieja = ticket(TOKEN, AHORA - 60_000);
+    const href = hrefDeIdioma("en", vieja);
+    expect(href).toBe(`?lang=en&v=${vieja}`);
+    const query = Object.fromEntries(new URLSearchParams(href.slice(1)));
+    expect(leerVisitaDeLaUrl(TOKEN, query.v, AHORA)).toMatchObject({ kind: "propia", ticket: vieja });
+    // Una visita inválida también se conserva tal cual: sigue sin emitirse una nueva.
+    const invalida = hrefDeIdioma("pt", "basura");
+    expect(leerVisitaDeLaUrl(TOKEN, Object.fromEntries(new URLSearchParams(invalida.slice(1))).v, AHORA).kind).toBe("invalida");
   });
 });
 

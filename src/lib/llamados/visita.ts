@@ -36,5 +36,11 @@ export function urlConVisita(path: string, query: Record<string, string | string
   return `${path}?${params.toString()}`;
 }
 
+/**
+ * Enlace del selector de idioma: `?lang=` más la visita `v` si la hay. Sin conservarla, cambiar de idioma equivale a escanear (sin `v`) y
+ * emite una visita nueva, con lo que tras un «Reiniciar QR» o un cobro el comensal recuperaría los botones de llamado.
+ */
+export const hrefDeIdioma = (lang: string, visit?: string): string => (visit === undefined ? `?lang=${lang}` : conParametro(`?lang=${lang}`, "v", visit));
+
 /** Agrega `clave=valor` a una ruta que puede tener ya una query. */
 export const conParametro = (ruta: string, clave: string, valor: string): string => `${ruta}${ruta.includes("?") ? "&" : "?"}${clave}=${encodeURIComponent(valor)}`;

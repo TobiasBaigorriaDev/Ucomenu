@@ -67,7 +67,7 @@ export default async function TablePage({ params, searchParams }: PageProps<"/t/
   const videosPath = visita ? conParametro(`/t/${token}/videos`, "v", visita.v) : `/t/${token}/videos`;
   const videosHref = menu.hasVideos ? conParametro(videosPath, "lang", lang) : undefined;
   return visita ? (
-    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={visita.ticket} ttlMs={visita.ttlMs} expired={visita.expired} lang={lang} videosHref={videosHref} reviewUrl={menu.branch.reviewUrl} reviewKey={menu.branch.id} />} />
+    <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} visit={visita.v} tableLabel={table.tableLabel} callBar={<CallBar token={token} ticket={visita.ticket} ttlMs={visita.ttlMs} expired={visita.expired} lang={lang} videosHref={videosHref} reviewUrl={menu.branch.reviewUrl} reviewKey={menu.branch.id} />} />
   ) : (
     <PublicMenuView menu={menu} lang={lang} videosPath={videosPath} tableLabel={table.tableActive ? table.tableLabel : null} />
   );

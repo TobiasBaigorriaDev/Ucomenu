@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { LANG_NAME, type Lang } from "@/lib/idiomas/idiomas";
 import { TEXTOS } from "@/lib/idiomas/textos";
+import { hrefDeIdioma } from "@/lib/llamados/visita";
 
 /**
  * Selector de idioma de la carta. Son enlaces a la misma página con `?lang=`: funcionan sin JavaScript y la elección vive
  * en la dirección (no se guarda nada en el dispositivo). Solo aparece si el local ofrece más de un idioma. Cada idioma se
- * nombra en sí mismo y lleva su `lang`, para que un lector de pantalla lo pronuncie bien.
+ * nombra en sí mismo y lleva su `lang`, para que un lector de pantalla lo pronuncie bien. En la mesa conserva la visita (`visit`, el `?v=`
+ * de la URL): si no, cambiar de idioma contaría como escanear de nuevo y devolvería los botones de llamado tras un «Reiniciar QR».
  */
-export function LanguageSwitcher({ languages, current }: { languages: Lang[]; current: Lang }) {
+export function LanguageSwitcher({ languages, current, visit }: { languages: Lang[]; current: Lang; visit?: string }) {
   if (languages.length < 2) return null;
   return (
     <nav aria-label={TEXTOS[current].languageLabel} data-testid="selector-idioma" className="mx-auto flex max-w-3xl justify-end px-4 pt-4 sm:px-6">
@@ -15,7 +17,7 @@ export function LanguageSwitcher({ languages, current }: { languages: Lang[]; cu
         {languages.map((lang) => (
           <li key={lang}>
             <Link
-              href={`?lang=${lang}`}
+              href={hrefDeIdioma(lang, visit)}
               replace
               scroll={false}
               lang={lang}

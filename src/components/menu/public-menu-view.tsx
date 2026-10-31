@@ -26,6 +26,7 @@ export function PublicMenuView({
   tableLabel,
   callBar,
   videosPath,
+  visit,
   lang,
 }: {
   menu: PublicMenu;
@@ -34,6 +35,8 @@ export function PublicMenuView({
   callBar?: ReactNode;
   /** Dónde está el feed desde esta entrada (en la mesa, bajo `/t/{token}` para no perderla); por defecto, el de la sucursal. */
   videosPath?: string;
+  /** La visita de la URL (`?v=`), que el selector de idioma conserva para que cambiar de idioma no cuente como un escaneo nuevo. */
+  visit?: string;
 }) {
   const { sections } = menu;
   const t = TEXTOS[lang];
@@ -41,7 +44,7 @@ export function PublicMenuView({
 
   return (
     <div lang={lang} data-layout={menu.organization.menu_layout} data-tema={theme ?? undefined} className={`${cartaFontClass} ${callBar ? "carta carta-con-llamado" : "carta"}`} style={{ ...paletteStyle(menu.organization.menu_palette), ...themeStyle(theme) }}>
-      <LanguageSwitcher languages={menu.languages} current={lang} />
+      <LanguageSwitcher languages={menu.languages} current={lang} visit={visit} />
       <MenuHeader organizationName={menu.organization.name} branchName={menu.branch.name} tableLabel={tableLabel} logo={logoUrl(menu.organization.logo_path)} lang={lang} theme={theme} layout={menu.organization.menu_layout} />
       {menu.hasVideos && !callBar ? (
         // Solo un enlace, SIN precarga: la carta no carga nada del feed (ni video, ni `hls.js`) hasta que se entra (ficha feed-de-videos).
