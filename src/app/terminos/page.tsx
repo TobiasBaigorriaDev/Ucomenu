@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LegalContactText, LegalEntityText, LegalPending } from "@/components/legal/legal-contact";
+import { LegalContactText, LegalEntityText } from "@/components/legal/legal-contact";
 import { LegalDocument, LegalSection } from "@/components/legal/legal-document";
 
 export const metadata: Metadata = {
@@ -116,14 +116,15 @@ export default function TermsPage() {
 
       <LegalSection title="4. Planes y vigencia">
         <p>
-          Cada organización tiene un plan con sus límites y una fecha hasta la cual está al día. Los valores y las condiciones
-          comerciales de cada plan se acuerdan al contratar.
+          Cada organización tiene un plan con sus límites y una fecha hasta la cual está al día. Los precios de lista se publican en
+          pesos argentinos en la portada y en la sección Suscripción del panel del dueño; las demás condiciones comerciales se
+          acuerdan al contratar.
         </p>
         <p>
-          Si la suscripción vence, el servicio no se corta de golpe: hay un período de gracia, después la cuenta pasa a solo
-          lectura (podés ver tus datos pero no modificarlos) y, si no se regulariza, se suspende la carta pública. Al
-          regularizar el pago, todo vuelve a funcionar.{" "}
-          <LegalPending>duración del período de gracia y aviso previo a la suspensión por falta de pago</LegalPending>
+          Si la suscripción vence, el servicio no se corta de golpe: durante los primeros 7 días después del vencimiento seguís
+          usando todo con normalidad (período de gracia); del día 8 al 15 la cuenta pasa a solo lectura (podés ver tus datos pero
+          no modificarlos) y, desde el día 16 sin regularizar, se suspende la carta pública. En todo ese tiempo el panel muestra un
+          aviso con los días de atraso. Al regularizar el pago, todo vuelve a funcionar.
         </p>
         <p>
           UcoMenu también puede suspender o dar de baja una cuenta o una carta que incumpla estas condiciones, por ejemplo si
@@ -133,7 +134,11 @@ export default function TermsPage() {
           <Link href="/privacidad" className="underline underline-offset-2">
             política de privacidad
           </Link>
-          . <LegalPending>cómo y con qué aviso un local pide su baja, y qué pasa con la facturación al cancelar</LegalPending>
+          .
+        </p>
+        <p>
+          Para dar de baja tu local escribinos a <LegalContactText />. La baja rige al vencer el período que ya pagaste: no se cobra
+          un período nuevo y no se reembolsa lo abonado, sin perjuicio de los derechos que la ley reconoce a los consumidores.
         </p>
       </LegalSection>
 
@@ -173,8 +178,9 @@ export default function TermsPage() {
           cualquier información que pueda poner en riesgo la salud de alguien, avisá primero al personal del local y escribinos a{" "}
           <LegalContactText /> indicando el local, el plato y qué está mal. Los reportes sobre alimentos y salud los tratamos como
           prioritarios: pedimos al local que corrija o retire el plato y, si el riesgo es evidente, podemos suspender la carta
-          mientras se resuelve. Como el contenido es del local, la corrección definitiva depende de él.{" "}
-          <LegalPending>plazos internos de respuesta a los reportes y quién los atiende</LegalPending>
+          mientras se resuelve. Como el contenido es del local, la corrección definitiva depende de él. Los atiende el equipo de
+          UcoMenu desde ese correo: respondemos en un máximo de 24 horas los reportes que puedan afectar la salud (por ejemplo, un
+          alérgeno que falta) y en un máximo de 3 días hábiles los demás (por ejemplo, un precio o un dato equivocado).
         </p>
       </LegalSection>
 
@@ -192,8 +198,8 @@ export default function TermsPage() {
         <p>
           Podemos actualizar estas condiciones; la versión vigente es la de esta página, con su fecha. Los cambios no se aplican
           a lo ocurrido antes de que rijan. Si cambiamos algo que afecte de forma sustancial a los locales, se lo avisaremos por
-          el medio de contacto que tengan registrado, y si no estás de acuerdo podés dejar de usar el servicio.{" "}
-          <LegalPending>plazo de aviso previo de los cambios a los locales</LegalPending>
+          el medio de contacto que tengan registrado, con al menos 15 días corridos de anticipación, y si no estás de acuerdo podés
+          dejar de usar el servicio.
         </p>
         <p>
           Se rigen por las leyes de la República Argentina y, ante un conflicto, intervendrán los tribunales competentes de ese

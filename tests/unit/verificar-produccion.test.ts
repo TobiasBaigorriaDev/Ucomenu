@@ -20,6 +20,11 @@ const BUENO: Record<string, string> = {
   NEXT_PUBLIC_CONTACT_EMAIL: "hola@ucomenu.com",
   VAPID_PUBLIC_KEY: "B".repeat(87),
   VAPID_PRIVATE_KEY: "p".repeat(43),
+  MUX_TOKEN_ID: "mux-id",
+  MUX_TOKEN_SECRET: "mux-secreto",
+  MUX_WEBHOOK_SECRET: "mux-webhook",
+  GEMINI_API_KEY: "g".repeat(39),
+  NEXT_PUBLIC_DEMO_CARTA_PATH: "https://ucomenu.com/m/demo/centro",
 };
 
 const con = (cambios: Record<string, string | undefined>) => {
@@ -29,11 +34,35 @@ const con = (cambios: Record<string, string | undefined>) => {
 };
 
 describe("evaluarEntorno", () => {
-  it("un entorno completo y bien formado no da errores ni avisos", () => {
+  it("un entorno completo y bien formado no da errores; su único aviso es el recordatorio de la clave de pago de Gemini", () => {
     const r = evaluarEntorno(BUENO);
     expect(r.errores).toEqual([]);
-    expect(r.avisos).toEqual([]);
-    expect(r.correctos.length).toBe(7);
+    expect(r.avisos).toHaveLength(1);
+    expect(r.avisos[0]).toContain("GEMINI_API_KEY");
+    expect(r.avisos[0]).toContain("facturación");
+    expect(r.correctos.length).toBe(9);
+  });
+
+  it("sin Mux avisa que los videos quedan sin configurar; con Mux a medias es un error; completo no avisa", () => {
+    expect(evaluarEntorno(con({ MUX_TOKEN_ID: undefined, MUX_TOKEN_SECRET: undefined, MUX_WEBHOOK_SECRET: undefined })).avisos.join(" ")).toContain("videos queda sin configurar");
+    const parcial = evaluarEntorno(con({ MUX_WEBHOOK_SECRET: undefined }));
+    expect(parcial.errores.join(" ")).toContain("MUX_WEBHOOK_SECRET");
+    expect(evaluarEntorno(BUENO).avisos.join(" ")).not.toContain("MUX_");
+  });
+
+  it("un secreto de Mux nunca puede estar en una variable pública", () => {
+    const r = evaluarEntorno(con({ NEXT_PUBLIC_ALGO: "mux-secreto" }));
+    expect(r.errores.join(" ")).toContain("NEXT_PUBLIC_ALGO");
+  });
+
+  it("Gemini: sin clave avisa que la IA queda apagada; con clave recuerda que tiene que ser de pago", () => {
+    expect(evaluarEntorno(con({ GEMINI_API_KEY: undefined })).avisos.join(" ")).toContain("quedan apagados");
+    expect(evaluarEntorno(BUENO).avisos.join(" ")).toContain("NO la gratuita");
+  });
+
+  it("la demo de la portada: sin definir o apuntando a staging avisa", () => {
+    expect(evaluarEntorno(con({ NEXT_PUBLIC_DEMO_CARTA_PATH: undefined })).avisos.join(" ")).toContain("demo de staging");
+    expect(evaluarEntorno(con({ NEXT_PUBLIC_DEMO_CARTA_PATH: "https://ucomenu-staging.fly.dev/m/aurelia/centro" })).avisos.join(" ")).toContain(".fly.dev");
   });
 
   it("sin claves de push no es un error: avisa que el aviso con la pestaña cerrada queda apagado", () => {

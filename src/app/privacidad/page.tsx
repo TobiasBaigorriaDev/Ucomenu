@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalContactText, LegalEntityText, LegalPending } from "@/components/legal/legal-contact";
 import { LegalDocument, LegalSection } from "@/components/legal/legal-document";
-import { WAITER_CALL_RETENTION_DAYS } from "@/lib/legal";
+import { BACKUP_RETENTION_MONTHS, RESERVATION_RETENTION_DAYS, WAITER_CALL_RETENTION_DAYS } from "@/lib/legal";
 import { PENDING_RETENTION_DAYS, REJECTED_RETENTION_DAYS } from "@/lib/videos/retencion";
 
 export const metadata: Metadata = {
@@ -69,8 +69,8 @@ export default function PrivacyPage() {
         <p>
           Como en cualquier sitio web, el servidor que te entrega la página y su proveedor de alojamiento pueden registrar datos
           técnicos de la conexión (por ejemplo, tu dirección IP y el navegador) en sus registros de funcionamiento y seguridad.
-          UcoMenu no usa esos registros para identificarte ni para publicidad. El plazo de esos registros lo fija cada proveedor:{" "}
-          <LegalPending>plazo de los registros de los proveedores de alojamiento</LegalPending>.
+          UcoMenu no usa esos registros para identificarte ni para publicidad. El plazo de esos registros lo fija cada proveedor según
+          sus propias políticas; UcoMenu no los copia a sus respaldos.
         </p>
       </LegalSection>
 
@@ -120,7 +120,22 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="5. Cuánto tiempo conservamos los datos">
+      <LegalSection title="5. Si hacés una reserva en un local">
+        <p>
+          Hoy las reservas las carga el personal del local (por ejemplo, cuando llamás o escribís al local para reservar una mesa);
+          no se piden desde esta carta. El personal registra el nombre, el teléfono, el email si lo das, la cantidad de personas, el
+          día y la hora, una nota si hace falta y la mesa asignada. <strong>No les pidas ni les des datos sensibles en la nota.</strong>
+        </p>
+        <p>
+          Esos datos los ven el dueño y el personal del local donde reservaste, que decide para qué los usa; el cocinero y las demás
+          personas no tienen acceso. Los usamos para que el local gestione la reserva y para nada más. Los datos de una reserva se
+          borran automáticamente {RESERVATION_RETENTION_DAYS} días después de que terminó, cualquiera sea su estado (confirmada,
+          cancelada, rechazada, sentada o «no vino»). Para pedir que se corrijan o se supriman antes, escribí a{" "}
+          <LegalContactText /> indicando el local, el día y el nombre con que reservaste.
+        </p>
+      </LegalSection>
+
+      <LegalSection title="6. Cuánto tiempo conservamos los datos">
         <ul>
           <li>
             Llamados al mozo o a la cuenta, con su identificador derivado de la IP: {WAITER_CALL_RETENTION_DAYS} días, con borrado
@@ -135,6 +150,10 @@ export default function PrivacyPage() {
             derivado de la IP, una hora.
           </li>
           <li>
+            Reservas (nombre, teléfono, email y nota): {RESERVATION_RETENTION_DAYS} días después de terminada la reserva, con borrado
+            automático.
+          </li>
+          <li>
             Pedidos cerrados o anulados: 2 años desde el cierre. <LegalPending>confirmar este plazo con un contador</LegalPending>
           </li>
           <li>
@@ -144,20 +163,23 @@ export default function PrivacyPage() {
           <li>
             Cuenta, carta y datos de un local: mientras el local use el servicio. Si el local se da de baja, sus datos se conservan
             y el borrado definitivo lo decide el equipo de UcoMenu después de al menos 30 días de baja; el historial de precios se
-            borra con el local. Las cuentas de acceso del personal no se borran automáticamente con el local:{" "}
-            <LegalPending>definir cuándo se borran las cuentas de personas que quedan sin ningún local</LegalPending>
+            borra con el local. Las cuentas de acceso del personal no se borran automáticamente con el local: se conservan hasta que el equipo de
+            UcoMenu las borra a mano, a pedido de la persona o cuando revisa las cuentas que quedaron sin ningún local, lo que hace
+            al menos una vez al año.
           </li>
           <li>
             Registro de auditoría: no se modifica; <LegalPending>plazo de conservación del registro de auditoría</LegalPending>
           </li>
           <li>
-            Copias de seguridad: hacemos copias propias que incluyen las cuentas del personal y los datos de los locales (no los
-            llamados), con acceso restringido. <LegalPending>plazo de conservación de las copias y cómo se cifran</LegalPending>
+            Copias de seguridad: hacemos copias propias que incluyen las cuentas del personal y los datos de los locales (también
+            las reservas, mientras no se hayan borrado; no los llamados), con acceso restringido. Se conservan hasta{" "}
+            {BACKUP_RETENTION_MONTHS} meses (7 diarias, 4 semanales y 3 mensuales): un dato que se borra de la aplicación puede seguir
+            en una copia hasta ese plazo y después desaparece. <LegalPending>cómo se cifran las copias</LegalPending>
           </li>
         </ul>
       </LegalSection>
 
-      <LegalSection title="6. Con quién compartimos los datos y dónde se guardan">
+      <LegalSection title="7. Con quién compartimos los datos y dónde se guardan">
         <p>No vendemos ni cedemos datos personales. Para funcionar usamos proveedores que tratan datos por nuestra cuenta y solo para prestar el servicio:</p>
         <ul>
           <li>Supabase: base de datos, autenticación y archivos (fotos y logos).</li>
@@ -169,9 +191,9 @@ export default function PrivacyPage() {
           </li>
           <li>Cloudflare, para el sistema de nombres de dominio (DNS) de la aplicación.</li>
           <li>
-            Un proveedor de inteligencia artificial, solo si el local usa la sugerencia de traducciones o el resumen de la
-            analítica: se envían los nombres y descripciones de su carta, o cifras agregadas de ventas, nunca datos personales de
-            comensales. <LegalPending>proveedor de IA que se usará en producción</LegalPending>
+            Google (servicio Gemini), solo si el local usa la sugerencia de traducciones o el resumen de la analítica: se envían
+            los nombres y descripciones de su carta, o cifras agregadas de ventas, nunca datos personales de comensales. Si
+            cambiamos de proveedor de inteligencia artificial, actualizamos esta lista.
           </li>
         </ul>
         <p>
@@ -185,7 +207,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="7. Tus derechos y cómo ejercerlos">
+      <LegalSection title="8. Tus derechos y cómo ejercerlos">
         <p>
           Conforme a la Ley 25.326 de Protección de los Datos Personales, podés pedir acceso a tus datos personales y su
           rectificación, actualización o supresión.
@@ -216,7 +238,7 @@ export default function PrivacyPage() {
         </p>
       </LegalSection>
 
-      <LegalSection title="8. Cambios en esta política">
+      <LegalSection title="9. Cambios en esta política">
         <p>
           Si cambiamos qué datos tratamos o para qué, actualizamos este texto y la fecha de arriba. La versión vigente es siempre
           la que ves en esta página.

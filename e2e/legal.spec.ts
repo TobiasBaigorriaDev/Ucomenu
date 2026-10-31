@@ -79,6 +79,41 @@ test("la privacidad nombra al responsable, el canal y los plazos de la ley, y ma
   expect(await page.getByTestId("pendiente-legal").count()).toBeGreaterThan(0);
 });
 
+test("la privacidad cubre las reservas: qué datos, quién los ve y cuándo se borran", async ({ page }) => {
+  await page.goto("/privacidad");
+  const body = page.locator("main");
+  await expect(body.getByRole("heading", { name: "5. Si hacés una reserva en un local" })).toBeVisible();
+  await expect(body).toContainText("el nombre, el teléfono, el email si lo das");
+  await expect(body).toContainText("el cocinero y las demás personas no tienen acceso");
+  await expect(body).toContainText("30 días después de que terminó");
+  await expect(body).toContainText("Reservas (nombre, teléfono, email y nota): 30 días");
+});
+
+test("la privacidad nombra a Google (Gemini) como proveedor de IA y fija las copias de seguridad en 3 meses", async ({ page }) => {
+  await page.goto("/privacidad");
+  const body = page.locator("main");
+  await expect(body).toContainText("Google (servicio Gemini)");
+  await expect(body).toContainText("nunca datos personales de comensales");
+  await expect(body).toContainText("Se conservan hasta 3 meses (7 diarias, 4 semanales y 3 mensuales)");
+  // Lo que ya está decidido no queda como pendiente.
+  await expect(body).not.toContainText("proveedor de IA que se usará en producción");
+  await expect(body).not.toContainText("plazo de los registros de los proveedores de alojamiento");
+  await expect(body).not.toContainText("definir cuándo se borran las cuentas");
+});
+
+test("los términos dicen la gracia, el solo lectura y la suspensión, la baja, los plazos de los reportes y el aviso previo", async ({ page }) => {
+  await page.goto("/terminos");
+  const body = page.locator("main");
+  await expect(body).toContainText("durante los primeros 7 días después del vencimiento");
+  await expect(body).toContainText("del día 8 al 15 la cuenta pasa a solo lectura");
+  await expect(body).toContainText("desde el día 16 sin regularizar, se suspende la carta pública");
+  await expect(body).toContainText("La baja rige al vencer el período que ya pagaste");
+  await expect(body).toContainText("máximo de 24 horas");
+  await expect(body).toContainText("máximo de 3 días hábiles");
+  await expect(body).toContainText("al menos 15 días corridos de anticipación");
+  await expect(body).toContainText("pesos argentinos");
+});
+
 for (const [origen, ruta] of [
   ["la portada", "/"],
   ["el login", "/login"],

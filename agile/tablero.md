@@ -6,7 +6,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
-Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado; el usuario confirmó todas las comprobaciones de «Para verificar» (2026-10-26). Producción sigue bloqueada aunque un cambio esté desplegado en staging.
+Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado. De «Para verificar», el usuario confirmó el 2026-10-26 solo lo que figura en «Hecho»; lo demás sigue esperando su comprobación manual. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
 
 ## En curso
 
@@ -18,14 +18,16 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado; el u
 
 ## Para verificar
 
+- [C] Precios en pesos: el catálogo `plans` pasa de USD a ARS (Básico 14.900 y 143.040; Pro 29.000 y 278.400; Premium sin precio de lista), la portada y Suscripción coinciden y una prueba RLS compara los precios — implementado y verificado en local (migración `20261216100000` solo en local, sin commit); falta la revisión independiente y tu aprobación para staging → [ficha](cambios/precios-en-pesos.md)
+- [M] Cierre de la revisión de preparación para producción: textos legales (reservas, proveedor de IA, gracia, baja, plazos), cabeceras de seguridad y `robots.txt`, avisos de `prod:check` (Mux, Gemini, demo), procedimiento de producción (Mux, tarea de reinicio de QR, limpieza de `pg_cron`, monitoreo) y recomendación de respaldos — verificado en local, sin commit; quedan 7 marcadores legales que resolvés vos y las tres tareas de `pg_cron` de staging por programar → [ficha](cambios/cierre-revision-de-lanzamiento.md)
 - [C] Reservas de mesa, fase 1 (el personal carga reservas a mano en la Sala, por día o todas las «Próximas», y les asigna una mesa; sin duración elegible: bloque fijo de 90 minutos; Pro y Premium; migración `20261215100000`) — aprobada por la revisión independiente (Codex, 3 rondas), en `origin/main` y en staging (Fly v88) con su migración; falta probarla con una sesión real y en teléfono → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
 - [M] Precio de la suscripción visible para el Dueño (por mes o por año, precio de lista del catálogo más sucursales adicionales y último pago) — en `origin/main` y en staging (Fly v88) → [ficha](cambios/precio-en-suscripcion.md)
 - [M] Resumen del panel con datos del día: salón en vivo, ventas de hoy contra el mismo día de la semana anterior, pendientes y carta para compartir, más rediseño visual — en `origin/main` y en staging (Fly v88); falta tu visto bueno visual en teléfono → [ficha](cambios/resumen-del-panel.md)
 - [C] Personalización ampliada de la carta: tipografía, forma y densidad, ambientación, datos del local y portada con foto — implementada y verificada en local (migraciones `20261212100000` a `20261212120000` solo en local); integrada a `main` y subida a `origin/main` y en staging (Fly v82); falta tu visto bueno visual en teléfono y probar el panel con una sesión real → [ficha](cambios/personalizacion-ampliada-de-la-carta.md) · [ADR 0050](../docs/decisiones/0050-personalizacion-ampliada-de-la-carta.md)
 - [M] Aparición suave de bloques de portada — implementada localmente; falta comprobar en teléfono → [ficha](cambios/aparicion-bloques-portada.md)
 - [M] Animación del hero en móvil — implementada y verificada localmente, falta comprobación en teléfono → [ficha](cambios/animacion-hero-movil.md)
-- [M] Revisión UX previa al lanzamiento — cinco defectos corregidos y desplegados en staging; falta comprobaci?n manual → [ficha](cambios/revision-ux-prelanzamiento.md)
-- [C] Feed de videos en Pro; Premium deja de ofrecerse — migración `20261210100000` aplicada solo en local, pruebas de RLS en verde, E2E sin correr; falta revisión independiente y tu aprobación para staging → [ficha](cambios/feed-de-videos-en-pro.md) · [ADR 0049](../docs/decisiones/0049-feed-de-videos-en-pro.md)
+- [M] Revisión UX previa al lanzamiento — cinco defectos corregidos y desplegados en staging; falta comprobación manual → [ficha](cambios/revision-ux-prelanzamiento.md)
+- [C] Feed de videos en Pro; Premium deja de ofrecerse — migración `20261210100000` aplicada en staging el 2026-10-29 (Fly v72) tras la revisión independiente («aprobar con cambios», aplicados); falta la comprobación manual en staging → [ficha](cambios/feed-de-videos-en-pro.md) · [ADR 0049](../docs/decisiones/0049-feed-de-videos-en-pro.md)
 - [M] Portada de ucomenu.com — construida y verificada en local con capturas reales; sin commit ni staging; falta tu visto bueno y la lista de «Antes de publicar» → [ficha](cambios/portada-ucomenu.md)
 - [M] Acciones del pedido desde Mesas — en staging Fly v68, cierre rojo y sin botón duplicado; pendiente comprobación manual → [ficha](cambios/acciones-pedido-desde-mesas.md)
 - [M] Vibración de los avisos con intensidad elegible por el Dueño (Android; en pantalla y por push); en `main` y en staging (Fly v84); falta probar en un Android real → [ficha](cambios/vibracion-de-aviso.md)
@@ -36,7 +38,7 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado; el u
 
 ## Bloqueado
 
-- [M] Salida a producción — preparación y staging hechos; dominio `ucomenu.com` confirmado (falta apuntarlo a la app); faltan proyecto de producción, configuración propia, purgas y respaldos programados, revisión legal (abogado y los pendientes visibles de `/terminos` y `/privacidad`) y aprobación del usuario → [ficha](cambios/salida-a-produccion.md)
+- [M] Salida a producción — preparación y staging hechos; dominio `ucomenu.com` confirmado (falta apuntarlo a la app); faltan proyecto de producción, configuración propia (incluida la cuenta de Mux de producción y la clave de Gemini de pago), purgas y respaldos programados (recomendación de frecuencia en `docs/operacion.md`), los datos del responsable legal, la revisión de un abogado y la aprobación del usuario; la demo estable se retoma después → [ficha](cambios/salida-a-produccion.md)
 - [S] Spike descartable de Apple Wallet y Google Wallet con ubicaciones — bloqueado por cuentas de Apple Developer y emisor de Google Wallet, aprobación y pago; valida ADR 0003 → [ADR 0003](../docs/decisiones/0003-fidelizacion-wallet-geofencing.md)
 
 ## Backlog

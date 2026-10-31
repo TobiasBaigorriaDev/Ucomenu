@@ -40,9 +40,9 @@ Carta pública en 4–5 paletas y los 4 estilos · carta de mesa con el dock «L
 ## Aceptación
 - [x] Dado un visitante en 390 px, cuando abre `/`, entonces ve titular, subtítulo, tildes y el botón de WhatsApp sin scroll horizontal, y el botón abre WhatsApp con el mensaje prellenado.
 - [x] Dado un visitante en 1440 px, cuando abre `/`, entonces ve el abanico de teléfonos con capturas reales, rotuladas como local de ejemplo.
-- [ ] Conciliar los precios de la portada en pesos con el catálogo `plans`, que sigue en USD; la prueba RLS comprueba los límites. Premium no muestra precio.
+- [x] Conciliar los precios de la portada en pesos con el catálogo `plans`: el catálogo pasó a pesos y la prueba RLS compara precios y límites (2026-10-31, [precios en pesos](precios-en-pesos.md); migración solo en local). Premium no muestra precio.
 - [x] Ninguna afirmación promete pedidos del cliente, pagos online, alérgenos por plato ni funciones no implementadas sin la etiqueta «Pronto».
-- [ ] Contraste AA, objetivos táctiles de 44 px, foco visible y `prefers-reduced-motion` respetado. *(Diseñado así —botones y píldoras de 44 px o más, foco propio, animaciones solo con `no-preference`—, pero no se midió el contraste con herramienta; pendiente.)*
+- [x] Contraste AA, objetivos táctiles de 44 px, foco visible y `prefers-reduced-motion` respetado. *(Diseñado así —botones y píldoras de 44 px o más, foco propio, animaciones solo con `no-preference`—. El contraste se midió el 2026-10-31 sobre los tokens: todos los pares de texto dan 5,2 a 15,3 a 1 y `contraste.test.ts` lo fija; el texto sobre fotos y video no se mide.)*
 - [x] El botón de «Probalo vos» abre una carta pública real. *(El QR codifica `NEXT_PUBLIC_SITE_URL` + la ruta de la demo: en local apunta al dominio definitivo, que todavía no sirve la app; ver «Antes de publicar».)*
 - [x] Título, descripción e imagen para compartir (es-AR); sin dependencias nuevas.
 - [x] Las rutas `/m`, `/t`, `/panel` y `/sala` no cambian de aspecto (usan sus propias paletas; los tokens globales solo alcanzan a la portada, los textos legales y las pantallas de estado). La prueba `identidad.spec` fijaba el fondo global anterior: se actualizó a `#f6f5f0`.

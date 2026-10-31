@@ -127,6 +127,41 @@ export function evaluarEntorno(env) {
     if (vapidBien) bien("VAPID_PUBLIC_KEY y VAPID_PRIVATE_KEY: presentes y con formato correcto (aviso con la pestaña cerrada activo).");
   }
 
+  // Videos del feed (Mux, ADR 0031). El feed es de Pro y la portada lo anuncia: sin las tres variables la subida queda sin configurar
+  // y ningún video sale de «Procesando». Parcial = error (la pantalla ofrecería algo que no anda).
+  const mux = ["MUX_TOKEN_ID", "MUX_TOKEN_SECRET", "MUX_WEBHOOK_SECRET"];
+  const hayMux = mux.filter((nombre) => !vacio(env[nombre]));
+  if (hayMux.length === 0) {
+    aviso("MUX_TOKEN_ID, MUX_TOKEN_SECRET y MUX_WEBHOOK_SECRET: no están; la subida de videos queda sin configurar (el feed está en Pro y la portada lo anuncia). Usar el entorno Production de Mux.");
+  } else if (hayMux.length < mux.length) {
+    for (const nombre of mux.filter((n) => vacio(env[n]))) error(`${nombre}: falta (con Mux a medias el feed de videos no funciona).`);
+  } else {
+    let muxBien = true;
+    for (const nombre of mux) {
+      const filtradas = Object.entries(env).filter(([clave, valor]) => clave.startsWith("NEXT_PUBLIC_") && valor === env[nombre]);
+      for (const [clave] of filtradas) {
+        error(`${clave}: contiene ${nombre} y llegaría al navegador.`);
+        muxBien = false;
+      }
+    }
+    if (!vacio(env.MUX_API_URL)) aviso("MUX_API_URL: está definida; solo sirve para un servidor de pruebas de la misma máquina y en producción se ignora. Quitarla.");
+    if (muxBien) bien("MUX_TOKEN_ID, MUX_TOKEN_SECRET y MUX_WEBHOOK_SECRET: presentes (videos del feed configurados).");
+  }
+
+  // Funciones de IA (ADR 0046 y 0047): hoy el único proveedor es Gemini. La clave GRATUITA puede usar lo enviado para mejorar los
+  // productos de Google: con ventas reales hay que usar una clave de un proyecto con facturación (servicio de pago).
+  if (vacio(env.GEMINI_API_KEY)) {
+    aviso("GEMINI_API_KEY: no está; «Sugerir con IA» y el resumen de la analítica quedan apagados (la portada anuncia el resumen en Pro).");
+  } else {
+    aviso("GEMINI_API_KEY: está definida; confirmá que es la clave de un proyecto de Google con facturación (servicio de pago) y NO la gratuita de AI Studio: el resumen envía cifras de ventas reales.");
+  }
+
+  // Carta de demostración de la portada: si no se define al construir, apunta a staging.
+  const demo = env.NEXT_PUBLIC_DEMO_CARTA_PATH;
+  if (vacio(demo)) aviso("NEXT_PUBLIC_DEMO_CARTA_PATH: no está; la portada abre la demo de staging (…fly.dev). Definir una demo estable al construir la imagen.");
+  else if (/\.fly\.dev/i.test(demo)) aviso("NEXT_PUBLIC_DEMO_CARTA_PATH: apunta a un dominio de staging (.fly.dev); la demo de la portada no debería depender de staging.");
+  else bien("NEXT_PUBLIC_DEMO_CARTA_PATH: definida y no es de staging.");
+
   // Dirección pública (base de los QR impresos).
   const sitio = env.NEXT_PUBLIC_SITE_URL;
   if (vacio(sitio)) {

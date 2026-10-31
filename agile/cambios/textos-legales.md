@@ -30,5 +30,8 @@ Nivel S (solo texto). Antes de habilitar los [comentarios](comentarios-del-feed.
 ## Actualización 2026-10-26
 Los tres textos se reescribieron tras una auditoría legal: ver [información alimentaria y textos legales](informacion-alimentaria-y-textos-legales.md), que reemplaza los puntos 2, 3, 5 y 6 de «Pendiente» (responsable, proveedores, copias de seguridad, términos comerciales) con los pendientes visibles en las propias páginas. Siguen vigentes el punto 1 (abogado) y el 4 (purgas).
 
+## Actualización 2026-10-31
+Revisión de preparación para producción: se agregó a `/privacidad` la sección de reservas (datos personales que ya guarda la fase 1), se nombró a Google (Gemini) como proveedor de IA, se fijaron las copias de seguridad en 3 meses y se resolvieron con el comportamiento real del sistema la gracia (7 días), el solo lectura, la baja, los plazos de los reportes (24 h y 3 días hábiles), el aviso previo (15 días) y las cuentas sin local. Quedan visibles el responsable (`LEGAL_ENTITY`), el correo de contacto y cinco puntos de privacidad. Detalle en [cierre de la revisión de lanzamiento](cierre-revision-de-lanzamiento.md). **Sigue valiendo el punto 1: un abogado debe revisar los tres textos antes de producción.**
+
 ## Evidencia (2026-10-16, diff sin commitear; luego del commit queda en Git)
 `pnpm typecheck` · `pnpm lint` · `pnpm test` 281/281 · `pnpm build` · `playwright e2e/legal.spec.ts` 8/8. No se revisó a ojo en un teléfono real ni con lector de pantalla.

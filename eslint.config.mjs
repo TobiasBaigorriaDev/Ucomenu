@@ -18,6 +18,8 @@ const eslintConfig = defineConfig([
     ".codex/**",
     // Diagnósticos locales generados por agentes, ajenos al producto.
     "output/**",
+    // Proyecto de video de presentación (HyperFrames): scripts de captura, no código del producto.
+    "video/**",
     "supabase/**",
     // Generado por `pnpm db:types`.
     "src/lib/supabase/database.types.ts",

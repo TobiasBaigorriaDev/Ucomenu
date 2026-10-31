@@ -8,12 +8,12 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 - **Hosting:** decidido (Fly.io, contenedor en São Paulo). La cuenta y `flyctl` ya existen (staging).
 - **Un proyecto de Supabase por entorno, no por cliente:** UcoMenu es multi-inquilino (organizaciones y sucursales en las mismas tablas, aisladas por RLS). Cada negocio nuevo se da de alta desde `/admin`; no se crea ningún proyecto. En total: staging y producción.
 - **Dominio:** **`ucomenu.com`, confirmado como definitivo por el usuario (2026-10-26)**; ya es suyo y su DNS está en Cloudflare. Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción lo usa como `NEXT_PUBLIC_SITE_URL=https://ucomenu.com`; hay que apuntarlo (sección 5) **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
-- **Legal** (fichas `agile/cambios/textos-legales.md` e `informacion-alimentaria-y-textos-legales.md`): revisión de un abogado argentino de `/terminos`, `/privacidad` y `/alergenos`, y las decisiones del usuario que hoy aparecen como `[Pendiente de definir antes del lanzamiento: …]` en esas páginas. Razón social, CUIT y domicilio se completan en `LEGAL_ENTITY` (`src/lib/legal.ts`). **No publicar mientras alguna página muestre un pendiente.**
+- **Legal** (fichas `agile/cambios/textos-legales.md` e `informacion-alimentaria-y-textos-legales.md`): revisión de un abogado argentino de `/terminos`, `/privacidad` y `/alergenos`, y las decisiones del usuario que hoy aparecen como `[Pendiente de definir antes del lanzamiento: …]` en esas páginas. Razón social, CUIT y domicilio se completan en `LEGAL_ENTITY` (`src/lib/legal.ts`). **No publicar mientras alguna página muestre un pendiente.** Estado al 2026-10-31: `/terminos` ya no tiene marcadores propios; en `/privacidad` quedan 5 (plazo de pedidos y de pagos con un contador, registro de auditoría, cifrado de las copias y transferencias internacionales) más el responsable y el correo de contacto. Hay un test E2E que exige que ya no figuren los resueltos.
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
 
 ## 1. Proyecto de Supabase (aprobación: crea recursos)
 1. Crear el proyecto, en Free al comienzo (ADR 0015), en la región de **São Paulo** (la misma ciudad que la app en Fly).
-2. Aplicar las migraciones con `supabase link` y `supabase db push`. **Nunca** `db reset` ni el `seed.sql` (son datos ficticios y el reset borra todo).
+2. Aplicar las migraciones con `supabase link` y `supabase db push`. **Nunca** `db reset` ni el `seed.sql` (son datos ficticios y el reset borra todo). La migración `20261204100000` ejecuta `create extension if not exists pg_cron` y **programa sola** la tarea `reset-scheduled-table-turns` (paso 4.e): si el `db push` falla ahí, activar `pg_cron` en el panel (Database → Extensions) y repetirlo.
 3. Configuración de Auth en el panel de Supabase (el `config.toml` solo vale en local): registro público apagado; contraseña mínima de 10; sin proveedores sociales. Las cuentas las crea el servidor (SuperAdmin y Dueño).
 4. Verificar que el bucket `product-images` quedó **público**, con tipos JPEG/PNG/WebP y 2 MB por archivo (ADR 0008; lo crea la migración).
 5. Guardar las claves: la **pública** (publishable) y la de **servicio** (secret), y la **conexión directa** a la base (para `pnpm respaldo`).
@@ -59,8 +59,9 @@ Las públicas (`NEXT_PUBLIC_*`) van como argumentos de construcción de la image
 | `NEXT_PUBLIC_SITE_URL` | el dominio definitivo con https, sin ruta |
 | `NEXT_PUBLIC_CONTACT_EMAIL` | el correo real de contacto de la política de privacidad |
 | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` | *(opcional, ADR 0020)* par de claves del aviso de llamados con la pestaña cerrada: `pnpm push:claves` (un par distinto por entorno). La privada es un **secreto de servidor** (`fly secrets set`); la pública también va como secreto/variable de servidor (la pantalla la lee en tiempo de ejecución). Sin ellas el aviso queda apagado |
-| `GEMINI_API_KEY`, `GEMINI_MODEL` | *(opcional; ADR 0046 y 0047)* sugerencia de traducciones y resumen de la analítica con IA. La clave **gratuita** de Gemini sirve solo con datos ficticios (staging): Google puede usar lo enviado para mejorar sus productos. **Antes de producción, con ventas reales, usar un servicio de pago (Claude, por decisión del usuario) y NO cargar la clave gratuita**; sin clave las dos funciones quedan apagadas |
+| `GEMINI_API_KEY`, `GEMINI_MODEL` | *(opcional; ADR 0046 y 0047)* sugerencia de traducciones y resumen de la analítica con IA. **Decisión del usuario (2026-10-31): el proveedor es Gemini por ahora** (si va bien, más adelante se pasa a Claude, lo que exige escribir ese proveedor; hoy no existe). La política de privacidad ya nombra a Google (Gemini). **En producción la clave tiene que ser de un proyecto de Google con facturación (servicio de pago), no la gratuita de AI Studio**: con la gratuita Google puede usar lo enviado para mejorar sus productos y el resumen envía cifras de ventas reales. `pnpm prod:check` lo recuerda. Sin clave las dos funciones quedan apagadas (y la portada anuncia el resumen en Pro: o se carga la clave o se saca esa línea de la portada) |
 | `VAPID_SUBJECT` | *(opcional)* `mailto:` o `https:` de contacto del aviso; si falta se usa `NEXT_PUBLIC_CONTACT_EMAIL`. Para iPhone/iPad conviene una dirección real y accesible: Apple valida este contacto y puede rechazar los avisos si es inválido |
+| `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET` | *(el feed de videos es de Pro y la portada lo anuncia: se tratan como obligatorias; ADR 0031)* credenciales de Mux Video del entorno **Production** (Settings → API Access Tokens, con permisos de Mux Video; el secreto se ve una sola vez) y el *signing secret* del webhook `https://ucomenu.com/api/mux/webhook` (Settings → Webhooks, se crea en Mux una vez que el dominio responde). Los tres son **secretos de servidor** (`fly secrets set`). Sin los dos primeros la pantalla de videos dice que la subida no está configurada; sin el tercero el webhook responde 503 y ningún video sale de «Procesando». Abrir una cuenta de Mux de producción, con su método de pago, es un gasto que aprueba el usuario. Mux también aparece en la política de privacidad |
 
 Las `NEXT_PUBLIC_*` se incrustan **al construir**: cambiarlas exige un nuevo despliegue. `WAITER_CALL_CLIENT_SECRET` también firma el ticket de visita; si se rota, los tickets abiertos dejan de valer (los comensales vuelven a escanear el QR) y cambian los identificadores de cliente (también los `device_key` y `rate_key` de los likes: cada dispositivo puede volver a dar su like una vez; los ya contados quedan).
 
@@ -164,7 +165,7 @@ select cron.schedule(
 Si el atraso creciera (más de 45 000 pedidos vencidos por día), subir el lote (hasta 5000) o la frecuencia; no convertirlo en un bucle. Para dar de baja: `select cron.unschedule('purge-expired-orders');`. `pg_cron` guarda en `cron.job_run_details` el **estado** de cada ejecución (`succeeded` o `failed`, con el error si falló) pero **no el JSON que devuelve la función**: los conteos de lo borrado (pedidos, líneas, opciones y eventos) no quedan registrados por la tarea. Se ven ejecutando la función a mano (`select public.purge_expired_orders(interval '2 years', 500)` devuelve los conteos del lote) y el estado de la purga se verifica con las consultas de abajo. Comprobación después de una ejecución real: estado `succeeded`, `select count(*) from public.orders where status <> 'open' and closed_at < now() - interval '2 years'` igual a 0 y `select tgenabled from pg_trigger where tgname = 'order_events_no_update_delete'` igual a `O` (encendido). Para probar con datos ficticios en staging: crear un pedido, cerrarlo, envejecer su `closed_at` como `postgres` (con `set session_replication_role = replica`) y ejecutar `select public.purge_expired_orders(interval '2 years', 500)` a mano. **El borrado es irreversible** (solo el respaldo, paso 6).
 
 ### 4.d Programar la purga de reservas (aprobación: infraestructura)
-La función `public.purge_expired_reservations` existe (ADR 0051; ficha `reservas-de-mesa`) pero nada la ejecuta: sin esto los datos personales de las reservas (nombre, teléfono y email) se acumulan. Borra, por lotes, las reservas **terminadas hace más de 30 días** (por la hora de fin de la reserva, cualquiera sea su estado) y devuelve cuántas borró. Tiene un piso de 7 días y solo la llama `service_role`. **El plazo de 30 días tiene que coincidir con el texto de privacidad** (que hay que actualizar antes de abrir el formulario público, fase 2). Un lote por ejecución:
+La función `public.purge_expired_reservations` existe (ADR 0051; ficha `reservas-de-mesa`) pero nada la ejecuta: sin esto los datos personales de las reservas (nombre, teléfono y email) se acumulan. Borra, por lotes, las reservas **terminadas hace más de 30 días** (por la hora de fin de la reserva, cualquiera sea su estado) y devuelve cuántas borró. Tiene un piso de 7 días y solo la llama `service_role`. **El plazo de 30 días tiene que coincidir con el texto de privacidad** (`RESERVATION_RETENTION_DAYS` en `src/lib/legal.ts`; la política ya describe las reservas manuales desde 2026-10-31 y hay que actualizarla otra vez antes de abrir el formulario público, fase 2). Un lote por ejecución:
 ```sql
 select cron.schedule(
   'purge-expired-reservations',
@@ -175,6 +176,19 @@ select cron.schedule(
 Para dar de baja: `select cron.unschedule('purge-expired-reservations');`. Si el atraso creciera, subir el lote (hasta 5000) o repetir la ejecución durante la madrugada. Comprobación después de la primera ejecución real: `select status, return_message, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'purge-expired-reservations') order by start_time desc limit 3;` tiene que mostrar `succeeded`.
 
 **Staging: programada el 2026-10-31** (tarea `purge-expired-reservations`, `15 6 * * *`, la tercera junto a `purge-waiter-calls` y `reset-scheduled-table-turns`), con `supabase db query --linked`. La función respondió `0` (no había nada vencido). **Producción: pendiente** hasta que exista el proyecto.
+
+### 4.e Tareas que ya programan las migraciones, y el historial de `pg_cron` (aprobación: infraestructura)
+- **`reset-scheduled-table-turns`** (cada minuto, `* * * * *`): la crea la migración `20261204100000` y ejecuta `private.run_scheduled_table_resets()`, el reinicio programado de los QR por sucursal (ficha `reinicio-programado-qr`). No hay nada que programar a mano; **hay que comprobar que quedó**: `select jobid, jobname, schedule, active from cron.job;` tiene que listarla con `active = true`, y `select status, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'reset-scheduled-table-turns') order by start_time desc limit 3;` tiene que mostrar `succeeded` con un minuto de diferencia. Para pausarla: `select cron.unschedule('reset-scheduled-table-turns');` (el reinicio individual de cada mesa sigue disponible).
+- **El historial crece.** Esa tarea escribe una fila por minuto en `cron.job_run_details` (unas 1.440 por día; en staging ya había 9.289 el 2026-10-31). Sin limpieza, la tabla crece para siempre. Tarea diaria a las 03:30 de Argentina (06:30 UTC) que conserva 7 días:
+```sql
+select cron.schedule(
+  'prune-cron-history',
+  '30 6 * * *',
+  $$ delete from cron.job_run_details where end_time < now() - interval '7 days' $$
+);
+```
+Para dar de baja: `select cron.unschedule('prune-cron-history');`. Con 7 días alcanza para ver una purga fallida (las comprobaciones de arriba miran las últimas ejecuciones); las cifras de lo borrado no se guardan ahí de todos modos.
+- **Estado en staging (2026-10-31):** `purge-waiter-calls`, `reset-scheduled-table-turns` y `purge-expired-reservations` están programadas; `purge-video-comments`, `purge-expired-orders` y `prune-cron-history` **todavía no** (nunca corrieron por cron, solo a mano). El SQL listo está en las secciones 4.b, 4.c y arriba; ese día se comprobó, solo leyendo, que en staging no había nada vencido que borrar (0 comentarios y 0 pedidos) y que el disparador de solo-agregado de `order_events` está encendido (`O`). Programarlas en staging y mirar `cron.job_run_details` tras la primera ejecución es el ensayo que falta antes de repetirlo en producción.
 
 ## 5. Dominio (aprobación: DNS y app de producción)
 `ucomenu.com` ya es del usuario (DNS en Cloudflare). Este paso se hace cuando exista la app de producción en Fly (`fly.toml`, hoy plantilla):
@@ -189,6 +203,8 @@ Correr `pnpm respaldo` contra el proyecto y **ensayar la restauración en stagin
 
 ## 7. Monitoreo de errores
 Inicialmente solo los registros de Fly (`fly logs`) y de Supabase, más la revisión semanal del consumo (`docs/operacion.md`, secciones 3 y 6). Sentry está postergado (ADR 0015).
+- **Mínimo recomendado antes del primer cliente: un monitor de disponibilidad externo y gratuito** (por ejemplo UptimeRobot o Better Stack, plan gratis, aviso por email o WhatsApp) sobre dos direcciones: `https://ucomenu.com/` y la carta de la demo estable (`/m/<demo>/<sucursal>`, que además toca la base). Intervalo de 5 minutos. Registrarse en un servicio externo es una decisión del usuario; no manda datos de clientes, solo consulta URLs públicas. Fly ya reinicia la máquina si falla el chequeo de `/` (`fly.toml`), pero no avisa a nadie.
+- **Revisión semanal** (cinco minutos): la lista de `cron.job_run_details` con `status = 'failed'`, `fly status` y el consumo de Supabase.
 
 ## 8. Comprobación posterior
 Con la app publicada y sin datos reales todavía:
@@ -198,13 +214,17 @@ Con la app publicada y sin datos reales todavía:
 - **La máquina:** con una pantalla de sala abierta un rato, anotar la memoria y la CPU de la máquina en el panel de Fly (la imagen midió ~80 MB en reposo; criterios en `docs/operacion.md`, sección 5); confirmar que `/sala/{slug}/estado` responde 401 JSON sin sesión.
 - `/terminos`, `/privacidad` y `/alergenos` abren, el contacto es el real y **ninguna muestra «Pendiente de definir»** (`data-testid="pendiente-legal"`: cero elementos).
 - No hay cookies en la carta pública (`/m/...`).
+- **Cabeceras y robots:** `curl -I https://ucomenu.com/` muestra `strict-transport-security`, `x-content-type-options: nosniff` y `x-frame-options: SAMEORIGIN`, y no muestra `x-powered-by`; `https://ucomenu.com/robots.txt` permite `/` y prohíbe `/panel/`, `/sala/`, `/cocina/`, `/admin/` y `/t/` (en staging prohíbe todo).
+- **Videos:** subir un video corto desde un local de ensayo y ver que sale de «Procesando» (confirma las claves de Mux y el webhook).
+- **IA:** con la clave de pago cargada, «Sugerir con IA» y «Generar resumen» responden; sin clave, los botones no aparecen.
 - La purga programada corrió y no quedan llamados de más de 14 días (paso 4).
 - La purga de comentarios corrió y no quedan rechazados de más de 7 días ni pendientes de más de 30 (paso 4.b).
 - La purga de pedidos corrió y no quedan pedidos cerrados o anulados de más de 2 años, con el registro de solo-agregado encendido (paso 4.c).
+- La purga de reservas corrió (paso 4.d), la tarea de reinicio de QR figura activa y con `succeeded` cada minuto, y la limpieza del historial corrió (paso 4.e).
 - Probar en un teléfono real lo pendiente del tablero: ticket de visita con la pantalla apagada y la pantalla «Llamados».
 
 ## Marcha atrás
 - **Aplicación:** volver a la versión anterior (`fly releases` y `fly deploy --image <imagen anterior>`).
 - **Base:** las migraciones traen su rollback en el encabezado. No se baja una migración en una base con datos reales sin aprobación; la purga de `waiter_calls` es irreversible y no tiene respaldo (aceptado, ADR 0014).
-- **Purga mal programada:** `cron.unschedule('purge-waiter-calls')`, `cron.unschedule('purge-video-comments')` o `cron.unschedule('purge-expired-orders')`.
+- **Purga mal programada:** `cron.unschedule('purge-waiter-calls')`, `cron.unschedule('purge-video-comments')`, `cron.unschedule('purge-expired-orders')`, `cron.unschedule('purge-expired-reservations')` o `cron.unschedule('prune-cron-history')`.
 - **Datos perdidos o dañados:** restaurar desde el último respaldo propio (`docs/operacion.md`, sección 2).
