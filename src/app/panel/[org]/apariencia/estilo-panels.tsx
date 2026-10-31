@@ -17,11 +17,11 @@ type Option = { key: string; name: string; description: string };
 const optionClass = "flex min-h-16 cursor-pointer items-start gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60";
 
 /** Opciones excluyentes (radio) con nombre y descripción. */
-function OptionGroup({ legend, field, options, value, saved, onChange, columns = "sm:grid-cols-2 2xl:grid-cols-3" }: { legend: string; field: string; options: Option[]; value: string; saved: string; onChange: (key: string) => void; columns?: string }) {
+function OptionGroup({ legend, field, options, value, saved, onChange }: { legend: string; field: string; options: Option[]; value: string; saved: string; onChange: (key: string) => void }) {
   return (
     <fieldset className="min-w-0">
       <legend className="mb-2 text-sm font-medium text-muted">{legend}</legend>
-      <div className={`grid grid-cols-1 gap-3 ${columns}`}>
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-3">
         {options.map(option => (
           <label key={option.key} className={optionClass}>
             <input key={`${option.key}:${saved}`} type="radio" name={`ui-${field}`} value={option.key} checked={value === option.key} onChange={() => onChange(option.key)} className="mt-1 size-4 shrink-0 accent-cobalt" />
@@ -58,7 +58,7 @@ export function LookGallery({ style, onChange, canWrite }: Omit<StyleProps, "sav
       <Heading id="looks" title="Empezá con un look">Una combinación lista de colores, estilo, letra y detalles. Después podés ajustar lo que quieras.</Heading>
       <fieldset disabled={!canWrite} className="mt-4 min-w-0">
         <legend className="sr-only">Looks</legend>
-        <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,15rem),1fr))] gap-3">
           {LOOK_KEYS.map(key => {
             const look = LOOKS[key];
             const palette = PALETTES[look.palette];
@@ -98,7 +98,7 @@ export function StylePanel({ style, saved, onChange, canWrite }: StyleProps) {
           {GROUPS.map(group => (
             <div key={group.scheme} className="mt-4 first:mt-0">
               <p className="mb-2 text-sm font-medium text-muted">{group.title}</p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 2xl:grid-cols-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))] gap-3">
                 {PALETTE_KEYS.filter(key => PALETTES[key].scheme === group.scheme).map(key => {
                   const p = PALETTES[key];
                   return (

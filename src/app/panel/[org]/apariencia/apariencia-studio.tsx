@@ -88,7 +88,7 @@ export function AparienciaStudio(props: {
   const previewSocial = { instagram: now.instagram ?? null, whatsapp: now.whatsapp ?? null };
 
   return (
-    <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_34rem] xl:items-start">
+    <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(26rem,32rem)] xl:items-start">
       <div className="min-w-0">
         <div role="tablist" aria-label="Secciones de la apariencia" className="flex gap-1 overflow-x-auto border-b border-ink/20">
           {TABS.map((item, index) => (
@@ -138,7 +138,7 @@ export function AparienciaStudio(props: {
                 <div hidden={!styleTab} className="sticky bottom-0 z-10 -mx-4 mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-ink/15 bg-porcelain/95 px-4 py-3 backdrop-blur sm:-mx-8 sm:px-8 xl:mx-0 xl:rounded-2xl xl:border xl:px-4">
                   <fieldset disabled={!canWrite} className="contents">
                     <SubmitButton pendingLabel="Guardando…">Guardar apariencia</SubmitButton>
-                    <button type="button" onClick={() => setStyle(saved.style)} disabled={!canWrite || !styleDirty} className={secondaryButtonClass}>Descartar<span className="hidden sm:inline"> cambios</span></button>
+                    <button type="button" onClick={() => setStyle(saved.style)} disabled={!canWrite || !styleDirty} className={secondaryButtonClass}><span>Descartar<span className="hidden sm:inline"> cambios</span></span></button>
                   </fieldset>
                   <p aria-live="polite" className="min-w-0 text-sm text-muted">
                     {styleDirty ? <><span className="sm:hidden">Cambios sin guardar</span><span className="hidden sm:inline">Tenés cambios sin guardar: la vista previa los muestra, tu carta todavía no.</span></> : "Sin cambios pendientes."}

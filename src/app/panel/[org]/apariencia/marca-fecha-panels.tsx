@@ -147,7 +147,7 @@ export function DatesPanel({ orgSlug, canWrite, draft, onDraft, saved, status }:
           <legend className="sr-only">Fecha especial</legend>
           <input type="hidden" name="org" value={orgSlug} />
           <p data-testid="tema-estado" className="font-medium">{statusText(status)}</p>
-          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+          <div className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(min(100%,13rem),1fr))] gap-3">
             {[NO_THEME, ...THEME_KEYS].map(key => (
               <label key={key} className="flex min-h-16 cursor-pointer items-start gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
                 <input key={`${key}:${saved.theme}`} type="radio" name="theme" value={key} checked={draft.selected === key} onChange={() => onDraft({ selected: key as Theme | typeof NO_THEME })} className="mt-1 size-4 shrink-0 accent-cobalt" />

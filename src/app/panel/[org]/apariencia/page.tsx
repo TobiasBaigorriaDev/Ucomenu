@@ -21,7 +21,7 @@ export default async function AparienciaPage({ params }: PageProps<"/panel/[org]
   const look = readLook(identity);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
+    <main className="mx-auto max-w-7xl px-4 2xl:max-w-[96rem] py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Apariencia</h1>
       <p className="mt-2 max-w-prose text-base text-muted">El logo, los colores, la tipografía, el estilo, los datos y las fechas especiales identifican a tu local en la carta de todas tus sucursales. Probá lo que quieras: la vista previa muestra los cambios antes de guardarlos.</p>
       {!canWrite ? <p className="mt-4 font-medium">Podés ver tu apariencia, pero no editarla mientras la cuenta no permita cambios.</p> : null}
