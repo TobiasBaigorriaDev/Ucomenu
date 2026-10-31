@@ -35,10 +35,10 @@ function Plan({ plan, destacado, anual }: { plan: PlanVendido; destacado?: boole
       <h3>{plan.nombre}</h3>
       <div>
         <p className="mk-precio">
-          <strong>{anual ? (plan.anualArs === null ? "Consultar" : `ARS ${plan.anualArs.toLocaleString("es-AR")}`) : precioArs(plan)}</strong>
+          <strong>{anual ? `ARS ${plan.anualArs.toLocaleString("es-AR")}` : precioArs(plan)}</strong>
           <span>{anual ? "por año" : "por mes"}</span>
         </p>
-        <p className="mk-nota">{anual ? (plan.anualArs === null ? "Precio anual a confirmar." : `Equivale a ARS ${(plan.anualArs / 12).toLocaleString("es-AR")} por mes.`) : "Pagás mes a mes."}</p>
+        <p className="mk-nota">{anual ? `Equivale a ARS ${(plan.anualArs / 12).toLocaleString("es-AR")} por mes.` : "Pagás mes a mes."}</p>
       </div>
       <ul className="mk-plan-list">
         {INCLUYE[plan.code].map((i) => (

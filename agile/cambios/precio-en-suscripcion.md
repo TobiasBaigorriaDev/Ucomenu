@@ -11,8 +11,10 @@ Nivel: M (solo muestra el precio de lista del catálogo y lo que `org_entitlemen
 - **Prueba gratuita:** «Sin costo durante la prueba» y, debajo, lo que sigue después. **Sin ciclo conocido y fuera de la prueba no se muestra precio** (no se adivina).
 - Solo el Dueño (la página ya exige `requireOwner`). Sin dependencias ni cambios de esquema. Lógica pura en `src/lib/cuenta/precio.ts`.
 
+> **Actualización 2026-10-31:** el catálogo pasó a pesos ([precios en pesos](precios-en-pesos.md)); la pantalla muestra «$ 29.000 ARS por mes» o «$ 278.400 ARS por año». Lo de abajo describe la primera versión, en dólares.
+
 ## Aceptación
-- [x] Plan mensual: «US$ 40 USD por mes»; anual: «US$ 380 USD por año» (valores del catálogo local).
+- [x] Plan mensual: «US$ 40 USD por mes»; anual: «US$ 380 USD por año» (valores del catálogo local en ese momento).
 - [x] Con sucursales adicionales, una línea aparte en ARS por mes con la cantidad en singular o plural.
 - [x] En la prueba gratuita no cuesta nada y avisa el precio posterior.
 - [x] El último pago vigente aparece solo en la primera página de pagos.

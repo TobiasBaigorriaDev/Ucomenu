@@ -39,7 +39,7 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
   const [account, catalog] = await Promise.all([
     // La base vuelve a comprobar que sea Dueño y entrega solo lo que puede ver (ADR 0021).
     loadOwnerAccount(db, membership.org.id, before),
-    // Precio de lista del plan (catálogo en USD, de lectura con sesión): con el ciclo de la cuenta da lo que cuesta por mes o por año.
+    // Precio de lista del plan (catálogo en pesos, de lectura con sesión): con el ciclo de la cuenta da lo que cuesta por mes o por año.
     ent?.plan ? loadPlanPrice(db, ent.plan) : null,
   ]);
   const price = describePrice(ent, catalog);

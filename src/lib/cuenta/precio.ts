@@ -3,15 +3,16 @@ import type { Entitlements } from "@/lib/entitlements";
 
 /**
  * Cuánto cuesta la suscripción del Dueño (ficha precio-en-suscripcion). Son los PRECIOS DE LISTA: el del plan sale del catálogo
- * (`plans`, en USD, legible con sesión) según el plan y el ciclo de la cuenta; el de las sucursales adicionales, de lo que ya entrega
- * `org_entitlements` al Dueño. Lo que se pagó de verdad (importe y moneda del cobro manual) vive en «Pagos». Las dos monedas no se
- * suman nunca (no hay tipo de cambio acá): cada una va en su línea. Puro: se prueba en `precio.test.ts`.
+ * (`plans`, en pesos, legible con sesión) según el plan y el ciclo de la cuenta; el de las sucursales adicionales, de lo que ya entrega
+ * `org_entitlements` al Dueño. Lo que se pagó de verdad (importe y moneda del cobro manual) vive en «Pagos». Cada precio va en su
+ * línea con su moneda y no se suman (no hay tipo de cambio acá). Un plan sin precio de lista (Premium, que no se vende) no muestra
+ * ninguno: no se inventa una cifra. Puro: se prueba en `precio.test.ts`.
  */
 
-export type PlanCatalogPrice = { monthlyUsdCents: number; yearlyUsdCents: number };
+export type PlanCatalogPrice = { monthlyCents: number | null; yearlyCents: number | null; currency: string };
 
 export type PriceSummary = {
-  /** Lo principal: «US$ 40 USD por mes» o, en la prueba gratuita, «Sin costo durante la prueba». */
+  /** Lo principal: «$ 29.000 ARS por mes» o, en la prueba gratuita, «Sin costo durante la prueba». */
   headline: string;
   /** Detalle: lo que sigue después de la prueba y las sucursales adicionales. */
   lines: string[];
@@ -19,11 +20,11 @@ export type PriceSummary = {
 
 const plural = (n: number, uno: string, varios: string) => `${n} ${n === 1 ? uno : varios}`;
 
-/** «US$ 40 USD por mes» / «US$ 380 USD por año»; `null` si falta el ciclo o el catálogo. */
+/** «$ 29.000 ARS por mes» / «$ 278.400 ARS por año»; `null` si falta el ciclo, el catálogo o el precio de lista del plan. */
 export function planPriceText(cycle: string | undefined, catalog: PlanCatalogPrice | null): string | null {
   if (!catalog) return null;
-  if (cycle === "monthly") return `${formatMoney(catalog.monthlyUsdCents, "USD")} por mes`;
-  if (cycle === "yearly") return `${formatMoney(catalog.yearlyUsdCents, "USD")} por año`;
+  if (cycle === "monthly" && catalog.monthlyCents !== null) return `${formatMoney(catalog.monthlyCents, catalog.currency)} por mes`;
+  if (cycle === "yearly" && catalog.yearlyCents !== null) return `${formatMoney(catalog.yearlyCents, catalog.currency)} por año`;
   return null;
 }
 

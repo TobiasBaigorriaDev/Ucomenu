@@ -39,9 +39,9 @@ export async function loadOwnerAccount(db: Db, orgId: string, before: { payments
   };
 }
 
-/** Precio de lista del plan en el catálogo (USD, centavos), o `null` si no se puede leer. La tabla `plans` es de lectura con sesión. */
+/** Precio de lista del plan en el catálogo (centavos de su moneda, hoy pesos), o `null` si no se puede leer. La tabla `plans` es de lectura con sesión. */
 export async function loadPlanPrice(db: Db, planCode: string): Promise<PlanCatalogPrice | null> {
-  const { data, error } = await db.from("plans").select("monthly_price_usd_cents, yearly_price_usd_cents").eq("code", planCode).maybeSingle();
+  const { data, error } = await db.from("plans").select("monthly_price_cents, yearly_price_cents, price_currency").eq("code", planCode).maybeSingle();
   if (error || !data) return null;
-  return { monthlyUsdCents: data.monthly_price_usd_cents, yearlyUsdCents: data.yearly_price_usd_cents };
+  return { monthlyCents: data.monthly_price_cents, yearlyCents: data.yearly_price_cents, currency: data.price_currency };
 }

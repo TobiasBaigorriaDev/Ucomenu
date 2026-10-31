@@ -30,6 +30,12 @@ describe("planes de la portada", () => {
   it("muestra los precios mensuales en pesos", () => {
     expect(PLANES.map(precioArs)).toEqual(["ARS 14.900", "ARS 29.000"]);
     expect(PLANES[0].anualArs).toBe(143_040);
-    expect(PLANES[0].anualArs! / 12).toBe(11_920);
+    expect(PLANES[0].anualArs / 12).toBe(11_920);
+  });
+
+  it("los dos planes tienen precio anual, con el mismo 20 % menos que doce meses", () => {
+    expect(PLANES.map((p) => p.anualArs)).toEqual([143_040, 278_400]);
+    for (const plan of PLANES) expect(plan.anualArs).toBe(plan.mensualArs * 12 * 0.8);
+    expect(PLANES[1].anualArs / 12).toBe(23_200);
   });
 });

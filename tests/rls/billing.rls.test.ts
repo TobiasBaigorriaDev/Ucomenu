@@ -520,7 +520,7 @@ describe("tablas de planes y suscripciones", () => {
       const db = usuario.db;
       const resultados = [
         await db.from("plans").update({ max_active_products: 9999 }).eq("code", "basic"),
-        await db.from("plans").insert({ code: "pro", name: "x", monthly_price_usd_cents: 1, yearly_price_usd_cents: 1 }),
+        await db.from("plans").insert({ code: "pro", name: "x", monthly_price_cents: 1, yearly_price_cents: 1 }),
         await db.from("plans").delete().eq("code", "basic"),
         await db.from("addons").insert({ code: "tt_x", name: "x", monthly_price_usd_cents: 1, base_model_quota: 1, pack_size: 1, pack_monthly_price_usd_cents: 1, allowed_plans: ["pro"] }),
         await db.from("plans").update({ max_videos_published: 9999 }).eq("code", "pro"),

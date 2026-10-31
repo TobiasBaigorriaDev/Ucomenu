@@ -4,7 +4,7 @@ import { createTenant, expectNoHorizontalOverflow, login, service, type Tenant }
 
 /**
  * Lo que el Dueño paga (ficha precio-en-suscripcion) contra el build y el Supabase local, a 390 px: el precio de lista de su plan por
- * mes o por año según su ciclo, las sucursales adicionales aparte (otra moneda, sin sumar), el último pago y la prueba gratuita sin costo.
+ * mes o por año según su ciclo, las sucursales adicionales aparte (cada una en su línea, sin sumar), el último pago y la prueba gratuita sin costo.
  */
 
 const ADMIN_ID = "a0000000-0000-4000-8000-000000000008"; // SuperAdmin del seed
@@ -48,7 +48,7 @@ test.describe("Suscripción: lo que paga el Dueño", () => {
     const page = await context.newPage();
     await login(page, t.owner.email, t.owner.password);
     await page.goto(`/panel/${t.slug}/suscripcion`);
-    await expect(page.getByTestId("suscripcion-precio-valor")).toHaveText(/US\$\s?380 USD por año/);
+    await expect(page.getByTestId("suscripcion-precio-valor")).toHaveText(/\$\s?278\.400 ARS por año/);
     await expect(page.getByTestId("suscripcion-precio-linea")).toHaveCount(0);
     expect(plain(await page.getByTestId("suscripcion-ultimo-pago").textContent())).toContain("$ 20.000 ARS");
     await expect(page.getByTestId("suscripcion-precio-nota")).toContainText("precios de lista");
@@ -56,13 +56,13 @@ test.describe("Suscripción: lo que paga el Dueño", () => {
     await context.close();
   });
 
-  test("plan Pro mensual con sucursales adicionales: el plan en USD y las adicionales en ARS, cada una en su línea", async ({ page }) => {
+  test("plan Pro mensual con sucursales adicionales: el plan y las adicionales, cada una en su línea", async ({ page }) => {
     const t = await local("precio-adicionales", "pro", "monthly");
     const alta = await service().from("subscription_addons").insert({ organization_id: t.orgId, addon_code: "extra_branch", extra_packs: 2 });
     expect(alta.error).toBeNull();
     await login(page, t.owner.email, t.owner.password);
     await page.goto(`/panel/${t.slug}/suscripcion`);
-    await expect(page.getByTestId("suscripcion-precio-valor")).toHaveText(/US\$\s?40 USD por mes/);
+    await expect(page.getByTestId("suscripcion-precio-valor")).toHaveText(/\$\s?29\.000 ARS por mes/);
     expect(plain(await page.getByTestId("suscripcion-precio-linea").textContent())).toBe("Más $ 24.000 ARS por mes por 2 sucursales adicionales.");
     await expect(page.getByTestId("suscripcion-ultimo-pago")).toHaveCount(0);
   });
@@ -74,7 +74,7 @@ test.describe("Suscripción: lo que paga el Dueño", () => {
     await login(page, t.owner.email, t.owner.password);
     await page.goto(`/panel/${t.slug}/suscripcion`);
     await expect(page.getByTestId("suscripcion-precio-valor")).toHaveText("Sin costo durante la prueba");
-    expect(plain(await page.getByTestId("suscripcion-precio-linea").first().textContent())).toBe("Después de la prueba: US$ 20 USD por mes.");
+    expect(plain(await page.getByTestId("suscripcion-precio-linea").first().textContent())).toBe("Después de la prueba: $ 14.900 ARS por mes.");
   });
 
   test("el Personal no ve ningún precio", async ({ page }) => {
@@ -83,6 +83,6 @@ test.describe("Suscripción: lo que paga el Dueño", () => {
     await page.goto(`/panel/${t.slug}/suscripcion`);
     await expect(page.getByTestId("suscripcion-precio")).toHaveCount(0);
     await expect(page.getByTestId("suscripcion-precio-valor")).toHaveCount(0);
-    await expect(page.getByText("US$")).toHaveCount(0);
+    await expect(page.getByText(/\$\s?29\.000/)).toHaveCount(0);
   });
 });

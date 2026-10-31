@@ -71,6 +71,20 @@ test("muestra los precios mensuales en pesos", async ({ page }) => {
   await expect(page.locator("article.mk-plan-pro .mk-precio")).toContainText("ARS 29.000");
 });
 
+test("el precio anual de los dos planes está en pesos, con su equivalente mensual, y nada queda «a confirmar»", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Anual" }).click();
+  const basico = page.locator(".mk-plan").first();
+  const pro = page.locator("article.mk-plan-pro");
+  await expect(basico.locator(".mk-precio")).toContainText("ARS 143.040");
+  await expect(basico.locator(".mk-nota")).toContainText("ARS 11.920 por mes");
+  await expect(pro.locator(".mk-precio")).toContainText("ARS 278.400");
+  await expect(pro.locator(".mk-nota")).toContainText("ARS 23.200 por mes");
+  const texto = await page.locator("#precios").innerText();
+  expect(texto).not.toMatch(/a confirmar|consultar el precio/i);
+  expect(texto).not.toMatch(/USD|US\$/);
+});
+
 test("se ofrecen solo Básico y Pro: sin Premium y sin funciones «Pronto»", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("article.mk-plan")).toHaveCount(2);

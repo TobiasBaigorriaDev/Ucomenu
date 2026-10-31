@@ -499,14 +499,14 @@ isOneToOne: true
                   ]
                 },"plans": {
                   Row: {
-                    "code": string,"created_at": string,"features": (string)[],"max_active_products": number | null,"max_branches": number | null,"max_tables_per_branch": number | null,"max_videos_published": number | null,"monthly_price_usd_cents": number,"name": string,"yearly_price_usd_cents": number
+                    "code": string,"created_at": string,"features": (string)[],"max_active_products": number | null,"max_branches": number | null,"max_tables_per_branch": number | null,"max_videos_published": number | null,"monthly_price_cents": number | null,"name": string,"price_currency": string,"yearly_price_cents": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "code": string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"max_videos_published"?: number | null,"monthly_price_usd_cents": number,"name": string,"yearly_price_usd_cents": number
+                    "code": string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"max_videos_published"?: number | null,"monthly_price_cents"?: number | null,"name": string,"price_currency"?: string,"yearly_price_cents"?: number | null
                   }
                   Update: {
-                    "code"?: string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"max_videos_published"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"yearly_price_usd_cents"?: number
+                    "code"?: string,"created_at"?: string,"features"?: (string)[],"max_active_products"?: number | null,"max_branches"?: number | null,"max_tables_per_branch"?: number | null,"max_videos_published"?: number | null,"monthly_price_cents"?: number | null,"name"?: string,"price_currency"?: string,"yearly_price_cents"?: number | null
                   }
                   Relationships: [
                     
