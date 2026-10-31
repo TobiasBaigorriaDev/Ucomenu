@@ -4,7 +4,7 @@ Actualizado: 2026-10-31 · agente saliente: Claude.
 
 ## Punto de retomada
 
-**`main` en `309e3a0`+ (commits locales, 6 por delante de `origin/main` `b49ed9d`; no se subieron).** Desplegado en **staging: Fly v89** (migración `20261216100000` aplicada, la siguiente libre es `20261217100000`). Contiene:
+**`main` en `9336ebf` (commits locales, 7 por delante de `origin/main` `b49ed9d`; no se subieron).** Desplegado en **staging: Fly v89** (migración `20261216100000` aplicada, la siguiente libre es `20261217100000`). Contiene:
 
 - **Precios en pesos [C]** ([ficha](cambios/precios-en-pesos.md)): catálogo y portada en ARS (Pro anual 278.400; Premium sin precio de lista). Codex lo revisó en 3 rondas (todo atendido) y lo aprobaste vos para staging. Falta ver Suscripción con una sesión real de Dueño y en un teléfono.
 - **Cierre de la revisión [M]** ([ficha](cambios/cierre-revision-de-lanzamiento.md)): textos legales (reservas, Gemini, gracia, baja, plazos), cabeceras de seguridad, `robots.txt`, avisos de `prod:check`, `docs/produccion.md` y la recomendación de respaldos en `docs/operacion.md`.
