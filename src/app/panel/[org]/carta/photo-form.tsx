@@ -14,13 +14,13 @@ const MAX_SIDE = 1600;
 const KEEP_AS_IS_BYTES = 1.5 * 1024 * 1024;
 const QUALITY = 0.85;
 
-const kb = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`);
+export const kb = (bytes: number) => (bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} KB` : `${(bytes / (1024 * 1024)).toFixed(1)} MB`);
 
 /**
  * Reduce la foto en el navegador (Canvas, sin dependencias): una foto de celular pesa 3 a 8 MB y el servidor
  * acepta hasta 2 MB. Respeta la orientación EXIF. Si algo falla devuelve la original (el servidor decide).
  */
-async function shrink(file: File): Promise<File> {
+export async function shrink(file: File): Promise<File> {
   try {
     const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
     const longest = Math.max(bitmap.width, bitmap.height);

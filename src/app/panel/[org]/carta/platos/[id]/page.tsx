@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
+import { parsePending, type AltaPending } from "@/lib/carta/alta-campos";
 import { loadCarta } from "@/lib/carta/catalog";
 import { loadProductOptions } from "@/lib/carta/options";
 import { loadProductAvailability } from "@/lib/carta/availability";
@@ -19,9 +20,12 @@ import { EditorTabs } from "./editor-tabs";
 
 export const metadata: Metadata = { title: "Editar plato" };
 
+const PENDING_LABEL: Record<AltaPending, string> = { foto: "la foto", opciones: "alguna variante u opción", precios: "algún precio por sucursal" };
+const listFormat = new Intl.ListFormat("es-AR", { style: "long", type: "conjunction" });
+
 export default async function EditProductPage({ params, searchParams }: PageProps<"/panel/[org]/carta/platos/[id]">) {
   const { org, id } = await params;
-  const { nuevo } = await searchParams;
+  const { nuevo, pendiente } = await searchParams;
   const { membership } = await requireMembership(org, `/panel/${org}/carta/platos/${id}`);
 
   const productId = asUuid(id);
@@ -41,6 +45,8 @@ export default async function EditProductPage({ params, searchParams }: PageProp
 
   const canWrite = ent?.canWrite === true;
   const notice = writeBlockNotice(ent);
+  // Piezas del alta unificada que no se pudieron guardar (`?pendiente=`): el plato existe, se completa desde acá.
+  const faltante = parsePending(pendiente);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-8 lg:px-10 lg:py-10">
@@ -59,7 +65,12 @@ export default async function EditProductPage({ params, searchParams }: PageProp
       <h1 className="font-display text-4xl leading-tight break-words">{product.name}</h1>
       {nuevo ? (
         <p role="status" className="mt-2 text-lg font-medium" data-testid="plato-creado">
-          Plato creado. Si querés, sumale una foto acá abajo.
+          Plato creado.{faltante.length === 0 ? " Si querés, sumale lo que falte desde acá." : ""}
+        </p>
+      ) : null}
+      {nuevo && faltante.length > 0 ? (
+        <p role="alert" className="mt-2 max-w-prose text-base font-medium" data-testid="alta-pendiente">
+          El plato quedó creado, pero no se pudo guardar {listFormat.format(faltante.map((piece) => PENDING_LABEL[piece]))}. Revisalo acá abajo y cargalo de nuevo.
         </p>
       ) : null}
       {product.is_active ? null : <p className="mt-2 text-base text-muted">Este plato está inactivo: no se ve en la carta.</p>}

@@ -1,6 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { parseAltaExtras, saveAltaExtras } from "@/lib/carta/alta";
+import { BRANCH_PRICE_FIELD } from "@/lib/carta/alta-campos";
 import { loadBranchesToHide } from "@/lib/carta/availability";
 import {
   cartaErrorMessage,
@@ -18,6 +20,7 @@ import {
   updateProduct,
   type Result,
 } from "@/lib/carta/catalog";
+import { getEntitlements } from "@/lib/auth/session";
 import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
 import { NOT_FOUND, outcome, prepare, refresh, text } from "./action-helpers";
@@ -74,7 +77,7 @@ export async function rowAction(_previous: FormState, formData: FormData): Promi
 
 // --- Platos ---------------------------------------------------------------------
 
-/** Crea (sin `id`) o edita (con `id`) un plato. Al crear, sigue en la pantalla del plato para sumarle la foto. */
+/** Crea (sin `id`) o edita (con `id`) un plato. Al crear (alta unificada) guarda también la foto, las variantes y los precios por sucursal, y sigue en la pantalla del plato. */
 export async function saveProductAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const { slug, orgId, db } = await prepare(formData);
 
@@ -104,10 +107,22 @@ export async function saveProductAction(_previous: FormState, formData: FormData
   // Si no se pudieron leer las sucursales no se crea nada: se publicaría el plato en todas, contra lo que la persona eligió.
   if (!hiddenBranches) return { error: cartaErrorMessage("unexpected", null), values: { ...values, active: formData.get("active") === "on" ? "on" : "" } };
 
+  // Lo que se vuelve a mostrar si algo falla: los datos, si estaba activo y el precio propio de cada sucursal (la foto y los grupos viven en el navegador).
+  const retained = {
+    ...values,
+    active: formData.get("active") === "on" ? "on" : "",
+    ...Object.fromEntries([...formData.entries()].filter((entry): entry is [string, string] => entry[0].startsWith(BRANCH_PRICE_FIELD) && typeof entry[1] === "string")),
+  };
+  // Foto, variantes y precios por sucursal se validan ANTES de crear: un dato inválido no deja un plato a medias.
+  const extras = await parseAltaExtras(formData, shown);
+  if (!extras.ok) return { error: cartaErrorMessage(extras.error, await getEntitlements(orgId)), values: retained };
+
   const result = await createProduct(db, orgId, { ...input, active: formData.get("active") === "on", hiddenBranches });
-  if (!result.ok) return outcome(slug, orgId, result, "", { ...values, active: formData.get("active") === "on" ? "on" : "" });
+  if (!result.ok) return outcome(slug, orgId, result, "", retained);
+  // El plato ya existe: lo que falle de ahora en más se informa como pendiente y se completa en su editor; nunca se vuelve a crear.
+  const pending = await saveAltaExtras(db, orgId, result.data.id, extras.data);
   refresh(slug, orgId);
-  redirect(`/panel/${slug}/carta/platos/${result.data.id}?nuevo=1`);
+  redirect(`/panel/${slug}/carta/platos/${result.data.id}?nuevo=1${pending.length > 0 ? `&pendiente=${pending.join(",")}` : ""}`);
 }
 
 export async function uploadPhotoAction(_previous: FormState, formData: FormData): Promise<FormState> {

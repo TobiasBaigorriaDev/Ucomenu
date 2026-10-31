@@ -242,6 +242,78 @@ test.describe("categorías y platos (Dueño)", () => {
   });
 });
 
+test.describe("alta unificada de un plato", () => {
+  test("al agregar un plato se cargan de una vez la foto y las variantes, y quedan guardadas", async ({ page }) => {
+    const t = await nuevoLocal("carta-alta-unificada");
+    await sembrar(t, [{ nombre: "Platos", platos: [] }]);
+    await ingresar(page, t.owner, t, "/carta/platos/nuevo");
+    await expectNoHorizontalOverflow(page);
+
+    // Todo está desplegado desde el principio: datos, foto, variantes y adicionales.
+    await expect(page.getByRole("heading", { name: "Foto", exact: true })).toBeVisible();
+    await expect(page.getByTestId("alta-opciones")).toBeVisible();
+
+    await page.getByLabel("Nombre", { exact: true }).fill("Milanesa completa");
+    await page.getByLabel("Precio en pesos").fill("9500");
+    await page.locator("#plato-foto").setInputFiles({ name: "milanesa.png", mimeType: "image/png", buffer: FOTO_PNG });
+    await expect(page.getByAltText("Vista previa de la foto elegida")).toBeVisible();
+
+    await page.getByTestId("alta-plantilla-variant").click();
+    await page.getByLabel("Nombre de la opción").fill("Grande");
+    await page.getByLabel("Diferencia de precio").fill("1.500");
+    await page.getByTestId("alta-agregar-opcion").click();
+    await page.getByLabel("Nombre de la opción").nth(1).fill("Chica");
+    await page.getByTestId("alta-plantilla-extras").click();
+    await page.getByLabel("Nombre de la opción").nth(2).fill("Huevo frito");
+    await page.getByLabel("Diferencia de precio").nth(2).fill("800");
+    await expectNoHorizontalOverflow(page);
+
+    await page.getByRole("button", { name: "Crear plato" }).click();
+    await expect(page.getByTestId("plato-creado")).toBeVisible();
+    await expect(page.getByTestId("alta-pendiente")).toHaveCount(0);
+    const id = page.url().match(/platos\/([0-9a-f-]{36})/)![1];
+
+    const db = service();
+    const producto = (await db.from("products").select("image_path").eq("id", id).single()).data;
+    expect(producto?.image_path).toMatch(new RegExp(`^${t.orgId}/${id}/[0-9a-f-]{36}\.png$`));
+    const grupos = (await db.from("option_groups").select("id, name, min_choices, max_choices, sort_order").eq("product_id", id).order("sort_order")).data ?? [];
+    expect(grupos.map((g) => [g.name, g.min_choices, g.max_choices])).toEqual([["Tamaño", 1, 1], ["Adicionales", 0, 3]]);
+    const opciones = (await db.from("options").select("name, price_delta_cents, group_id, sort_order").in("group_id", grupos.map((g) => g.id)).order("sort_order")).data ?? [];
+    expect(opciones.map((o) => [o.group_id === grupos[0].id ? "Tamaño" : "Adicionales", o.name, o.price_delta_cents]).sort()).toEqual([
+      ["Adicionales", "Huevo frito", 80000],
+      ["Tamaño", "Chica", 0],
+      ["Tamaño", "Grande", 150000],
+    ]);
+  });
+
+  test("si algo es inválido no se crea nada y lo cargado (grupos incluidos) se conserva", async ({ page }) => {
+    const t = await nuevoLocal("carta-alta-invalida");
+    await sembrar(t, [{ nombre: "Platos", platos: [] }]);
+    await ingresar(page, t.owner, t, "/carta/platos/nuevo");
+
+    await page.getByLabel("Nombre", { exact: true }).fill("Plato con error");
+    await page.getByLabel("Precio en pesos").fill("1000");
+    await page.getByTestId("alta-plantilla-variant").click();
+    await page.getByLabel("Nombre de la opción").fill("Grande");
+    await page.getByLabel("Diferencia de precio").fill("abc");
+    await page.getByRole("button", { name: "Crear plato" }).click();
+    await expect(alerta(page)).toContainText("El precio no es válido");
+
+    await expect(page.getByLabel("Nombre", { exact: true })).toHaveValue("Plato con error");
+    await expect(page.getByLabel("Nombre de la opción")).toHaveValue("Grande");
+    await expect(page.getByLabel("Diferencia de precio")).toHaveValue("abc");
+    const { count } = await service().from("products").select("id", { count: "exact", head: true }).eq("organization_id", t.orgId);
+    expect(count).toBe(0);
+
+    // Corregido el dato, se crea con todo lo que ya estaba cargado, una sola vez.
+    await page.getByLabel("Diferencia de precio").fill("500");
+    await page.getByRole("button", { name: "Crear plato" }).click();
+    await expect(page.getByTestId("plato-creado")).toBeVisible();
+    const productos = await service().from("products").select("id", { count: "exact", head: true }).eq("organization_id", t.orgId);
+    expect(productos.count).toBe(1);
+  });
+});
+
 test.describe("Staff", () => {
   test("el Staff gestiona la carta igual que el Dueño", async ({ page }) => {
     const t = await nuevoLocal("carta-staff");

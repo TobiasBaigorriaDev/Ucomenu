@@ -119,7 +119,7 @@ async function optionsWriteFailure(
 
 export type GroupInput = { name: string; min: string; max: string };
 
-function parseGroup(input: GroupInput): Result<{ name: string; min_choices: number; max_choices: number }> {
+export function parseGroup(input: GroupInput): Result<{ name: string; min_choices: number; max_choices: number }> {
   const name = validateName(input.name);
   if (!name.ok) return fail(name.problem === "blank" ? "name_blank" : "name_too_long");
   const choices = parseChoices(input.min, input.max);
@@ -202,7 +202,7 @@ export async function moveGroup(db: Db, orgId: string, id: string, direction: Di
 
 export type OptionInput = { name: string; delta: string };
 
-function parseOption(input: OptionInput): Result<{ name: string; price_delta_cents: number }> {
+export function parseOption(input: OptionInput): Result<{ name: string; price_delta_cents: number }> {
   const name = validateName(input.name);
   if (!name.ok) return fail(name.problem === "blank" ? "name_blank" : "name_too_long");
   const delta = parseDelta(input.delta);

@@ -169,11 +169,17 @@ test("el alta de un plato elige en qué sucursales se muestra; con una sola sucu
   await expect(page.getByTestId("alta-sucursales")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 
-  await page.getByLabel("Nombre").fill("Sopa del día");
-  await page.getByLabel("Precio").fill("2500");
-  await page.getByTestId("alta-sucursales").getByLabel("Norte").uncheck();
+  await page.getByLabel("Nombre", { exact: true }).fill("Sopa del día");
+  await page.getByLabel("Precio en pesos").fill("2500");
+  await page.getByTestId("alta-sucursales").getByLabel("Norte", { exact: true }).uncheck();
+  // El mismo alta trae el precio propio de cada sucursal (en blanco = el general).
+  await page.getByLabel("Precio propio en Centro").fill("2.800,50");
   await page.getByRole("button", { name: "Crear plato" }).click();
-  await page.waitForURL(/\/carta\/platos\/[0-9a-f-]{36}\?nuevo=1/);
+  await page.waitForURL(/\/carta\/platos\/([0-9a-f-]{36})\?nuevo=1/);
+  const sopa = page.url().match(/platos\/([0-9a-f-]{36})/)![1];
+  await expect(page.getByTestId("alta-pendiente")).toHaveCount(0);
+  expect((await service().from("product_availability").select("branch_id, price_cents, is_visible").eq("product_id", sopa).order("branch_id")).data)
+    .toEqual(expect.arrayContaining([{ branch_id: e.centro, price_cents: 280050, is_visible: true }, { branch_id: e.norte, price_cents: null, is_visible: false }]));
 
   await page.goto(e.menuCentro);
   await expect(page.getByRole("heading", { name: "Sopa del día", exact: true })).toBeVisible();
