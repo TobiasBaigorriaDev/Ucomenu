@@ -29,7 +29,7 @@ const SECTIONS: Section[] = [
 
 /**
  * Vista previa de la carta con los componentes reales (cabecera, mosaico de categorías, banda de sección y cards) y datos de
- * muestra, dentro de `.carta` con la paleta elegida. Es decorativa: `inert` + `aria-hidden` la sacan del foco y del lector de pantalla.
+ * muestra, dentro de `.carta` con la paleta elegida. Se muestra entera, sin recorte: quien se desplaza es el contenedor (el panel fijo del estudio o la hoja del celular), así con una portada también se llega al menú.
  */
 export function CartaPreview({ name, logo, palette, layout, theme = null, look = DEFAULT_LOOK, tagline = null, cover = null, social = {}, testId }: { name: string; logo: string | null; palette: string; layout: Layout; theme?: Theme | null; look?: Look; tagline?: string | null; cover?: string | null; social?: { instagram?: string | null; whatsapp?: string | null }; testId: string }) {
   const { attrs, style } = lookProps(look, theme !== null);
@@ -42,7 +42,7 @@ export function CartaPreview({ name, logo, palette, layout, theme = null, look =
         data-tema={theme ?? undefined}
         data-layout={layout}
         {...attrs}
-        className={`${cartaFontClass} carta carta-preview max-h-[34rem] overflow-hidden pb-8 select-none`}
+        className={`${cartaFontClass} carta carta-preview pb-8 select-none`}
         style={{ ...paletteStyle(palette), ...themeStyle(theme), ...style, minHeight: 0 }}
       >
         <MenuHeader organizationName={name} branchName="Centro" logo={logo} theme={theme} layout={layout} tagline={tagline} cover={cover} social={social} />
@@ -62,7 +62,6 @@ export function CartaPreview({ name, logo, palette, layout, theme = null, look =
           {layout === "hoja" ? <SheetView sections={SECTIONS} title={{ name, logo }} lang="es" /> : <MenuSection section={SECTIONS[1]} index={1} lang="es" layout={layout} />}
         </div>
       </div>
-      <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent" />
     </div>
   );
 }
