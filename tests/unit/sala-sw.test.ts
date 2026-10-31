@@ -65,6 +65,40 @@ describe("service worker del aviso de llamados", () => {
     });
   });
 
+  describe("vibración del aviso (Android)", () => {
+    const mostrar = async (vibrate: unknown) => {
+      const { listeners, showNotification } = loadWorker([]);
+      const { event, done } = pushEvent({ ...PAYLOAD, vibrate });
+      listeners.get("push")!(event);
+      await done();
+      const options = (showNotification.mock.calls[0] as unknown as [string, Record<string, unknown>])[1];
+      return options.vibrate;
+    };
+
+    it("usa el patrón que manda el servidor", async () => {
+      expect(await mostrar([500, 200, 500])).toEqual([500, 200, 500]);
+      expect(await mostrar([700, 200, 700, 200, 700, 200, 700])).toEqual([700, 200, 700, 200, 700, 200, 700]);
+    });
+
+    it("sin patrón, la notificación no declara uno", async () => {
+      expect(await mostrar(undefined)).toBeUndefined();
+    });
+
+    it.each([
+      ["no es una lista", "500"],
+      ["lista vacía", []],
+      ["no son números", ["a", 200]],
+      ["decimales", [100.5]],
+      ["negativos o cero", [0, 200]],
+      ["una vibración de más de 3 s", [3001]],
+      ["más de 15 tramos", Array.from({ length: 16 }, () => 100)],
+      ["más de 6 s en total", [3000, 100, 3000]],
+      ["valores no finitos", [Infinity]],
+    ])("descarta un patrón inválido (%s) en vez de usarlo", async (_motivo, vibrate) => {
+      expect(await mostrar(vibrate)).toBeUndefined();
+    });
+  });
+
   it("no duplica el aviso si esa sala está a la vista y con foco", async () => {
     const { listeners, showNotification } = loadWorker([client("https://app.test/sala/cafe", { visibilityState: "visible", focused: true })]);
     const { event, done } = pushEvent(PAYLOAD);

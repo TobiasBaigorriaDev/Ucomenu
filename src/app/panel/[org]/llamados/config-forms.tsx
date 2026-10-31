@@ -5,8 +5,9 @@ import { useFormStatus } from "react-dom";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { inputClass, labelClass, secondaryButtonClass } from "@/components/panel/styles";
 import { COOLDOWN_MAX, COOLDOWN_MIN, MUTE_OPTIONS } from "@/lib/llamados/config-rules";
-import { previewTone } from "@/components/panel/sonido-llamados";
+import { previewTone, previewVibration } from "@/components/panel/sonido-llamados";
 import { TONES, type AlertTones, type ToneId } from "@/lib/sala/tonos";
+import { VIBRATION_LEVELS, type VibrationLevel } from "@/lib/sala/vibracion";
 import { muteTableAction, setAlertTonesAction, setCooldownAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
@@ -163,13 +164,26 @@ const TONE_GROUPS = [
   { name: "ready", legend: "Cuando un pedido está listo", help: "Suena al mozo cuando cocina termina todos los platos de un pedido." },
 ] as const;
 
-/** Tonos de aviso del local: uno para el llamado de mesa y otro para el pedido listo (solo el Dueño los cambia). */
-export function TonosForm({ orgSlug, tones, canWrite }: { orgSlug: string; tones: AlertTones; canWrite: boolean }) {
+/**
+ * Tonos y vibración de aviso del local: un tono para el llamado de mesa, otro para el pedido listo y la intensidad con la que vibra
+ * el celular (solo el Dueño los cambia).
+ */
+export function TonosForm({ orgSlug, tones, vibration, canWrite }: { orgSlug: string; tones: AlertTones; vibration: VibrationLevel; canWrite: boolean }) {
   const [heard, setHeard] = useState<string | null>(null);
 
   async function listen(id: ToneId, label: string) {
     const played = await previewTone(id);
     setHeard(played ? `Sonando: ${label}.` : "Tu navegador no dejó reproducir el sonido. Tocá de nuevo o revisá que el volumen esté activado.");
+  }
+
+  function feel(level: VibrationLevel, label: string) {
+    setHeard(
+      level === "ninguna"
+        ? "Sin vibración: el celular no vibra por los avisos."
+        : previewVibration(level)
+          ? `Vibrando: ${label}.`
+          : "Este dispositivo no vibra desde el navegador. Probalo desde el celular Android del local.",
+    );
   }
 
   return (
@@ -215,11 +229,50 @@ export function TonosForm({ orgSlug, tones, canWrite }: { orgSlug: string; tones
               </ul>
             </fieldset>
           ))}
+          <fieldset className="grid gap-1" data-testid="vibracion">
+            <legend className="text-lg font-medium">Vibración del celular</legend>
+            <p className="text-sm text-muted">
+              Vibra cuando una mesa llama, pide la cuenta o un pedido queda listo, y «Pedir la cuenta» se siente distinto de «Llamar al
+              mozo». Funciona en celulares Android; el iPhone no deja que la web controle la vibración.
+            </p>
+            <ul className="mt-2 grid gap-1">
+              {VIBRATION_LEVELS.map((level) => {
+                const inputId = `vibracion-${level.id}`;
+                return (
+                  <li key={level.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-ink/10 py-1">
+                    <label htmlFor={inputId} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-base">
+                      <input
+                        id={inputId}
+                        type="radio"
+                        name="vibration"
+                        value={level.id}
+                        defaultChecked={(state.values?.vibration ?? vibration) === level.id}
+                        className="size-5 shrink-0 accent-brand"
+                      />
+                      <span className="min-w-0">
+                        <span className="font-medium">{level.label}</span>
+                        <span className="block text-sm text-muted">{level.hint}</span>
+                      </span>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => feel(level.id, level.label)}
+                      className={secondaryButtonClass}
+                      aria-label={`Probar vibración ${level.label}`}
+                      data-testid={`probar-vibracion-${level.id}`}
+                    >
+                      Probar
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </fieldset>
           <p aria-live="polite" className="min-h-5 text-sm text-muted" data-testid="tono-escuchado">
             {heard}
           </p>
           <div>
-            <SubmitButton pendingLabel="Guardando…">Guardar tonos</SubmitButton>
+            <SubmitButton pendingLabel="Guardando…">Guardar tonos y vibración</SubmitButton>
           </div>
         </fieldset>
       )}

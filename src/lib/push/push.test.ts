@@ -175,7 +175,16 @@ describe("lectura de los destinos", () => {
 });
 
 type Rpc = (name: string, args: unknown) => Promise<{ data: unknown; error: { code?: string; message: string } | null }>;
-const dbWith = (rpc: Rpc) => ({ rpc: vi.fn(rpc) }) as unknown as SupabaseClient<Database> & { rpc: ReturnType<typeof vi.fn> };
+/** `vibration`: lo que responde `organizations.vibration` (un nivel, `undefined` si la lectura falla). */
+const dbWith = (rpc: Rpc, vibration: string | undefined = "fuerte") =>
+  ({
+    rpc: vi.fn(rpc),
+    from: vi.fn(() => ({
+      select: () => ({
+        eq: () => ({ maybeSingle: async () => (vibration === undefined ? { data: null, error: { message: "sin lectura" } } : { data: { vibration }, error: null }) }),
+      }),
+    })),
+  }) as unknown as SupabaseClient<Database> & { rpc: ReturnType<typeof vi.fn>; from: ReturnType<typeof vi.fn> };
 
 describe("envío del aviso", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -200,9 +209,38 @@ describe("envío del aviso", () => {
     expect(send).toHaveBeenCalledTimes(2);
     const [subscription, payload, options] = send.mock.calls[0];
     expect(subscription).toEqual({ endpoint: "https://fcm.googleapis.com/fcm/send/a", keys: { p256dh: P256DH, auth: AUTH } });
-    expect(JSON.parse(payload)).toEqual({ title: "Pide la cuenta", body: "Mesa 4", url: "/sala/cafe", tag: `llamado:cafe:bill:${KEY}` });
+    expect(JSON.parse(payload)).toEqual({
+      title: "Pide la cuenta",
+      body: "Mesa 4",
+      url: "/sala/cafe",
+      tag: `llamado:cafe:bill:${KEY}`,
+      vibrate: [1200, 300, 1200],
+    });
     expect(options).toMatchObject({ TTL: PUSH_TTL_SECONDS, urgency: "high" });
     expect(db.rpc).toHaveBeenCalledWith("push_targets_for_call", { p_token: TOKEN, p_kind: "bill" });
+  });
+
+  describe("vibración elegida por el Dueño", () => {
+    const enviar = async (db: ReturnType<typeof dbWith>, kind: "waiter" | "bill" = "waiter") => {
+      const send = vi.fn<PushSend>(async () => ({}));
+      await dispatchCallPush(db, send, TOKEN, kind);
+      return JSON.parse(send.mock.calls[0][1]);
+    };
+    const destinosA = async () => ({ data: destinos([sub("a")]), error: null });
+
+    it("el aviso lleva el patrón del nivel del local y del tipo de llamado", async () => {
+      expect((await enviar(dbWith(destinosA, "muy_fuerte"))).vibrate).toEqual([700, 200, 700, 200, 700, 200, 700]);
+      expect((await enviar(dbWith(destinosA, "suave"), "bill")).vibrate).toEqual([800]);
+    });
+
+    it("con la vibración apagada el aviso sale sin patrón", async () => {
+      expect("vibrate" in (await enviar(dbWith(destinosA, "ninguna")))).toBe(false);
+    });
+
+    it("si no se puede leer el nivel (o es desconocido) usa el de siempre y el aviso sale igual", async () => {
+      expect((await enviar(dbWith(destinosA, undefined))).vibrate).toEqual([500, 200, 500, 200, 500]);
+      expect((await enviar(dbWith(destinosA, "extrema"))).vibrate).toEqual([500, 200, 500, 200, 500]);
+    });
   });
 
   it("borra las suscripciones que el servicio da por muertas (404 y 410), no las que fallan por otra causa", async () => {

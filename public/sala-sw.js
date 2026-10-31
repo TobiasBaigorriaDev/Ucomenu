@@ -25,6 +25,21 @@ function text(value, fallback, max) {
   return typeof value === "string" && value.trim() !== "" ? value.trim().slice(0, max) : fallback;
 }
 
+/**
+ * Patrón de vibración del push (solo Android lo usa). Datos no confiables: números enteros de 1 a 3000 ms, hasta 15 y 6 s en
+ * total; cualquier otra cosa se descarta y la notificación sale sin patrón propio.
+ */
+function readVibration(value) {
+  if (!Array.isArray(value) || value.length === 0 || value.length > 15) return undefined;
+  var total = 0;
+  for (var i = 0; i < value.length; i++) {
+    var ms = value[i];
+    if (typeof ms !== "number" || !isFinite(ms) || Math.floor(ms) !== ms || ms < 1 || ms > 3000) return undefined;
+    total += ms;
+  }
+  return total <= 6000 ? value.slice() : undefined;
+}
+
 function readPayload(event) {
   try {
     var data = event.data ? event.data.json() : null;
@@ -35,6 +50,7 @@ function readPayload(event) {
       body: text(data.body, FALLBACK.body, 160),
       url: url,
       tag: text(data.tag, FALLBACK.tag, 120),
+      vibrate: readVibration(data.vibrate),
     };
   } catch {
     return FALLBACK;
@@ -83,13 +99,15 @@ self.addEventListener("push", function (event) {
           return client.visibilityState === "visible" && client.focused === true && isWatching(new URL(client.url).pathname, data.url);
         });
       if (watching) return undefined;
-      return self.registration.showNotification(data.title, {
+      var options = {
         body: data.body,
         tag: data.tag,
         renotify: true,
         requireInteraction: true,
         data: { url: data.url },
-      });
+      };
+      if (data.vibrate) options.vibrate = data.vibrate;
+      return self.registration.showNotification(data.title, options);
     }),
   );
 });

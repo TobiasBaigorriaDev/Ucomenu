@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import type { CallKind } from "@/lib/sala/types";
+import { vibrationOrDefault, type VibrationLevel } from "@/lib/sala/vibracion";
 import { isAllowedPushEndpoint } from "./endpoint";
 import { buildCallPayload } from "./payload";
 
@@ -52,6 +53,19 @@ export function parseTargets(raw: unknown): {
   return { slug, tableLabel, tableKey, branchName, multiBranch, subscriptions: targets };
 }
 
+/**
+ * Intensidad de vibración que eligió el Dueño del local (`organizations.vibration`). Si no se puede leer, el valor por defecto:
+ * un fallo acá nunca debe impedir el aviso.
+ */
+async function vibrationOf(db: Db, slug: string): Promise<VibrationLevel> {
+  try {
+    const { data } = await db.from("organizations").select("vibration").eq("slug", slug).maybeSingle();
+    return vibrationOrDefault(data?.vibration);
+  } catch {
+    return vibrationOrDefault(null);
+  }
+}
+
 const statusOf = (error: unknown): number | null => (isRecord(error) && typeof error.statusCode === "number" ? error.statusCode : null);
 
 /**
@@ -79,6 +93,7 @@ export async function dispatchCallPush(db: Db, send: PushSend, token: string, ki
         tableKey: targets.tableKey,
         branchName: targets.branchName,
         multiBranch: targets.multiBranch,
+        vibration: await vibrationOf(db, targets.slug),
       }),
     );
 

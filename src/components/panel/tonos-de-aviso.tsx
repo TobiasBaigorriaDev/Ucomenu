@@ -2,15 +2,17 @@
 
 import { useEffect } from "react";
 import { toneOrDefault } from "@/lib/sala/tonos";
-import { setAlertTones } from "./sonido-llamados";
+import { vibrationOrDefault } from "@/lib/sala/vibracion";
+import { setAlertTones, setAlertVibration } from "./sonido-llamados";
 
 /**
- * Fija los tonos de aviso del local (ficha tonos-de-aviso) para los sonidos de esta pantalla. No dibuja nada; lo renderiza
- * el layout de cada área, así que cada carga de panel, sala o cocina arranca con lo que el Dueño eligió.
+ * Fija los tonos y la vibración de aviso del local (fichas tonos-de-aviso y vibracion-de-aviso) para esta pantalla. No dibuja
+ * nada; lo renderiza el layout de cada área, así que cada carga de panel, sala o cocina arranca con lo que el Dueño eligió.
  */
-export function TonosDeAviso({ call, ready }: { call: string; ready: string }) {
+export function TonosDeAviso({ call, ready, vibration }: { call: string; ready: string; vibration: string }) {
   useEffect(() => {
     setAlertTones({ call: toneOrDefault(call, "call"), ready: toneOrDefault(ready, "ready") });
-  }, [call, ready]);
+    setAlertVibration(vibrationOrDefault(vibration));
+  }, [call, ready, vibration]);
   return null;
 }

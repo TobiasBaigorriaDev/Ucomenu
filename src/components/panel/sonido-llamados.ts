@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { createBeeper, type Beeper } from "@/lib/sala/beep";
 import { DEFAULT_TONES, type AlertTones, type ToneId } from "@/lib/sala/tonos";
+import { DEFAULT_VIBRATION, vibrationPattern, type VibrationEvent, type VibrationLevel } from "@/lib/sala/vibracion";
 
 /**
  * Sonido de los llamados, compartido por la sala en vivo y el panel (ficha aviso-push-desde-el-panel). Vive a nivel de
@@ -18,6 +19,7 @@ let state: SoundState = "off";
 let beeper: Beeper | null = null;
 let arming = false;
 let tones: AlertTones = { ...DEFAULT_TONES };
+let vibration: VibrationLevel = DEFAULT_VIBRATION;
 const listeners = new Set<() => void>();
 
 function set(next: SoundState) {
@@ -67,12 +69,34 @@ export function setAlertTones(next: AlertTones) {
   tones = next;
 }
 
+/** La intensidad de vibración que eligió el Dueño (ficha vibracion-de-aviso); la fija el layout en cada carga. */
+export function setAlertVibration(next: VibrationLevel) {
+  vibration = next;
+}
+
+/** Hace vibrar el dispositivo con un patrón. `false` si el navegador no sabe vibrar (iPhone, escritorio) o el patrón está vacío. */
+export function vibrateNow(pattern: number[]): boolean {
+  try {
+    if (pattern.length === 0 || typeof navigator === "undefined" || typeof navigator.vibrate !== "function") return false;
+    return navigator.vibrate(pattern);
+  } catch {
+    return false;
+  }
+}
+
+/** Prueba un nivel de vibración con el patrón de un llamado al mozo (el Dueño lo toca para sentirlo). */
+export const previewVibration = (level: VibrationLevel) => vibrateNow(vibrationPattern(level, "waiter"));
+
 /**
- * Reproduce el aviso si el sonido está activado: `notification` es un llamado de mesa (y un plato nuevo en cocina) y
- * `ready` un pedido terminado; cada uno suena con el tono que eligió el Dueño.
+ * Avisa si el sonido está activado: suena el tono y vibra el celular con la intensidad elegida. `notification` es un llamado
+ * de mesa (y un plato nuevo en cocina) y `ready` un pedido terminado; cada uno suena con el tono que eligió el Dueño.
+ * `kind` distingue «Pedir la cuenta» (`bill`) de «Llamar al mozo» (`waiter`): vibran distinto para reconocerlos sin mirar.
  */
-export function beepIfOn(event: "notification" | "ready" = "notification") {
-  if (state === "on") beeper?.beep(event === "ready" ? tones.ready : tones.call);
+export function beepIfOn(event: "notification" | "ready" = "notification", kind: "waiter" | "bill" = "waiter") {
+  if (state !== "on") return;
+  beeper?.beep(event === "ready" ? tones.ready : tones.call);
+  const shape: VibrationEvent = event === "ready" ? "ready" : kind;
+  vibrateNow(vibrationPattern(vibration, shape));
 }
 
 /** Escucha un tono sin activar los avisos (el Dueño lo prueba al elegirlo). Hay que llamarla desde un toque. */

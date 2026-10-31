@@ -5,6 +5,7 @@ import { COOLDOWN_MAX, COOLDOWN_MIN, formatMuteEnd, isMuted } from "@/lib/llamad
 import { loadLlamadoConfig } from "@/lib/llamados/config";
 import { createSessionClient } from "@/lib/supabase/server";
 import { toneById, toneOrDefault } from "@/lib/sala/tonos";
+import { VIBRATION_LEVELS, vibrationOrDefault } from "@/lib/sala/vibracion";
 import { CooldownForm, MuteControls, TonosForm } from "./config-forms";
 
 export const metadata: Metadata = { title: "Configuración del llamado" };
@@ -24,6 +25,7 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
   const callsEnabled = ent?.features.includes("waiter_call") === true;
   const now = new Date();
   const tones = { call: toneOrDefault(membership.org.call_tone, "call"), ready: toneOrDefault(membership.org.ready_tone, "ready") };
+  const vibration = vibrationOrDefault(membership.org.vibration);
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
@@ -47,13 +49,13 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
 
       <section aria-labelledby="tonos" className="panel-cell mt-6" data-testid="tonos-de-aviso">
         <h2 id="tonos" className="font-display text-3xl leading-tight">
-          Tonos de aviso
+          Tonos y vibración de aviso
         </h2>
         <p className="mt-2 max-w-prose text-base text-muted">
-          Elegí qué suena en los dispositivos del local, con el sonido activado. Tocá «Escuchar» para probar cada tono.
+          Elegí qué suena y cuánto vibra el celular en los dispositivos del local, con las alertas activadas. Tocá «Escuchar» o «Probar» para sentir cada opción.
         </p>
         {isOwner ? (
-          <TonosForm orgSlug={membership.org.slug} tones={tones} canWrite={canWrite} />
+          <TonosForm orgSlug={membership.org.slug} tones={tones} vibration={vibration} canWrite={canWrite} />
         ) : (
           <dl className="mt-3 grid gap-1 text-base" data-testid="tonos-lectura">
             <div>
@@ -63,6 +65,10 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
             <div>
               <dt className="inline font-medium">Cuando un pedido está listo: </dt>
               <dd className="inline">{toneById(tones.ready).label}</dd>
+            </div>
+            <div>
+              <dt className="inline font-medium">Vibración del celular: </dt>
+              <dd className="inline">{VIBRATION_LEVELS.find((level) => level.id === vibration)?.label}</dd>
             </div>
             <p className="text-sm text-muted">Lo define el Dueño del local.</p>
           </dl>

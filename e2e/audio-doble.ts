@@ -9,6 +9,7 @@ export async function conDobles(context: BrowserContext) {
     const w = window as unknown as Record<string, unknown>;
     w.__audios = [];
     w.__synth = [];
+    w.__vibraciones = [];
     w.__wake = 0;
     class FakeContext {
       state = "running";
@@ -55,6 +56,14 @@ export async function conDobles(context: BrowserContext) {
       }
     }
     w.AudioContext = FakeContext;
+    // `navigator.vibrate` real no deja observar nada en una prueba: se registra cada patrón pedido.
+    Object.defineProperty(navigator, "vibrate", {
+      configurable: true,
+      value: (pattern: number[]) => {
+        (window as unknown as { __vibraciones: number[][] }).__vibraciones.push(pattern);
+        return true;
+      },
+    });
     Object.defineProperty(navigator, "wakeLock", {
       configurable: true,
       value: {
@@ -70,6 +79,8 @@ export async function conDobles(context: BrowserContext) {
 export const sonidos = (page: Page) => page.evaluate(() => (window as unknown as { __audios: string[] }).__audios);
 /** Frecuencias (Hz) de las notas sintetizadas que sonaron, en orden. */
 export const sintetizados = (page: Page) => page.evaluate(() => (window as unknown as { __synth: number[] }).__synth);
+/** Patrones de vibración (ms) pedidos al navegador, en orden. */
+export const vibraciones = (page: Page) => page.evaluate(() => (window as unknown as { __vibraciones: number[][] }).__vibraciones);
 /** Cantidad de avisos, conservando el nombre usado por las pruebas de sala y panel. */
 export const pitidos = async (page: Page) => (await sonidos(page)).length;
 export const wakeLocks = (page: Page) => page.evaluate(() => (window as unknown as { __wake: number }).__wake);

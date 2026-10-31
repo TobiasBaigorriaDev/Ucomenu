@@ -210,7 +210,7 @@ export function MesasBoard({
           : `Hay platos listos para entregar en ${justReady.length} mesas.`;
     setAnnouncement([incoming.length > 0 ? newCallsAnnouncement(incoming, next.multiBranch) : "", readyText].filter(Boolean).join(" "));
     if (hasCompletedKitchenOrder(justReady)) beepIfOn("ready");
-    else if (incoming.length > 0) beepIfOn();
+    else if (incoming.length > 0) beepIfOn("notification", incoming.some((call) => call.kind === "bill") ? "bill" : "waiter");
   }, []);
 
   // --- Sondeo: la tabla es la fuente de verdad; cada respuesta reemplaza la lista entera.

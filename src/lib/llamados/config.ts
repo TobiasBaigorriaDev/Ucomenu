@@ -3,6 +3,7 @@ import { parseEntitlements, type Entitlements } from "@/lib/entitlements";
 import { sortByLabel } from "@/lib/mesas/labels";
 import { readAllByKey } from "@/lib/paginar";
 import { isToneId, type AlertTones } from "@/lib/sala/tonos";
+import { isVibrationLevel, type VibrationLevel } from "@/lib/sala/vibracion";
 import type { Database } from "@/lib/supabase/database.types";
 import { configErrorMessage, configWriteBlock, type ConfigError } from "./config-messages";
 import { muteUntil, parseCooldown, parseMuteMinutes } from "./config-rules";
@@ -156,20 +157,29 @@ export async function setBranchCooldown(db: Db, orgId: string, branchId: string,
   return ok({ seconds: data[0].waiter_call_cooldown_seconds });
 }
 
-/** Los tonos de aviso del local (ficha tonos-de-aviso). Solo el Dueño escribe: lo decide la base, y 0 filas no es éxito. */
-export async function setAlertTones(db: Db, orgId: string, rawCall: unknown, rawReady: unknown): Promise<Result<AlertTones>> {
-  if (!isToneId(rawCall) || !isToneId(rawReady)) return fail("tone_invalid");
+/**
+ * Los tonos y la vibración de aviso del local (fichas tonos-de-aviso y vibracion-de-aviso). Solo el Dueño escribe: lo decide
+ * la base, y 0 filas no es éxito.
+ */
+export async function setAlertTones(
+  db: Db,
+  orgId: string,
+  rawCall: unknown,
+  rawReady: unknown,
+  rawVibration: unknown,
+): Promise<Result<AlertTones & { vibration: VibrationLevel }>> {
+  if (!isToneId(rawCall) || !isToneId(rawReady) || !isVibrationLevel(rawVibration)) return fail("tone_invalid");
 
   const blocked = await guard(db, orgId);
   if (blocked) return fail(blocked);
 
   const { data, error } = await db
     .from("organizations")
-    .update({ call_tone: rawCall, ready_tone: rawReady })
+    .update({ call_tone: rawCall, ready_tone: rawReady, vibration: rawVibration })
     .eq("id", orgId)
-    .select("call_tone, ready_tone");
+    .select("call_tone, ready_tone, vibration");
   if (error) return fail(error.code === CHECK_VIOLATION ? "tone_invalid" : await writeFailure(db, orgId, error));
   // Un UPDATE que la base descarta por RLS afecta 0 filas sin error: la causa es el permiso (el Staff) o la cuenta.
   if (data.length === 0) return fail((await guard(db, orgId)) ?? "forbidden");
-  return ok({ call: rawCall, ready: rawReady });
+  return ok({ call: rawCall, ready: rawReady, vibration: rawVibration });
 }

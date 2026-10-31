@@ -82,7 +82,8 @@ export function LlamadosBanner({ slug }: { slug: string }) {
           seen.current = new Set(next.calls.map((call) => call.id).concat(known ? [...known] : []));
           const snapshot = Date.parse(next.serverNow);
           // La misma regla que la sala: lo ya recibido y oculto por la vista anterior es base; lo creado desde la última actualización suena.
-          if (known && announceableCalls(known, next.calls, viewChanged, lastSnapshot.current ?? snapshot).length > 0) beepIfOn();
+          const fresh = known ? announceableCalls(known, next.calls, viewChanged, lastSnapshot.current ?? snapshot) : [];
+          if (fresh.length > 0) beepIfOn("notification", fresh.some((call) => call.kind === "bill") ? "bill" : "waiter");
           lastSnapshot.current = snapshot;
           setViewKey(viewKey);
           setWatching(next.view.length > 0 ? next.branches.filter((branch: SalaBranch) => next.view.includes(branch.id)).map((branch) => branch.name) : []);

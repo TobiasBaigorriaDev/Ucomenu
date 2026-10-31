@@ -18,7 +18,7 @@ const MESSAGE: Record<ConfigError, string> = {
   cooldown_blank: "Ingresá cuántos segundos tienen que pasar entre dos llamados.",
   cooldown_invalid: `Ingresá un número entero de segundos entre ${COOLDOWN_MIN} y ${COOLDOWN_MAX}.`,
   mute_invalid: "Elegí cuánto tiempo silenciar la mesa.",
-  tone_invalid: "Elegí un tono de la lista para cada aviso.",
+  tone_invalid: "Elegí un tono de la lista para cada aviso y una intensidad de vibración.",
   blocked_read_only:
     "Tu cuenta está en solo lectura: no se puede cambiar la configuración del llamado hasta regularizar el pago. No se guardó ningún cambio.",
   blocked_suspended:

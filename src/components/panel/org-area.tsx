@@ -27,7 +27,7 @@ export async function OrgArea({ area, slug, children }: { area: "panel" | "sala"
 
   return (
     <AppShell area={area} org={membership.org} role={membership.role} hasSeveralOrgs={visibleIn(area, memberships).length > 1}>
-      <TonosDeAviso call={membership.org.call_tone} ready={membership.org.ready_tone} />
+      <TonosDeAviso call={membership.org.call_tone} ready={membership.org.ready_tone} vibration={membership.org.vibration} />
       {showCalls ? <LlamadosBanner slug={membership.org.slug} /> : null}
       {notice ? <MoraBanner notice={notice} /> : null}
       {children}

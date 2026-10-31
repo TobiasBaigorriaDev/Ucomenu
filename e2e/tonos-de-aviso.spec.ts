@@ -1,9 +1,9 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { conDobles, sintetizados, sonidos } from "./audio-doble";
+import { conDobles, sintetizados, sonidos, vibraciones } from "./audio-doble";
 import { createTenant, expectNoHorizontalOverflow, login, service, type Person, type Tenant } from "./support";
 
 /**
- * Tonos de aviso (ficha tonos-de-aviso): el Dueño elige en `/panel/{slug}/llamados` qué suena ante un llamado de mesa y ante un
+ * Tonos y vibración de aviso (fichas tonos-de-aviso y vibracion-de-aviso): el Dueño elige en `/panel/{slug}/llamados` qué suena ante un llamado de mesa y ante un
  * pedido listo, y la sala usa ese tono. Contra el build y el Supabase local, a 390 px. Cada prueba usa un local propio.
  */
 
@@ -26,6 +26,7 @@ test.afterAll(async () => {
 });
 
 const tonosDe = async (orgId: string) => (await service().from("organizations").select("call_tone, ready_tone").eq("id", orgId).single()).data;
+const vibracionDe = async (orgId: string) => (await service().from("organizations").select("vibration").eq("id", orgId).single()).data?.vibration;
 
 async function abrir(context: BrowserContext, persona: Person, ruta: string) {
   const page = await context.newPage();
@@ -59,25 +60,40 @@ test.describe("tonos de aviso", () => {
 
     await page.getByTestId("tonos-call").getByRole("radio", { name: /Campana/ }).check();
     await page.getByTestId("tonos-ready").getByRole("radio", { name: /Marimba/ }).check();
-    await page.getByRole("button", { name: "Guardar tonos" }).click();
-    await expect(page.locator("form").getByRole("status")).toContainText("Tonos guardados");
+
+    // La vibración: por defecto «Fuerte»; «Probar» vibra con el patrón del llamado sin guardar nada.
+    await expect(page.getByTestId("vibracion").getByRole("radio", { name: /Fuerte/ })).toBeChecked();
+    await page.getByTestId("probar-vibracion-muy_fuerte").click();
+    await expect(page.getByTestId("tono-escuchado")).toContainText("Vibrando: Muy fuerte");
+    expect(await vibraciones(page)).toEqual([[700, 200, 700, 200, 700, 200, 700]]);
+    await page.getByTestId("probar-vibracion-ninguna").click();
+    await expect(page.getByTestId("tono-escuchado")).toContainText("Sin vibración");
+    expect(await vibraciones(page)).toHaveLength(1);
+    expect(await vibracionDe(t.orgId)).toBe("fuerte");
+    await page.getByTestId("vibracion").getByRole("radio", { name: /Muy fuerte/ }).check();
+
+    await page.getByRole("button", { name: "Guardar tonos y vibración" }).click();
+    await expect(page.locator("form").getByRole("status")).toContainText("Guardado");
     expect(await tonosDe(t.orgId)).toEqual({ call_tone: "campana", ready_tone: "marimba" });
+    expect(await vibracionDe(t.orgId)).toBe("muy_fuerte");
 
     await page.reload();
     await expect(page.getByTestId("tonos-call").getByRole("radio", { name: /Campana/ })).toBeChecked();
     await expect(page.getByTestId("tonos-ready").getByRole("radio", { name: /Marimba/ })).toBeChecked();
+    await expect(page.getByTestId("vibracion").getByRole("radio", { name: /Muy fuerte/ })).toBeChecked();
     await ctx.close();
   });
 
   test("el Staff ve los tonos elegidos pero no puede cambiarlos", async ({ browser }) => {
     const { t } = await nuevoLocal("tonos-staff");
-    await service().from("organizations").update({ call_tone: "timbre", ready_tone: "digital" }).eq("id", t.orgId);
+    await service().from("organizations").update({ call_tone: "timbre", ready_tone: "digital", vibration: "suave" }).eq("id", t.orgId);
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await abrir(ctx, t.staff, `/panel/${t.slug}/llamados`);
 
     await expect(page.getByTestId("tonos-lectura")).toContainText("Cuando una mesa llama: Timbre");
     await expect(page.getByTestId("tonos-lectura")).toContainText("Cuando un pedido está listo: Digital");
-    await expect(page.getByRole("button", { name: "Guardar tonos" })).toHaveCount(0);
+    await expect(page.getByTestId("tonos-lectura")).toContainText("Vibración del celular: Suave");
+    await expect(page.getByRole("button", { name: "Guardar tonos y vibración" })).toHaveCount(0);
     await expect(page.getByRole("radio")).toHaveCount(0);
     await expectNoHorizontalOverflow(page);
     await ctx.close();
@@ -85,7 +101,7 @@ test.describe("tonos de aviso", () => {
 
   test("la sala suena con el tono elegido ante un llamado, no con el MP3", async ({ browser }) => {
     const { t, token } = await nuevoLocal("tonos-sala");
-    await service().from("organizations").update({ call_tone: "campana", ready_tone: "marimba" }).eq("id", t.orgId);
+    await service().from("organizations").update({ call_tone: "campana", ready_tone: "marimba", vibration: "muy_fuerte" }).eq("id", t.orgId);
     const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await conDobles(ctx);
     const page: Page = await abrir(ctx, t.staff, `/sala/${t.slug}`);
@@ -102,6 +118,12 @@ test.describe("tonos de aviso", () => {
     expect(new Set(await sintetizados(page))).toEqual(new Set([HZ_CAMPANA, HZ_CAMPANA * 2.76, 880, 880 * 2.76]));
     expect(await sonidos(page)).toEqual([]);
     expect(await sintetizados(page)).not.toContain(HZ_MARIMBA); // el de pedido listo no suena ante un llamado
+    // El celular vibra con la intensidad del local: el llamado al mozo, y «Pedir la cuenta» con otro patrón.
+    await expect.poll(() => vibraciones(page)).toEqual([[700, 200, 700, 200, 700, 200, 700]]);
+    const mesa2 = await service().from("tables").insert({ organization_id: t.orgId, branch_id: (await service().from("branches").select("id").eq("organization_id", t.orgId).single()).data!.id, label: "Mesa 2" }).select("qr_token").single();
+    const cuenta = await service().rpc("create_waiter_call", { p_token: mesa2.data!.qr_token, p_kind: "bill" });
+    expect(cuenta.error).toBeNull();
+    await expect.poll(() => vibraciones(page), { timeout: 12_000 }).toEqual([[700, 200, 700, 200, 700, 200, 700], [1500, 300, 1500, 300, 1500]]);
     await ctx.close();
   });
 });

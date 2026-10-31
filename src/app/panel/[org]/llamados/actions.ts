@@ -55,12 +55,12 @@ export async function muteTableAction(_previous: FormState, formData: FormData):
 
 export async function setAlertTonesAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const { slug, orgId, role, db } = await prepare(formData);
-  const values = { call: text(formData, "call"), ready: text(formData, "ready") };
+  const values = { call: text(formData, "call"), ready: text(formData, "ready"), vibration: text(formData, "vibration") };
   // La base ya lo impide (la política de `organizations` es del Dueño); se corta antes para dar el motivo sin tocar nada.
   if (role !== "owner") return { error: configErrorMessage("forbidden"), values };
-  const result = await setAlertTones(db, orgId, values.call, values.ready);
+  const result = await setAlertTones(db, orgId, values.call, values.ready, values.vibration);
   if (!result.ok) return { error: configErrorMessage(result.error), values };
   // Los tonos los fija el layout de cada área: se refrescan los tres para que el cambio rija al volver a ellas.
   for (const area of ["panel", "sala", "cocina"]) revalidatePath(`/${area}/${slug}`, "layout");
-  return { ok: true, message: "Tonos guardados. Los demás dispositivos los usan al recargar la pantalla.", values };
+  return { ok: true, message: "Guardado. Los demás dispositivos lo usan al recargar la pantalla.", values };
 }
