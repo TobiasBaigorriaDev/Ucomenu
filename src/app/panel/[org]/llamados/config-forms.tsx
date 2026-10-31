@@ -1,11 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { inputClass, labelClass, secondaryButtonClass } from "@/components/panel/styles";
 import { COOLDOWN_MAX, COOLDOWN_MIN, MUTE_OPTIONS } from "@/lib/llamados/config-rules";
-import { muteTableAction, setCooldownAction } from "./actions";
+import { previewTone } from "@/components/panel/sonido-llamados";
+import { TONES, type AlertTones, type ToneId } from "@/lib/sala/tonos";
+import { muteTableAction, setAlertTonesAction, setCooldownAction } from "./actions";
 
 const summaryExtras = "cursor-pointer list-none [&::-webkit-details-marker]:hidden";
 
@@ -153,5 +155,74 @@ function Feedback({ state }: { state: { error?: string; message?: string } }) {
         </p>
       ) : null}
     </>
+  );
+}
+
+const TONE_GROUPS = [
+  { name: "call", legend: "Cuando una mesa llama", help: "Suena al mozo si una mesa llama o pide la cuenta, y al cocinero cuando entra un plato nuevo." },
+  { name: "ready", legend: "Cuando un pedido está listo", help: "Suena al mozo cuando cocina termina todos los platos de un pedido." },
+] as const;
+
+/** Tonos de aviso del local: uno para el llamado de mesa y otro para el pedido listo (solo el Dueño los cambia). */
+export function TonosForm({ orgSlug, tones, canWrite }: { orgSlug: string; tones: AlertTones; canWrite: boolean }) {
+  const [heard, setHeard] = useState<string | null>(null);
+
+  async function listen(id: ToneId, label: string) {
+    const played = await previewTone(id);
+    setHeard(played ? `Sonando: ${label}.` : "Tu navegador no dejó reproducir el sonido. Tocá de nuevo o revisá que el volumen esté activado.");
+  }
+
+  return (
+    <ActionForm action={setAlertTonesAction} className="mt-3 max-w-2xl">
+      {(state) => (
+        <fieldset disabled={!canWrite} className="grid gap-6">
+          <input type="hidden" name="org" value={orgSlug} />
+          {TONE_GROUPS.map((group) => (
+            <fieldset key={group.name} className="grid gap-1" data-testid={`tonos-${group.name}`}>
+              <legend className="text-lg font-medium">{group.legend}</legend>
+              <p className="text-sm text-muted">{group.help}</p>
+              <ul className="mt-2 grid gap-1">
+                {TONES.map((tone) => {
+                  const inputId = `tono-${group.name}-${tone.id}`;
+                  return (
+                    <li key={tone.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-ink/10 py-1">
+                      <label htmlFor={inputId} className="flex min-h-11 min-w-0 flex-1 items-center gap-3 text-base">
+                        <input
+                          id={inputId}
+                          type="radio"
+                          name={group.name}
+                          value={tone.id}
+                          defaultChecked={(state.values?.[group.name] ?? tones[group.name]) === tone.id}
+                          className="size-5 shrink-0 accent-brand"
+                        />
+                        <span className="min-w-0">
+                          <span className="font-medium">{tone.label}</span>
+                          <span className="block text-sm text-muted">{tone.hint}</span>
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => void listen(tone.id, tone.label)}
+                        className={secondaryButtonClass}
+                        aria-label={`Escuchar ${tone.label}`}
+                        data-testid={`escuchar-${group.name}-${tone.id}`}
+                      >
+                        Escuchar
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </fieldset>
+          ))}
+          <p aria-live="polite" className="min-h-5 text-sm text-muted" data-testid="tono-escuchado">
+            {heard}
+          </p>
+          <div>
+            <SubmitButton pendingLabel="Guardando…">Guardar tonos</SubmitButton>
+          </div>
+        </fieldset>
+      )}
+    </ActionForm>
   );
 }

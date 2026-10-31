@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireMembership } from "@/lib/auth/session";
 import { asUuid } from "@/lib/carta/validation";
 import type { FormState } from "@/lib/form-state";
-import { configErrorMessage, muteTable, setBranchCooldown, unmuteTable, type Result } from "@/lib/llamados/config";
+import { configErrorMessage, muteTable, setAlertTones, setBranchCooldown, unmuteTable, type Result } from "@/lib/llamados/config";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -51,4 +51,16 @@ export async function muteTableAction(_previous: FormState, formData: FormData):
   // «Quitar silencio» manda `intent=unmute`; cada duración manda `minutes` (se valida contra las que ofrece la pantalla).
   if (text(formData, "intent") === "unmute") return outcome(slug, await unmuteTable(db, orgId, id), "La mesa vuelve a admitir llamados.");
   return outcome(slug, await muteTable(db, orgId, id, formData.get("minutes")), "Mesa silenciada: sus botones de llamado no se muestran.");
+}
+
+export async function setAlertTonesAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const { slug, orgId, role, db } = await prepare(formData);
+  const values = { call: text(formData, "call"), ready: text(formData, "ready") };
+  // La base ya lo impide (la política de `organizations` es del Dueño); se corta antes para dar el motivo sin tocar nada.
+  if (role !== "owner") return { error: configErrorMessage("forbidden"), values };
+  const result = await setAlertTones(db, orgId, values.call, values.ready);
+  if (!result.ok) return { error: configErrorMessage(result.error), values };
+  // Los tonos los fija el layout de cada área: se refrescan los tres para que el cambio rija al volver a ellas.
+  for (const area of ["panel", "sala", "cocina"]) revalidatePath(`/${area}/${slug}`, "layout");
+  return { ok: true, message: "Tonos guardados. Los demás dispositivos los usan al recargar la pantalla.", values };
 }

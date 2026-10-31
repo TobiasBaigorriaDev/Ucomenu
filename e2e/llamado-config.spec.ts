@@ -139,7 +139,7 @@ test.describe("silenciar mesas", () => {
       mesa(page, "Mesa 1").getByRole("button", { name: "Silenciar Mesa 1 por 15 minutos" }),
       mesa(page, "Mesa 1").getByRole("button", { name: "Quitar el silencio de Mesa 1" }),
       page.getByLabel(/Segundos entre llamados/),
-      page.getByRole("button", { name: "Guardar" }),
+      page.getByRole("button", { name: "Guardar", exact: true }),
     ];
     for (const boton of botones) {
       const caja = await boton.boundingBox();
@@ -196,7 +196,7 @@ test.describe("cooldown", () => {
     const campo = page.getByLabel(/Segundos entre llamados/);
     await expect(campo).toHaveValue("60");
     await campo.fill("90");
-    await page.getByRole("button", { name: "Guardar" }).click();
+    await page.getByRole("button", { name: "Guardar", exact: true }).click();
     await expect(aviso(page)).toContainText("90 segundos");
     expect(await cooldownDe(branch)).toBe(90);
 
@@ -214,7 +214,7 @@ test.describe("cooldown", () => {
       const campo = page.getByLabel(/Segundos entre llamados/);
       await campo.evaluate((el) => ((el as HTMLInputElement).type = "text"));
       await campo.fill(valor);
-      await page.getByRole("button", { name: "Guardar" }).click();
+      await page.getByRole("button", { name: "Guardar", exact: true }).click();
       await expect(alerta(page), valor).toContainText(/Ingresá/);
       expect(await cooldownDe(branch), valor).toBe(60);
     }
@@ -227,7 +227,7 @@ test.describe("cooldown", () => {
     await expect(page.getByTestId("cooldown-lectura")).toContainText("120 segundos");
     await expect(page.getByTestId("cooldown-lectura")).toContainText("Dueño");
     await expect(page.getByLabel(/Segundos entre llamados/)).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Guardar" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Guardar", exact: true })).toHaveCount(0);
   });
 });
 
@@ -238,7 +238,7 @@ test.describe("cuenta y plan", () => {
       await ingresar(page, t.owner, t);
       await expect(page.getByTestId("llamados-bloqueados")).toContainText(texto);
       await expect(page.getByLabel(/Segundos entre llamados/)).toBeDisabled();
-      await expect(page.getByRole("button", { name: "Guardar" })).toBeDisabled();
+      await expect(page.getByRole("button", { name: "Guardar", exact: true })).toBeDisabled();
       await mesa(page, "Mesa 1").locator("summary", { hasText: "Silenciar" }).click();
       await expect(mesa(page, "Mesa 1").getByRole("button", { name: "Silenciar Mesa 1 por 15 minutos" })).toBeDisabled();
       expect(await cooldownDe(branch)).toBe(60);
@@ -251,7 +251,7 @@ test.describe("cuenta y plan", () => {
     await ingresar(page, t.owner, t);
     await expect(page.getByTestId("llamados-bloqueados")).toHaveCount(0);
     await page.getByLabel(/Segundos entre llamados/).fill("45");
-    await page.getByRole("button", { name: "Guardar" }).click();
+    await page.getByRole("button", { name: "Guardar", exact: true }).click();
     await expect(aviso(page)).toContainText("45 segundos");
     expect(await cooldownDe(branch)).toBe(45);
   });
@@ -261,7 +261,7 @@ test.describe("cuenta y plan", () => {
     await ingresar(page, t.owner, t);
     await expect(page.getByTestId("llamado-inactivo")).toContainText("no está activo");
     await page.getByLabel(/Segundos entre llamados/).fill("100");
-    await page.getByRole("button", { name: "Guardar" }).click();
+    await page.getByRole("button", { name: "Guardar", exact: true }).click();
     await expect(aviso(page)).toContainText("100 segundos");
     expect(await cooldownDe(branch)).toBe(100);
   });

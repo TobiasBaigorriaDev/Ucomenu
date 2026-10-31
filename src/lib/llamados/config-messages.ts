@@ -7,6 +7,7 @@ export type ConfigError =
   | "cooldown_blank"
   | "cooldown_invalid"
   | "mute_invalid"
+  | "tone_invalid"
   | "blocked_read_only"
   | "blocked_suspended"
   | "forbidden"
@@ -17,11 +18,12 @@ const MESSAGE: Record<ConfigError, string> = {
   cooldown_blank: "Ingresá cuántos segundos tienen que pasar entre dos llamados.",
   cooldown_invalid: `Ingresá un número entero de segundos entre ${COOLDOWN_MIN} y ${COOLDOWN_MAX}.`,
   mute_invalid: "Elegí cuánto tiempo silenciar la mesa.",
+  tone_invalid: "Elegí un tono de la lista para cada aviso.",
   blocked_read_only:
     "Tu cuenta está en solo lectura: no se puede cambiar la configuración del llamado hasta regularizar el pago. No se guardó ningún cambio.",
   blocked_suspended:
     "La cuenta está suspendida: no se puede cambiar la configuración del llamado hasta regularizar el pago. No se guardó ningún cambio.",
-  forbidden: "No tenés permiso para cambiar esto. El tiempo entre llamados lo define el Dueño del local.",
+  forbidden: "No tenés permiso para cambiar esto. El tiempo entre llamados y los tonos los define el Dueño del local.",
   not_found: "No encontramos esa mesa o sucursal. Puede que ya no exista: recargá la página.",
   unexpected: "No se pudo completar la acción. Probá de nuevo en unos minutos.",
 };

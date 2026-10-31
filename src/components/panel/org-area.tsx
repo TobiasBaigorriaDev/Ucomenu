@@ -7,6 +7,7 @@ import { toneFor } from "@/components/menu/tones";
 import { AppShell, ROLE_LABEL } from "./app-shell";
 import { LlamadosBanner } from "./llamados-banner";
 import { MoraBanner } from "./mora-banner";
+import { TonosDeAviso } from "./tonos-de-aviso";
 
 /** El panel y la sala son de Dueño y Personal: el cocinero solo tiene `/cocina`. */
 const visibleIn = <T extends { role: string }>(area: "panel" | "sala" | "cocina", memberships: T[]): T[] =>
@@ -26,6 +27,7 @@ export async function OrgArea({ area, slug, children }: { area: "panel" | "sala"
 
   return (
     <AppShell area={area} org={membership.org} role={membership.role} hasSeveralOrgs={visibleIn(area, memberships).length > 1}>
+      <TonosDeAviso call={membership.org.call_tone} ready={membership.org.ready_tone} />
       {showCalls ? <LlamadosBanner slug={membership.org.slug} /> : null}
       {notice ? <MoraBanner notice={notice} /> : null}
       {children}

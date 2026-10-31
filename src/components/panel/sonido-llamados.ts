@@ -1,7 +1,8 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { createBeeper, type Beeper, type NotificationSound } from "@/lib/sala/beep";
+import { createBeeper, type Beeper } from "@/lib/sala/beep";
+import { DEFAULT_TONES, type AlertTones, type ToneId } from "@/lib/sala/tonos";
 
 /**
  * Sonido de los llamados, compartido por la sala en vivo y el panel (ficha aviso-push-desde-el-panel). Vive a nivel de
@@ -16,6 +17,7 @@ const PREFERENCE_KEY = "ucomenu:sala:alertas";
 let state: SoundState = "off";
 let beeper: Beeper | null = null;
 let arming = false;
+let tones: AlertTones = { ...DEFAULT_TONES };
 const listeners = new Set<() => void>();
 
 function set(next: SoundState) {
@@ -50,7 +52,7 @@ export async function activateSound(confirm = true): Promise<boolean> {
   }
   set("on");
   remember(true);
-  if (confirm) beeper.beep();
+  if (confirm) beeper.beep(tones.call);
   return true;
 }
 
@@ -60,9 +62,25 @@ export function silenceSound() {
   remember(false);
 }
 
-/** Reproduce el aviso elegido si el sonido está activado. */
-export function beepIfOn(sound: NotificationSound = "notification") {
-  if (state === "on") beeper?.beep(sound);
+/** Los tonos que eligió el Dueño para el local (ficha tonos-de-aviso); los fija el layout en cada carga. */
+export function setAlertTones(next: AlertTones) {
+  tones = next;
+}
+
+/**
+ * Reproduce el aviso si el sonido está activado: `notification` es un llamado de mesa (y un plato nuevo en cocina) y
+ * `ready` un pedido terminado; cada uno suena con el tono que eligió el Dueño.
+ */
+export function beepIfOn(event: "notification" | "ready" = "notification") {
+  if (state === "on") beeper?.beep(event === "ready" ? tones.ready : tones.call);
+}
+
+/** Escucha un tono sin activar los avisos (el Dueño lo prueba al elegirlo). Hay que llamarla desde un toque. */
+export async function previewTone(id: ToneId): Promise<boolean> {
+  beeper ??= createBeeper();
+  if (!(await beeper.unlock())) return false;
+  beeper.beep(id);
+  return true;
 }
 
 /**

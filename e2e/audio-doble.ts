@@ -8,6 +8,7 @@ export async function conDobles(context: BrowserContext) {
   await context.addInitScript(() => {
     const w = window as unknown as Record<string, unknown>;
     w.__audios = [];
+    w.__synth = [];
     w.__wake = 0;
     class FakeContext {
       state = "running";
@@ -21,6 +22,23 @@ export async function conDobles(context: BrowserContext) {
       }
       async decodeAudioData(bytes: ArrayBuffer) {
         return { sound: new Uint8Array(bytes)[0] === 2 ? "ready" : "notification" };
+      }
+      /** Los tonos sintetizados no son un MP3: se registra la frecuencia de cada nota en `__synth`. */
+      createGain() {
+        return { gain: { setValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect() {}, disconnect() {} };
+      }
+      createOscillator() {
+        let hz = 0;
+        return {
+          type: "sine",
+          frequency: { setValueAtTime(value: number) { hz = value; } },
+          onended: null,
+          connect() {},
+          start() {
+            (window as unknown as { __synth: number[] }).__synth.push(hz);
+          },
+          stop() {},
+        };
       }
       createBufferSource() {
         const source = {
@@ -50,6 +68,8 @@ export async function conDobles(context: BrowserContext) {
 }
 
 export const sonidos = (page: Page) => page.evaluate(() => (window as unknown as { __audios: string[] }).__audios);
+/** Frecuencias (Hz) de las notas sintetizadas que sonaron, en orden. */
+export const sintetizados = (page: Page) => page.evaluate(() => (window as unknown as { __synth: number[] }).__synth);
 /** Cantidad de avisos, conservando el nombre usado por las pruebas de sala y panel. */
 export const pitidos = async (page: Page) => (await sonidos(page)).length;
 export const wakeLocks = (page: Page) => page.evaluate(() => (window as unknown as { __wake: number }).__wake);

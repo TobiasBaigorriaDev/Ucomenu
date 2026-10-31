@@ -4,7 +4,8 @@ import { configBlockNotice, NOT_ENABLED_NOTICE } from "@/lib/llamados/config-mes
 import { COOLDOWN_MAX, COOLDOWN_MIN, formatMuteEnd, isMuted } from "@/lib/llamados/config-rules";
 import { loadLlamadoConfig } from "@/lib/llamados/config";
 import { createSessionClient } from "@/lib/supabase/server";
-import { CooldownForm, MuteControls } from "./config-forms";
+import { toneById, toneOrDefault } from "@/lib/sala/tonos";
+import { CooldownForm, MuteControls, TonosForm } from "./config-forms";
 
 export const metadata: Metadata = { title: "Configuración del llamado" };
 
@@ -22,6 +23,7 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
   const isOwner = membership.role === "owner";
   const callsEnabled = ent?.features.includes("waiter_call") === true;
   const now = new Date();
+  const tones = { call: toneOrDefault(membership.org.call_tone, "call"), ready: toneOrDefault(membership.org.ready_tone, "ready") };
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
@@ -42,6 +44,30 @@ export default async function LlamadosPage({ params }: PageProps<"/panel/[org]/l
           {NOT_ENABLED_NOTICE}
         </p>
       ) : null}
+
+      <section aria-labelledby="tonos" className="panel-cell mt-6" data-testid="tonos-de-aviso">
+        <h2 id="tonos" className="font-display text-3xl leading-tight">
+          Tonos de aviso
+        </h2>
+        <p className="mt-2 max-w-prose text-base text-muted">
+          Elegí qué suena en los dispositivos del local, con el sonido activado. Tocá «Escuchar» para probar cada tono.
+        </p>
+        {isOwner ? (
+          <TonosForm orgSlug={membership.org.slug} tones={tones} canWrite={canWrite} />
+        ) : (
+          <dl className="mt-3 grid gap-1 text-base" data-testid="tonos-lectura">
+            <div>
+              <dt className="inline font-medium">Cuando una mesa llama: </dt>
+              <dd className="inline">{toneById(tones.call).label}</dd>
+            </div>
+            <div>
+              <dt className="inline font-medium">Cuando un pedido está listo: </dt>
+              <dd className="inline">{toneById(tones.ready).label}</dd>
+            </div>
+            <p className="text-sm text-muted">Lo define el Dueño del local.</p>
+          </dl>
+        )}
+      </section>
 
       {branches.length === 0 ? <p className="mt-10 max-w-prose text-lg text-muted">Este local todavía no tiene sucursales.</p> : null}
 
