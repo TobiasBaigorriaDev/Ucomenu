@@ -81,7 +81,7 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
 };
 
 // Funciones de la API que NO son SECURITY DEFINER a propósito: corren con los permisos y la RLS de quien llama, así que no amplían nada.
-const INVOKER_FUNCTIONS = new Set(["create_product_in_branches", "reorder_siblings", "replace_organization_logo", "replace_product_image", "save_promotion"]);
+const INVOKER_FUNCTIONS = new Set(["create_product_in_branches", "reorder_siblings", "replace_organization_cover", "replace_organization_logo", "replace_product_image", "save_promotion"]);
 
 // Las únicas funciones de la API (RPC). SECURITY DEFINER a propósito (salvo INVOKER_FUNCTIONS); ver ADR 0006.
 const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> = {
@@ -146,6 +146,7 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   purge_expired_orders: [false, false], // purga de pedidos de más de 2 años (ADR 0043): SECURITY DEFINER, solo service_role
   create_product_in_branches: [false, true], // alta del plato con sucursales donde se oculta (ADR 0035): SECURITY INVOKER, manda la RLS de quien llama
   reorder_siblings: [false, true], // orden de la carta (ficha orden-e-imagenes-atomicos): SECURITY INVOKER, manda la RLS de quien llama
+  replace_organization_cover: [false, true], // portada del local: SECURITY INVOKER, devuelve la portada saliente; manda la RLS del Dueño
   replace_organization_logo: [false, true], // logo del local: SECURITY INVOKER, devuelve el logo saliente; manda la RLS del Dueño
   replace_product_image: [false, true], // foto del plato: SECURITY INVOKER, devuelve la foto saliente; manda la RLS de quien llama
   register_push_subscription: [false, true], // aviso de llamados (ADR 0020): el miembro registra su dispositivo; valida adentro
