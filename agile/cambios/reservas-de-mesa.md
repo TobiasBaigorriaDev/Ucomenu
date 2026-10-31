@@ -7,6 +7,8 @@ Que el personal cargue, vea y gestione las reservas de cada sucursal desde la Sa
 pública (fases 2 y 3, abajo), que reutiliza el mismo modelo, los mismos estados y la misma pantalla.
 
 ## Fases
+**Estado (2026-10-31):** la fase 1 está hecha y en staging; las fases 2 y 3 se pospusieron por decisión del usuario y quedan en el tablero.
+
 1. **Esta ficha:** modelo de datos, funciones, pantalla «Reservas» (Sala), reserva manual, asignar mesa, cancelar, «no vino», sentar,
    purga a los 30 días, función `reservations` en Pro y Premium. Sin público, sin email.
 2. Formulario público en la carta (botón flotante solo en `/m/…`), confirmación del email, límites contra spam, aviso push al personal

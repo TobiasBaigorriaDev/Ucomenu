@@ -6,11 +6,10 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
-Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el usuario confirmó todas las comprobaciones de «Para verificar» (2026-10-26). Producción sigue bloqueada aunque un cambio esté desplegado en staging.
+Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado; el usuario confirmó todas las comprobaciones de «Para verificar» (2026-10-26). Producción sigue bloqueada aunque un cambio esté desplegado en staging.
 
 ## En curso
 
-- [C] Reservas de mesa, fase 1 (reservas manuales y asignación de mesa en la Sala; Pro y Premium; migración `20261215100000` solo en local) — verificada en local y aprobada por la revisión independiente (Codex, 3 rondas); en `origin/main` y en staging (Fly v88) con su migración; falta probarla con sesión real; fases 2 (formulario público y email) y 3 (disponibilidad automática) en la ficha → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
 - [M] Alta unificada de platos — en staging Fly v78 (con el selector de idioma y el botón Reiniciar QR en Mesas); falta la prueba manual con sesión real → [ficha](cambios/alta-unificada-de-platos.md)
 
 ## Seleccionado
@@ -19,8 +18,9 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## Para verificar
 
-- [M] Precio de la suscripción visible para el Dueño (por mes o por año, precio de lista del catálogo más sucursales adicionales y último pago) — en `origin/main` y en staging (Fly v86) → [ficha](cambios/precio-en-suscripcion.md)
-- [M] Resumen del panel con datos del día: salón en vivo, ventas de hoy contra el mismo día de la semana anterior, pendientes y carta para compartir, más rediseño visual — en `origin/main` y en staging (Fly v86); falta tu visto bueno visual en teléfono → [ficha](cambios/resumen-del-panel.md)
+- [C] Reservas de mesa, fase 1 (el personal carga reservas a mano en la Sala, por día o todas las «Próximas», y les asigna una mesa; sin duración elegible: bloque fijo de 90 minutos; Pro y Premium; migración `20261215100000`) — aprobada por la revisión independiente (Codex, 3 rondas), en `origin/main` y en staging (Fly v88) con su migración; falta probarla con una sesión real y en teléfono → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
+- [M] Precio de la suscripción visible para el Dueño (por mes o por año, precio de lista del catálogo más sucursales adicionales y último pago) — en `origin/main` y en staging (Fly v88) → [ficha](cambios/precio-en-suscripcion.md)
+- [M] Resumen del panel con datos del día: salón en vivo, ventas de hoy contra el mismo día de la semana anterior, pendientes y carta para compartir, más rediseño visual — en `origin/main` y en staging (Fly v88); falta tu visto bueno visual en teléfono → [ficha](cambios/resumen-del-panel.md)
 - [C] Personalización ampliada de la carta: tipografía, forma y densidad, ambientación, datos del local y portada con foto — implementada y verificada en local (migraciones `20261212100000` a `20261212120000` solo en local); integrada a `main` y subida a `origin/main` y en staging (Fly v82); falta tu visto bueno visual en teléfono y probar el panel con una sesión real → [ficha](cambios/personalizacion-ampliada-de-la-carta.md) · [ADR 0050](../docs/decisiones/0050-personalizacion-ampliada-de-la-carta.md)
 - [M] Aparición suave de bloques de portada — implementada localmente; falta comprobar en teléfono → [ficha](cambios/aparicion-bloques-portada.md)
 - [M] Animación del hero en móvil — implementada y verificada localmente, falta comprobación en teléfono → [ficha](cambios/animacion-hero-movil.md)
@@ -42,6 +42,12 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 ## Backlog
 
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
+
+### Reservas de mesa (fases siguientes, pospuestas por el usuario el 2026-10-31)
+
+- [C] Reservas, fase 2: botón flotante «Reservar» en la carta compartida (solo `/m/…`), formulario público (nombre, teléfono, email, personas, fecha, hora, nota y consentimiento), confirmación del email con un enlace de un solo uso, límites contra spam, interruptor por sucursal, aviso push al personal y política de privacidad actualizada (bloqueado por: proveedor de correo, p. ej. Resend, y su dominio remitente; decisiones pendientes: correo de «confirmada/rechazada» al comensal, interruptor apagado al inicio, captcha) → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
+- [C] Reservas, fase 3: disponibilidad automática por capacidad, recordatorios y cancelación desde el email (después de la fase 2)
+- [S] Programar la purga de reservas con `pg_cron` al salir a producción (`docs/produccion.md`, 4.d)
 
 ### Mejoras y decisiones pendientes del MVP
 

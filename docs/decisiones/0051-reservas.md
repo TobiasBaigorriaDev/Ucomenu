@@ -1,6 +1,6 @@
 # 0051 — Reservas de mesa, en el plan Pro, con confirmación manual por el personal
 
-- Estado: aceptada (decidida por el usuario el 2026-10-31)
+- Estado: aceptada (decidida por el usuario el 2026-10-31); fase 1 hecha, fases 2 y 3 pospuestas
 - Fecha: 2026-10-31
 - Enmienda a: [`docs/producto.md`](../producto.md), que hasta hoy dejaba las reservas fuera de alcance.
 
@@ -41,3 +41,8 @@ guardan datos personales de gente anónima (Ley 25.326), así que el cambio es d
 - La fase 2 depende de contratar y configurar un proveedor de correo (nuevo servicio, aprobación del usuario).
 - Las reservas no tocan pedidos, mesas ni llamados: una reserva `seated` solo recuerda qué mesa se ocupó; abrir el pedido sigue
   siendo del mozo.
+
+## Actualización (2026-10-31)
+- **Fase 1 hecha** (reservas manuales, asignación de mesa y vista «Próximas»): ver la [ficha](../../agile/cambios/reservas-de-mesa.md).
+- **Duración:** no se elige por reserva. Cada una ocupa su mesa un bloque fijo de **90 minutos** (el usuario pidió sacar la duración); la base conserva el parámetro, así que volver a un valor configurable no necesita migración.
+- **Fases 2 y 3 pospuestas** por el usuario («dejemos esta automatización para otra iteración»). Quedan en el tablero con sus bloqueos: proveedor de correo, política de privacidad y las decisiones abiertas de la ficha.
