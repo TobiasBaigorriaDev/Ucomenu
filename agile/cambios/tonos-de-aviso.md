@@ -1,5 +1,5 @@
 # Cambio: Tonos de aviso elegibles por el Dueño
-Estado: verificado en local (2026-10-31); sin commit, sin staging; falta escucha manual
+Estado: en `origin/main` (`e028e64`) y desplegado en staging (Fly v83); falta tu escucha manual de los tonos
 Nivel: M (escribe dos columnas nuevas de `organizations` con permiso por columna solo del Dueño, como [configuración del llamado](configuracion-del-llamado.md); no toca dinero, datos existentes ni borrados)
 
 ## Objetivo
@@ -27,4 +27,5 @@ Subir un tono propio; tono por sucursal o por persona; volumen; aplicar el cambi
 - `pnpm test:rls tonos`: **7/7** (migración aplicada con `supabase migration up`, sin `db:reset`). No se corrió la suite RLS completa.
 - E2E: `tonos-de-aviso.spec.ts` 3/3; `llamado-config.spec.ts` 18/18 (7 pruebas viejas buscaban «Guardar» por nombre parcial y chocaban con «Guardar tonos»: ahora `exact`); sonidos de cocina, panel y sala (`--grep` de audio) 10/10.
 - **No ejecutado:** escucha real de los cinco tonos sintetizados (las pruebas usan un doble de Web Audio) ni en teléfono; el volumen relativo entre tonos y el MP3 es a oído.
+- **Staging (2026-10-31, aprobado por el usuario):** migración aplicada con `supabase db push` en `ucomenu-staging` (el `--dry-run` previo mostró solo `20261213100000`). App: Fly **v83** `complete`, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:tonos-04143e4-git` (copia limpia de `04143e4`). `/`, `/login` y `/m/aurelia/centro` 200, local inexistente 404, `/panel/aurelia/llamados` sin sesión 307. **No probado:** la pantalla con una sesión real en staging. Marcha atrás de la app: `flyctl deploy -c fly.staging.toml --image registry.fly.io/ucomenu-staging:personaliza-bb3695b-git` (v82; la migración puede quedar, es aditiva).
 - Recuperación: revertir el incremento; en una base con datos, el rollback SQL está en la migración (se pierde solo la elección).
