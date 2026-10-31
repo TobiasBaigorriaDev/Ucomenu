@@ -17,7 +17,7 @@
 --
 -- Efecto sobre datos existentes: ninguno sobre organizaciones. Solo cambia lo que se muestra como «precio de lista» (Suscripción).
 --
--- Rollback (en UNA transacción):
+-- Rollback (en UNA transacción; los valores son fieles porque la migración exige esos precios de partida, ver la guarda):
 --   alter table public.plans drop constraint plans_prices_together_check;
 --   update public.plans set monthly_price_cents = case code when 'basic' then 2000 when 'pro' then 4000 else 7000 end,
 --                           yearly_price_cents  = case code when 'basic' then 19000 when 'pro' then 38000 else 67000 end;
@@ -28,6 +28,18 @@
 --   (y renombrar los dos `check` a su nombre anterior; el código de la aplicación anterior solo funciona con los nombres viejos).
 
 begin;
+
+-- Guarda: el rollback de arriba devuelve valores fijos, así que solo es fiel si los precios de partida son exactamente estos (los del
+-- seed de 20261014003848, confirmados en local y en staging el 2026-10-31). Si alguien los cambió a mano, la migración se detiene
+-- en vez de pisarlos sin dejar con qué volver (hallazgo de la revisión de Codex, ronda 1).
+do $$
+begin
+  if (select count(*) from public.plans
+      where (code, monthly_price_usd_cents, yearly_price_usd_cents) in (('basic', 2000, 19000), ('pro', 4000, 38000), ('premium', 7000, 67000))) <> 3 then
+    raise exception 'plans_prices_unexpected: los precios del catálogo no son los esperados; anotarlos antes de migrar y ajustar el rollback' using errcode = '55000';
+  end if;
+end
+$$;
 
 alter table public.plans rename column monthly_price_usd_cents to monthly_price_cents;
 alter table public.plans rename column yearly_price_usd_cents to yearly_price_cents;

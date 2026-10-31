@@ -39,5 +39,6 @@ Cobro automático, tipo de cambio, ajuste por inflación de los precios, factura
 - Orden recomendado en staging: `db push` y despliegue inmediato (hay unos segundos sin precio en Suscripción).
 
 ## (C) Revisión y aprobación
-- Revisión independiente: **pendiente** (`pnpm revision:codex --base main --ficha agile/cambios/precios-en-pesos.md --nivel C`).
+- **Ronda 1 (Codex, commit `95fda90`): APROBAR CON CAMBIOS, un hallazgo «importante», real.** El rollback documentado devuelve valores USD fijos, pero la migración pisaba los precios sin conservar los de partida: con un catálogo editado a mano, volver atrás habría dejado precios distintos de los anteriores. Corregido con una **guarda en la migración**: si los precios de partida no son exactamente los del seed (confirmados en local y, solo lectura, en staging el 2026-10-31), se detiene con `plans_prices_unexpected` y no pisa nada. Comprobado en la base local dentro de transacciones deshechas: rollback documentado + migración vuelve a dar los precios en pesos; con Pro cambiado a 4.100 la migración falla y no queda ningún cambio. Codex fue estático (no ejecutó pruebas ni mutaciones).
+- Revisión de verificación (ronda 2): ver abajo cuando termine.
 - Aprobación del usuario para staging: **pendiente**. Precios dados por el usuario el 2026-10-31.
