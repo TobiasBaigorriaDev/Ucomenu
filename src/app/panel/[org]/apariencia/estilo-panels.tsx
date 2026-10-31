@@ -98,14 +98,14 @@ export function StylePanel({ style, saved, onChange, canWrite }: StyleProps) {
           {GROUPS.map(group => (
             <div key={group.scheme} className="mt-4 first:mt-0">
               <p className="mb-2 text-sm font-medium text-muted">{group.title}</p>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,10rem),1fr))] gap-3">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,11.5rem),1fr))] gap-3">
                 {PALETTE_KEYS.filter(key => PALETTES[key].scheme === group.scheme).map(key => {
                   const p = PALETTES[key];
                   return (
-                    <label key={key} className="flex min-h-16 cursor-pointer items-center gap-3 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
+                    <label key={key} className="flex min-h-16 min-w-0 cursor-pointer items-center gap-2.5 rounded-2xl border border-ink/30 px-3 py-3 has-checked:border-cobalt has-checked:bg-tile/40 has-disabled:cursor-default has-disabled:opacity-60">
                       <input key={`${key}:${saved.palette}`} type="radio" name="ui-palette" value={key} checked={style.palette === key} onChange={() => onChange({ palette: key })} className="size-4 shrink-0 accent-cobalt" />
                       <span className="min-w-0">
-                        <span className="block font-medium">{p.name}</span>
+                        <span className="block font-medium [overflow-wrap:anywhere]">{p.name}</span>
                         <span aria-hidden="true" className="mt-1 flex gap-1">
                           {[p.background, p.accent, p.terra, p.blush].map(color => <span key={color} className="size-3 rounded-full border border-ink/30" style={{ background: color }} />)}
                         </span>
