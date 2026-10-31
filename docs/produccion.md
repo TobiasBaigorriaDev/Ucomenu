@@ -163,6 +163,17 @@ select cron.schedule(
 ```
 Si el atraso creciera (más de 45 000 pedidos vencidos por día), subir el lote (hasta 5000) o la frecuencia; no convertirlo en un bucle. Para dar de baja: `select cron.unschedule('purge-expired-orders');`. `pg_cron` guarda en `cron.job_run_details` el **estado** de cada ejecución (`succeeded` o `failed`, con el error si falló) pero **no el JSON que devuelve la función**: los conteos de lo borrado (pedidos, líneas, opciones y eventos) no quedan registrados por la tarea. Se ven ejecutando la función a mano (`select public.purge_expired_orders(interval '2 years', 500)` devuelve los conteos del lote) y el estado de la purga se verifica con las consultas de abajo. Comprobación después de una ejecución real: estado `succeeded`, `select count(*) from public.orders where status <> 'open' and closed_at < now() - interval '2 years'` igual a 0 y `select tgenabled from pg_trigger where tgname = 'order_events_no_update_delete'` igual a `O` (encendido). Para probar con datos ficticios en staging: crear un pedido, cerrarlo, envejecer su `closed_at` como `postgres` (con `set session_replication_role = replica`) y ejecutar `select public.purge_expired_orders(interval '2 years', 500)` a mano. **El borrado es irreversible** (solo el respaldo, paso 6).
 
+### 4.d Programar la purga de reservas (aprobación: infraestructura)
+La función `public.purge_expired_reservations` existe (ADR 0051; ficha `reservas-de-mesa`) pero nada la ejecuta: sin esto los datos personales de las reservas (nombre, teléfono y email) se acumulan. Borra, por lotes, las reservas **terminadas hace más de 30 días** (por la hora de fin de la reserva, cualquiera sea su estado) y devuelve cuántas borró. Tiene un piso de 7 días y solo la llama `service_role`. **El plazo de 30 días tiene que coincidir con el texto de privacidad** (que hay que actualizar antes de abrir el formulario público, fase 2). Un lote por ejecución:
+```sql
+select cron.schedule(
+  'purge-expired-reservations',
+  '15 6 * * *',
+  $$ select public.purge_expired_reservations(interval '30 days', 500) $$
+);
+```
+Para dar de baja: `select cron.unschedule('purge-expired-reservations');`. Si el atraso creciera, subir el lote (hasta 5000) o repetir la ejecución durante la madrugada.
+
 ## 5. Dominio (aprobación: DNS y app de producción)
 `ucomenu.com` ya es del usuario (DNS en Cloudflare). Este paso se hace cuando exista la app de producción en Fly (`fly.toml`, hoy plantilla):
 1. Agregar el dominio a Fly: `fly certs add ucomenu.com -c fly.toml` (y `www.ucomenu.com` si se quiere; redirigirlo al raíz). `fly certs show ucomenu.com -c fly.toml` indica los registros exactos.

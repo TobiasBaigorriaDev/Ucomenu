@@ -13,6 +13,7 @@ import { buildAhora, type AhoraView } from "@/lib/resumen/ahora";
 import { buildAttention, loadPendingComments, loadSoldOutProducts } from "@/lib/resumen/atencion";
 import { loadHoy } from "@/lib/resumen/cargar";
 import type { HoyView } from "@/lib/resumen/hoy";
+import { loadPendingReservations } from "@/lib/reservas/cargar";
 import { loadMesas } from "@/lib/sala/mesas-loader";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -69,11 +70,13 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
   const wantsAhora = features.includes("orders");
   const wantsHoy = isOwner && features.includes("analytics");
   const wantsComments = features.includes("video_feed");
-  const [mesas, hoy, pendingComments, soldOut] = await Promise.all([
+  const wantsReservations = features.includes("reservations");
+  const [mesas, hoy, pendingComments, soldOut, pendingReservations] = await Promise.all([
     wantsAhora ? settle(() => loadMesas(supabase, orgId)) : Promise.resolve(null),
     wantsHoy ? settle(() => loadHoy(supabase, orgId)) : Promise.resolve(null),
     wantsComments ? loadPendingComments(supabase, orgId) : Promise.resolve(null),
     loadSoldOutProducts(supabase, orgId),
+    wantsReservations ? loadPendingReservations(supabase, orgId) : Promise.resolve(null),
   ]);
 
   const ahora: AhoraView | "error" | null = mesas === null ? null : mesas === "error" ? "error" : buildAhora(mesas);
@@ -88,6 +91,7 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
       : null;
   const attention = buildAttention({
     slug: membership.org.slug,
+    pendingReservations,
     pendingComments,
     soldOutProducts: soldOut,
     usage: usageRows?.flatMap((row) => (row.limit === null ? [] : [{ label: row.label, used: row.used, limit: row.limit }])) ?? null,

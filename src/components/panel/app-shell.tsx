@@ -58,6 +58,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
         items.push({ href: `/panel/${org.slug}/personal`, label: "Personal", icon: "personal", group: "Gestión" });
       }
       items.push({ href: `/sala/${org.slug}/mesas`, label: "Sala en vivo", icon: "sala", group: "Servicio", alertOnCalls: true });
+      items.push({ href: `/sala/${org.slug}/reservas`, label: "Reservas", icon: "reservas", group: "Servicio" });
     } else if (area === "cocina") {
       items.push({ href: `/cocina/${org.slug}`, label: "Pedidos", exact: true, icon: "sala" });
       items.push({ href: `/cocina/${org.slug}/carta`, label: "Platos agotados", icon: "carta" });
@@ -65,6 +66,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
       if (role !== "cook") items.push({ href: `/panel/${org.slug}`, label: "Volver al panel principal", icon: "panel" });
     } else {
       items.push({ href: `/sala/${org.slug}/mesas`, label: "Mesas en vivo", icon: "mesas" });
+      items.push({ href: `/sala/${org.slug}/reservas`, label: "Reservas", icon: "reservas" });
       items.push({ href: `/panel/${org.slug}`, label: "Volver al panel principal", icon: "panel" });
     }
   } else if (area === "admin") {

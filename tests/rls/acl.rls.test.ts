@@ -73,6 +73,8 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   my_assigned_branches: [true, false, false], // personal por sucursal (ficha personal-por-sucursal): sucursales activas asignadas a quien llama; solo la usan funciones de public; sin EXECUTE para la API
   cook_drops_push: [true, false, false], // trigger de memberships: quien pasa a cocinero pierde sus suscripciones push
   can_take_orders: [true, false, false], // la usa add_order_item (ficha pedidos-esquema-y-alta-de-items): miembro + función `orders` en el plan + cuenta al día; sin EXECUTE para la API
+  can_manage_reservations: [true, false, false], // reservas (ficha reservas-de-mesa, ADR 0051): Dueño o Staff (no el cocinero) + función `reservations` en el plan + cuenta al día; sin EXECUTE para la API
+  reservation_table_is_free: [true, false, false], // reservas: ¿la mesa está libre en ese horario? Solo la llaman las funciones de reservas, con el candado de la mesa tomado; sin EXECUTE para la API
   can_manage_promotions: [true, false, true], // usada por las políticas de escritura de promotions y sus tablas (ficha promociones-y-precio-efectivo): Dueño + función en el plan + cuenta al día
   record_promotion_change: [true, false, false], // trigger de promotions, promotion_targets y promotion_branches: escribe promotion_history (la API no tiene INSERT)
   promotion_history_append_only: [false, false, false], // trigger de promotion_history: rechaza UPDATE, DELETE y TRUNCATE
@@ -119,6 +121,10 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   reset_table_turn: [false, true], // turno de mesa (ficha turno-de-mesa, ADR 0044): el miembro reinicia a mano el turno de una mesa; nunca se bloquea por plan ni mora
   reset_all_table_turns: [false, true],
   owner_qr_reset_schedules: [false, true],
+  create_reservation: [false, true], // reservas (ficha reservas-de-mesa, ADR 0051): única puerta de alta de reservations; valida adentro (miembro que no sea cocinero, plan, mora)
+  assign_reservation_table: [false, true], // reservas: asigna una mesa libre y confirma; valida adentro
+  set_reservation_status: [false, true], // reservas: cancelar, rechazar, sentar, «no vino» o soltar la mesa según las transiciones permitidas; valida adentro
+  purge_expired_reservations: [false, false], // purga de reservas terminadas hace más de 30 días (ADR 0051): SECURITY DEFINER, solo service_role
   add_order_item: [false, true], // pedidos del mozo (ficha pedidos-esquema-y-alta-de-items, ADR 0041): única puerta de escritura de orders y order_items; valida adentro (miembro, plan, mora)
   org_entitlements: [false, true],
   owner_calls_by_hour: [false, true], // analítica básica (ADR 0022): llamados por hora para el Dueño con el plan; vuelve a comprobar todo; solo lectura

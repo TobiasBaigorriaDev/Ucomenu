@@ -727,6 +727,38 @@ isOneToOne: false
       referencedColumns: ["user_id","organization_id"]
     }
                   ]
+                },"reservations": {
+                  Row: {
+                    "branch_id": string,"client_key": string,"created_at": string,"created_by": string | null,"ends_at": string,"guest_email": string | null,"guest_name": string,"guest_phone": string,"id": string,"notes": string | null,"organization_id": string,"party_size": number,"request_hash": string,"source": string,"starts_at": string,"status": string,"table_id": string | null,"table_label": string | null,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "branch_id": string,"client_key": string,"created_at"?: string,"created_by"?: string | null,"ends_at": string,"guest_email"?: string | null,"guest_name": string,"guest_phone": string,"id"?: string,"notes"?: string | null,"organization_id": string,"party_size": number,"request_hash": string,"source"?: string,"starts_at": string,"status"?: string,"table_id"?: string | null,"table_label"?: string | null,"updated_at"?: string
+                  }
+                  Update: {
+                    "branch_id"?: string,"client_key"?: string,"created_at"?: string,"created_by"?: string | null,"ends_at"?: string,"guest_email"?: string | null,"guest_name"?: string,"guest_phone"?: string,"id"?: string,"notes"?: string | null,"organization_id"?: string,"party_size"?: number,"request_hash"?: string,"source"?: string,"starts_at"?: string,"status"?: string,"table_id"?: string | null,"table_label"?: string | null,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "reservations_branch_id_organization_id_fkey"
+      columns: ["branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "branches"
+      referencedColumns: ["id","organization_id"]
+    },{
+      foreignKeyName: "reservations_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "reservations_table_id_branch_id_organization_id_fkey"
+      columns: ["table_id","branch_id","organization_id"]
+isOneToOne: false
+      referencedRelation: "tables"
+      referencedColumns: ["id","branch_id","organization_id"]
+    }
+                  ]
                 },"subscription_addons": {
                   Row: {
                     "addon_code": string,"created_at": string,"ends_at": string | null,"extra_packs": number,"id": string,"organization_id": string
@@ -928,6 +960,9 @@ isOneToOne: false
 "admin_void_payment":
 { Args: { "p_actor": string,"p_org": string,"p_payment": string,"p_reason": string }; Returns: string
                            },
+"assign_reservation_table":
+{ Args: { "p_reservation": string,"p_table": string }; Returns: Json
+                           },
 "claim_analytics_summary":
 { Args: { "p_branch"?: string,"p_cooldown_minutes": number,"p_days": number,"p_org": string,"p_user": string }; Returns: Json
                            },
@@ -936,6 +971,9 @@ isOneToOne: false
                            },
 "create_product_in_branches":
 { Args: { "p_category": string,"p_description": string,"p_dietary_tags": (string)[],"p_hidden_branches": (string)[],"p_is_active": boolean,"p_name": string,"p_org": string,"p_price_cents": number,"p_sort_order": number }; Returns: string
+                           },
+"create_reservation":
+{ Args: { "p_branch": string,"p_client_key": string,"p_date": string,"p_duration": number,"p_email": string,"p_name": string,"p_notes": string,"p_party": number,"p_phone": string,"p_table": string,"p_time": string }; Returns: Json
                            },
 "create_waiter_call":
 { Args: { "p_client"?: string,"p_kind": string,"p_token": string,"p_visit_started_at"?: string }; Returns: Json
@@ -1018,6 +1056,9 @@ isOneToOne: false
 "purge_expired_orders":
 { Args: { "p_batch"?: number,"p_retention"?: string }; Returns: Json
                            },
+"purge_expired_reservations":
+{ Args: { "p_batch"?: number,"p_retention"?: string }; Returns: number
+                           },
 "purge_video_comments":
 { Args: { "p_batch"?: number,"p_pending_retention"?: string,"p_rejected_retention"?: string }; Returns: number
                            },
@@ -1077,6 +1118,9 @@ isOneToOne: false
                            },
 "set_order_item_status":
 { Args: { "p_item": string,"p_reason"?: string,"p_status": string }; Returns: Json
+                           },
+"set_reservation_status":
+{ Args: { "p_reservation": string,"p_status": string }; Returns: Json
                            },
 "set_video_like":
 { Args: { "p_device": string,"p_liked": boolean,"p_rate"?: string,"p_token": string,"p_video": string,"p_visit_started_at"?: string }; Returns: Json

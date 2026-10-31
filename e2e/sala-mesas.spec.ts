@@ -68,7 +68,7 @@ test.describe("vista Mesas", () => {
     await expect(page).toHaveURL(new RegExp(`/sala/${l.t.slug}/mesas$`));
     await expect(page.getByRole("heading", { name: "Mesas en vivo", level: 1 })).toBeVisible();
     const nav = page.getByRole("navigation", { name: "Secciones de la sala" });
-    await expect(nav.getByRole("link")).toHaveText(["Mesas en vivo", "Volver al panel principal"]);
+    await expect(nav.getByRole("link")).toHaveText(["Mesas en vivo", "Reservas", "Volver al panel principal"]);
 
     const m1 = mesaCard(page, "Mesa 1");
     await expect(m1).toHaveAttribute("data-estado", "pedido");

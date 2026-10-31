@@ -10,7 +10,7 @@ import type { Database } from "@/lib/supabase/database.types";
 type Db = SupabaseClient<Database>;
 
 export type AttentionItem = {
-  id: "comentarios" | "agotados" | "plan";
+  id: "reservas" | "comentarios" | "agotados" | "plan";
   text: string;
   href: string;
   cta: string;
@@ -29,12 +29,22 @@ export const NEAR_LIMIT = 0.9;
  */
 export function buildAttention(input: {
   slug: string;
+  /** Reservas por confirmar (solo con la función `reservations`); `null` si no corresponde o no se pudo leer. */
+  pendingReservations?: number | null;
   pendingComments: number | null;
   soldOutProducts: number | null;
   usage: readonly AttentionUsage[] | null;
 }): AttentionItem[] {
   const base = `/panel/${input.slug}`;
   const items: AttentionItem[] = [];
+  if (input.pendingReservations !== undefined && input.pendingReservations !== null && input.pendingReservations > 0) {
+    items.push({
+      id: "reservas",
+      text: `${plural(input.pendingReservations, "reserva espera", "reservas esperan")} que le asignes una mesa.`,
+      href: `/sala/${input.slug}/reservas`,
+      cta: "Ver reservas",
+    });
+  }
   if (input.pendingComments !== null && input.pendingComments > 0) {
     items.push({
       id: "comentarios",
