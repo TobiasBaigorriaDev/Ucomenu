@@ -1,3 +1,5 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createCategory, createProduct, loadProduct, removeProductImage, setProductImage } from "@/lib/carta/catalog";
 import { IMAGE_BUCKET } from "@/lib/carta/images";
@@ -12,6 +14,7 @@ import {
   deleteUser,
   serviceClient,
   setSubscription,
+  sql,
   type Db,
   type TestUser,
 } from "./helpers";
@@ -498,6 +501,31 @@ describe("portada del local", () => {
 
     expect(await trasCover(org)).toBeNull();
     expect(await archivosDelLogo(org)).toEqual([logo]);
+  });
+
+  it("el reemplazo ESPERA el bloqueo de la fila y devuelve la referencia que otro cambio dejó confirmada (determinista: sin FOR UPDATE leería la vieja)", async () => {
+    const org = await nuevaOrg();
+    expect((await setCover(owner.db, org, png())).ok).toBe(true);
+    const intermedia = `${org}/${crypto.randomUUID()}.png`;
+    const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
+    // Otra transacción cambia la referencia y se queda con la fila 2 segundos antes de confirmar.
+    const retiene = promisify(execFile)("docker", ["exec", contenedor, "psql", "-U", "postgres", "-c",
+      `begin; update public.organizations set cover_path = '${intermedia}' where id = '${org}'; select pg_sleep(2); commit;`]);
+    // Se espera a que esa transacción tenga el bloqueo (está dentro de pg_sleep), sin depender de cuánto tarde Docker.
+    const hasta = Date.now() + 8000;
+    while (sql(`select count(*) from pg_stat_activity where wait_event = 'PgSleep' and query like '%${org}%'`)[0][0] === "0") {
+      if (Date.now() > hasta) throw new Error("La transacción que retiene la fila no arrancó.");
+      await new Promise((r) => setTimeout(r, 50));
+    }
+
+    const inicio = Date.now();
+    const respuesta = await owner.db.rpc("replace_organization_cover", { p_org: org, p_path: `${org}/${crypto.randomUUID()}.png` });
+    const espera = Date.now() - inicio;
+    await retiene;
+
+    expect(respuesta.error).toBeNull();
+    expect(espera).toBeGreaterThan(300); // se quedó esperando al bloqueo en vez de leer sin él
+    expect(respuesta.data).toMatchObject({ updated: true, previous: intermedia });
   });
 
   it("un fallo al limpiar la portada anterior no rompe la vigente y se informa incompleto; el Staff no cambia nada", async () => {

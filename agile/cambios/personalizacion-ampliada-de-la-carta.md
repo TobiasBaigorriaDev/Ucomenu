@@ -1,5 +1,5 @@
 # Cambio: Personalización ampliada de la carta
-Estado: en curso (implementado y verificado en local; sin commit, sin staging, falta revisión independiente de la parte C y tu aprobación)
+Estado: para verificar (implementado y verificado en local en la rama `feat/personalizacion-ampliada`; sin staging; revisión independiente hecha, falta tu visto bueno y tu aprobación)
 Nivel: **C** (la portada suma archivos públicos de la organización, una función con permisos y políticas heredadas de Storage, y la voz del local expone texto y números a anónimos). Tipografía, forma, densidad y ambientación son **M** y viajan en la misma entrega. [ADR 0050](../../docs/decisiones/0050-personalizacion-ampliada-de-la-carta.md). Antecedentes: [identidad del local](identidad-del-local.md), [personalización de la carta](personalizacion-carta.md), ADR 0036 y 0037.
 
 ## Objetivo
@@ -28,11 +28,12 @@ Cinco herramientas nuevas en `/panel/[org]/apariencia` para que cada local sient
 ## Fuera de alcance
 Colores o fuentes libres, cupo por plan, video de portada, horarios por sucursal, traducción del lema, «looks» de un clic que combinen todo (siguiente paso natural).
 
-## Evidencia (árbol sin confirmar sobre `f2327af`)
+## Evidencia (rama `feat/personalizacion-ampliada` sobre `f2327af`, commits `64088f0`, `f812d8f` y `bda86a0`)
 - `pnpm lint`: sin errores (una advertencia ajena en `video/`). `pnpm build`: verde.
-- `pnpm test`: 1277 de 1277 (nuevos: `apariencia.test.ts`, `voz.test.ts`; amplía `textos`).
-- `pnpm test:rls identidad reemplazo`: 30 de 30 (nuevas: catálogos, voz con el espejo de los `check`, portada con reemplazo, distinta del logo, permisos). La corrida completa de `pnpm test:rls` se registra abajo.
-- `pnpm exec playwright test e2e/identidad.spec.ts e2e/rendimiento-carta.spec.ts`: 16 de 16 antes de agregar la prueba nueva; la prueba nueva (tipografía → forma → ambientación → tema manda → datos → portada → quitar) pasa sola.
+- `pnpm test`: 1277 de 1277 (nuevos: `apariencia.test.ts`, `voz.test.ts`; amplía `textos`). `pnpm typecheck` sin errores.
+- `pnpm test:rls identidad reemplazo`: 30 de 30 (nuevas: catálogos, voz con el espejo de los `check`, portada con reemplazo, distinta del logo, permisos). **`pnpm test:rls` completo: 1514 pasan, 12 fallan y el resto se omite (1533).** Los 2 fallos causados por este cambio (`acl.rls.test.ts`: faltaba registrar `replace_organization_cover`) se corrigieron en `f812d8f` (22 de 22). Los otros 10 fallos son ajenos y vienen de los datos de demo que otras sesiones cargaron en la base local (locales Aurelia, Bruma Bistró, Fuego Andino, La Bestia y Patio Oliva, y platos extra de Café Ejemplo): `catalog.rls` (7), `tenancy.rls` (2) y `push.rls` (1: «un local sin membresías»). **No se comprobó sobre una base limpia** (`pnpm db:reset` borraría esa carga local); conviene hacerlo antes de integrar.
+- E2E: `identidad.spec.ts` 7 de 7 (incluye la prueba nueva: tipografía → forma → ambientación → tema manda → datos → portada → Hoja → quitar) y `rendimiento-carta.spec.ts` en verde. `menu.spec.ts` (3 pruebas) falla por los platos y categorías extra de Café Ejemplo en la base local (esperaba la carta del seed); `carta.spec.ts` «en gracia se edita» falló una vez y pasó al repetir (se anota, no se investigó).
+- **Mutación de la defensa de concurrencia:** quitando `FOR UPDATE` de `replace_organization_cover` en la base local, la prueba determinista nueva («el reemplazo ESPERA el bloqueo…») falla 3 de 3 y la de reemplazos simultáneos también; con la función original, 21 de 21 en `reemplazo-de-imagenes`. La función quedó restaurada.
 - Revisión visual con «Aurelia» local a 390 px: las 6 tipografías, forma recta y filete con densidad compacta, 5 texturas, lema y contacto; nombre de 47 caracteres con Bodegón, Nocturna y Moderna sin desborde.
 - No corrido: staging, teléfono real, revisión independiente (ver abajo).
 
@@ -49,5 +50,8 @@ Colores o fuentes libres, cupo por plan, video de portada, horarios por sucursal
 - El código nuevo con una base sin migrar falla al leer columnas inexistentes: aplicar las tres migraciones antes de desplegar.
 
 ## (C) Revisión y aprobación
-- Revisión independiente: pendiente (`pnpm revision:codex`, ver la skill `ciclo-revision-codex`).
-- Aprobación del usuario para staging: pendiente.
+- **Revisión independiente (Codex, solo lectura, `--base main`):**
+  - Ronda 1 (informe `output/revisiones/2026-10-31T01-53-33-base-main.md`): aprobar con cambios, 2 hallazgos importantes, ambos reales. (1) El estilo Hoja no dibujaba lema ni portada: la portada se excluye a propósito y ahora está documentada y avisada en el panel; el lema se agregó a la barra de Hoja (`bda86a0`, con E2E). (2) La concurrencia de `replace_organization_cover` no tenía prueba propia: se agregaron reemplazos simultáneos, quitar mientras se reemplaza y fallo de limpieza (`bda86a0`).
+  - Ronda 2 (verificación, informe `2026-10-31T02-03-24-base-main.md`): aprobar con cambios; (1) corregido; (2) parcial: las pruebas no forzaban de forma determinista la lectura sin bloqueo. Se agregó una prueba determinista que retiene la fila desde otra transacción y exige que el reemplazo espere y devuelva la referencia confirmada; validada con la mutación de arriba.
+  - Codex no pudo ejecutar pruebas ni `git status` (el sandbox no ve el árbol de trabajo): su lectura fue estática.
+- Aprobación del usuario para aplicar las migraciones y desplegar en staging: **pendiente**. El veredicto de Codex no la reemplaza.
