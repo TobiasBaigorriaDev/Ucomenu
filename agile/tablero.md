@@ -45,6 +45,28 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado. De �
 
 > Las fases agrupan por objetivo de entrega; dentro de cada una el orden es libre salvo las dependencias indicadas. Las fichas se crean al seleccionar el ítem.
 
+### Salida a producción (pendientes de la revisión del 2026-10-31)
+
+> Veredicto de la revisión: **no listo** hasta crear producción y resolver lo legal. Procedimiento en [`docs/produccion.md`](../docs/produccion.md); cada paso remoto necesita aprobación del usuario. Orden sugerido: legales y abogado primero (es lo que más tarda), en paralelo las cuentas de Mux y Gemini y la decisión de Supabase; después producción, purgas, respaldos y dominio.
+
+- [S] Datos del responsable en los textos legales: razón social, CUIT y domicilio (`LEGAL_ENTITY` en `src/lib/legal.ts`) y correo de contacto real (`NEXT_PUBLIC_CONTACT_EMAIL`; staging usa uno de prueba) (bloqueado por: usuario)
+- [S] Confirmar con un contador los plazos de conservación de pedidos (2 años) y de pagos (10 años), y completar el del registro de auditoría (bloqueado por: contador)
+- [S] Revisión de un abogado de `/terminos`, `/privacidad` y `/alergenos`: transferencias internacionales, cifrado de las copias, la baja «sin reembolso» frente a los derechos de consumidores y la sección de reservas (bloqueado por: abogado)
+- [S] Decidir Supabase Free o Pro para producción (recomendación: Pro desde el primer cliente que paga) (bloqueado por: usuario)
+- [M] Crear el proyecto de Supabase de producción, aplicar las migraciones con `db push` (nunca `db reset` ni el seed) y la configuración de Auth; primer SuperAdmin → [procedimiento](../docs/produccion.md) (bloqueado por: aprobación del usuario)
+- [M] Crear la app de producción en Fly (`fly.toml`), cargar secretos y variables (`pnpm prod:check` sin errores), desplegar y apuntar `ucomenu.com` en Cloudflare con HTTPS; recién entonces imprimir QR (bloqueado por: Supabase de producción)
+- [S] Cuenta de Mux de producción: `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET` y el webhook `MUX_WEBHOOK_SECRET`; probar subir un video (bloqueado por: usuario, gasto)
+- [S] Clave de Gemini de un proyecto de Google **con facturación** (no la gratuita) para el resumen con IA y las traducciones; sin ella esas funciones quedan apagadas y la portada las anuncia (bloqueado por: usuario)
+- [S] Programar en staging `purge-video-comments`, `purge-expired-orders` y `prune-cron-history` y mirar `cron.job_run_details` tras la primera ejecución; el SQL está en `docs/produccion.md` (4.b, 4.c y 4.e) (bloqueado por: autorización de escritura remota)
+- [S] Mirar `cron.job_run_details` de `purge-expired-reservations` en staging después del 2026-11-01 06:15 UTC (primera ejecución real)
+- [S] Programar en producción las purgas (4 a 4.e): `waiter_calls`, comentarios, pedidos, reservas y la limpieza del historial; comprobar que la tarea de reinicio de QR quedó activa (bloqueado por: Supabase de producción)
+- [S] Respaldos: programar el respaldo diario (07:00 de Argentina, 7+4+3, segunda copia cifrada fuera de OneDrive), elegir la herramienta de cifrado y repetir el ensayo de restauración (el último fue el 2026-10-17) → [recomendación](../docs/operacion.md) (bloqueado por: aprobación de instalar el cifrado)
+- [S] Monitoreo externo de disponibilidad (por ejemplo UptimeRobot o Better Stack, plan gratis) sobre `/` y la carta de la demo (bloqueado por: usuario)
+- [S] Demo estable de la portada: una carta de ejemplo en producción o `NEXT_PUBLIC_DEMO_CARTA_PATH` hacia una URL estable; hoy apunta a staging (se retoma después de crear producción)
+- [S] Comprobación posterior a la publicación (paso 8 de `docs/produccion.md`): login, `/admin` 404, QR, llamado, textos sin pendientes, cabeceras, videos, IA, purgas y reinicio de QR
+- [S] Pruebas manuales en staging con sesión real y en teléfono: Suscripción con precios en pesos, Resumen, Reservas, estilo Hoja, personalización de la carta, animación y aparición de la portada, vibración en Android y tonos; confirmar que el WhatsApp de la portada es el definitivo
+- [M] Proveedor Claude para el resumen de la analítica y las traducciones, si Gemini funciona bien (hoy no existe; decisión del usuario del 2026-10-31) → [ADR 0046](../docs/decisiones/0046-sugerencia-de-traducciones-con-ia.md) · [ADR 0047](../docs/decisiones/0047-resumen-de-analitica-con-ia.md)
+
 ### Reservas de mesa (fases siguientes, pospuestas por el usuario el 2026-10-31)
 
 - [C] Reservas, fase 2: botón flotante «Reservar» en la carta compartida (solo `/m/…`), formulario público (nombre, teléfono, email, personas, fecha, hora, nota y consentimiento), confirmación del email con un enlace de un solo uso, límites contra spam, interruptor por sucursal, aviso push al personal y política de privacidad actualizada (bloqueado por: proveedor de correo, p. ej. Resend, y su dominio remitente; decisiones pendientes: correo de «confirmada/rechazada» al comensal, interruptor apagado al inicio, captcha) → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
