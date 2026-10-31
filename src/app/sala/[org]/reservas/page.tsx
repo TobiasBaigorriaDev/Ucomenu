@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { dangerButtonClass, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/panel/styles";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
-import { loadDay } from "@/lib/reservas/cargar";
+import { loadDay, PAGE_LIMIT } from "@/lib/reservas/cargar";
 import {
   dayTitle,
   DURATIONS,
@@ -101,7 +101,7 @@ function AssignTable({ back, reservation, free }: { back: Back; reservation: Res
   );
 }
 
-function ReservationCard({ reservation, back, timeZone, free, now }: { reservation: Reservation; back: Back; timeZone: string; free: ReservationTable[]; now: number }) {
+function ReservationCard({ reservation, back, timeZone, free, now, readOnly }: { reservation: Reservation; back: Back; timeZone: string; free: ReservationTable[]; now: number; readOnly: boolean }) {
   const started = now >= Date.parse(reservation.startsAt);
   return (
     <li className="panel-cell" data-testid="reserva" data-id={reservation.id} data-status={reservation.status}>
@@ -136,7 +136,7 @@ function ReservationCard({ reservation, back, timeZone, free, now }: { reservati
         </p>
       ) : null}
 
-      {reservation.status === "requested" || reservation.status === "confirmed" ? (
+      {!readOnly && (reservation.status === "requested" || reservation.status === "confirmed") ? (
         <div className="mt-4 flex flex-col gap-3">
           <AssignTable back={back} reservation={reservation} free={free} />
           <div className="flex flex-wrap items-start gap-2">
@@ -179,6 +179,10 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
     readBranchAccess(db, orgId),
   ]);
   const hasFeature = ent?.features.includes("reservations") === true;
+  // En solo lectura o suspendida `org_entitlements` quita la función (no se puede escribir), pero lo ya cargado se sigue pudiendo leer
+  // (la política de lectura es de miembros): se muestra la lista sin formularios ni botones (revisión de Codex).
+  const readOnlyView = ent !== null && !hasFeature && (ent.state === "read_only" || ent.state === "suspended");
+  const canView = hasFeature || readOnlyView;
   const branches = onlyAssigned(branchesResult.data ?? [], access.assigned);
   const requested = typeof query.sucursal === "string" ? query.sucursal : null;
   // Sin `?sucursal=`: la que la persona mira en la Sala si es exactamente una; si no, la primera.
@@ -187,7 +191,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
   const today = todayIn(timeZone);
   const date = parseDate(query.dia) ?? today;
 
-  const data = hasFeature && branch ? await loadDay(db, orgId, branch.id, date, timeZone) : null;
+  const data = canView && branch ? await loadDay(db, orgId, branch.id, date, timeZone) : null;
   const now = new Date().getTime();
   const back: Back = { slug, date, branch: branch?.slug ?? "" };
   const list = data ? sortForDay(data.day) : [];
@@ -208,7 +212,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
         <p role="status" className="mt-6 max-w-prose text-base text-muted" data-testid="reservas-sin-estado">
           No pudimos comprobar el estado de la cuenta. Probá de nuevo en unos minutos.
         </p>
-      ) : !hasFeature ? (
+      ) : !canView ? (
         <p className="panel-cell mt-6 max-w-prose text-base" data-testid="reservas-no-incluida">
           Las reservas están incluidas desde el plan Pro.{" "}
           {membership.role === "owner" ? (
@@ -239,6 +243,18 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
             </nav>
           ) : null}
 
+          {readOnlyView ? (
+            <p className="panel-cell mt-6 max-w-prose text-base" data-testid="reservas-solo-lectura">
+              {ent?.state === "suspended"
+                ? "La cuenta está suspendida: podés ver las reservas ya cargadas, pero no cargar ni cambiar ninguna hasta regularizar el pago."
+                : "Tu cuenta está en solo lectura: podés ver las reservas ya cargadas, pero no cargar ni cambiar ninguna hasta regularizar el pago."}
+            </p>
+          ) : null}
+          {data?.truncated ? (
+            <p role="status" className="mt-6 max-w-prose rounded-3xl border border-danger p-4 text-base font-medium text-danger" data-testid="reservas-truncada">
+              Este día tiene más reservas de las que podemos mostrar ({PAGE_LIMIT}): la lista puede estar incompleta. Probá con otra sucursal o consultá a UcoMenu.
+            </p>
+          ) : null}
           {ok ? (
             <p role="status" className="panel-cell mt-6 max-w-prose text-base font-medium" data-testid="reservas-ok">
               {ok}
@@ -279,6 +295,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
             {alive.length === 0 ? "Sin reservas pendientes ni confirmadas." : `${alive.length} ${alive.length === 1 ? "reserva" : "reservas"} · ${people} ${people === 1 ? "persona" : "personas"}.`}
           </p>
 
+          {hasFeature ? (
           <details className="panel-cell mt-6" open={Boolean(error)} data-testid="reservas-nueva">
             <summary className="cursor-pointer text-lg font-medium">Nueva reserva</summary>
             <form action={createReservationAction.bind(null, slug)} className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -361,6 +378,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
               </div>
             </form>
           </details>
+          ) : null}
 
           {data === null ? (
             <p role="status" className="mt-6 max-w-prose text-base text-muted" data-testid="reservas-lectura-error">
@@ -373,7 +391,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
           ) : (
             <ul className="mt-6 grid gap-3" data-testid="reservas-lista">
               {list.map((reservation) => (
-                <ReservationCard key={reservation.id} reservation={reservation} back={back} timeZone={timeZone} free={freeTables(reservation, data.tables, data.around)} now={now} />
+                <ReservationCard key={reservation.id} reservation={reservation} back={back} timeZone={timeZone} free={freeTables(reservation, data.tables, data.around)} now={now} readOnly={!hasFeature} />
               ))}
             </ul>
           )}

@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { addMembership, anonClient, createOrg, createUser, DIA_MS, deleteOrg, deleteUser, serviceClient, setSubscription, sql, type Db, type PlanCode, type TestUser } from "./helpers";
@@ -98,6 +99,20 @@ const ok = (r: { data: unknown; error: { message: string } | null }): Resultado 
 
 const cuenta = (orgId: string) => Number(sql(`select count(*) from public.reservations where organization_id = '${orgId}'`)[0][0]);
 const estado = (id: string) => sql(`select status, coalesce(table_label, ''), coalesce(table_id::text, '') from public.reservations where id = '${id}'`)[0];
+
+
+/**
+ * Otra sesión de la base retiene un candado de aviso `segundos` y la devuelve junto con una promesa de su fin. Sirve para detener una
+ * función justo donde espera ese candado y comprobar DOS cosas: que de verdad lo toma (si no lo tomara, no quedaría esperando) y que lo
+ * que cambió mientras esperaba cuenta al despertar. Es lo que hace que estas pruebas FALLEN si se quita el candado (revisión de Codex).
+ */
+function retenerCandado(clave: string, segundos: number) {
+  const proceso = spawn("docker", ["exec", "supabase_db_ucomenu", "psql", "-U", "postgres", "-c", `begin; select pg_advisory_xact_lock(${clave}); select pg_sleep(${segundos}); commit;`], { stdio: "ignore" });
+  return new Promise<void>((resolver) => proceso.on("exit", () => resolver()));
+}
+const esperando = (funcion: string) =>
+  Number(sql(`select count(*) from pg_stat_activity where wait_event_type = 'Lock' and query like '%${funcion}%' and query not like '%pg_stat_activity%'`)[0][0]);
+const pausa = (ms: number) => new Promise((resolver) => setTimeout(resolver, ms));
 
 beforeAll(async () => {
   service = serviceClient();
@@ -266,7 +281,13 @@ describe("los datos de la reserva", () => {
     expect(b.id).toBe(a.id);
     expect(b.replayed).toBe(true);
     expect((await reservar(owner.db, l, 24 * 60, { p_client_key: clave, p_party: 5 })).error?.message).toBe("client_key_reused");
-    expect(cuenta(l.id)).toBe(1);
+    // Tampoco una nota distinta se toma por un reintento (revisión de Codex, ronda 1): la persona creería que quedó registrada.
+    const conNota = randomUUID();
+    ok(await reservar(owner.db, l, 24 * 60, { p_client_key: conNota, p_notes: "sin gluten" }));
+    expect((await reservar(owner.db, l, 24 * 60, { p_client_key: conNota, p_notes: "cumpleaños" })).error?.message).toBe("client_key_reused");
+    expect((await reservar(owner.db, l, 24 * 60, { p_client_key: conNota, p_notes: null })).error?.message).toBe("client_key_reused");
+    expect(ok(await reservar(owner.db, l, 24 * 60, { p_client_key: conNota, p_notes: "sin gluten" })).replayed).toBe(true);
+    expect(cuenta(l.id)).toBe(2);
   });
 
   it("envíos simultáneos con la misma clave crean una sola reserva", async () => {
@@ -276,6 +297,26 @@ describe("los datos de la reserva", () => {
     expect(rs.every((r) => r.error === null)).toBe(true);
     expect(new Set(rs.map((r) => ok(r).id)).size).toBe(1);
     expect(cuenta(l.id)).toBe(1);
+  });
+});
+
+describe("la clave del envío", () => {
+  it("el alta espera el candado de su clave: el reintento no cruza la puerta si mientras tanto perdió el permiso", async () => {
+    const l = await nuevoLocal();
+    const clave = randomUUID();
+    ok(await reservar(staff.db, l, 24 * 60, { p_client_key: clave }));
+    const termino = retenerCandado(`hashtextextended('${l.id}' || '${clave}', 0)`, 4);
+    await pausa(2000);
+    const espera = reservar(staff.db, l, 24 * 60, { p_client_key: clave }).then((x) => x);
+    await pausa(800);
+    expect(esperando("create_reservation")).toBeGreaterThanOrEqual(1);
+    expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", staff.id)).error).toBeNull();
+    const r = await espera;
+    expect(r.error?.message).toBe("reservations_not_allowed");
+    expect(r.data).toBeNull();
+    await termino;
+    expect(cuenta(l.id)).toBe(1);
+    await addMembership(service, staff, l.id, "staff");
   });
 });
 
@@ -321,6 +362,42 @@ describe("la mesa", () => {
     expect(rs.filter((r) => r.error === null)).toHaveLength(1);
     expect(rs.filter((r) => r.error?.message === "table_busy")).toHaveLength(1);
     expect(sql(`select count(*) from public.reservations where table_id = '${l.table}' and status = 'confirmed'`)[0][0]).toBe("1");
+  });
+
+  it("asignar espera el candado de la mesa, y lo que otra sesión confirmó mientras tanto cuenta al despertar", async () => {
+    const l = await nuevoLocal();
+    const { date, time } = local(BA, 24 * 60);
+    const r = ok(await reservar(owner.db, l, 0, { p_date: date, p_time: time }));
+    const termino = retenerCandado(`hashtextextended('${l.table}', 1)`, 4);
+    await pausa(2000);
+    // `.then` fuerza el envío: el cliente no manda la llamada hasta que alguien la espera.
+    const espera = owner.db.rpc("assign_reservation_table", { p_reservation: r.id, p_table: l.table }).then((x) => x);
+    await pausa(800);
+    // Tiene que estar de verdad detenida en el candado de ESA mesa (sin el candado, no esperaría).
+    expect(esperando("assign_reservation_table")).toBeGreaterThanOrEqual(1);
+    // Mientras tanto, otra reserva queda confirmada en esa mesa y en ese horario.
+    sql(
+      `insert into public.reservations (organization_id, branch_id, table_id, table_label, status, guest_name, guest_phone, party_size, starts_at, ends_at, client_key, request_hash) ` +
+        `select organization_id, branch_id, '${l.table}', 'Mesa 1', 'confirmed', 'Ocupante', '123456', 2, starts_at, ends_at, gen_random_uuid(), 'x' from public.reservations where id = '${r.id}'`,
+    );
+    expect((await espera).error?.message).toBe("table_busy");
+    await termino;
+    expect(estado(r.id)[0]).toBe("requested");
+  });
+
+  it("también revalida quién llama después de esperar el candado de la mesa", async () => {
+    const l = await nuevoLocal();
+    const r = ok(await reservar(owner.db, l));
+    const termino = retenerCandado(`hashtextextended('${l.table}', 1)`, 4);
+    await pausa(2000);
+    const espera = staff.db.rpc("assign_reservation_table", { p_reservation: r.id, p_table: l.table }).then((x) => x);
+    await pausa(800);
+    expect(esperando("assign_reservation_table")).toBeGreaterThanOrEqual(1);
+    expect((await service.from("memberships").delete().eq("organization_id", l.id).eq("user_id", staff.id)).error).toBeNull();
+    expect((await espera).error?.message).toBe("reservations_not_allowed");
+    await termino;
+    expect(estado(r.id)[0]).toBe("requested");
+    await addMembership(service, staff, l.id, "staff");
   });
 
   it("una reserva cancelada o rechazada libera la mesa", async () => {

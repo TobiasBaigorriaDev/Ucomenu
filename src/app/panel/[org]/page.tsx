@@ -15,6 +15,7 @@ import { loadHoy } from "@/lib/resumen/cargar";
 import type { HoyView } from "@/lib/resumen/hoy";
 import { loadPendingReservations } from "@/lib/reservas/cargar";
 import { loadMesas } from "@/lib/sala/mesas-loader";
+import { readBranchAccess } from "@/lib/sucursales/vista";
 import { createSessionClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Resumen" };
@@ -76,7 +77,7 @@ export default async function PanelHomePage({ params }: PageProps<"/panel/[org]"
     wantsHoy ? settle(() => loadHoy(supabase, orgId)) : Promise.resolve(null),
     wantsComments ? loadPendingComments(supabase, orgId) : Promise.resolve(null),
     loadSoldOutProducts(supabase, orgId),
-    wantsReservations ? loadPendingReservations(supabase, orgId) : Promise.resolve(null),
+    wantsReservations ? readBranchAccess(supabase, orgId).then((access) => loadPendingReservations(supabase, orgId, access.assigned)) : Promise.resolve(null),
   ]);
 
   const ahora: AhoraView | "error" | null = mesas === null ? null : mesas === "error" ? "error" : buildAhora(mesas);

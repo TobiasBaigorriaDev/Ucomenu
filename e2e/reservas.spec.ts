@@ -1,5 +1,8 @@
+import { randomUUID } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
-import { createPerson, createTenant, expectNoHorizontalOverflow, login, service, type Tenant } from "./support";
+import { createPerson, createTenant, expectNoHorizontalOverflow, login, service, type Person, type Tenant } from "./support";
+import { sql } from "../tests/rls/helpers"; // después de ./support: carga las variables de entorno
 
 /**
  * Reservas de mesa, fase 1 (nivel C; ficha reservas-de-mesa, ADR 0051) contra el build y el Supabase local, a 390 px: el personal carga
@@ -25,9 +28,36 @@ async function nuevoLocal(label: string, plan: "basic" | "pro" = "pro") {
   const db = service();
   await db.from("subscriptions").update({ plan_code: plan }).eq("organization_id", t.orgId);
   const branch = (await db.from("branches").select("id").eq("organization_id", t.orgId).single()).data!.id as string;
-  const mesas = await db.from("tables").insert(["Mesa 1", "Mesa 2"].map((l) => ({ organization_id: t.orgId, branch_id: branch, label: l })));
+  const mesas = await db.from("tables").insert(["Mesa 1", "Mesa 2"].map((l) => ({ organization_id: t.orgId, branch_id: branch, label: l }))).select("id, label").order("label");
   expect(mesas.error).toBeNull();
-  return t;
+  return Object.assign(t, { branch, mesaIds: mesas.data!.map((m) => m.id as string) });
+}
+
+/** Carga una reserva con la sesión de la persona (la única puerta de escritura es la función de la base). */
+async function reservarComo(persona: Person, branch: string, dia: string, hora: string, extra: { mesa?: string; nombre?: string } = {}) {
+  const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!, { auth: { persistSession: false, autoRefreshToken: false } });
+  const sesion = await db.auth.signInWithPassword({ email: persona.email, password: persona.password });
+  expect(sesion.error).toBeNull();
+  const r = await db.rpc("create_reservation", {
+    p_branch: branch,
+    p_name: extra.nombre ?? "Reserva de prueba",
+    p_phone: "11 5555 0000",
+    p_email: null as unknown as string,
+    p_party: 2,
+    p_date: dia,
+    p_time: hora,
+    p_duration: 90,
+    p_notes: null as unknown as string,
+    p_table: (extra.mesa ?? null) as unknown as string,
+    p_client_key: randomUUID(),
+  });
+  expect(r.error).toBeNull();
+}
+
+/** `YYYY-MM-DD` de hoy más `dias` (el calendario de Buenos Aires). */
+function enDias(dias: number): string {
+  const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(new Date()).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + dias)).toISOString().slice(0, 10);
 }
 
 async function cargar(page: Page, datos: { nombre: string; telefono: string; personas?: number; hora?: string; nota?: string }) {
@@ -135,6 +165,63 @@ test.describe("Reservas en la Sala", () => {
     await expect(page.getByTestId("reservas-nueva")).toHaveCount(0);
     await page.goto(`/panel/${t.slug}`);
     await expect(page.locator('[data-item="reservas"]')).toHaveCount(0);
+  });
+
+  // Regresiones de la revisión independiente de Codex (ronda 1).
+  test("con la cuenta en solo lectura se ven las reservas ya cargadas, sin formularios ni botones", async ({ page }) => {
+    const t = await nuevoLocal("res-lectura");
+    await reservarComo(t.owner, t.branch, manana(), "21:00", { nombre: "Fabiana" });
+    await service().from("subscriptions").update({ current_period_end: new Date(Date.now() - 10 * 864e5).toISOString(), trial_ends_at: null }).eq("organization_id", t.orgId);
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/sala/${t.slug}/reservas?dia=${manana()}`);
+    await expect(page.getByTestId("reservas-solo-lectura")).toContainText("solo lectura");
+    await expect(page.getByTestId("reservas-no-incluida")).toHaveCount(0);
+    await expect(tarjeta(page, "Fabiana")).toHaveCount(1);
+    await expect(page.getByTestId("reservas-nueva")).toHaveCount(0);
+    await expect(page.getByTestId("reserva").getByRole("button")).toHaveCount(0);
+  });
+
+  test("una mesa ocupada pasada la medianoche no se ofrece a una reserva que termina después de las 00:00", async ({ page }) => {
+    const t = await nuevoLocal("res-medianoche");
+    const dia = manana();
+    await reservarComo(t.owner, t.branch, enDias(2), "00:30", { mesa: t.mesaIds[0], nombre: "Madrugada" }); // Mesa 1, de 00:30 a 02:00 del día siguiente
+    await reservarComo(t.owner, t.branch, dia, "23:30", { nombre: "Noche" }); // de 23:30 a 01:00: se pisa con la anterior
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/sala/${t.slug}/reservas?dia=${dia}`);
+    const noche = tarjeta(page, "Noche");
+    await expect(noche.getByRole("option", { name: "Mesa 1" })).toHaveCount(0);
+    await expect(noche.getByRole("option", { name: "Mesa 2" })).toHaveCount(1);
+  });
+
+  test("si el día tiene más reservas de las que se pueden leer, la pantalla lo avisa", async ({ page }) => {
+    const t = await nuevoLocal("res-tope");
+    const dia = manana();
+    sql(
+      `insert into public.reservations (organization_id, branch_id, status, guest_name, guest_phone, party_size, starts_at, ends_at, client_key, request_hash) ` +
+        `select '${t.orgId}', '${t.branch}', 'cancelled', 'Masiva ' || i, '123456', 2, ((date '${dia}' + time '10:00') at time zone 'America/Argentina/Buenos_Aires') + (i * interval '1 minute'), ` +
+        `((date '${dia}' + time '10:00') at time zone 'America/Argentina/Buenos_Aires') + (i * interval '1 minute') + interval '1 hour', gen_random_uuid(), 'x' from generate_series(1, 1005) as i`,
+    );
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/sala/${t.slug}/reservas?dia=${dia}`);
+    await expect(page.getByTestId("reservas-truncada")).toContainText("1000");
+    await expect(page.getByTestId("reserva").first()).toBeVisible();
+  });
+
+  test("el Resumen del Staff con sucursales asignadas solo cuenta las reservas de las suyas", async ({ page }) => {
+    const t = await nuevoLocal("res-asignadas");
+    const norte = await service().from("branches").insert({ organization_id: t.orgId, slug: "norte", name: "Norte" }).select("id").single();
+    expect(norte.error).toBeNull();
+    await reservarComo(t.owner, norte.data!.id as string, manana(), "21:00", { nombre: "De Norte" });
+    await service().from("memberships").update({ assigned_branch_ids: [t.branch] }).eq("organization_id", t.orgId).eq("user_id", t.staff.id);
+
+    await login(page, t.staff.email, t.staff.password);
+    await page.goto(`/panel/${t.slug}`);
+    await expect(page.getByTestId("resumen-atencion")).toBeVisible();
+    await expect(page.locator('[data-item="reservas"]')).toHaveCount(0);
+
+    await service().from("memberships").update({ assigned_branch_ids: [] }).eq("organization_id", t.orgId).eq("user_id", t.staff.id);
+    await page.goto(`/panel/${t.slug}`);
+    await expect(page.locator('[data-item="reservas"]')).toContainText("1 reserva espera");
   });
 
   test("el cocinero no entra a las reservas y quien no tiene sesión va al login", async ({ browser }) => {

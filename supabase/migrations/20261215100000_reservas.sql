@@ -316,7 +316,8 @@ begin
   if not private.can_manage_reservations(v_org) then
     raise exception 'reservations_not_allowed' using errcode = '42501';
   end if;
-  v_hash := md5(format('%s|%s|%s|%s|%s|%s|%s|%s', p_branch, v_name, v_phone, coalesce(v_email, ''), p_party, v_starts, v_duration, coalesce(p_table::text, '')));
+  -- La huella cubre TODO lo que la persona cargó (también la nota): repetir la clave con otros datos no se toma por un reintento.
+  v_hash := md5(format('%s|%s|%s|%s|%s|%s|%s|%s|%s', p_branch, v_name, v_phone, coalesce(v_email, ''), p_party, v_starts, v_duration, coalesce(p_table::text, ''), coalesce(v_notes, '')));
   select r.* into v_row from public.reservations r where r.organization_id = v_org and r.client_key = p_client_key;
   if found then
     if v_row.request_hash <> v_hash then
