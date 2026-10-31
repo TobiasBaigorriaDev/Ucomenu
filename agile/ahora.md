@@ -6,7 +6,7 @@ Actualizado: 2026-10-31 · agente saliente: Claude Code.
 
 **Tonos de aviso elegibles** (nivel M): el Dueño elige en `/panel/{slug}/llamados` el tono del llamado de mesa y del pedido listo (los MP3 de siempre o cinco sintetizados con Web Audio), con «Escuchar». En `origin/main` (`e028e64`) y **desplegado en staging (Fly v83)** con la migración `20261213100000` (la siguiente libre es `20261214100000`). Evidencia, decisiones y lo no probado en la [ficha](cambios/tonos-de-aviso.md). Falta tu escucha de los cinco tonos en staging con una sesión real.
 
-**Vibración de los avisos** (nivel M): el Dueño elige la intensidad (ninguna, suave, fuerte, muy fuerte) en la misma sección; vibra en pantalla y por push en Android, con patrones distintos para llamado, cuenta y pedido listo. Verificada en local, **sin push ni staging**; migración `20261214100000` solo en local (la siguiente libre es `20261215100000`). Ver la [ficha](cambios/vibracion-de-aviso.md).
+**Vibración de los avisos** (nivel M): el Dueño elige la intensidad (ninguna, suave, fuerte, muy fuerte) en la misma sección; vibra en pantalla y por push en Android, con patrones distintos para llamado, cuenta y pedido listo. En `origin/main` (`cabb49e`) y **desplegada en staging (Fly v84)** con la migración `20261214100000` (la siguiente libre es `20261215100000`). Ver la [ficha](cambios/vibracion-de-aviso.md).
 
 **Personalización ampliada de la carta** (nivel C): integrada a `main` y subida a `origin/main` (HEAD `6c9f61b`), con sus tres migraciones aplicadas en local y en `ucomenu-staging`. Estado y revisión en la [ficha](cambios/personalizacion-ampliada-de-la-carta.md) y el [ADR 0050](../docs/decisiones/0050-personalizacion-ampliada-de-la-carta.md). 
 
@@ -20,4 +20,4 @@ Actualizado: 2026-10-31 · agente saliente: Claude Code.
 - Pruebas RLS que fallan en mi base local por datos de demo ajenos (`catalog`, `tenancy`, `push`): conviene una base con `pnpm db:reset`, que borra la carga local de Café Ejemplo.
 - Antes de producción: datos legales y su revisión, precios de portada contra el catálogo, demo estable. Ver [producción](../docs/produccion.md) y [tablero](tablero.md).
 
-Próximo paso: aprobar el push y el despliegue de la vibración a staging (migración + app) y probarla en el Android del local; escuchar los tonos y ajustar el volumen relativo si alguno desentona.
+Próximo paso: probar la vibración en el Android del local (con la sala abierta y con el celular bloqueado); escuchar los tonos y ajustar el volumen relativo si alguno desentona.

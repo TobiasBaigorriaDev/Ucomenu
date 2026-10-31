@@ -1,5 +1,5 @@
 # Cambio: Vibración de los avisos con intensidad elegible
-Estado: verificado en local (2026-10-31); sin push ni staging; falta probar en un Android real
+Estado: en `origin/main` (`cabb49e`) y desplegado en staging (Fly v84); falta probar en un Android real
 Nivel: M (una columna más de `organizations` con permiso por columna solo del Dueño, como [tonos-de-aviso](tonos-de-aviso.md); no toca dinero, datos existentes ni borrados)
 
 ## Objetivo
@@ -27,4 +27,5 @@ Controlar la fuerza física del motor (la web solo fija duración y pausas); vib
 - `pnpm test:rls tonos`: **8/8** (migración con `supabase migration up`, sin `db:reset`). No se corrió la suite RLS completa.
 - E2E (79/79): `tonos-de-aviso`, `llamado-config`, `panel-llamados-aviso`, `cocina`, `sala`, `sala-push` y `panel-push`. Con un doble de `navigator.vibrate` que registra los patrones.
 - **No ejecutado:** la vibración real en un Android (las pruebas usan dobles); el efecto del push con el celular bloqueado (depende del canal de notificaciones de Chrome, que tiene que tener la vibración activada); la fuerza percibida de cada nivel.
+- **Staging (2026-10-31, aprobado por el usuario):** migración aplicada con `supabase db push` en `ucomenu-staging` (el `--dry-run` previo mostró solo `20261214100000`). App: Fly **v84** `complete`, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:vibracion-cabb49e-git` (copia limpia de `cabb49e`). `/`, `/login` y `/m/aurelia/centro` 200, local inexistente 404, `/panel/aurelia/llamados` sin sesión 307, y `/sala-sw.js` publicado ya trae la validación del patrón. **No probado:** la pantalla con sesión real ni la vibración en un Android. Marcha atrás de la app: `flyctl deploy -c fly.staging.toml --image registry.fly.io/ucomenu-staging:tonos-04143e4-git` (v83; la migración puede quedar, es aditiva).
 - Recuperación: revertir el incremento; el rollback SQL está en la migración.
