@@ -163,6 +163,7 @@ export function CoverForm(props: Props & { currentUrl: string | null }) {
         {state.error ? <p role="alert" className="mt-3 font-medium text-danger">{state.error}</p> : null}
         {state.message ? <p role="status" className="mt-3 font-medium">{state.message}</p> : null}
       </form>
+      {props.layout === "hoja" ? <p data-testid="portada-hoja" className="mt-4 text-sm font-medium">Tu carta usa el estilo Hoja, que se muestra como una página de PDF y no lleva portada. La foto se guarda y aparece apenas elijas otro estilo.</p> : null}
       <p className="mt-5 text-sm text-muted">{current?.url ? "Así se verá tu carta con la foto elegida (todavía sin guardar)." : props.currentUrl ? "Así se ve hoy tu carta con la portada." : "Así se verá tu carta cuando agregues una portada: elegí una foto para verla acá."}</p>
       <CartaPreview {...previewBase(props)} cover={current?.url ?? props.currentUrl} testId="apariencia-preview-portada" />
       <ActionForm action={removeCoverAction} className="mt-3">

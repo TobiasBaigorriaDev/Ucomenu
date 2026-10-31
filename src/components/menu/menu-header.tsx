@@ -82,14 +82,16 @@ function PosterHeader({ organizationName, branchName, tableLabel, logo, lang, th
 
 /**
  * Cabecera del estilo «hoja»: una barra oscura como la de un visor de PDF, con el nombre del local (el único `h1` de la página; el
- * título grande vive dentro de la hoja, decorativo), la sucursal y la mesa. Sin foto ni bloque: la hoja es lo que importa.
+ * título grande vive dentro de la hoja, decorativo), el lema del local, la sucursal y la mesa. Sin portada ni bloque de color: la hoja
+ * es lo que importa (el panel lo avisa al elegir una portada).
  */
-function SheetToolbar({ organizationName, branchName, tableLabel, lang, theme }: { organizationName: string; branchName?: string; tableLabel?: string | null; lang: Lang; theme: Theme | null }) {
+function SheetToolbar({ organizationName, branchName, tableLabel, lang, theme, tagline }: { organizationName: string; branchName?: string; tableLabel?: string | null; lang: Lang; theme: Theme | null; tagline?: string | null }) {
   const t = TEXTOS[lang];
   return (
     <header className="bg-ink text-porcelain">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 sm:px-6">
         <h1 className="min-w-0 flex-1 basis-40 text-base leading-tight font-semibold [overflow-wrap:anywhere]">{organizationName}</h1>
+        {tagline ? <p data-testid="lema" className="w-full text-sm [overflow-wrap:anywhere]">{tagline}</p> : null}
         {branchName ? <p className="text-sm [overflow-wrap:anywhere]">{t.branch(branchName)}</p> : null}
         {tableLabel ? (
           <p data-testid="mesa" className="inline-block bg-porcelain px-2.5 py-0.5 text-sm font-semibold text-ink [overflow-wrap:anywhere]">
@@ -139,7 +141,7 @@ export function MenuHeader({
   cover?: string | null;
 }) {
   const t = TEXTOS[lang];
-  if (layout === "hoja") return <SheetToolbar organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} lang={lang} theme={theme} />;
+  if (layout === "hoja") return <SheetToolbar organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} lang={lang} theme={theme} tagline={tagline} />;
   if (layout === "afiche") return <PosterHeader organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} logo={logo} lang={lang} theme={theme} tagline={tagline} cover={cover} />;
   return (
     <header>

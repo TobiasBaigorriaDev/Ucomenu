@@ -356,6 +356,17 @@ test("el Dueño publica tipografía, forma, ambientación, datos y portada; se v
   await expect(cover).toBeVisible();
   await expect(cover).toHaveAttribute("src", /organization-logos/);
   await expectNoHorizontalOverflow(publicPage);
+  // Hoja es una página de PDF: lleva el lema pero no la portada, y el panel lo avisa.
+  await db.from("organizations").update({ menu_layout: "hoja" }).eq("id", t.orgId);
+  await publicPage.reload();
+  await expect(publicPage.getByTestId("lema")).toHaveText("Café de especialidad desde 2014");
+  await expect(publicPage.locator(`img[alt^="Foto del ambiente de"]`)).toHaveCount(0);
+  await expect(publicPage.getByTestId("contacto")).toContainText("Lun a sáb de 8 a 20 hs");
+  await page.reload();
+  await expect(page.getByTestId("portada-hoja")).toBeVisible();
+  await db.from("organizations").update({ menu_layout: "bento" }).eq("id", t.orgId);
+  await page.reload();
+  await expect(page.getByTestId("portada-hoja")).toHaveCount(0);
   // Quitar la portada deja la carta como estaba.
   await page.getByRole("button", { name: "Quitar portada" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Portada quitada." })).toBeVisible();

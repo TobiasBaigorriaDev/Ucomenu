@@ -9,6 +9,7 @@ Cinco herramientas nuevas en `/panel/[org]/apariencia` para que cada local sient
 - Todo cerrado y curado; ver el ADR para los motivos y las alternativas.
 - Migraciones: `20261212100000_personalizacion_ampliada` (M), `20261212110000_voz_del_local` (C) y `20261212120000_portada_del_local` (C). Aditivas; cada una trae su rollback en el encabezado.
 - Nombres de opciones elegidos para no chocar con los selectores de las pruebas E2E existentes («Tradicional» y no «Clásica»; «Follaje» y no «Hojas»).
+- El estilo Hoja (página de PDF) **no muestra la portada** —a propósito— pero sí el lema en su barra superior, y el panel lo avisa al elegir una portada. Horarios, Instagram y WhatsApp salen en el pie en todos los estilos.
 - `next/font` no admite `...spread` en sus llamadas: las opciones de cada fuente se repiten.
 - «Editorial» usa Playfair Display porque DM Serif Display no tiene métricas de reemplazo en `next/font`.
 - `tsconfig.json` excluye `output/` (carpeta ignorada con copias de despliegues viejos): su copia de `apariencia/actions.ts` rompía el `tsc` del build al ampliar los tipos de error.
@@ -21,6 +22,7 @@ Cinco herramientas nuevas en `/panel/[org]/apariencia` para que cada local sient
 - [x] Lema, horarios, Instagram y WhatsApp se guardan como texto plano e identificadores; la base rechaza lo inválido; los enlaces los arma el servidor.
 - [x] La portada se sube, se reemplaza y se quita con vista previa antes de guardar; borra su archivo anterior; nunca coincide con el logo; no hay desborde horizontal a 390 px.
 - [x] Staff, ajeno y anónimo no escriben nada de esto (RLS).
+- [x] Con el estilo Hoja el lema se ve y la portada no; el panel avisa (hallazgo de la revisión de Codex, corregido).
 - [ ] Revisión visual del usuario en teléfono real, sobre todo las fuentes anchas con nombres largos.
 
 ## Fuera de alcance

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { createCategory, createProduct, loadProduct, removeProductImage, setProductImage } from "@/lib/carta/catalog";
 import { IMAGE_BUCKET } from "@/lib/carta/images";
-import { loadIdentity, removeLogo, setLogo } from "@/lib/identidad/identity";
+import { loadIdentity, removeCover, removeLogo, setCover, setLogo } from "@/lib/identidad/identity";
 import { LOGO_BUCKET } from "@/lib/identidad/logos";
 import {
   addMembership,
@@ -435,6 +435,85 @@ describe("logo del local", () => {
     try {
       expect(await setLogo(db, org, png())).toEqual({ ok: true, filesComplete: false });
       expect(await archivosDelLogo(org)).toContain((await trasLogo(org))!);
+    } finally {
+      log.mockRestore();
+    }
+  });
+});
+
+describe("portada del local", () => {
+  const trasCover = async (org: string) => (await loadIdentity(service, org)).cover_path;
+  const trasLogo = async (org: string) => (await loadIdentity(service, org)).logo_path;
+
+  it("dos reemplazos simultáneos no dejan huérfanos ni borran la portada vigente ni el logo", async () => {
+    const org = await nuevaOrg();
+    expect((await setLogo(owner.db, org, png())).ok).toBe(true);
+    expect((await setCover(owner.db, org, png())).ok).toBe(true);
+    const logo = await trasLogo(org);
+    const inicial = await trasCover(org);
+    let resultadoB: Awaited<ReturnType<typeof setCover>> | undefined;
+    const a = conGanchos(owner.db, {
+      trasSubir: async () => {
+        resultadoB = await setCover(owner.db, org, png());
+      },
+    });
+
+    const resultadoA = await setCover(a, org, png());
+
+    expect(resultadoA).toEqual({ ok: true, filesComplete: true });
+    expect(resultadoB).toEqual({ ok: true, filesComplete: true });
+    const vigente = await trasCover(org);
+    expect(vigente).not.toBe(inicial);
+    // Solo quedan el logo (intacto) y la portada vigente: ninguna portada desplazada sobrevive.
+    expect(await archivosDelLogo(org)).toEqual([logo, vigente].sort());
+    expect(await trasLogo(org)).toBe(logo);
+  });
+
+  it("varios reemplazos que corren de verdad a la vez terminan con una sola portada", async () => {
+    const org = await nuevaOrg();
+    expect((await setLogo(owner.db, org, png())).ok).toBe(true);
+    expect((await setCover(owner.db, org, png())).ok).toBe(true);
+    const logo = await trasLogo(org);
+
+    const resultados = await Promise.all([setCover(owner.db, org, png()), setCover(owner.db, org, png()), setCover(owner.db, org, png())]);
+
+    expect(resultados.every((r) => r.ok)).toBe(true);
+    expect(await archivosDelLogo(org)).toEqual([logo, (await trasCover(org))!].sort());
+  });
+
+  it("quitar la portada mientras otro la reemplaza: no queda ningún archivo huérfano y el logo sigue", async () => {
+    const org = await nuevaOrg();
+    expect((await setLogo(owner.db, org, png())).ok).toBe(true);
+    expect((await setCover(owner.db, org, png())).ok).toBe(true);
+    const logo = await trasLogo(org);
+    const quita = conGanchos(owner.db, {
+      antesDeRpc: {
+        replace_organization_cover: async () => {
+          expect((await setCover(owner.db, org, png())).ok).toBe(true);
+        },
+      },
+    });
+
+    expect(await removeCover(quita, org)).toEqual({ ok: true, filesComplete: true });
+
+    expect(await trasCover(org)).toBeNull();
+    expect(await archivosDelLogo(org)).toEqual([logo]);
+  });
+
+  it("un fallo al limpiar la portada anterior no rompe la vigente y se informa incompleto; el Staff no cambia nada", async () => {
+    const org = await nuevaOrg();
+    expect((await setCover(owner.db, org, png())).ok).toBe(true);
+    const anterior = await trasCover(org);
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      const r = await setCover(conGanchos(owner.db, { borrar: async () => ({ data: [], error: null }) }), org, png());
+
+      expect(r).toEqual({ ok: true, filesComplete: false });
+      const vigente = await trasCover(org);
+      expect((await service.storage.from(LOGO_BUCKET).download(vigente!)).error).toBeNull();
+      expect(await archivosDelLogo(org)).toEqual([anterior, vigente].sort());
+      expect((await setCover(staff.db, org, png())).ok).toBe(false);
+      expect(await trasCover(org)).toBe(vigente);
     } finally {
       log.mockRestore();
     }
