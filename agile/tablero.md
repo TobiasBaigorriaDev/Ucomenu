@@ -18,7 +18,14 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## Para verificar
 
+- [C] Personalización ampliada de la carta: tipografía, forma y densidad, ambientación, datos del local y portada con foto — implementada y verificada en local (migraciones `20261212100000` a `20261212120000` solo en local); integrada a `main` y subida a `origin/main` y en staging (Fly v82); falta tu visto bueno visual en teléfono y probar el panel con una sesión real → [ficha](cambios/personalizacion-ampliada-de-la-carta.md) · [ADR 0050](../docs/decisiones/0050-personalizacion-ampliada-de-la-carta.md)
+- [M] Aparición suave de bloques de portada — implementada localmente; falta comprobar en teléfono → [ficha](cambios/aparicion-bloques-portada.md)
+- [M] Animación del hero en móvil — implementada y verificada localmente, falta comprobación en teléfono → [ficha](cambios/animacion-hero-movil.md)
+- [M] Revisión UX previa al lanzamiento — cinco defectos corregidos y desplegados en staging; falta comprobaci?n manual → [ficha](cambios/revision-ux-prelanzamiento.md)
+- [C] Feed de videos en Pro; Premium deja de ofrecerse — migración `20261210100000` aplicada solo en local, pruebas de RLS en verde, E2E sin correr; falta revisión independiente y tu aprobación para staging → [ficha](cambios/feed-de-videos-en-pro.md) · [ADR 0049](../docs/decisiones/0049-feed-de-videos-en-pro.md)
+- [M] Portada de ucomenu.com — construida y verificada en local con capturas reales; sin commit ni staging; falta tu visto bueno y la lista de «Antes de publicar» → [ficha](cambios/portada-ucomenu.md)
 - [M] Acciones del pedido desde Mesas — en staging Fly v68, cierre rojo y sin botón duplicado; pendiente comprobación manual → [ficha](cambios/acciones-pedido-desde-mesas.md)
+- [M] Tonos de aviso elegibles: el Dueño elige el tono del llamado de mesa y del pedido listo (MP3 de siempre o cinco sintetizados); verificado en local, sin commit ni staging; falta escucha manual → [ficha](cambios/tonos-de-aviso.md)
 - [M] Audios de notificación para mozo y cocina; aviso al completar el pedido — subido a main y desplegado en staging Fly v65, falta escucha manual → [ficha](cambios/audios-notificaciones.md)
 - [C] Propina sugerida por sucursal — aprobada por Claude, en staging Fly v64 y subida a main; falta comprobación manual del usuario → [ficha](cambios/propina-sugerida.md)
 - [M] Personal por sucursal, solo pantalla: el Dueño asigna sucursales a un mozo o cocinero desde Personal y ellos solo ven los pedidos, mesas, llamados, avisos y platos de esas sucursales (sin RLS; la restricción real es el ítem [C] del Backlog); implementado, verificado en local y desplegado en staging (Fly v62, 2026-10-26), falta tu comprobación manual → [ficha](cambios/personal-por-sucursal.md)
@@ -36,7 +43,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 - [C] Personal por sucursal con restricción real: que mozo y cocinero solo puedan leer **y escribir** lo de su sucursal (RLS de `orders`, `order_items`, `tables`, `waiter_calls`, cuentas de mesa; `set_order_item_status`, `set_kitchen_availability` y demás funciones del mozo y la cocina). Hoy solo se acota lo que ven en pantalla (ficha M, en «Para verificar») → [ficha M](cambios/personal-por-sucursal.md) · revierte parte de los ADR 0005 y 0034
 
-### Fase 2 — Feed de videos cortos (plan Premium)
+### Fase 2 — Feed de videos cortos (plan Pro desde el 2026-10-29, ADR 0049)
 
 > Reemplaza al add-on WebAR, descartado el 2026-10-21 (ADR 0002 → [ADR 0031](../docs/decisiones/0031-feed-de-videos-cortos.md)). Reglas en `docs/producto.md`, «Feed de videos cortos».
 > Catálogo, elección de Mux, carga y publicación de videos, el feed, los likes y los comentarios están en «Hecho»; el texto legal de los comentarios también está hecho; para habilitarlos en producción faltan la revisión de un abogado y programar la purga.
@@ -64,6 +71,10 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## Hecho
 
+- [S] Carta Bento sin huecos en la última fila de platos en escritorio: `def05ee`, desplegado en staging Fly v70 y verificado en móvil y escritorio (2026-10-28).
+
+- [S] Auditoría local de seguridad: riesgo residual del ADR 0032 reproducido y conservado por decisión del usuario; corregida expectativa ACL de propina → [ficha](cambios/auditoria-seguridad-2026-10-28.md)
+
 > Una línea por ítem: qué es, fecha y ficha. Pruebas, decisiones y revisiones viven en la ficha; los motivos duraderos, en el ADR.
 
 - [M] Información alimentaria segura y textos legales coherentes con la app: avisos que no sugieren alérgenos que no hay, notas de contacto cruzado y de opciones, traducciones viejas quitadas al cambiar el original, y términos, privacidad y `/alergenos` reescritos con pendientes visibles; implementado y verificado en local (2026-10-26); falta abogado y decisiones del usuario → [ficha](cambios/informacion-alimentaria-y-textos-legales.md)
@@ -75,6 +86,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 - [C] Reinicio de QR programado por sucursal y masivo por el mozo — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/reinicio-programado-qr.md)
 - [C] Turno de mesa (rota al cerrar, anular o reiniciar; el QR impreso no cambia) y cuenta del comensal («Ver mi cuenta» tras pedir la cuenta) — comprobación manual confirmada por el usuario (2026-10-26) → [turno](cambios/turno-de-mesa.md) · [cuenta](cambios/cuenta-del-comensal.md) · [ADR 0044](../docs/decisiones/0044-turno-de-mesa-y-cuenta-del-comensal.md)
 - [M] Estilo de carta «Afiche» (Big Shoulders, bandas de color, platos numerados) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/estilo-afiche.md)
+- [M] Estilo de carta «Hoja» (pliego de columnas, solo texto, datos vivos) — implementado en local, falta revisión visual en teléfono → [ficha](cambios/estilo-hoja.md)
 - [C] Sucursal adicional para Pro (ARS 12.000/mes, hasta 3) como add-on de cupo, con cancelación que desactiva las elegidas — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/sucursal-adicional.md) · [ADR 0039](../docs/decisiones/0039-sucursal-adicional-y-vistas-previas.md)
 - [S] Comprobación con sesión en staging: catálogo vacío de add-ons y baja/reactivación en SuperAdmin; apariencia y temas, editor de platos y selector de Sala de Fly v18 — comprobación manual confirmada por el usuario (2026-10-26) → [catálogo y despliegue](cambios/catalogo-video-feed.md#despliegue-en-staging--2026-10-21) · [add-ons y baja](cambios/addons-y-baja-de-organizaciones.md)
 - [S] Prueba en un Android real de la subida de videos desde el panel y el feed (también en Firefox y en Safari de escritorio) — comprobación manual confirmada por el usuario (2026-10-26) → [ficha](cambios/feed-de-videos.md)
@@ -92,6 +104,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 - [C] Analítica de pedidos para el Dueño (rework Pro/Premium: resumen con comparación, ventas por día, franjas, platos, categorías y anulaciones) → [ficha](cambios/analitica-de-pedidos.md) · ADR 0045 (hecho, revisado por Codex en 3 rondas, aprobado por el usuario y desplegado en staging, Fly v54, 2026-10-25)
 
 - [S] Pantalla del historial de promociones: `/panel/{slug}/promociones/historial`, Dueño y Staff, de a 50, con el detalle en palabras y las mismas reglas de «quién» que el historial de precios; implementada, verificada y en staging (2026-10-23) → [ficha](cambios/historial-de-promociones.md)
+- [M] Búsqueda en Carta y navegación móvil: desplegada en staging, verificación visual pendiente → [ficha](cambios/busqueda-carta-navegacion-movil.md)
 - [M] Carta con precio promocional en vivo: la carta y el feed leen `effective_prices` fuera de la caché y muestran el precio de lista tachado, el promocional y hasta cuándo, en es/en/pt; falla cerrado; sin medir el LCP; implementada, verificada y en staging (Fly versión 40, 2026-10-23) → [ficha](cambios/carta-con-precio-promocional.md)
 - [M] Panel de promociones del Dueño: crear, editar, pausar, duplicar y borrar con guardado atómico (`save_promotion`), aviso de superposición y vista previa por día y hora; el Staff las ve; implementado y verificado, migración `20261124100000` y app en staging (Fly versión 40, 2026-10-23) → [ficha](cambios/panel-de-promociones.md)
 - [C] Promociones y función de precio efectivo: tablas, historial de solo-agregado, `promotions` en Pro y Premium, `effective_prices` (única autoridad del precio) y paridad con la réplica en TypeScript con casos de medianoche y horario de verano; aprobado por Codex (3 rondas) y por el usuario; migración en staging y app en Fly versión 38 (2026-10-23) → [ficha](cambios/promociones-y-precio-efectivo.md) · [ADR 0040](../docs/decisiones/0040-promociones-programadas.md)
@@ -133,6 +146,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 - [C] Aviso de llamados con la pestaña cerrada por Web Push (Android y Windows): tabla de suscripciones cerrada a la API, envío desde el servidor, service worker de la sala; revisado por Codex en tres rondas, probado por el usuario en Windows y Android contra staging y aprobado (2026-10-18) → [ficha](cambios/aviso-push-de-llamados.md) · ADR 0020
 - [S] Restauración ensayada en un proyecto Supabase nuevo; repetición manual con recordatorio mensual configurado (2026-10-17) → [ficha](cambios/salida-a-produccion.md#ensayo-de-restauración-en-un-proyecto-nuevo-2026-10-17)
 - [S] Wake Lock nativo del panel de sala comprobado con HTTPS en Chrome de Windows (2026-10-17) → [ficha](cambios/panel-de-sala.md#ensayo-de-wake-lock-nativo-con-https-2026-10-17)
+- [C] Tres restaurantes ficticios nuevos en staging: dos Pro y uno Premium, con logos y 33 platos fotografiados (2026-10-28) → [ficha](cambios/tres-restaurantes-staging.md)
 - [S] Carta de demostración en staging: organización `demo` con 26 platos y 24 fotos; herramienta `tools/sembrar-demo-staging.mjs` (2026-10-17) → [ficha](cambios/demo-en-staging.md)
 - [M] Login y sala en vivo con el lenguaje del panel; integrado a `main` y desplegado en staging (2026-10-17) → [ficha](cambios/ui-login-y-sala.md)
 - [C] SuperAdmin suma una cuenta existente como Dueño de otra organización; integrado a `main`, migración aplicada en staging y aprobado por el usuario (2026-10-17) → [ficha](cambios/dueno-existente.md)

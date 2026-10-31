@@ -8,6 +8,186 @@
         "value": "afichefallback",
         "createdAt": "2026-10-24T02:41:26.790Z",
         "reason": "agent: AficheFallback is the metric-adjusted loading fallback for Big Shoulders (documented in DESIGN.md afiche section), not a display face"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "video/youtube/index.html"
+        ],
+        "createdAt": "2026-10-29T20:13:13.753Z",
+        "reason": "Claude: #f6f5f0 es platform-bg de DESIGN.md (color de marca)"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/cliente.html"
+        ],
+        "createdAt": "2026-10-29T20:13:16.322Z",
+        "reason": "Claude: capas de pantalla con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/llamado.html"
+        ],
+        "createdAt": "2026-10-29T22:13:31.451Z",
+        "reason": "Claude: capas de pantalla con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/equipo.html"
+        ],
+        "createdAt": "2026-10-29T22:13:32.882Z",
+        "reason": "Claude: capas de pantalla con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/dueno.html"
+        ],
+        "createdAt": "2026-10-29T22:13:34.613Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/cliente.html"
+        ],
+        "createdAt": "2026-10-29T22:13:35.884Z",
+        "reason": "Claude: capas de pantalla con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/llamado.html"
+        ],
+        "createdAt": "2026-10-29T22:13:37.313Z",
+        "reason": "Claude: capas de pantalla con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/equipo.html"
+        ],
+        "createdAt": "2026-10-29T22:13:38.774Z",
+        "reason": "Claude: capas de pantalla con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/dueno.html"
+        ],
+        "createdAt": "2026-10-29T22:13:40.099Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/comensal.html"
+        ],
+        "createdAt": "2026-10-30T00:11:37.217Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/recorrido.html"
+        ],
+        "createdAt": "2026-10-30T00:11:38.653Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/identidad.html"
+        ],
+        "createdAt": "2026-10-30T00:11:41.563Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/numeros.html"
+        ],
+        "createdAt": "2026-10-30T00:11:43.353Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/youtube/compositions/entrada.html"
+        ],
+        "createdAt": "2026-10-30T00:11:44.481Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/comensal.html"
+        ],
+        "createdAt": "2026-10-30T00:11:47.439Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/recorrido.html"
+        ],
+        "createdAt": "2026-10-30T00:11:49.024Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/identidad.html"
+        ],
+        "createdAt": "2026-10-30T00:11:51.800Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/numeros.html"
+        ],
+        "createdAt": "2026-10-30T00:11:53.451Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "buried-raster",
+        "value": "*",
+        "files": [
+          "video/reels/compositions/entrada.html"
+        ],
+        "createdAt": "2026-10-30T00:11:54.972Z",
+        "reason": "Claude: capas de captura con opacidad 0 que la linea de tiempo del video muestra una por una"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          "video/reels/index.html"
+        ],
+        "createdAt": "2026-10-30T00:11:56.315Z",
+        "reason": "Claude: #f6f5f0 es platform-bg de DESIGN.md (color de marca)"
       }
     ]
   }

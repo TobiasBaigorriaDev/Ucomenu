@@ -41,3 +41,7 @@ No equivale a una certificación completa de accesibilidad ni a una prueba en te
 Persisten los bloqueos previos, que requieren datos o decisiones del usuario: `LEGAL_ENTITY` sigue en `null`; la [portada](portada-ucomenu.md) anuncia precios ARS mientras el catálogo de facturación sigue en USD, y el anual Pro está por confirmar; el enlace/QR de demostración debe apuntar a un local publicado. La preparación operativa está en [producción](../../docs/produccion.md). No se inventaron datos legales ni se cambiaron reglas comerciales.
 
 Reversión: revertir solo el diff de esta ficha; no hay cambios persistentes de aplicación que recuperar. Sin commit, push ni despliegue de esta sesión.
+
+## Integración y despliegue (2026-10-29)
+
+El usuario autorizó push y despliegue. Commit `ce4a710` subido a `origin/main` con solo la unidad de UX. Se preparó un worktree aislado en `%TEMP%/ucomenu-ux-ce4a710` para desplegar sin incorporar portada ni feed pendientes. `flyctl status -a ucomenu-staging` mediante la imagen oficial en Docker falló: la sesión de Fly carece de un token de autorización válido. No se inició despliegue ni se tocaron migraciones o secretos. Requiere renovar la sesión de Fly y repetir desde ese commit.

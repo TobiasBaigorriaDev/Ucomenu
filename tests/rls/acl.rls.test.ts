@@ -426,6 +426,7 @@ describe("RLS y permisos de tablas", () => {
       ["branches", "name"],
       ["branches", "qr_reset_times"],
       ["branches", "timezone"], // solo el Dueño con la cuenta al día, por la política de branches (ficha zona-horaria-por-sucursal)
+      ["branches", "tip_percent"], // solo el Dueño con la cuenta al día, por la política de branches (ficha propina-sugerida)
       ["branches", "waiter_call_cooldown_seconds"], // solo el Dueño, por la política de branches
       ["tables", "is_active"],
       ["tables", "label"],

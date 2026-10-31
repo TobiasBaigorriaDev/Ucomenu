@@ -31,7 +31,7 @@ Auditoría legal previa al lanzamiento. Se investigó el código antes de cambia
 - UcoMenu **no usa el logo oficial «libre de gluten»** ni certifica: su etiqueta «Sin TACC» es una declaración del local.
 
 ## Pendiente — decisiones del usuario
-1. **Responsable:** razón social, CUIT y domicilio (`LEGAL_ENTITY`) y correo de contacto (`NEXT_PUBLIC_CONTACT_EMAIL`).
+1. **Responsable:** el usuario informó el CUIT **20-46549854-5** y que todavía no está inscripto en el monotributo (2026-10-28). Falta confirmar el nombre o razón social del responsable, domicilio y correo de contacto, y completar `LEGAL_ENTITY` y `NEXT_PUBLIC_CONTACT_EMAIL`. Consultar con un contador el régimen tributario y las obligaciones aplicables antes de cobrar o facturar; tener CUIT no equivale a adherir al monotributo ([ARCA: inscripción](https://www.arca.gob.ar/inscripcion/abm/)).
 2. **Plazos y procedimientos comerciales:** período de gracia y aviso de suspensión; cómo pide un local su baja; aviso previo de cambios de las condiciones; plazo interno y responsable de atender reportes.
 3. **Conservación:** plazo de pedidos (2 años) y pagos (10 años) a confirmar con un contador; cuándo se borran las cuentas sin local; plazo del registro de auditoría y de los respaldos (y su cifrado); plazo de los registros de los proveedores.
 4. **IA en producción:** proveedor definitivo (hoy Gemini gratuito solo con datos ficticios; Claude previsto).
