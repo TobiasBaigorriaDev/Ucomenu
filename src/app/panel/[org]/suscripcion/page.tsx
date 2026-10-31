@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
-import { loadOwnerAccount, type Page } from "@/lib/cuenta/cargar";
+import { loadOwnerAccount, loadPlanPrice, type Page } from "@/lib/cuenta/cargar";
 import { describeHistory, describePayment, formatDateTime, formatDay, parseCursor, type HistoryRow, type PaymentRow } from "@/lib/cuenta/lectura";
+import { describePrice } from "@/lib/cuenta/precio";
 import { branchBreakdown, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL, type BillingState } from "@/lib/entitlements";
 import { createSessionClient } from "@/lib/supabase/server";
 
@@ -33,11 +34,18 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
   const { membership } = await requireOwner(org, `/panel/${org}/suscripcion`);
   const query = await searchParams;
   const before = { payments: parseCursor(query.pagos_antes), history: parseCursor(query.cambios_antes) };
-  const [ent, account] = await Promise.all([
-    getEntitlements(membership.org.id),
+  const ent = await getEntitlements(membership.org.id);
+  const db = await createSessionClient();
+  const [account, catalog] = await Promise.all([
     // La base vuelve a comprobar que sea Dueño y entrega solo lo que puede ver (ADR 0021).
-    createSessionClient().then((db) => loadOwnerAccount(db, membership.org.id, before)),
+    loadOwnerAccount(db, membership.org.id, before),
+    // Precio de lista del plan (catálogo en USD, de lectura con sesión): con el ciclo de la cuenta da lo que cuesta por mes o por año.
+    ent?.plan ? loadPlanPrice(db, ent.plan) : null,
   ]);
+  const price = describePrice(ent, catalog);
+  // El último pago vigente (solo en la primera página de la lista: en las siguientes las filas son anteriores).
+  const lastPaymentRow = before.payments ? null : (account.payments?.rows.find((row) => !describePayment(row).voided) ?? null);
+  const lastPayment = lastPaymentRow ? describePayment(lastPaymentRow) : null;
   const base = `/panel/${membership.org.slug}/suscripcion`;
   // «Ver más» de una lista conserva dónde está la otra.
   const moreHref = (list: "pagos" | "cambios", next: string) => {
@@ -58,6 +66,30 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Suscripción</h1>
+
+      {price ? (
+        <section aria-labelledby="precio-titulo" className="mt-6 rounded-3xl bg-brand p-5 text-white sm:p-6" data-testid="suscripcion-precio">
+          <h2 id="precio-titulo" className="font-display text-2xl">
+            Lo que pagás
+          </h2>
+          <p className="mt-2 font-display text-4xl leading-tight tabular-nums sm:text-5xl" data-testid="suscripcion-precio-valor">
+            {price.headline}
+          </p>
+          {price.lines.map((line) => (
+            <p key={line} className="mt-2 max-w-prose text-lg" data-testid="suscripcion-precio-linea">
+              {line}
+            </p>
+          ))}
+          {lastPayment && lastPaymentRow ? (
+            <p className="mt-2 max-w-prose text-base" data-testid="suscripcion-ultimo-pago">
+              Último pago: <span className="font-medium tabular-nums">{lastPayment.amount}</span>, recibido el {formatDay(lastPaymentRow.paidOn)}.
+            </p>
+          ) : null}
+          <p className="mt-4 max-w-prose border-t border-white/25 pt-3 text-sm" data-testid="suscripcion-precio-nota">
+            Son los precios de lista de tu plan. Lo que se cobró en cada período figura en Pagos, más abajo.
+          </p>
+        </section>
+      ) : null}
 
       {ent ? (
         <ul className="mt-6 panel-list">

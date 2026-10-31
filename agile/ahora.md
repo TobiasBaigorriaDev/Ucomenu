@@ -1,25 +1,24 @@
 # Ahora (handoff)
 
-Actualizado: 2026-10-31 · agente saliente: Codex.
+Actualizado: 2026-10-31 · agente saliente: Claude.
 
 ## Punto de retomada
 
-**Aclaración de iOS:** el texto de vibración ahora explica que no funciona en iPhone, incluso con Chrome, y distingue las notificaciones del sistema. Cambio S en `origin/main` (`319cf75`); lint del archivo y 9 pruebas de sonido y vibración en verde. Desplegado en staging (Fly v85) desde el commit confirmado; build y TypeScript correctos, control de salud en verde, portada, login y carta 200, local inexistente 404 y panel sin sesión redirige a login. No se probó el panel con sesión real.
+**Resumen del panel rediseñado** (nivel M, sin commit): `/panel/{slug}` ahora muestra *Ahora en el salón* (llamados, mesas con pedido, platos en cocina, por cobrar), *Ventas de hoy* contra el mismo día de la semana anterior con los últimos 7 días y los platos más pedidos (solo Dueño con Pro), *Para atender* (comentarios por revisar, platos agotados, plan cerca del tope) y *Tu carta pública* con copiar enlace y WhatsApp. La guía de primeros pasos sube arriba solo mientras está incompleta.  Sin migración; ver la [ficha](cambios/resumen-del-panel.md) y DESIGN.md.
 
-**Tonos de aviso elegibles** (nivel M): el Dueño elige en `/panel/{slug}/llamados` el tono del llamado de mesa y del pedido listo (los MP3 de siempre o cinco sintetizados con Web Audio), con «Escuchar». En `origin/main` (`e028e64`) y **desplegado en staging (Fly v83)** con la migración `20261213100000` (la siguiente libre es `20261214100000`). Evidencia, decisiones y lo no probado en la [ficha](cambios/tonos-de-aviso.md). Falta tu escucha de los cinco tonos en staging con una sesión real.
+**Precio en Suscripción** (nivel M, sin commit): arriba de `/panel/{slug}/suscripcion`, «Lo que pagás» muestra el precio de lista por mes o año (catálogo en USD), las sucursales adicionales aparte en ARS y el último pago. Ver la [ficha](cambios/precio-en-suscripcion.md).
 
-**Vibración de los avisos** (nivel M): el Dueño elige la intensidad (ninguna, suave, fuerte, muy fuerte) en la misma sección; vibra en pantalla y por push en Android, con patrones distintos para llamado, cuenta y pedido listo. En `origin/main` (`cabb49e`) y **desplegada en staging (Fly v84)** con la migración `20261214100000` (la siguiente libre es `20261215100000`). Ver la [ficha](cambios/vibracion-de-aviso.md).
+**Ya en `origin/main` y staging:** aclaración de iOS (Fly v85), vibración (Fly v84; la siguiente migración libre es `20261215100000`) y tonos de aviso (Fly v83). Falta probarlos en un Android real.
 
-**Personalización ampliada de la carta** (nivel C): integrada a `main` y subida a `origin/main` (HEAD `6c9f61b`), con sus tres migraciones aplicadas en local y en `ucomenu-staging`. Estado y revisión en la [ficha](cambios/personalizacion-ampliada-de-la-carta.md) y el [ADR 0050](../docs/decisiones/0050-personalizacion-ampliada-de-la-carta.md). 
+**Sin integrar:** estilo Hoja, animación del hero móvil y aparición de bloques de portada; falta tu visto bueno en teléfono (también el de la personalización de la carta).
 
-**Otros trabajos locales sin integrar:** estilo Hoja ([ficha](cambios/estilo-hoja.md)), animación del hero móvil ([ficha](cambios/animacion-hero-movil.md)) y aparición de bloques de portada ([ficha](cambios/aparicion-bloques-portada.md)); falta revisión visual en teléfono real.
-
-**Git:** sin commit, a propósito: `video/`, `.codegraph/`, `tools/demo-portada/mis-capturas/`, las skills de terceros de HyperFrames y `security-audit`, `skills-lock.json`, `.claude/launch.json` y `tools/escenarios-locales.mjs`. Preservar `.agents/skills/security-audit/`, `.codegraph/`, `tools/escenarios-locales.mjs` y `video/`.
+**Git:** sin commit a propósito: Resumen y Suscripción (fichas enlazadas, más DESIGN.md y tablero), más `video/`, `.codegraph/`, `tools/demo-portada/mis-capturas/`, las skills de HyperFrames y `security-audit`, `skills-lock.json`, `.claude/launch.json` y `tools/escenarios-locales.mjs`. Preservar `.agents/skills/security-audit/`, `.codegraph/`, `tools/escenarios-locales.mjs` y `video/`.
 
 ## Bloqueos y próximo paso
 
-- Personalización: tu visto bueno visual en teléfono (fuentes anchas con nombres largos) y probar Apariencia en staging con una sesión real.
-- Pruebas RLS que fallan en mi base local por datos de demo ajenos (`catalog`, `tenancy`, `push`): conviene una base con `pnpm db:reset`, que borra la carga local de Café Ejemplo.
-- Antes de producción: datos legales y su revisión, precios de portada contra el catálogo, demo estable. Ver [producción](../docs/produccion.md) y [tablero](tablero.md).
+- Tu visto bueno del Resumen en un teléfono (y con una paleta clara).
+- En la base local: Aurelia tiene pedidos de demostración que cargué yo, y Café Ejemplo la carga de demostración que rompe 3 pruebas de `menu.spec.ts`. `pnpm db:reset` limpia ambas; las pruebas RLS de `catalog`, `tenancy` y `push` también dependen de eso.
+- Observación aparte: en el panel, a 390 px, la ventana de diseño del navegador se ensancha (~1435 px) por la lista de secciones; ya existía.
+- Antes de producción: datos legales, precios de portada y demo estable ([producción](../docs/produccion.md), [tablero](tablero.md)).
 
-Próximo paso: comprobar el texto en el panel con sesión real y probar la vibración en Android; escuchar los tonos y ajustar el volumen relativo si alguno desentona.
+Próximo paso: mirar el Resumen en el teléfono, decidir si se commitea y, si querés, desplegarlo a staging.

@@ -18,6 +18,8 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## Para verificar
 
+- [M] Precio de la suscripción visible para el Dueño (por mes o por año, precio de lista del catálogo más sucursales adicionales y último pago) — implementado y verificado en local, sin commit → [ficha](cambios/precio-en-suscripcion.md)
+- [M] Resumen del panel con datos del día: salón en vivo, ventas de hoy contra el mismo día de la semana anterior, pendientes y carta para compartir, más rediseño visual — implementado y verificado en local, sin commit; falta tu visto bueno visual en teléfono → [ficha](cambios/resumen-del-panel.md)
 - [C] Personalización ampliada de la carta: tipografía, forma y densidad, ambientación, datos del local y portada con foto — implementada y verificada en local (migraciones `20261212100000` a `20261212120000` solo en local); integrada a `main` y subida a `origin/main` y en staging (Fly v82); falta tu visto bueno visual en teléfono y probar el panel con una sesión real → [ficha](cambios/personalizacion-ampliada-de-la-carta.md) · [ADR 0050](../docs/decisiones/0050-personalizacion-ampliada-de-la-carta.md)
 - [M] Aparición suave de bloques de portada — implementada localmente; falta comprobar en teléfono → [ficha](cambios/aparicion-bloques-portada.md)
 - [M] Animación del hero en móvil — implementada y verificada localmente, falta comprobación en teléfono → [ficha](cambios/animacion-hero-movil.md)

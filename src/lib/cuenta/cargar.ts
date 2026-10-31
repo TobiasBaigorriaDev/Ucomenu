@@ -1,6 +1,7 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
+import type { PlanCatalogPrice } from "./precio";
 import { formatCursor, HISTORY_PAGE, parseHistory, parsePayments, PAYMENTS_PAGE, type Cursor, type HistoryRow, type PaymentRow } from "./lectura";
 
 type Db = SupabaseClient<Database>;
@@ -36,4 +37,11 @@ export async function loadOwnerAccount(db: Db, orgId: string, before: { payments
     payments: payments.error ? null : page<PaymentRow>(parsePayments(payments.data), PAYMENTS_PAGE),
     history: history.error ? null : page<HistoryRow>(parseHistory(history.data), HISTORY_PAGE),
   };
+}
+
+/** Precio de lista del plan en el catálogo (USD, centavos), o `null` si no se puede leer. La tabla `plans` es de lectura con sesión. */
+export async function loadPlanPrice(db: Db, planCode: string): Promise<PlanCatalogPrice | null> {
+  const { data, error } = await db.from("plans").select("monthly_price_usd_cents, yearly_price_usd_cents").eq("code", planCode).maybeSingle();
+  if (error || !data) return null;
+  return { monthlyUsdCents: data.monthly_price_usd_cents, yearlyUsdCents: data.yearly_price_usd_cents };
 }
