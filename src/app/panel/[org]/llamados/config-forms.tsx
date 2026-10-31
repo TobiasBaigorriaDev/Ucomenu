@@ -233,7 +233,8 @@ export function TonosForm({ orgSlug, tones, vibration, canWrite }: { orgSlug: st
             <legend className="text-lg font-medium">Vibración del celular</legend>
             <p className="text-sm text-muted">
               Vibra cuando una mesa llama, pide la cuenta o un pedido queda listo, y «Pedir la cuenta» se siente distinto de «Llamar al
-              mozo». Funciona en celulares Android; el iPhone no deja que la web controle la vibración.
+              mozo». Funciona en celulares Android. Esta función no está disponible en iPhone (iOS), tampoco al usar Chrome.
+              Las notificaciones pueden vibrar según los ajustes del iPhone, sin usar el patrón elegido aquí.
             </p>
             <ul className="mt-2 grid gap-1">
               {VIBRATION_LEVELS.map((level) => {
