@@ -11,7 +11,7 @@ import { isLayout, type Layout } from "@/lib/identidad/layouts";
 import { MAX_LOGO_BYTES } from "@/lib/identidad/logos";
 import { isPalette } from "@/lib/identidad/palettes";
 import { FONT_KEYS, FONTS, type Font } from "@/lib/identidad/tipografias";
-import { HOURS_MAX, TAGLINE_MAX, type Voice } from "@/lib/identidad/voz";
+import { HOURS_MAX, TAGLINE_MAX, validateInstagram, validateWhatsapp, type Voice } from "@/lib/identidad/voz";
 import { ambientAction, fontAction, removeCoverAction, shapeAction, uploadCoverAction, voiceAction } from "./actions";
 import { CartaPreview } from "./carta-preview";
 
@@ -97,6 +97,10 @@ export function AmbientForm(props: Props) {
 
 export function VoiceForm(props: Props & { voice: Voice }) {
   const [tagline, setTagline] = useState(props.voice.tagline ?? "");
+  const [instagram, setInstagram] = useState(props.voice.instagram ? `@${props.voice.instagram}` : "");
+  const [whatsapp, setWhatsapp] = useState(props.voice.whatsapp ? `+${props.voice.whatsapp}` : "");
+  // La vista previa muestra lo que se está escribiendo solo cuando ya es válido (igual que lo guardará el servidor).
+  const social = { instagram: (() => { const r = validateInstagram(instagram); return r.ok ? r.value : null; })(), whatsapp: (() => { const r = validateWhatsapp(whatsapp); return r.ok ? r.value : null; })() };
   return (
     <ActionForm action={voiceAction} className="mt-5">
       <fieldset disabled={!props.canWrite} className="grid min-w-0 max-w-xl gap-4">
@@ -115,17 +119,17 @@ export function VoiceForm(props: Props & { voice: Voice }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="voz-instagram" className={labelClass}>Instagram (opcional)</label>
-            <input id="voz-instagram" name="instagram" type="text" defaultValue={props.voice.instagram ? `@${props.voice.instagram}` : ""} placeholder="@milocal" autoCapitalize="none" className={`${inputClass} mt-1`} />
+            <input id="voz-instagram" name="instagram" type="text" defaultValue={props.voice.instagram ? `@${props.voice.instagram}` : ""} onChange={event => setInstagram(event.target.value)} placeholder="@milocal" autoCapitalize="none" className={`${inputClass} mt-1`} />
           </div>
           <div>
             <label htmlFor="voz-whatsapp" className={labelClass}>WhatsApp (opcional)</label>
-            <input id="voz-whatsapp" name="whatsapp" type="tel" defaultValue={props.voice.whatsapp ? `+${props.voice.whatsapp}` : ""} placeholder="+54 9 11 1234-5678" className={`${inputClass} mt-1`} />
+            <input id="voz-whatsapp" name="whatsapp" type="tel" defaultValue={props.voice.whatsapp ? `+${props.voice.whatsapp}` : ""} onChange={event => setWhatsapp(event.target.value)} placeholder="+54 9 11 1234-5678" className={`${inputClass} mt-1`} />
           </div>
         </div>
         <p className="text-sm text-muted">Todo esto es público: lo ve cualquiera que abra tu carta. Usá el Instagram y el WhatsApp del local, no teléfonos personales. Dejá un campo vacío para quitarlo.</p>
         <div>
-          <p className="mb-1 text-sm text-muted">Así se verá el lema en tu carta (con platos de ejemplo).</p>
-          <CartaPreview {...previewBase(props)} look={props.look} tagline={tagline.trim() || null} testId="apariencia-preview-voz" />
+          <p className="mb-1 text-sm text-muted">Así se verán el lema, Instagram y WhatsApp arriba de tu carta (con platos de ejemplo). Los horarios van al pie.</p>
+          <CartaPreview {...previewBase(props)} look={props.look} tagline={tagline.trim() || null} social={social} testId="apariencia-preview-voz" />
         </div>
         <div><SubmitButton pendingLabel="Guardando…">Guardar datos del local</SubmitButton></div>
       </fieldset>

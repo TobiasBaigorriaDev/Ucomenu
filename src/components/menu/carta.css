@@ -115,6 +115,11 @@
   letter-spacing: 0.06em;
 }
 
+/* Instagram y WhatsApp van sobre el bloque de color: el borde sigue el color del texto, no la tinta. */
+.carta[data-layout="afiche"] .carta-chip.redes-link {
+  border-color: currentColor;
+}
+
 .carta[data-layout="afiche"] #menu-search {
   border: 2px solid var(--ink);
 }

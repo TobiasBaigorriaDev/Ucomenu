@@ -5,7 +5,10 @@ import { TEXTOS } from "@/lib/idiomas/textos";
 import type { Layout } from "@/lib/identidad/layouts";
 import { THEMES, type Theme } from "@/lib/identidad/temas";
 import { posterFontSize } from "./poster";
+import { SocialLinks } from "./social-links";
 import { TemaIcono } from "./tema-icono";
+
+type Social = { instagram?: string | null; whatsapp?: string | null };
 
 /**
  * Foto de portada: proporción fija (sin saltos de diseño), recorte centrado y `priority` porque suele ser lo primero que se ve. La vista
@@ -33,7 +36,7 @@ function PinIcon({ className }: { className: string }) {
  * fondo de la carta (el logo se ve sobre el mismo color que en los otros estilos) y el nombre en la condensada, tan grande como
  * entre. Debajo, una franja con la sucursal y la mesa cerrada por un filete grueso de tinta.
  */
-function PosterHeader({ organizationName, branchName, tableLabel, logo, lang, theme, tagline, cover }: { organizationName: string; branchName?: string; tableLabel?: string | null; logo?: string | null; lang: Lang; theme: Theme | null; tagline?: string | null; cover?: string | null }) {
+function PosterHeader({ organizationName, branchName, tableLabel, logo, lang, theme, tagline, cover, social }: { organizationName: string; branchName?: string; tableLabel?: string | null; logo?: string | null; lang: Lang; theme: Theme | null; tagline?: string | null; cover?: string | null; social: Social }) {
   const t = TEXTOS[lang];
   return (
     <header className="mb-6 sm:mb-10">
@@ -57,6 +60,7 @@ function PosterHeader({ organizationName, branchName, tableLabel, logo, lang, th
             </h1>
           </div>
           {tagline ? <p data-testid="lema" className="mt-3 max-w-prose text-base font-bold [overflow-wrap:anywhere] sm:text-lg">{tagline}</p> : null}
+          <SocialLinks instagram={social.instagram} whatsapp={social.whatsapp} lang={lang} className="mt-4" />
         </div>
       </div>
       {branchName || tableLabel ? (
@@ -85,13 +89,14 @@ function PosterHeader({ organizationName, branchName, tableLabel, logo, lang, th
  * título grande vive dentro de la hoja, decorativo), el lema del local, la sucursal y la mesa. Sin portada ni bloque de color: la hoja
  * es lo que importa (el panel lo avisa al elegir una portada).
  */
-function SheetToolbar({ organizationName, branchName, tableLabel, lang, theme, tagline }: { organizationName: string; branchName?: string; tableLabel?: string | null; lang: Lang; theme: Theme | null; tagline?: string | null }) {
+function SheetToolbar({ organizationName, branchName, tableLabel, lang, theme, tagline, social }: { organizationName: string; branchName?: string; tableLabel?: string | null; lang: Lang; theme: Theme | null; tagline?: string | null; social: Social }) {
   const t = TEXTOS[lang];
   return (
     <header className="bg-ink text-porcelain">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-4 gap-y-1 px-4 py-3 sm:px-6">
         <h1 className="min-w-0 flex-1 basis-40 text-base leading-tight font-semibold [overflow-wrap:anywhere]">{organizationName}</h1>
         {tagline ? <p data-testid="lema" className="w-full text-sm [overflow-wrap:anywhere]">{tagline}</p> : null}
+        <SocialLinks instagram={social.instagram} whatsapp={social.whatsapp} lang={lang} className="w-full" />
         {branchName ? <p className="text-sm [overflow-wrap:anywhere]">{t.branch(branchName)}</p> : null}
         {tableLabel ? (
           <p data-testid="mesa" className="inline-block bg-porcelain px-2.5 py-0.5 text-sm font-semibold text-ink [overflow-wrap:anywhere]">
@@ -124,6 +129,7 @@ export function MenuHeader({
   layout,
   tagline = null,
   cover = null,
+  social = {},
 }: {
   organizationName: string;
   /** La pantalla de «carta no disponible» no muestra sucursal. */
@@ -139,10 +145,12 @@ export function MenuHeader({
   tagline?: string | null;
   /** Foto de portada del local: va arriba de todo, sin texto encima (el contraste del nombre no depende de la foto). */
   cover?: string | null;
+  /** Instagram y WhatsApp del local (voz del local): van arriba, con el logo de cada app. */
+  social?: Social;
 }) {
   const t = TEXTOS[lang];
-  if (layout === "hoja") return <SheetToolbar organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} lang={lang} theme={theme} tagline={tagline} />;
-  if (layout === "afiche") return <PosterHeader organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} logo={logo} lang={lang} theme={theme} tagline={tagline} cover={cover} />;
+  if (layout === "hoja") return <SheetToolbar organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} lang={lang} theme={theme} tagline={tagline} social={social} />;
+  if (layout === "afiche") return <PosterHeader organizationName={organizationName} branchName={branchName} tableLabel={tableLabel} logo={logo} lang={lang} theme={theme} tagline={tagline} cover={cover} social={social} />;
   return (
     <header>
       {cover ? (
@@ -174,6 +182,7 @@ export function MenuHeader({
           </h1>
         </div>
         {tagline ? <p data-testid="lema" className="mt-4 max-w-prose text-lg leading-snug text-muted [overflow-wrap:anywhere] sm:text-xl">{tagline}</p> : null}
+        <SocialLinks instagram={social.instagram} whatsapp={social.whatsapp} lang={lang} className="mt-4" />
         {branchName || tableLabel ? (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t-[1.5px] border-ink pt-3">
             {branchName ? (

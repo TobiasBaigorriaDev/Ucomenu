@@ -31,7 +31,7 @@ const SECTIONS: Section[] = [
  * Vista previa de la carta con los componentes reales (cabecera, mosaico de categorías, banda de sección y cards) y datos de
  * muestra, dentro de `.carta` con la paleta elegida. Es decorativa: `inert` + `aria-hidden` la sacan del foco y del lector de pantalla.
  */
-export function CartaPreview({ name, logo, palette, layout, theme = null, look = DEFAULT_LOOK, tagline = null, cover = null, testId }: { name: string; logo: string | null; palette: string; layout: Layout; theme?: Theme | null; look?: Look; tagline?: string | null; cover?: string | null; testId: string }) {
+export function CartaPreview({ name, logo, palette, layout, theme = null, look = DEFAULT_LOOK, tagline = null, cover = null, social = {}, testId }: { name: string; logo: string | null; palette: string; layout: Layout; theme?: Theme | null; look?: Look; tagline?: string | null; cover?: string | null; social?: { instagram?: string | null; whatsapp?: string | null }; testId: string }) {
   const { attrs, style } = lookProps(look, theme !== null);
   return (
     <div className="relative mt-5 overflow-hidden rounded-xl border border-ink/15">
@@ -45,7 +45,7 @@ export function CartaPreview({ name, logo, palette, layout, theme = null, look =
         className={`${cartaFontClass} carta carta-preview max-h-[34rem] overflow-hidden pb-8 select-none`}
         style={{ ...paletteStyle(palette), ...themeStyle(theme), ...style, minHeight: 0 }}
       >
-        <MenuHeader organizationName={name} branchName="Centro" logo={logo} theme={theme} layout={layout} tagline={tagline} cover={cover} />
+        <MenuHeader organizationName={name} branchName="Centro" logo={logo} theme={theme} layout={layout} tagline={tagline} cover={cover} social={social} />
         {layout === "bento" ? (
           <CategoryMosaic sections={SECTIONS} lang="es" />
         ) : (

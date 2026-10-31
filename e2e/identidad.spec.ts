@@ -324,6 +324,12 @@ test("el Dueño publica tipografía, forma, ambientación, datos y portada; se v
   await publicPage.reload();
   await expect(publicPage.getByTestId("lema")).toHaveText("Café de especialidad desde 2014");
   await expect(publicPage.getByTestId("contacto")).toContainText("Lun a sáb de 8 a 20 hs");
+  // Instagram y WhatsApp van arriba (en la cabecera, antes de los platos) y con el logo de cada app; los horarios, en el pie.
+  await expect(publicPage.locator("header").getByTestId("redes")).toBeVisible();
+  await expect(publicPage.getByTestId("contacto").getByTestId("contacto-instagram")).toHaveCount(0);
+  await expect(publicPage.getByTestId("contacto-instagram").locator("svg")).toBeVisible();
+  await expect(publicPage.getByTestId("contacto-instagram")).toHaveText("@mi.local");
+  await expect(publicPage.getByTestId("contacto-whatsapp").locator("svg")).toBeVisible();
   await expect(publicPage.getByTestId("contacto-instagram")).toHaveAttribute("href", "https://www.instagram.com/mi.local/");
   await expect(publicPage.getByTestId("contacto-whatsapp")).toHaveAttribute("href", "https://wa.me/5491112345678");
   await expect(publicPage.getByTestId("contacto-whatsapp")).toHaveAttribute("rel", /noopener/);
@@ -362,6 +368,7 @@ test("el Dueño publica tipografía, forma, ambientación, datos y portada; se v
   await expect(publicPage.getByTestId("lema")).toHaveText("Café de especialidad desde 2014");
   await expect(publicPage.locator(`img[alt^="Foto del ambiente de"]`)).toHaveCount(0);
   await expect(publicPage.getByTestId("contacto")).toContainText("Lun a sáb de 8 a 20 hs");
+  await expect(publicPage.locator("header").getByTestId("contacto-whatsapp")).toBeVisible();
   await page.reload();
   await expect(page.getByTestId("portada-hoja")).toBeVisible();
   await db.from("organizations").update({ menu_layout: "bento" }).eq("id", t.orgId);
