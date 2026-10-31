@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { requireMembership } from "@/lib/auth/session";
-import { isUuid, parseDate, parseNewReservation } from "@/lib/reservas/reservas";
+import { isUuid, parseDate, parseNewReservation, parseView, RESERVATION_MINUTES } from "@/lib/reservas/reservas";
 import { createSessionClient } from "@/lib/supabase/server";
 
 /**
@@ -12,11 +12,12 @@ import { createSessionClient } from "@/lib/supabase/server";
  * la dirección se arma acá con el slug de la sesión y la fecha ya validada.
  */
 
-type Back = { slug: string; date: string | null; branch: string | null };
+type Back = { slug: string; date: string | null; branch: string | null; view: "dia" | "proximas" };
 
 function back(b: Back, result: { ok: string } | { error: string }): never {
   const query = new URLSearchParams();
-  if (b.date) query.set("dia", b.date);
+  if (b.view === "proximas") query.set("ver", "proximas");
+  else if (b.date) query.set("dia", b.date);
   if (b.branch) query.set("sucursal", b.branch);
   if ("ok" in result) query.set("ok", result.ok);
   else query.set("error", result.error);
@@ -31,6 +32,7 @@ async function context(form: FormData, slug: string): Promise<Back> {
     slug: membership.org.slug,
     date: parseDate(form.get("back_dia")),
     branch: typeof branch === "string" && /^[a-z0-9-]{1,64}$/.test(branch) ? branch : null,
+    view: parseView(form.get("back_ver")),
   };
 }
 
@@ -47,7 +49,7 @@ export async function createReservationAction(slug: string, form: FormData): Pro
     p_party: input.party,
     p_date: input.date,
     p_time: input.time,
-    p_duration: input.duration,
+    p_duration: RESERVATION_MINUTES,
     p_notes: input.notes,
     p_table: input.table as string,
     p_client_key: input.clientKey,

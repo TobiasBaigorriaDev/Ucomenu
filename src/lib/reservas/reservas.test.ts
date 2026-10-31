@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayTitle, errorMessage, freeTables, GENERIC_ERROR, isActive, parseDate, parseNewReservation, parseReservation, shiftDate, sortForDay, startOfDay, timeLabel, todayIn, type Reservation, type ReservationTable } from "./reservas";
+import { dayTitle, errorMessage, freeTables, GENERIC_ERROR, groupByDay, isActive, localDate, parseDate, parseNewReservation, parseReservation, parseView, RESERVATION_MINUTES, shiftDate, sortForDay, startOfDay, tablesKnown, timeLabel, todayIn, type Reservation, type ReservationTable } from "./reservas";
 
 const reserva = (over: Partial<Reservation> = {}): Reservation => ({
   id: "r1",
@@ -108,7 +108,9 @@ describe("parseNewReservation", () => {
     return data;
   };
   it("lee el formulario y recorta los textos", () => {
-    expect(parseNewReservation(form())).toMatchObject({ name: "Ana", party: 4, date: "2026-11-05", time: "21:00", duration: 90, table: null });
+    expect(parseNewReservation(form())).toMatchObject({ name: "Ana", party: 4, date: "2026-11-05", time: "21:00", table: null });
+    // La duración no es un dato del formulario: un valor que llegue igual no cambia nada.
+    expect(parseNewReservation(form({ duration: "999" }))).not.toHaveProperty("duration");
   });
   it("una mesa elegida viaja; una malformada o una fecha rota lo invalidan", () => {
     expect(parseNewReservation(form({ table: uuid }))!.table).toBe(uuid);
@@ -125,5 +127,49 @@ describe("errorMessage", () => {
     expect(errorMessage("table_busy")).toContain("otra reserva");
     expect(errorMessage("algo_raro")).toBe(GENERIC_ERROR);
     expect(errorMessage(undefined)).toBe(GENERIC_ERROR);
+  });
+});
+
+describe("la vista «Próximas»", () => {
+  const BA = "America/Argentina/Buenos_Aires";
+  it("parseView: solo «proximas» activa la vista; cualquier otra cosa es por día", () => {
+    expect(parseView("proximas")).toBe("proximas");
+    expect(parseView(["proximas", "x"])).toBe("proximas");
+    expect(parseView(undefined)).toBe("dia");
+    expect(parseView("otra")).toBe("dia");
+  });
+
+  it("la duración es un bloque fijo de 90 minutos", () => {
+    expect(RESERVATION_MINUTES).toBe(90);
+  });
+
+  it("localDate usa la zona de la sucursal: las 01:00 UTC todavía son el día anterior en Buenos Aires", () => {
+    expect(localDate("2026-11-02T01:00:00Z", BA)).toBe("2026-11-01");
+    expect(localDate("2026-11-02T01:00:00Z", "Europe/Madrid")).toBe("2026-11-02");
+  });
+
+  it("groupByDay agrupa por día de la sucursal, sin reordenar, y una reserva de madrugada va al día local que le toca", () => {
+    const lista = [
+      reserva({ id: "a", startsAt: "2026-11-01T23:00:00Z" }), // 20:00 del 1/11 en BA
+      reserva({ id: "b", startsAt: "2026-11-02T02:00:00Z" }), // 23:00 del 1/11 en BA
+      reserva({ id: "c", startsAt: "2026-11-02T04:00:00Z" }), // 01:00 del 2/11 en BA
+      reserva({ id: "d", startsAt: "2026-11-05T22:00:00Z" }),
+    ];
+    const grupos = groupByDay(lista, BA);
+    expect(grupos.map((g) => [g.date, g.items.map((r) => r.id)])).toEqual([
+      ["2026-11-01", ["a", "b"]],
+      ["2026-11-02", ["c"]],
+      ["2026-11-05", ["d"]],
+    ]);
+    expect(groupByDay([], BA)).toEqual([]);
+  });
+
+  it("tablesKnown: con la lectura completa siempre; cortada, solo si la reserva termina antes de lo que quedó afuera", () => {
+    const r = reserva({ endsAt: "2026-11-01T23:30:00Z" });
+    expect(tablesKnown(r, false, null)).toBe(true);
+    expect(tablesKnown(r, true, null)).toBe(false);
+    expect(tablesKnown(r, true, "2026-11-01T23:00:00Z")).toBe(false); // lo que quedó afuera empieza antes de que esta termine: podría pisarse
+    expect(tablesKnown(r, true, "2026-11-01T23:30:00Z")).toBe(true); // empieza justo cuando esta termina: no se pisan
+    expect(tablesKnown(r, true, "2026-11-02T10:00:00Z")).toBe(true);
   });
 });

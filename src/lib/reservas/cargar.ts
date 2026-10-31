@@ -21,6 +21,8 @@ export type DayData = {
   tables: ReservationTable[];
   /** La lectura llegó al tope de filas: la lista y las mesas libres pueden estar incompletas (la pantalla lo avisa). */
   truncated: boolean;
+  /** Con la lectura cortada, el inicio de la última fila leída: lo que no se leyó empieza ahí o después (`null` si no se cortó). */
+  firstUnloadedStart: string | null;
 };
 
 /**
@@ -51,7 +53,43 @@ export async function loadDay(db: Db, orgId: string, branchId: string, date: str
   return {
     day,
     truncated: rows.data.length >= PAGE_LIMIT,
+    firstUnloadedStart: null,
     around,
+    tables: tables.data.map((table) => ({ id: table.id, label: table.label, branchId: table.branch_id })).sort((a, b) => a.label.localeCompare(b.label, "es-AR", { numeric: true })),
+  };
+}
+
+export const UPCOMING_LIMIT = 300;
+
+/**
+ * Todas las reservas próximas de una sucursal: las que siguen vivas (por confirmar o confirmadas) y todavía no terminaron, de la más
+ * cercana a la más lejana. También lee las que ya están sentadas y no terminaron, que no se listan pero ocupan su mesa. Con la
+ * sesión de la persona (RLS). `null` si la lectura falla. Si hay más que `UPCOMING_LIMIT`, `truncated` y `firstUnloadedStart` dicen
+ * hasta dónde se leyó.
+ */
+export async function loadUpcoming(db: Db, orgId: string, branchId: string): Promise<DayData | null> {
+  const [rows, tables] = await Promise.all([
+    db
+      .from("reservations")
+      .select(COLUMNS)
+      .eq("organization_id", orgId)
+      .eq("branch_id", branchId)
+      .in("status", ["pending_email", "requested", "confirmed", "seated"])
+      .gt("ends_at", new Date().toISOString())
+      .order("starts_at")
+      .order("id")
+      .limit(UPCOMING_LIMIT),
+    db.from("tables").select("id, label, branch_id").eq("organization_id", orgId).eq("branch_id", branchId).eq("is_active", true).order("label"),
+  ]);
+  if (rows.error || tables.error) return null;
+  const around = rows.data.flatMap((row) => parseReservation(row) ?? []);
+  if (around.length !== rows.data.length) return null;
+  const truncated = rows.data.length >= UPCOMING_LIMIT;
+  return {
+    day: around.filter((reservation) => reservation.status !== "seated"),
+    around,
+    truncated,
+    firstUnloadedStart: truncated ? around[around.length - 1].startsAt : null,
     tables: tables.data.map((table) => ({ id: table.id, label: table.label, branchId: table.branch_id })).sort((a, b) => a.label.localeCompare(b.label, "es-AR", { numeric: true })),
   };
 }

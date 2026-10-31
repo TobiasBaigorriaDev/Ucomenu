@@ -41,7 +41,7 @@ export function buildAttention(input: {
     items.push({
       id: "reservas",
       text: `${plural(input.pendingReservations, "reserva espera", "reservas esperan")} que le asignes una mesa.`,
-      href: `/sala/${input.slug}/reservas`,
+      href: `/sala/${input.slug}/reservas?ver=proximas`,
       cta: "Ver reservas",
     });
   }

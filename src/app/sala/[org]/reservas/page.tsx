@@ -3,18 +3,21 @@ import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { dangerButtonClass, inputClass, labelClass, primaryButtonClass, secondaryButtonClass } from "@/components/panel/styles";
 import { getEntitlements, requireMembership } from "@/lib/auth/session";
-import { loadDay, PAGE_LIMIT } from "@/lib/reservas/cargar";
+import { loadDay, loadUpcoming, PAGE_LIMIT, UPCOMING_LIMIT } from "@/lib/reservas/cargar";
 import {
   dayTitle,
-  DURATIONS,
   errorMessage,
   freeTables,
+  groupByDay,
   isActive,
   OK_MESSAGE,
   parseDate,
+  parseView,
+  RESERVATION_MINUTES,
   shiftDate,
   sortForDay,
   STATUS_LABEL,
+  tablesKnown,
   timeLabel,
   todayIn,
   type Reservation,
@@ -37,7 +40,7 @@ const PILL: Record<Reservation["status"], string> = {
   no_show: "bg-sand text-ink ring-1 ring-ink/25",
 };
 
-type Back = { slug: string; date: string; branch: string };
+type Back = { slug: string; date: string; branch: string; view: "dia" | "proximas" };
 
 /** Un botón de estado; los que no se pueden deshacer piden una segunda confirmación dentro de la misma tarjeta. */
 function StatusAction({ back, reservation, action, label, confirmLabel, tone = "secondary" }: { back: Back; reservation: Reservation; action: string; label: string; confirmLabel?: string; tone?: "primary" | "secondary" | "danger" }) {
@@ -48,6 +51,7 @@ function StatusAction({ back, reservation, action, label, confirmLabel, tone = "
       <input type="hidden" name="action" value={action} />
       <input type="hidden" name="back_dia" value={back.date} />
       <input type="hidden" name="back_sucursal" value={back.branch} />
+      <input type="hidden" name="back_ver" value={back.view} />
       <button type="submit" className={className} data-testid={`reserva-${action}`}>
         {confirmLabel ?? label}
       </button>
@@ -85,6 +89,7 @@ function AssignTable({ back, reservation, free }: { back: Back; reservation: Res
       <input type="hidden" name="reservation" value={reservation.id} />
       <input type="hidden" name="back_dia" value={back.date} />
       <input type="hidden" name="back_sucursal" value={back.branch} />
+      <input type="hidden" name="back_ver" value={back.view} />
       <div>
         <label htmlFor={`mesa-${reservation.id}`} className={labelClass}>
           {reservation.tableId ? "Cambiar de mesa" : "Mesa"}
@@ -136,7 +141,6 @@ function ReservationCard({ reservation, back, timeZone, free, now, readOnly }: {
       </p>
       <p className="mt-1 text-base" data-testid="reserva-mesa">
         {reservation.tableLabel ? `${reservation.tableLabel}${isActive(reservation.status) || reservation.status === "seated" ? "" : " (liberada)"}` : "Sin mesa asignada"}
-        <span className="text-muted">{` · hasta las ${timeLabel(reservation.endsAt, timeZone)}`}</span>
       </p>
       {reservation.notes ? (
         <p className="mt-1 text-base break-words text-muted" data-testid="reserva-nota">
@@ -198,14 +202,18 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
   const timeZone = branch?.timezone ?? "America/Argentina/Buenos_Aires";
   const today = todayIn(timeZone);
   const date = parseDate(query.dia) ?? today;
+  const mode = parseView(query.ver);
 
-  const data = canView && branch ? await loadDay(db, orgId, branch.id, date, timeZone) : null;
+  const data = !(canView && branch) ? null : mode === "proximas" ? await loadUpcoming(db, orgId, branch.id) : await loadDay(db, orgId, branch.id, date, timeZone);
   const now = new Date().getTime();
-  const back: Back = { slug, date, branch: branch?.slug ?? "" };
+  const back: Back = { slug, date, branch: branch?.slug ?? "", view: mode };
   const list = data ? sortForDay(data.day) : [];
   const alive = list.filter((reservation) => isActive(reservation.status));
   const people = alive.reduce((sum, reservation) => sum + reservation.partySize, 0);
 
+  /** Las mesas libres de una reserva, o `null` si la lectura quedó incompleta y no se sabe. */
+  const freeFor = (reservation: Reservation) => (data && tablesKnown(reservation, data.truncated, data.firstUnloadedStart) ? freeTables(reservation, data.tables, data.around) : null);
+  const groups = mode === "proximas" ? groupByDay(list, timeZone) : [];
   const href = (nextDate: string) => `/sala/${slug}/reservas?${new URLSearchParams({ dia: nextDate, ...(branch ? { sucursal: branch.slug } : {}) })}`;
   const chip = (active: boolean) => `inline-flex min-h-11 items-center rounded-full px-4 text-base font-medium ${active ? "bg-brand text-white" : "border border-ink/50 text-ink hover:bg-ink/5"}`;
   const ok = typeof query.ok === "string" ? OK_MESSAGE[query.ok] : undefined;
@@ -214,7 +222,9 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Reservas</h1>
-      <p className="mt-2 max-w-prose text-base text-muted">Las reservas de cada sucursal, por día. Asignale una mesa para confirmarla.</p>
+      <p className="mt-2 max-w-prose text-base text-muted">
+        Las reservas de cada sucursal, por día o todas las próximas. Asignale una mesa para confirmarla: cada reserva ocupa su mesa {RESERVATION_MINUTES} minutos.
+      </p>
 
       {!ent ? (
         <p role="status" className="mt-6 max-w-prose text-base text-muted" data-testid="reservas-sin-estado">
@@ -244,7 +254,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
           {branches.length > 1 ? (
             <nav aria-label="Sucursal" className="mt-6 flex flex-wrap gap-2" data-testid="reservas-sucursales">
               {branches.map((item) => (
-                <Link key={item.id} href={`/sala/${slug}/reservas?${new URLSearchParams({ dia: date, sucursal: item.slug })}`} aria-current={item.id === branch.id ? "page" : undefined} className={chip(item.id === branch.id)}>
+                <Link key={item.id} href={`/sala/${slug}/reservas?${new URLSearchParams({ ...(mode === "proximas" ? { ver: "proximas" } : { dia: date }), sucursal: item.slug })}`} aria-current={item.id === branch.id ? "page" : undefined} className={chip(item.id === branch.id)}>
                   {item.name}
                 </Link>
               ))}
@@ -260,7 +270,9 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
           ) : null}
           {data?.truncated ? (
             <p role="status" className="mt-6 max-w-prose rounded-3xl border border-danger p-4 text-base font-medium text-danger" data-testid="reservas-truncada">
-              Este día tiene más reservas de las que podemos mostrar ({PAGE_LIMIT}): la lista puede estar incompleta. Probá con otra sucursal o consultá a UcoMenu.
+              {mode === "proximas"
+                ? `Mostramos las próximas ${UPCOMING_LIMIT} reservas: hay más. Las mesas libres solo se ofrecen donde se pueden calcular con lo que se muestra.`
+                : `Este día tiene más reservas de las que podemos mostrar (${PAGE_LIMIT}): la lista puede estar incompleta. Probá con otra sucursal o consultá a UcoMenu.`}
             </p>
           ) : null}
           {ok ? (
@@ -274,6 +286,16 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
             </p>
           ) : null}
 
+          <nav aria-label="Vista" className="mt-6 flex flex-wrap gap-2" data-testid="reservas-vistas">
+            <Link href={`/sala/${slug}/reservas?${new URLSearchParams({ dia: date, sucursal: branch.slug })}`} aria-current={mode === "dia" ? "page" : undefined} className={chip(mode === "dia")} data-testid="reservas-vista-dia">
+              Por día
+            </Link>
+            <Link href={`/sala/${slug}/reservas?${new URLSearchParams({ ver: "proximas", sucursal: branch.slug })}`} aria-current={mode === "proximas" ? "page" : undefined} className={chip(mode === "proximas")} data-testid="reservas-vista-proximas">
+              Próximas
+            </Link>
+          </nav>
+
+          {mode === "dia" ? (
           <nav aria-label="Día" className="mt-6 flex flex-wrap items-center gap-2" data-testid="reservas-dias">
             <Link href={href(shiftDate(date, -1))} className={secondaryButtonClass} aria-label="Día anterior">
               ← Anterior
@@ -295,12 +317,13 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
               </button>
             </form>
           </nav>
+          ) : null}
 
           <h2 className="mt-6 font-display text-3xl leading-tight" data-testid="reservas-titulo-dia">
-            {dayTitle(date)}
+            {mode === "proximas" ? "Próximas reservas" : dayTitle(date)}
           </h2>
           <p className="mt-1 text-base text-muted" data-testid="reservas-resumen">
-            {alive.length === 0 ? "Sin reservas pendientes ni confirmadas." : `${alive.length} ${alive.length === 1 ? "reserva" : "reservas"} · ${people} ${people === 1 ? "persona" : "personas"}.`}
+            {alive.length === 0 ? (mode === "proximas" ? "No hay reservas próximas." : "Sin reservas pendientes ni confirmadas.") : `${alive.length} ${alive.length === 1 ? "reserva" : "reservas"} · ${people} ${people === 1 ? "persona" : "personas"}.`}
           </p>
 
           {hasFeature ? (
@@ -311,6 +334,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
               <input type="hidden" name="clientKey" value={randomUUID()} />
               <input type="hidden" name="back_dia" value={date} />
               <input type="hidden" name="back_sucursal" value={branch.slug} />
+              <input type="hidden" name="back_ver" value={mode} />
               <div>
                 <label htmlFor="r-nombre" className={labelClass}>
                   Nombre
@@ -339,25 +363,13 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
                 <label htmlFor="r-fecha" className={labelClass}>
                   Fecha
                 </label>
-                <input id="r-fecha" name="date" type="date" required defaultValue={date < today ? today : date} min={today} className={`${inputClass} mt-1`} />
+                <input id="r-fecha" name="date" type="date" required defaultValue={mode === "proximas" || date < today ? today : date} min={today} className={`${inputClass} mt-1`} />
               </div>
               <div>
                 <label htmlFor="r-hora" className={labelClass}>
                   Hora
                 </label>
                 <input id="r-hora" name="time" type="time" required defaultValue="21:00" className={`${inputClass} mt-1`} />
-              </div>
-              <div>
-                <label htmlFor="r-duracion" className={labelClass}>
-                  Duración
-                </label>
-                <select id="r-duracion" name="duration" defaultValue="90" className={`${inputClass} mt-1`}>
-                  {DURATIONS.map((minutes) => (
-                    <option key={minutes} value={minutes}>
-                      {minutes % 60 === 0 ? `${minutes / 60} h` : `${Math.floor(minutes / 60)} h ${minutes % 60} min`}
-                    </option>
-                  ))}
-                </select>
               </div>
               <div>
                 <label htmlFor="r-mesa" className={labelClass}>
@@ -394,14 +406,32 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
             </p>
           ) : list.length === 0 ? (
             <p className="mt-6 max-w-prose text-base text-muted" data-testid="reservas-vacio">
-              No hay reservas para este día.
+              {mode === "proximas" ? "No hay reservas próximas." : "No hay reservas para este día."}
             </p>
           ) : (
-            <ul className="mt-6 grid gap-3" data-testid="reservas-lista">
-              {list.map((reservation) => (
-                <ReservationCard key={reservation.id} reservation={reservation} back={back} timeZone={timeZone} free={data.truncated ? null : freeTables(reservation, data.tables, data.around)} now={now} readOnly={!hasFeature} />
-              ))}
-            </ul>
+            mode === "proximas" ? (
+              <div className="mt-6 flex flex-col gap-8" data-testid="reservas-lista">
+                {groups.map((group) => (
+                  <section key={group.date} aria-labelledby={`dia-${group.date}`} data-testid="reservas-grupo" data-dia={group.date}>
+                    <h3 id={`dia-${group.date}`} className="font-display text-2xl leading-tight">
+                      {dayTitle(group.date)}
+                      <span className="ml-2 text-base text-muted">{group.items.length === 1 ? "1 reserva" : `${group.items.length} reservas`}</span>
+                    </h3>
+                    <ul className="mt-3 grid gap-3">
+                      {group.items.map((reservation) => (
+                        <ReservationCard key={reservation.id} reservation={reservation} back={back} timeZone={timeZone} free={freeFor(reservation)} now={now} readOnly={!hasFeature} />
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+              </div>
+            ) : (
+              <ul className="mt-6 grid gap-3" data-testid="reservas-lista">
+                {list.map((reservation) => (
+                  <ReservationCard key={reservation.id} reservation={reservation} back={back} timeZone={timeZone} free={freeFor(reservation)} now={now} readOnly={!hasFeature} />
+                ))}
+              </ul>
+            )
           )}
         </>
       )}

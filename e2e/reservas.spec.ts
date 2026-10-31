@@ -95,6 +95,9 @@ test.describe("Reservas en la Sala", () => {
     await expect(ana.getByTestId("reserva-telefono")).toHaveAttribute("href", "tel:+541155551234");
     await expect(ana.getByTestId("reserva-nota")).toHaveText("Cumpleaños");
     await expect(ana.getByTestId("reserva-mesa")).toContainText("Sin mesa asignada");
+    // La duración ya no se elige ni se muestra (decisión del usuario): ni campo en el formulario ni «hasta las» en la tarjeta.
+    await expect(page.getByLabel("Duración")).toHaveCount(0);
+    await expect(ana).not.toContainText("hasta las");
 
     // Se confirma asignándole la Mesa 1.
     await ana.getByLabel("Mesa", { exact: true }).selectOption({ label: "Mesa 1" });
@@ -154,7 +157,7 @@ test.describe("Reservas en la Sala", () => {
     await page.goto(`/panel/${t.slug}`);
     const item = page.locator('[data-item="reservas"]');
     await expect(item).toContainText("1 reserva espera");
-    await expect(item.getByRole("link")).toHaveAttribute("href", `/sala/${t.slug}/reservas`);
+    await expect(item.getByRole("link")).toHaveAttribute("href", `/sala/${t.slug}/reservas?ver=proximas`);
   });
 
   test("un local Básico ve que las reservas vienen con Pro y no puede cargar ninguna", async ({ page }) => {
@@ -165,6 +168,72 @@ test.describe("Reservas en la Sala", () => {
     await expect(page.getByTestId("reservas-nueva")).toHaveCount(0);
     await page.goto(`/panel/${t.slug}`);
     await expect(page.locator('[data-item="reservas"]')).toHaveCount(0);
+  });
+
+  test("«Próximas» junta las reservas de todos los días por venir, agrupadas por día, y se puede trabajar desde ahí", async ({ page }) => {
+    const t = await nuevoLocal("res-proximas");
+    await reservarComo(t.owner, t.branch, enDias(3), "20:00", { nombre: "Dentro de tres" });
+    await reservarComo(t.owner, t.branch, enDias(1), "21:00", { nombre: "Mañana A" });
+    await reservarComo(t.owner, t.branch, enDias(1), "22:00", { nombre: "Mañana B", mesa: t.mesaIds[0] });
+    await reservarComo(t.owner, t.branch, enDias(40), "13:00", { nombre: "Lejana" });
+    await reservarComo(t.owner, t.branch, enDias(2), "19:00", { nombre: "Se cancela" });
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/sala/${t.slug}/reservas?dia=${enDias(2)}`);
+    await tarjeta(page, "Se cancela").getByTestId("reserva-cancelar-abrir").click();
+    await tarjeta(page, "Se cancela").getByTestId("reserva-cancelar").click();
+    await expect(page.getByTestId("reservas-ok")).toHaveText("Reserva cancelada.");
+
+    await page.getByTestId("reservas-vista-proximas").click();
+    await expect(page).toHaveURL(/ver=proximas/);
+    await expect(page.getByTestId("reservas-titulo-dia")).toHaveText("Próximas reservas");
+    await expect(page.getByTestId("reservas-dias")).toHaveCount(0); // sin navegación de día
+    // Están las de varios días, en orden y agrupadas; la cancelada no.
+    await expect(page.getByTestId("reservas-grupo")).toHaveCount(3);
+    await expect(page.getByTestId("reservas-grupo").nth(0)).toHaveAttribute("data-dia", enDias(1));
+    await expect(page.getByTestId("reservas-grupo").nth(0).getByTestId("reserva")).toHaveCount(2);
+    await expect(page.getByTestId("reservas-grupo").nth(1)).toHaveAttribute("data-dia", enDias(3));
+    await expect(page.getByTestId("reservas-grupo").nth(2)).toHaveAttribute("data-dia", enDias(40));
+    await expect(page.getByTestId("reserva-nombre")).toHaveText(["Mañana A", "Mañana B", "Dentro de tres", "Lejana"]);
+    await expect(page.getByTestId("reservas-resumen")).toContainText("4 reservas");
+
+    // Se asigna una mesa desde esta vista (la Mesa 1 está ocupada por «Mañana B» a esa hora, pero no a las 20:00 de otro día) y se vuelve a ella.
+    const manana = tarjeta(page, "Mañana A");
+    await expect(manana.getByRole("option", { name: "Mesa 1" })).toHaveCount(0);
+    await manana.getByLabel("Mesa", { exact: true }).selectOption({ label: "Mesa 2" });
+    await manana.getByRole("button", { name: "Confirmar con esta mesa" }).click();
+    await expect(page).toHaveURL(/ver=proximas/);
+    await expect(tarjeta(page, "Mañana A").getByTestId("reserva-estado")).toHaveText("Confirmada");
+    await expect(page.getByTestId("reservas-titulo-dia")).toHaveText("Próximas reservas");
+
+    // La que se carga desde esta vista también deja en ella.
+    await cargar(page, { nombre: "Nueva desde próximas", telefono: "11 6666 1111" });
+    await expect(page).toHaveURL(/ver=proximas/);
+    await expect(tarjeta(page, "Nueva desde próximas")).toHaveCount(1);
+
+    // Volver a «Por día» muestra el día de hoy.
+    await page.getByTestId("reservas-vista-dia").click();
+    await expect(page.getByTestId("reservas-dias")).toBeVisible();
+  });
+
+  test("«Próximas» no lista lo que ya terminó ni mezcla otra sucursal; sin reservas lo dice", async ({ page }) => {
+    const t = await nuevoLocal("res-proximas-vacio");
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/sala/${t.slug}/reservas?ver=proximas`);
+    await expect(page.getByTestId("reservas-vacio")).toHaveText("No hay reservas próximas.");
+    await expect(page.getByTestId("reservas-resumen")).toHaveText("No hay reservas próximas.");
+
+    const norte = await service().from("branches").insert({ organization_id: t.orgId, slug: "norte", name: "Norte" }).select("id").single();
+    expect(norte.error).toBeNull();
+    await reservarComo(t.owner, norte.data!.id as string, enDias(1), "21:00", { nombre: "Solo en Norte" });
+    sql(
+      `insert into public.reservations (organization_id, branch_id, status, guest_name, guest_phone, party_size, starts_at, ends_at, client_key, request_hash) ` +
+        `values ('${t.orgId}', '${t.branch}', 'requested', 'Ya pasó', '123456', 2, now() - interval '5 hours', now() - interval '3 hours', gen_random_uuid(), 'x')`,
+    );
+    await page.goto(`/sala/${t.slug}/reservas?ver=proximas`);
+    await expect(page.getByTestId("reservas-vacio")).toBeVisible(); // Centro: la de Norte no cuenta y la que ya terminó tampoco
+    await page.getByTestId("reservas-sucursales").getByRole("link", { name: "Norte" }).click();
+    await expect(page).toHaveURL(/ver=proximas/);
+    await expect(tarjeta(page, "Solo en Norte")).toHaveCount(1);
   });
 
   // Regresiones de la revisión independiente de Codex (ronda 1).

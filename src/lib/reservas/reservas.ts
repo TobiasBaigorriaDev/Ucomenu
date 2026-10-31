@@ -148,7 +148,40 @@ export const timeLabel = (iso: string, timeZone: string): string => new Intl.Dat
 // Formulario y errores
 // ---------------------------------------------------------------------------------------------------------------------
 
-export const DURATIONS = [60, 90, 120, 150, 180] as const;
+/**
+ * Cuánto tiempo ocupa una reserva su mesa. No se elige ni se muestra por reserva: es un bloque fijo (decisión del usuario, 2026-10-31).
+ * Sirve para que una mesa no se reserve dos veces seguidas casi a la misma hora; la base lo recibe como la duración de la reserva.
+ */
+export const RESERVATION_MINUTES = 90;
+
+/** Qué reservas se ven: las de un día (por defecto) o todas las próximas. */
+export type ReservationsView = "dia" | "proximas";
+export const parseView = (raw: unknown): ReservationsView => ((Array.isArray(raw) ? raw[0] : raw) === "proximas" ? "proximas" : "dia");
+
+/** El día calendario (`YYYY-MM-DD`) de un instante en la zona `timeZone`. */
+export const localDate = (iso: string, timeZone: string): string => todayIn(timeZone, new Date(iso));
+
+/** Agrupa por día de la sucursal, en el orden recibido (la lista ya viene por hora). */
+export function groupByDay(reservations: readonly Reservation[], timeZone: string): { date: string; items: Reservation[] }[] {
+  const groups: { date: string; items: Reservation[] }[] = [];
+  for (const reservation of reservations) {
+    const date = localDate(reservation.startsAt, timeZone);
+    const last = groups[groups.length - 1];
+    if (last && last.date === date) last.items.push(reservation);
+    else groups.push({ date, items: [reservation] });
+  }
+  return groups;
+}
+
+/**
+ * ¿Se sabe qué mesas están libres para esta reserva? Con la lectura completa, sí. Con la lectura cortada en el tope, solo si la reserva
+ * termina antes de la primera reserva que quedó afuera (las que quedaron afuera empiezan en `firstUnloadedStart` o después, y una que
+ * empieza cuando esta ya terminó no se pisa con ella).
+ */
+export function tablesKnown(reservation: Reservation, truncated: boolean, firstUnloadedStart: string | null): boolean {
+  if (!truncated) return true;
+  return firstUnloadedStart !== null && Date.parse(reservation.endsAt) <= Date.parse(firstUnloadedStart);
+}
 
 export type NewReservation = {
   branch: string;
@@ -158,7 +191,6 @@ export type NewReservation = {
   party: number;
   date: string;
   time: string;
-  duration: number;
   notes: string;
   table: string | null;
   clientKey: string;
@@ -179,12 +211,11 @@ export function parseNewReservation(form: FormData): NewReservation | null {
   const date = parseDate(text(form, "date"));
   const time = text(form, "time");
   const party = Number(text(form, "party"));
-  const duration = Number(text(form, "duration") || 90);
   const table = text(form, "table");
   if (!isUuid(branch) || !isUuid(clientKey) || !date || !/^\d{2}:\d{2}$/.test(time)) return null;
-  if (!Number.isInteger(party) || !Number.isInteger(duration)) return null;
+  if (!Number.isInteger(party)) return null;
   if (table && !isUuid(table)) return null;
-  return { branch, name: text(form, "name"), phone: text(form, "phone"), email: text(form, "email"), party, date, time, duration, notes: text(form, "notes"), table: table || null, clientKey };
+  return { branch, name: text(form, "name"), phone: text(form, "phone"), email: text(form, "email"), party, date, time, notes: text(form, "notes"), table: table || null, clientKey };
 }
 
 /** Código estable de la base → texto para la persona. Un código desconocido da el mensaje genérico. */
