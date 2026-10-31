@@ -508,23 +508,24 @@ describe("portada del local", () => {
     expect((await setCover(owner.db, org, png())).ok).toBe(true);
     const intermedia = `${org}/${crypto.randomUUID()}.png`;
     const contenedor = process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu";
-    // Otra transacción cambia la referencia y se queda con la fila 2 segundos antes de confirmar.
+    // Otra transacción cambia la referencia y se queda con la fila hasta VER a otra sesión bloqueada ejecutando el reemplazo (con un
+    // tope de 10 s por si nunca llega): confirma solo después de eso, así que el resultado no depende de cuánto tarde cada proceso.
     const retiene = promisify(execFile)("docker", ["exec", contenedor, "psql", "-U", "postgres", "-c",
-      `begin; update public.organizations set cover_path = '${intermedia}' where id = '${org}'; select pg_sleep(2); commit;`]);
-    // Se espera a que esa transacción tenga el bloqueo (está dentro de pg_sleep), sin depender de cuánto tarde Docker.
+      `begin; update public.organizations set cover_path = '${intermedia}' where id = '${org}'; ` +
+      `do $$ begin for i in 1..200 loop perform pg_stat_clear_snapshot(); ` + // dentro de una transacción pg_stat_activity se cachea
+      `exit when exists (select 1 from pg_stat_activity where pid <> pg_backend_pid() and wait_event_type = 'Lock' and query like '%replace_organization_cover%'); ` +
+      `perform pg_sleep(0.05); end loop; end $$; commit;`]);
+    // Se espera a que esa transacción tenga el bloqueo (ya hizo el UPDATE y está esperando), sin depender de cuánto tarde Docker.
     const hasta = Date.now() + 8000;
     while (sql(`select count(*) from pg_stat_activity where wait_event = 'PgSleep' and query like '%${org}%'`)[0][0] === "0") {
       if (Date.now() > hasta) throw new Error("La transacción que retiene la fila no arrancó.");
       await new Promise((r) => setTimeout(r, 50));
     }
 
-    const inicio = Date.now();
     const respuesta = await owner.db.rpc("replace_organization_cover", { p_org: org, p_path: `${org}/${crypto.randomUUID()}.png` });
-    const espera = Date.now() - inicio;
     await retiene;
 
     expect(respuesta.error).toBeNull();
-    expect(espera).toBeGreaterThan(300); // se quedó esperando al bloqueo en vez de leer sin él
     expect(respuesta.data).toMatchObject({ updated: true, previous: intermedia });
   });
 
