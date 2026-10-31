@@ -1,5 +1,5 @@
 # Cambio: Cierre de la revisión de preparación para producción
-Estado: implementado y verificado en local (2026-10-31), sin commit; **nada desplegado ni programado en staging todavía**
+Estado: commits locales (sin subir a `origin`) y **desplegado en staging (Fly v89, 2026-10-31)** junto con los precios en pesos; **las tres tareas de `pg_cron` de staging siguen sin programar**
 Nivel: **M** (textos legales, cabeceras, avisos del verificador y documentación; el cambio de dinero va aparte, en [precios en pesos](precios-en-pesos.md), nivel C)
 
 ## Objetivo
@@ -35,3 +35,4 @@ La demo estable (se retoma después de crear producción), el proveedor Claude, 
 - RLS 244/244 en los 9 archivos de la ficha de precios.
 - **Bloqueado por el sistema, no ejecutado:** programar `purge-video-comments`, `purge-expired-orders` y `prune-cron-history` en **staging** (escritura remota). El SQL está listo en `docs/produccion.md` (4.b, 4.c y 4.e). Solo se hicieron lecturas de staging: tareas programadas (3), 0 comentarios y 0 pedidos vencidos, disparador de solo-agregado encendido, 9.289 filas de historial de cron.
 - **No probado:** las cabeceras en staging (el build local las sirve; falta desplegar), el correo de contacto, el texto con un abogado.
+- **Staging (Fly v89):** las cabeceras de seguridad, el `robots.txt` (staging pide no indexar nada) y los textos legales nuevos están en `ucomenu-staging.fly.dev` (comprobado con `curl`). Ver los detalles del despliegue en la [ficha de precios](precios-en-pesos.md#staging-2026-10-31-aprobado-por-el-usuario).
