@@ -42,6 +42,11 @@ describe("migración a pesos: guarda de los precios de partida", () => {
     expect(sinGuarda).not.toContain("plans_prices_unexpected");
   });
 
+  it("el bloqueo exclusivo se toma ANTES de la guarda: así nadie confirma un precio entre la comprobación y el alter table", () => {
+    expect(cuerpo.indexOf("lock table public.plans in access exclusive mode")).toBeGreaterThanOrEqual(0);
+    expect(cuerpo.indexOf("lock table public.plans in access exclusive mode")).toBeLessThan(cuerpo.indexOf("plans_prices_unexpected"));
+  });
+
   it("rollback documentado + migración vuelve a dar los precios en pesos", () => {
     const filas = enTransaccion(ROLLBACK, cuerpo, PRECIOS_HOY + ";");
     expect(filas).toContainEqual(["basic", "1490000", "14304000", "ARS"]);
