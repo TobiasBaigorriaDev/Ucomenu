@@ -1,5 +1,5 @@
 # Cambio: Reservas de mesa (fase 1: reservas manuales y asignación de mesa)
-Estado: fase 1 implementada y verificada en local, revisada y aprobada por Codex (3 rondas, `c7b51f5`); local, sin push ni staging, falta tu aprobación · [ADR 0051](../../docs/decisiones/0051-reservas.md)
+Estado: fase 1 implementada y verificada en local, revisada y aprobada por Codex (3 rondas, `c7b51f5`); en `origin/main` y en staging (Fly v87) · [ADR 0051](../../docs/decisiones/0051-reservas.md)
 Nivel: **C** (datos personales de comensales: nombre, teléfono y email; los lee solo el personal de la organización)
 
 ## Objetivo
@@ -85,4 +85,10 @@ vuelve a cargar), recordatorios, reservas recurrentes o de grupos con varias mes
 
 **Ronda 3 (Codex, verificación, commit `c7b51f5`): APROBAR, sin hallazgos nuevos** y los 5 anteriores corregidos. El informe fue estático (no ejecutó pruebas ni mutaciones; esas las hice yo, arriba). El veredicto de Codex no reemplaza tu aprobación.
 
-**Aprobación del usuario antes de subir a staging (migración incluida): pendiente.**
+**Aprobación del usuario para subir a staging (migración incluida): dada el 2026-10-31.**
+
+## Staging (2026-10-31, aprobado por el usuario)
+- Migración: `supabase db push --dry-run` mostró solo `20261215100000_reservas.sql`; aplicada en `ucomenu-staging` y el segundo `--dry-run` dice «Remote database is up to date».
+- App: Fly **v87** `complete`, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:reservas-95dd861-git` (copia limpia de `95dd861`). `/`, `/login` y `/m/aurelia/centro` 200, local inexistente 404, `/sala/aurelia/reservas` y `/panel/aurelia` sin sesión 307.
+- **No probado:** la pantalla con sesión real en staging ni en un teléfono. Para probarla, un local de demostración de staging tiene que estar en Pro (`aurelia` lo es).
+- Marcha atrás de la app: `flyctl deploy -c fly.staging.toml --image registry.fly.io/ucomenu-staging:resumen-104004c-git` (v86; ver el SQL de rollback en el encabezado de la migración, que además deja la tabla sin uso: la v86 no la lee).
