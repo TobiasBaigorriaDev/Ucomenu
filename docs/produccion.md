@@ -172,7 +172,9 @@ select cron.schedule(
   $$ select public.purge_expired_reservations(interval '30 days', 500) $$
 );
 ```
-Para dar de baja: `select cron.unschedule('purge-expired-reservations');`. Si el atraso creciera, subir el lote (hasta 5000) o repetir la ejecución durante la madrugada.
+Para dar de baja: `select cron.unschedule('purge-expired-reservations');`. Si el atraso creciera, subir el lote (hasta 5000) o repetir la ejecución durante la madrugada. Comprobación después de la primera ejecución real: `select status, return_message, start_time from cron.job_run_details where jobid = (select jobid from cron.job where jobname = 'purge-expired-reservations') order by start_time desc limit 3;` tiene que mostrar `succeeded`.
+
+**Staging: programada el 2026-10-31** (tarea `purge-expired-reservations`, `15 6 * * *`, la tercera junto a `purge-waiter-calls` y `reset-scheduled-table-turns`), con `supabase db query --linked`. La función respondió `0` (no había nada vencido). **Producción: pendiente** hasta que exista el proyecto.
 
 ## 5. Dominio (aprobación: DNS y app de producción)
 `ucomenu.com` ya es del usuario (DNS en Cloudflare). Este paso se hace cuando exista la app de producción en Fly (`fly.toml`, hoy plantilla):

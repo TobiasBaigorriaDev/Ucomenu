@@ -16,6 +16,6 @@ Actualizado: 2026-10-31 · agente saliente: Claude.
 
 - Probar con una sesión real en staging (Aurelia está en Pro) el Resumen, la Suscripción y Reservas, y mirarlos en un teléfono.
 - Base local con datos de demostración (Aurelia con pedidos y reservas, Café Ejemplo con la carga completa): `pnpm db:reset` las limpia y arregla `menu.spec.ts`. Docker Desktop hay que encenderlo y correr `pnpm db:start` para trabajar en local.
-- Antes de producción: datos legales y su revisión, precios de portada contra el catálogo (catálogo en USD, portada en ARS), programar la purga de reservas, demo estable ([producción](../docs/produccion.md)).
+- Antes de producción: datos legales y su revisión, precios de portada contra el catálogo (catálogo en USD, portada en ARS), programar la purga de reservas **en producción** (en staging ya corre: tarea `purge-expired-reservations`, 06:15 UTC; mirar `cron.job_run_details` tras la primera ejecución), demo estable ([producción](../docs/produccion.md)).
 
 Próximo paso: tu prueba en staging; después elegir entre la fase 2 de reservas, el cierre de lo que está «Para verificar» o lo que siga en el backlog.

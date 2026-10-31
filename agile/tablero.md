@@ -47,7 +47,7 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado; el u
 
 - [C] Reservas, fase 2: botón flotante «Reservar» en la carta compartida (solo `/m/…`), formulario público (nombre, teléfono, email, personas, fecha, hora, nota y consentimiento), confirmación del email con un enlace de un solo uso, límites contra spam, interruptor por sucursal, aviso push al personal y política de privacidad actualizada (bloqueado por: proveedor de correo, p. ej. Resend, y su dominio remitente; decisiones pendientes: correo de «confirmada/rechazada» al comensal, interruptor apagado al inicio, captcha) → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
 - [C] Reservas, fase 3: disponibilidad automática por capacidad, recordatorios y cancelación desde el email (después de la fase 2)
-- [S] Programar la purga de reservas con `pg_cron` al salir a producción (`docs/produccion.md`, 4.d)
+- [S] Programar la purga de reservas con `pg_cron` en producción (`docs/produccion.md`, 4.d); en staging ya está programada (2026-10-31, `15 6 * * *`)
 
 ### Mejoras y decisiones pendientes del MVP
 
