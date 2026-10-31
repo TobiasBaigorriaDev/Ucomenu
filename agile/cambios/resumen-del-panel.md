@@ -1,5 +1,5 @@
 # Cambio: Resumen del panel con datos del día y rediseño
-Estado: implementado y verificado en local, sin commit; falta tu visto bueno visual en un teléfono real
+Estado: en `origin/main` (`104004c`) y desplegado en staging (Fly v86); falta tu visto bueno visual en un teléfono real
 Nivel: M (solo lee datos que ya existen y que cada rol ya ve en otra pantalla; sin migración, sin escritura, sin cambio de permisos)
 
 ## Objetivo
@@ -36,3 +36,4 @@ Notificaciones nuevas, tiempo real en el Resumen (se actualiza al recargar; el s
 - **No ejecutado:** revisión en un teléfono real; el copiado al portapapeles fuera de Chromium; el enlace de WhatsApp abriendo la app.
 - Datos de demostración: para ver el Resumen cargué en el Supabase **local** pedidos cerrados, dos mesas abiertas, llamados y platos agotados en Aurelia (`dueno@aurelia.test`). `pnpm db:reset` los borra.
 - Recuperación: revertir el incremento (no hay migración).
+- **Staging (2026-10-31, aprobado por el usuario):** Fly **v86** `complete`, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:resumen-104004c-git` (copia limpia de `104004c`; sin migraciones). `/`, `/login` y `/m/aurelia/centro` 200, local inexistente 404, `/panel/aurelia` y `/panel/aurelia/suscripcion` sin sesión 307. **No probado:** la pantalla con sesión real en staging. Marcha atrás: `flyctl deploy -c fly.staging.toml --image registry.fly.io/ucomenu-staging:<etiqueta de la v85>`.

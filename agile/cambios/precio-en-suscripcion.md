@@ -1,5 +1,5 @@
 # Cambio: Precio de la suscripción visible para el Dueño
-Estado: implementado y verificado en local, sin commit
+Estado: en `origin/main` (`104004c`) y desplegado en staging (Fly v86)
 Nivel: M (solo muestra el precio de lista del catálogo y lo que `org_entitlements` ya entrega al Dueño; no cobra, no cambia planes, límites ni permisos; sin migración)
 
 ## Objetivo
@@ -27,3 +27,4 @@ Cambiar precios o moneda del catálogo (hoy el catálogo está en USD y la porta
 - Visto en pantalla con el local Aurelia (Pro anual) a escritorio y a 390 px.
 - **No ejecutado:** pruebas RLS (no hay cambio de base; `plans` ya era de lectura con sesión, lo cubre `acl.rls.test.ts`).
 - Recuperación: revertir el incremento.
+- **Staging (2026-10-31, aprobado por el usuario):** Fly **v86** `complete`, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:resumen-104004c-git` (copia limpia de `104004c`; sin migraciones). `/`, `/login` y `/m/aurelia/centro` 200, local inexistente 404, `/panel/aurelia` y `/panel/aurelia/suscripcion` sin sesión 307. **No probado:** la pantalla con sesión real en staging. Marcha atrás: `flyctl deploy -c fly.staging.toml --image registry.fly.io/ucomenu-staging:<etiqueta de la v85>`.
