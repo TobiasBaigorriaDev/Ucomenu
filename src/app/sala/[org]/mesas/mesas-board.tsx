@@ -23,6 +23,7 @@ import { AvisoPush } from "@/components/push/aviso-push";
 import { activateSound, beepIfOn, rememberedAlerts, silenceSound, useSoundState } from "@/components/panel/sonido-llamados";
 import { attendCallAction, setBranchViewAction } from "../actions";
 import { SelectorDeSucursal } from "../selector-sucursal";
+import { ResetSheet } from "./[mesa]/anotar/reset-sheet";
 import { dangerPrimaryClass } from "./[mesa]/anotar/ui";
 
 /** Cuánto dura el resaltado de un llamado nuevo. */
@@ -104,6 +105,8 @@ export function MesasBoard({
   // Hora del servidor de la última actualización recibida: con un cambio de vista, solo lo creado después es nuevo (ver announceableCalls).
   const lastSnapshot = useRef(Date.parse(initial.serverNow));
   const [viewNote, setViewNote] = useState("");
+  // Mesa cuyo QR se está por reiniciar (hoja de confirmación, la misma de la pantalla de anotar).
+  const [resetFor, setResetFor] = useState<{ tableId: string; label: string } | null>(null);
 
   // Diferencia entre el reloj del servidor y el del dispositivo: «hace N» sale de la hora del servidor.
   const offset = useRef(0);
@@ -630,6 +633,18 @@ export function MesasBoard({
               </Link>
             );
 
+            const reiniciar = (
+              <button
+                type="button"
+                data-testid="abrir-reinicio"
+                aria-label={`Reiniciar QR: ${card.tableLabel}`}
+                onClick={() => setResetFor({ tableId: card.tableId, label: card.tableLabel })}
+                className={buttonClass}
+              >
+                Reiniciar QR
+              </button>
+            );
+
             if (layout === "filas") {
               return (
                 <li key={card.tableId} data-testid="mesa" data-mesa={card.tableLabel} data-estado={estadoDe(card)} className={`flex overflow-hidden rounded-2xl bg-white ${border}`}>
@@ -644,6 +659,7 @@ export function MesasBoard({
                     {renderOrder(card, true)}
                     <div className="mt-3 flex flex-wrap gap-2">
                       {anotar}
+                      {reiniciar}
                       {card.order ? (
                         <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={dangerPrimaryClass}>
                           Cerrar o anular pedido…
@@ -667,6 +683,7 @@ export function MesasBoard({
                   {renderOrder(card, false)}
                   <div className="mt-auto flex flex-wrap gap-2 pt-4">
                     {anotar}
+                    {reiniciar}
                     {card.order ? (
                       <Link href={`/sala/${slug}/mesas/${card.tableId}/anotar?accion=cerrar`} data-testid="cerrar-desde-mesas" aria-label={`Cerrar o anular pedido: ${card.tableLabel}`} className={dangerPrimaryClass}>
                         Cerrar o anular pedido…
@@ -688,6 +705,7 @@ export function MesasBoard({
       <p className="mt-6 text-sm text-muted" data-testid="actualizado">
         Se actualiza sola cada pocos segundos.
       </p>
+      {resetFor ? <ResetSheet key={resetFor.tableId} slug={slug} tableId={resetFor.tableId} label={resetFor.label} onClose={() => setResetFor(null)} /> : null}
     </section>
   );
 }
