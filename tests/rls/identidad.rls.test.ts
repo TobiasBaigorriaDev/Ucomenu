@@ -1,11 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { AMBIENT_KEYS } from "@/lib/identidad/ambientes";
 import { DENSITY_KEYS, SHAPE_KEYS } from "@/lib/identidad/formas";
-import { loadIdentity, removeCover, removeLogo, setAmbient, setCover, setFont, setLayout, setLogo, setPalette, setShape, setTheme, setVoice } from "@/lib/identidad/identity";
+import { loadIdentity, removeCover, removeLogo, setAmbient, setCover, setFont, setLayout, setLogo, setPalette, setShape, setStyle, setTheme, setVoice } from "@/lib/identidad/identity";
 import { LOGO_BUCKET } from "@/lib/identidad/logos";
 import { LAYOUT_KEYS } from "@/lib/identidad/layouts";
 import { PALETTE_KEYS } from "@/lib/identidad/palettes";
 import { THEME_KEYS } from "@/lib/identidad/temas";
+import { LOOK_KEYS, lookStyle } from "@/lib/identidad/looks";
 import { FONT_KEYS } from "@/lib/identidad/tipografias";
 import { addMembership, anonClient, createOrg, createUser, deleteOrg, deleteUser, DIA_MS, serviceClient, setSubscription, type Db, type TestUser } from "./helpers";
 
@@ -88,6 +89,28 @@ describe("identidad por organización", () => {
     expect((await sinApp({ menu_theme_from: "2026-12-26", menu_theme_until: "2026-12-20" })).error?.code).toBe("23514");
     expect((await owner.db.from("organizations").update({ menu_layout: "libre" }).eq("id", org)).error?.code).toBe("23514");
     expect((await owner.db.from("organizations").update({ menu_palette: "libre" }).eq("id", org)).error?.code).toBe("23514");
+  });
+
+  it("guardar el estilo escribe las seis opciones juntas (o ninguna): cada look se acepta y lo inválido no cambia nada", async () => {
+    for (const key of LOOK_KEYS) {
+      const look = lookStyle(key);
+      expect(await setStyle(owner.db, org, look), key).toEqual({ ok: true });
+      expect(await loadIdentity(owner.db, org)).toMatchObject({
+        menu_palette: look.palette, menu_layout: look.layout, menu_font: look.font, menu_shape: look.shape, menu_density: look.density, menu_ambient: look.ambient,
+      });
+    }
+    const vigente = await loadIdentity(owner.db, org);
+    const bueno = lookStyle("brunch");
+    for (const [campo, error] of [["palette", "palette_invalid"], ["layout", "layout_invalid"], ["font", "font_invalid"], ["shape", "shape_invalid"], ["density", "density_invalid"], ["ambient", "ambient_invalid"]] as const) {
+      expect(await setStyle(owner.db, org, { ...bueno, [campo]: "__proto__" }), campo).toEqual({ ok: false, error });
+    }
+    expect(await loadIdentity(owner.db, org)).toEqual(vigente); // un valor inválido no deja la mitad escrita
+    for (const db of [staff.db, stranger.db]) expect((await setStyle(db, org, bueno)).ok).toBe(false);
+    expect((await setStyle(owner.db, other, bueno)).ok).toBe(false);
+    expect(await loadIdentity(owner.db, org)).toEqual(vigente);
+    expect(await loadIdentity(service, other)).toMatchObject({ menu_palette: "oliva", menu_layout: "bento", menu_font: "clasica" });
+    // Se deja el estilo como lo esperan las pruebas siguientes.
+    expect(await setStyle(owner.db, org, { palette: "vino", layout: "bento", font: "clasica", shape: "suave", density: "aireada", ambient: "ninguno" })).toEqual({ ok: true });
   });
 
   it("tipografía, forma, densidad y ambientación: cada opción se guarda, lo inválido se rechaza y nada se filtra a otro local", async () => {

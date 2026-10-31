@@ -5,7 +5,7 @@ import { requireOwner } from "@/lib/auth/session";
 import type { CartaError } from "@/lib/carta/catalog";
 import { cartaErrorMessage } from "@/lib/carta/messages";
 import type { FormState } from "@/lib/form-state";
-import { removeCover, removeLogo, setAmbient, setCover, setFont, setLayout, setLogo, setPalette, setShape, setTheme, setVoice, type Result } from "@/lib/identidad/identity";
+import { removeCover, removeLogo, setCover, setLogo, setStyle, setTheme, setVoice, type Result } from "@/lib/identidad/identity";
 import { createSessionClient } from "@/lib/supabase/server";
 
 const VOICE_ERRORS = {
@@ -58,35 +58,19 @@ function refresh(slug: string) {
   revalidatePath(`/m/${slug}`, "layout");
 }
 
-export async function paletteAction(_state: FormState, form: FormData): Promise<FormState> {
-  const { slug, id, db } = await prepare(form);
-  return outcome(slug, await setPalette(db, id, form.get("palette")), "Colores guardados.");
-}
-
-export async function layoutAction(_state: FormState, form: FormData): Promise<FormState> {
-  const { slug, id, db } = await prepare(form);
-  return outcome(slug, await setLayout(db, id, form.get("layout")), "Estilo guardado.");
-}
-
-export async function fontAction(_state: FormState, form: FormData): Promise<FormState> {
-  const { slug, id, db } = await prepare(form);
-  return outcome(slug, await setFont(db, id, form.get("font")), "Tipografía guardada.");
-}
-
-export async function shapeAction(_state: FormState, form: FormData): Promise<FormState> {
-  const { slug, id, db } = await prepare(form);
-  return outcome(slug, await setShape(db, id, form.get("shape"), form.get("density")), "Forma guardada.");
-}
-
-export async function ambientAction(_state: FormState, form: FormData): Promise<FormState> {
-  const { slug, id, db } = await prepare(form);
-  return outcome(slug, await setAmbient(db, id, form.get("ambient")), "Ambientación guardada.");
-}
-
 export async function voiceAction(_state: FormState, form: FormData): Promise<FormState> {
   const { slug, id, db } = await prepare(form);
   const result = await setVoice(db, id, { tagline: form.get("tagline"), hours: form.get("hours"), instagram: form.get("instagram"), whatsapp: form.get("whatsapp") });
   return outcome(slug, result, "Datos del local guardados.");
+}
+
+export async function styleAction(_state: FormState, form: FormData): Promise<FormState> {
+  const { slug, id, db } = await prepare(form);
+  const result = await setStyle(db, id, {
+    palette: form.get("palette"), layout: form.get("layout"), font: form.get("font"),
+    shape: form.get("shape"), density: form.get("density"), ambient: form.get("ambient"),
+  });
+  return outcome(slug, result, "Apariencia guardada.");
 }
 
 export async function themeAction(_state: FormState, form: FormData): Promise<FormState> {

@@ -61,6 +61,26 @@ export async function setShape(db: Db, orgId: string, shape: unknown, density: u
   return blocked ? fail(blocked) : save(db, orgId, { menu_shape: shape, menu_density: density });
 }
 
+/**
+ * Guarda de una vez las seis opciones de estilo (paleta, estilo de carta, tipografía, forma, densidad y ambientación): lo que el panel
+ * muestra en la vista previa es lo que se publica, en UNA escritura (o todo o nada). Cada valor se valida contra su catálogo cerrado.
+ */
+export async function setStyle(
+  db: Db,
+  orgId: string,
+  input: { palette: unknown; layout: unknown; font: unknown; shape: unknown; density: unknown; ambient: unknown },
+): Promise<Result> {
+  if (!isPalette(input.palette)) return fail("palette_invalid");
+  if (!isLayout(input.layout)) return fail("layout_invalid");
+  if (!isFont(input.font)) return fail("font_invalid");
+  if (!isShape(input.shape)) return fail("shape_invalid");
+  if (!isDensity(input.density)) return fail("density_invalid");
+  if (!isAmbient(input.ambient)) return fail("ambient_invalid");
+  const blocked = await guard(db, orgId);
+  if (blocked) return fail(blocked);
+  return save(db, orgId, { menu_palette: input.palette, menu_layout: input.layout, menu_font: input.font, menu_shape: input.shape, menu_density: input.density, menu_ambient: input.ambient });
+}
+
 export async function setAmbient(db: Db, orgId: string, value: unknown): Promise<Result> {
   if (!isAmbient(value)) return fail("ambient_invalid");
   const blocked = await guard(db, orgId);

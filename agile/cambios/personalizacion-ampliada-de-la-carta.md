@@ -11,6 +11,8 @@ Cinco herramientas nuevas en `/panel/[org]/apariencia` para que cada local sient
 - Nombres de opciones elegidos para no chocar con los selectores de las pruebas E2E existentes («Tradicional» y no «Clásica»; «Follaje» y no «Hojas»).
 - El estilo Hoja (página de PDF) **no muestra la portada** —a propósito— pero sí el lema en su barra superior, y el panel lo avisa al elegir una portada. Horarios, Instagram y WhatsApp salen en el pie en todos los estilos.
 - **Instagram y WhatsApp van arriba** (pedido del usuario, 2026-10-31): botones con el logo de cada app en la cabecera de todos los estilos (`social-links.tsx`; a un solo color, objetivo táctil de 44 px, enlaces armados por el servidor), con vista previa en vivo en el panel. Los horarios siguen en el pie. Verificado a 390 px en Minimal, Bento oscuro, Afiche y Hoja (sin desborde); `identidad.spec`, `rendimiento-carta`, `resenas-carta` e `idiomas` en verde (30 de 30), 179 unitarias, lint y build. Va después de la revisión de Codex. **Desplegado en staging el 2026-10-31: Fly v80** `complete`, máquina `78177dda131e38` sana, imagen `registry.fly.io/ucomenu-staging:personaliza-eec0a2d-git` (copia limpia de `eec0a2d`); `/`, `/login` y `/m/aurelia/centro` 200, local inexistente 404, panel sin sesión 307. Marcha atrás: `--image registry.fly.io/ucomenu-staging:personaliza-b144ad9-git` (v79) o `...:alta-03bcba4-git` (v78).
+- **Pantalla de Apariencia reorganizada** (pedido del usuario, 2026-10-31; ideas 1, 2 y 3 de la propuesta de comodidad): cuatro pestañas (Marca, Estilo, Detalles, Fechas especiales) en vez de nueve secciones apiladas, **una sola vista previa** con los cambios sin guardar (fija al costado desde 1280 px; en celular, una hoja inferior que se abre con «Ver vista previa» y se cierra con Escape) y **seis looks** (cafetería, bodegón, bar, bistró, brunch y minimalista; `looks.ts`) que cambian de una vez las seis opciones de estilo. **Estilo y Detalles se guardan juntos** con «Guardar apariencia» (`setStyle`: una sola escritura de seis columnas, todo o nada, con «Descartar cambios»); Marca y Fechas especiales guardan lo suyo. Las pestañas con cambios sin guardar llevan un punto. Se eliminaron las acciones por campo (`paletteAction`, `layoutAction`, `fontAction`, `shapeAction`, `ambientAction`) y los formularios viejos; las funciones de `identity.ts` siguen (las usan las pruebas de RLS). No hay migración ni cambio de permisos. «Publicar todo de una vez» (idea 4) **no** se hizo.
+- Gotcha: React resetea el formulario al terminar la acción y deja sin marcar los radios controlados; por eso cada radio lleva una `key` con el valor guardado (cubierto por la prueba «tras guardar, la opción elegida sigue marcada»).
 - `next/font` no admite `...spread` en sus llamadas: las opciones de cada fuente se repiten.
 - «Editorial» usa Playfair Display porque DM Serif Display no tiene métricas de reemplazo en `next/font`.
 - `tsconfig.json` excluye `output/` (carpeta ignorada con copias de despliegues viejos): su copia de `apariencia/actions.ts` rompía el `tsc` del build al ampliar los tipos de error.
@@ -24,7 +26,14 @@ Cinco herramientas nuevas en `/panel/[org]/apariencia` para que cada local sient
 - [x] La portada se sube, se reemplaza y se quita con vista previa antes de guardar; borra su archivo anterior; nunca coincide con el logo; no hay desborde horizontal a 390 px.
 - [x] Staff, ajeno y anónimo no escriben nada de esto (RLS).
 - [x] Con el estilo Hoja el lema se ve y la portada no; el panel avisa (hallazgo de la revisión de Codex, corregido).
+- [x] La pantalla tiene pestañas, una vista previa única con los cambios sin guardar, looks de un clic y un solo guardado de estilo.
 - [ ] Revisión visual del usuario en teléfono real, sobre todo las fuentes anchas con nombres largos.
+
+## Evidencia de la reorganización (commit siguiente a `8f7b9cd`)
+- `pnpm test` 1285 de 1285 (nuevo `looks.test.ts`), `tsc` y lint sin errores, `pnpm build` verde.
+- `pnpm test:rls identidad acl reemplazo`: 58 de 58 (nueva prueba de `setStyle`: cada look, valores inválidos sin escritura parcial, Staff y ajenos rechazados). Un worker caído `0xC0000409` se repitió una vez y pasó.
+- E2E: `identidad` 9 de 9 (nuevas: pestañas y looks, y vista previa en celular), `rendimiento-carta`, `resenas-carta` e `idiomas` en verde (32 de 32 en total). Las pruebas de escritorio abren el panel en 1280 px porque el proyecto usa 390 px por defecto.
+- Capturas del panel real a 1440 px y 390 px (Estilo, Detalles, Marca y la hoja de vista previa). **No desplegado** a staging: la v80 tiene la pantalla anterior.
 
 ## Fuera de alcance
 Colores o fuentes libres, cupo por plan, video de portada, horarios por sucursal, traducción del lema, «looks» de un clic que combinen todo (siguiente paso natural).
