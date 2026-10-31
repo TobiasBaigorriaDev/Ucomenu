@@ -64,7 +64,15 @@ function StatusAction({ back, reservation, action, label, confirmLabel, tone = "
   );
 }
 
-function AssignTable({ back, reservation, free }: { back: Back; reservation: Reservation; free: ReservationTable[] }) {
+function AssignTable({ back, reservation, free }: { back: Back; reservation: Reservation; free: ReservationTable[] | null }) {
+  // `null`: la lectura del día quedó incompleta, así que no se sabe qué mesas están libres: no se ofrece ninguna (revisión de Codex, ronda 2).
+  if (free === null) {
+    return (
+      <p className="text-base text-muted" data-testid="reserva-mesas-incompletas">
+        Este día tiene demasiadas reservas para saber qué mesas están libres desde esta pantalla.
+      </p>
+    );
+  }
   if (free.length === 0) {
     return (
       <p className="text-base text-muted" data-testid="reserva-sin-mesas">
@@ -101,7 +109,7 @@ function AssignTable({ back, reservation, free }: { back: Back; reservation: Res
   );
 }
 
-function ReservationCard({ reservation, back, timeZone, free, now, readOnly }: { reservation: Reservation; back: Back; timeZone: string; free: ReservationTable[]; now: number; readOnly: boolean }) {
+function ReservationCard({ reservation, back, timeZone, free, now, readOnly }: { reservation: Reservation; back: Back; timeZone: string; free: ReservationTable[] | null; now: number; readOnly: boolean }) {
   const started = now >= Date.parse(reservation.startsAt);
   return (
     <li className="panel-cell" data-testid="reserva" data-id={reservation.id} data-status={reservation.status}>
@@ -391,7 +399,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
           ) : (
             <ul className="mt-6 grid gap-3" data-testid="reservas-lista">
               {list.map((reservation) => (
-                <ReservationCard key={reservation.id} reservation={reservation} back={back} timeZone={timeZone} free={freeTables(reservation, data.tables, data.around)} now={now} readOnly={!hasFeature} />
+                <ReservationCard key={reservation.id} reservation={reservation} back={back} timeZone={timeZone} free={data.truncated ? null : freeTables(reservation, data.tables, data.around)} now={now} readOnly={!hasFeature} />
               ))}
             </ul>
           )}

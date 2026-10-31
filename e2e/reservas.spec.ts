@@ -201,10 +201,16 @@ test.describe("Reservas en la Sala", () => {
         `select '${t.orgId}', '${t.branch}', 'cancelled', 'Masiva ' || i, '123456', 2, ((date '${dia}' + time '10:00') at time zone 'America/Argentina/Buenos_Aires') + (i * interval '1 minute'), ` +
         `((date '${dia}' + time '10:00') at time zone 'America/Argentina/Buenos_Aires') + (i * interval '1 minute') + interval '1 hour', gen_random_uuid(), 'x' from generate_series(1, 1005) as i`,
     );
+    // Una reserva por confirmar, dentro de las primeras 1000 filas: con la lectura incompleta no se sabe qué mesas están libres.
+    await reservarComo(t.owner, t.branch, dia, "09:00", { nombre: "Visible" });
     await login(page, t.owner.email, t.owner.password);
     await page.goto(`/sala/${t.slug}/reservas?dia=${dia}`);
     await expect(page.getByTestId("reservas-truncada")).toContainText("1000");
     await expect(page.getByTestId("reserva").first()).toBeVisible();
+    const visible = tarjeta(page, "Visible");
+    await expect(visible.getByTestId("reserva-mesas-incompletas")).toBeVisible();
+    await expect(visible.getByRole("option")).toHaveCount(0);
+    await expect(visible.getByRole("button", { name: "Confirmar con esta mesa" })).toHaveCount(0);
   });
 
   test("el Resumen del Staff con sucursales asignadas solo cuenta las reservas de las suyas", async ({ page }) => {

@@ -81,4 +81,6 @@ vuelve a cargar), recordatorios, reservas recurrentes o de grupos con varias mes
 
 **Lo que el revisor no pudo comprobar (mutación):** las pruebas de concurrencia que escribí **pasaban aunque se sacara el candado**; no probaban la defensa. Se reemplazaron por pruebas deterministas (otra sesión retiene el candado exacto, la llamada tiene que quedar esperando y lo que cambie mientras tanto cuenta al despertar). Mutación hecha en la base local: sin el candado de la mesa fallan **2** pruebas; sin el candado de la clave, **1**; restaurados, pasan (27/27).
 
-**Ronda de verificación:** (pendiente) · Aprobación del usuario antes de subir a staging: (pendiente)
+**Ronda 2 (Codex, verificación, commit `00e2301`): RECHAZAR por un solo punto.** Confirmó como corregidos los hallazgos 1, 2, 4 y 5. El 3 quedó **parcial**: con la lectura truncada la pantalla avisaba pero seguía ofreciendo mesas calculadas con datos incompletos. Real; corregido: con la lectura incompleta no se ofrece ninguna mesa («Este día tiene demasiadas reservas para saber qué mesas están libres…»). E2E: la reserva visible no tiene opciones ni botón de confirmar (falló contra el código anterior).
+
+**Ronda 3 (verificación del último arreglo):** (pendiente) · Aprobación del usuario antes de subir a staging: (pendiente)
