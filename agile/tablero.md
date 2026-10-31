@@ -10,7 +10,7 @@ Actualizado: 2026-10-26. «Hecho» indica alcance implementado e integrado; el u
 
 ## En curso
 
-- (vacío)
+- [M] Alta unificada de platos — en staging Fly v78 (con el selector de idioma y el botón Reiniciar QR en Mesas); falta la prueba manual con sesión real → [ficha](cambios/alta-unificada-de-platos.md)
 
 ## Seleccionado
 
