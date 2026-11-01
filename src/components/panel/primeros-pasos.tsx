@@ -77,6 +77,26 @@ export function PrimerosPasos({ guide, slug, dismissed = false }: { guide: Guide
         Primeros pasos
       </h2>
       <p className="mt-1 max-w-prose text-base text-ink/80">Tres pasos para que tus clientes vean tu carta desde la mesa.</p>
+      <div className="mt-5" data-testid="tutorial-primeros-pasos">
+        <h3 id="tutorial-titulo" className="text-lg font-medium">Mirá cómo empezar</h3>
+        <p className="mt-1 text-base text-ink/80">Un recorrido de menos de 3 minutos para dar tus primeros pasos en UcoMenu.</p>
+        <video
+          controls
+          playsInline
+          preload="none"
+          width={1280}
+          height={720}
+          poster="/tutoriales/primeros-pasos.jpg"
+          aria-labelledby="tutorial-titulo"
+          className="mt-3 aspect-video w-full rounded-2xl bg-ink"
+        >
+          <source src="/tutoriales/primeros-pasos.mp4" type="video/mp4" />
+          Tu navegador no puede reproducir este video.
+        </video>
+        <a href="/tutoriales/primeros-pasos.mp4" target="_blank" rel="noopener" className="mt-2 inline-flex min-h-11 items-center text-base underline underline-offset-4">
+          Abrir el tutorial en otra pestaña
+        </a>
+      </div>
       {guide.blockedNotice ? (
         <p className="mt-3 max-w-prose text-base font-medium" data-testid="guia-bloqueada">
           {guide.blockedNotice}
