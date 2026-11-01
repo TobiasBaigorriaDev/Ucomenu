@@ -6,7 +6,7 @@ Estados: **Backlog · Seleccionado · En curso · Bloqueado · Para verificar ·
 
 Formato por línea: `- [nivel S/M/C] Título — nota (bloqueado por: X) → ficha: agile/cambios/x.md`
 
-Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado. De «Para verificar», el usuario confirmó el 2026-10-26 solo lo que figura en «Hecho»; lo demás sigue esperando su comprobación manual. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
+Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De «Para verificar», el usuario confirmó el 2026-10-26 solo lo que figura en «Hecho»; lo demás sigue esperando su comprobación manual. Producción sigue bloqueada aunque un cambio esté desplegado en staging.
 
 ## En curso
 
@@ -57,6 +57,8 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado. De �
 - [S] Decidir Supabase Free o Pro para producción (recomendación: Pro desde el primer cliente que paga) (bloqueado por: usuario)
 - [M] Crear el proyecto de Supabase de producción, aplicar las migraciones con `db push` (nunca `db reset` ni el seed) y la configuración de Auth; primer SuperAdmin → [procedimiento](../docs/produccion.md) (bloqueado por: aprobación del usuario)
 - [M] Crear la app de producción en Fly (`fly.toml`), cargar secretos y variables (`pnpm prod:check` sin errores), desplegar y apuntar `ucomenu.com` en Cloudflare con HTTPS; recién entonces imprimir QR (bloqueado por: Supabase de producción)
+- [S] Cobro con Mercado Pago en producción: decidir el titular de la cuenta de cobro (hoy solo hay una cuenta personal), crear la aplicación con credenciales de producción, el webhook `https://ucomenu.com/api/mercadopago/webhook` y cargar los dos secretos; ensayo con dinero real y reembolso → [sección 3c](../docs/produccion.md) · [ficha](cambios/cobro-con-link-de-mercado-pago.md) (bloqueado por: usuario, Supabase y Fly de producción)
+- [S] Probar con Mercado Pago real en staging lo que falta: «Ya pagué, verificar», un pago rechazado (titular `OTHE`) y un reembolso → [ficha](cambios/cobro-con-link-de-mercado-pago.md)
 - [S] Cuenta de Mux de producción: `MUX_TOKEN_ID`, `MUX_TOKEN_SECRET` y el webhook `MUX_WEBHOOK_SECRET`; probar subir un video (bloqueado por: usuario, gasto)
 - [S] Clave de Gemini de un proyecto de Google **con facturación** (no la gratuita) para el resumen con IA y las traducciones; sin ella esas funciones quedan apagadas y la portada las anuncia (bloqueado por: usuario)
 - [S] Programar en staging `purge-video-comments`, `purge-expired-orders` y `prune-cron-history` y mirar `cron.job_run_details` tras la primera ejecución; el SQL está en `docs/produccion.md` (4.b, 4.c y 4.e) (bloqueado por: autorización de escritura remota)
