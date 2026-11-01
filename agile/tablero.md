@@ -102,7 +102,7 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado. De �
 
 ### Fase 4 — Posterior al MVP
 
-- [C] Cobro por link de Mercado Pago con registro automático del pago (publicado en staging; pendiente prueba con Mercado Pago real y credenciales de prueba) → [ficha](cambios/cobro-con-link-de-mercado-pago.md) · ADR 0052
+- [C] Cobro por link de Mercado Pago con registro automático del pago (publicado en staging; primer pago de prueba real registrado el 2026-11-01; faltan probar «Ya pagué», rechazos y reembolsos, y antes de producción decidir la cuenta de cobro) → [ficha](cambios/cobro-con-link-de-mercado-pago.md) · ADR 0052
 - [C] Cobro automático de la suscripción (Mercado Pago Suscripciones) con activación y suspensión por webhook — posterior al anterior
 - [M] Subdominio o dominio propio por organización
 
