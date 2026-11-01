@@ -10,9 +10,9 @@ El 2026-11-01 se creó, con el MCP oficial de Mercado Pago (solo para esta tarea
 
 ## Bloqueos y próximo paso
 
-1. El usuario revisa «Credenciales de prueba» de esa aplicación (no las de producción) y carga en su terminal `MERCADOPAGO_ACCESS_TOKEN` y `MERCADOPAGO_WEBHOOK_SECRET` con `fly secrets set -c fly.staging.toml`; nunca por el chat.
-2. **Redesplegar staging con `810ee0a`** (lee `NEXT_PUBLIC_SITE_URL` también del valor incrustado al construir; sin él «Pagar» no aparece). Espera la autorización del usuario.
-3. Probar el circuito completo con el comprador de prueba y mirar el historial de avisos (`notifications_history`).
-4. Antes de producción: autorización, titular de la cuenta de cobro, pruebas manuales, datos legales, contador y abogado (`docs/produccion.md`).
+Staging corre el **release v94** (imagen `cobro-a79fc30-git`, 2026-11-01): incluye `810ee0a` (el botón «Pagar» ya aparece), con los secretos `MERCADOPAGO_ACCESS_TOKEN` y `MERCADOPAGO_WEBHOOK_SECRET` cargados por el usuario. Verificado desde afuera: `/`, `/login`, `/privacidad` y `/terminos` 200 y el aviso de Mercado Pago responde 401 sin firma. Marcha atrás de la app: `--image registry.fly.io/ucomenu-staging:marca-98931b9-git` (v92). Sin migración nueva.
 
-Entorno: OneDrive provoca bloqueos intermitentes de E2E; usar `--workers=4`. Falla previa: `owner-lectura` por `account.deleted` en el historial local. Preservar los archivos locales sin seguimiento (`video/`, `.codegraph/`, capturas, skills, `skills-lock.json`, `.claude/launch.json`).
+1. **Probar un pago de verdad:** como Dueño de un local Pro, al día y no suspendido, Suscripción → Pagar, y pagar con el comprador de prueba y una tarjeta de prueba de Argentina (titular `APRO`). Si algo falla, leer el historial de avisos con el MCP (`notifications_history`) y los registros de Fly. Es lo único sin probar contra Mercado Pago real.
+2. Antes de producción: autorización, titular de la cuenta de cobro, pruebas manuales, datos legales, contador y abogado (`docs/produccion.md`).
+
+Entorno: OneDrive provoca bloqueos intermitentes de E2E (usar `--workers=4`) y Docker Desktop dejó de responder durante el despliegue (se usó el constructor remoto de Fly). Falla previa: `owner-lectura` por `account.deleted` en el historial local. Preservar los archivos locales sin seguimiento (`video/`, `.codegraph/`, capturas, skills, `skills-lock.json`, `.claude/launch.json`).
