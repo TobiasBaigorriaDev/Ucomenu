@@ -80,9 +80,16 @@ export function mercadoPagoWebhookSecret(env: Record<string, string | undefined>
   return env.MERCADOPAGO_WEBHOOK_SECRET?.trim() || null;
 }
 
-/** La dirección pública de la app sin barra final, o `null` si falta o no es http(s). De ahí salen el aviso y el retorno. */
+/**
+ * La dirección pública de la app sin barra final, o `null` si falta o no es http(s). De ahí salen el aviso y el retorno.
+ *
+ * Ojo con cómo llega el valor: `NEXT_PUBLIC_SITE_URL` es un `ARG` del Dockerfile, o sea que existe SOLO al construir la imagen, y Next
+ * la incrusta reemplazando la forma LITERAL `process.env.NEXT_PUBLIC_SITE_URL`; en el contenedor ya no es una variable de entorno. Leerla
+ * solo por acceso dinámico (`env.NEXT_PUBLIC_SITE_URL`) devolvería `undefined` en staging y producción y «Pagar» no aparecería nunca.
+ * Por eso, con el entorno real, se prueba la variable de ejecución (dev, pruebas) y, si no hay, el valor incrustado al construir.
+ */
 export function siteBaseUrl(env: Record<string, string | undefined> = process.env): string | null {
-  const raw = env.NEXT_PUBLIC_SITE_URL?.trim();
+  const raw = (env.NEXT_PUBLIC_SITE_URL ?? (env === process.env ? process.env.NEXT_PUBLIC_SITE_URL : undefined))?.trim();
   if (!raw) return null;
   try {
     const url = new URL(raw);

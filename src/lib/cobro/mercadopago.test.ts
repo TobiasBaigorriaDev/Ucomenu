@@ -30,6 +30,19 @@ describe("configuración", () => {
     expect(resolveApiBase("no es una url")).toBe("https://api.mercadopago.com");
   });
 
+  it("con el entorno real lee la variable de ejecución (dev y pruebas); en el contenedor llega incrustada al construir", () => {
+    const antes = process.env.NEXT_PUBLIC_SITE_URL;
+    try {
+      process.env.NEXT_PUBLIC_SITE_URL = "https://staging.example.test/";
+      expect(siteBaseUrl()).toBe("https://staging.example.test");
+      delete process.env.NEXT_PUBLIC_SITE_URL;
+      expect(siteBaseUrl()).toBeNull();
+    } finally {
+      if (antes === undefined) delete process.env.NEXT_PUBLIC_SITE_URL;
+      else process.env.NEXT_PUBLIC_SITE_URL = antes;
+    }
+  });
+
   it("la dirección pública debe ser http(s) y se normaliza sin barra final", () => {
     expect(siteBaseUrl({ NEXT_PUBLIC_SITE_URL: "https://ucomenu.com/" })).toBe("https://ucomenu.com");
     expect(siteBaseUrl({ NEXT_PUBLIC_SITE_URL: "http://localhost:3000/panel" })).toBe("http://localhost:3000");
