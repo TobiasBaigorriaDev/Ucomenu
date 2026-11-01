@@ -358,7 +358,7 @@ describe("RLS y permisos de tablas", () => {
     }
   });
 
-  it("payment_intents y payment_reviews (cobro con Mercado Pago, ADR 0052): nada se escribe por la API ni por service_role; solo el SuperAdmin lee las revisiones", () => {
+  it("payment_intents, payment_reversals y payment_reviews (cobro con Mercado Pago, ADR 0052): nada se escribe por la API ni por service_role; solo el SuperAdmin lee las revisiones", () => {
     const permisos = (rol: string, tabla: string) =>
       sql(
         `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
@@ -368,6 +368,7 @@ describe("RLS y permisos de tablas", () => {
 
     for (const rol of ["anon", "authenticated", "service_role"]) {
       expect(permisos(rol, "payment_intents"), `payment_intents: ${rol}`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+      expect(permisos(rol, "payment_reversals"), `payment_reversals: ${rol}`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
     }
     expect(permisos("anon", "payment_reviews")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
     expect(permisos("service_role", "payment_reviews")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);

@@ -11,6 +11,8 @@
 --  * `payments.provider` / `provider_payment_id`: el pago de Mercado Pago, con unicidad (un pago de MP extiende UNA vez).
 --  * `payment_intents`: el pedido de pago con el importe congelado (el importe sale de la base, nunca del cliente).
 --  * `payment_reviews`: pagos aprobados que NO se registraron solos (no cuadran) o que se revirtieron; los resuelve el SuperAdmin.
+--  * `payment_reversals`: un reembolso o contracargo que llegó ANTES de que el pago se registrara (dos avisos concurrentes): el
+--    registro lo consulta y, si existe, deja el pago a revisar en vez de renovar. Un candado por ID de pago ordena a las dos funciones.
 --  * funciones: `private.payment_quote`, `owner_payment_quote`, `system_start_payment_intent`, `system_attach_payment_preference`,
 --    `system_register_mp_payment`, `system_flag_mp_reversal`, `admin_resolve_payment_review`.
 --  * `audit_log.action` suma `payment_review.resolved`. El pago automático reutiliza `payment.registered` con un actor «sistema»
@@ -24,7 +26,9 @@
 --   drop function public.system_attach_payment_preference(uuid, text, text);
 --   drop function public.system_start_payment_intent(uuid, uuid);
 --   drop function public.owner_payment_quote(uuid);
+--   drop function private.flag_payment_review(uuid, uuid, text, text, bigint, text);
 --   drop function private.payment_quote(uuid);
+--   drop table public.payment_reversals;
 --   drop table public.payment_reviews;
 --   drop table public.payment_intents;
 --   alter table public.addons drop column yearly_price_cents;
@@ -166,6 +170,22 @@ revoke all on table public.payment_reviews from public, anon, authenticated, ser
 grant select on table public.payment_reviews to authenticated;
 
 -- ---------------------------------------------------------------------------
+-- Reversiones recibidas antes de registrar el pago
+-- ---------------------------------------------------------------------------
+-- Dos avisos del mismo pago pueden procesarse a la vez: uno lo lee aprobado y todavía no lo registró cuando el otro lo lee ya
+-- reembolsado. La reversión se guarda acá (por ID de pago) y `system_register_mp_payment` la consulta bajo el mismo candado.
+
+create table public.payment_reversals (
+  provider_payment_id text primary key check (provider_payment_id ~ '^[0-9]{1,20}$'),
+  status text not null check (status in ('refunded', 'charged_back')),
+  created_at timestamptz not null default clock_timestamp()
+);
+comment on table public.payment_reversals is
+  'Reembolsos y contracargos vistos por ID de pago (ADR 0052). Los escribe system_flag_mp_reversal y los lee system_register_mp_payment; sin acceso por la API.';
+alter table public.payment_reversals enable row level security;
+revoke all on table public.payment_reversals from public, anon, authenticated, service_role;
+
+-- ---------------------------------------------------------------------------
 -- Cuánto hay que pagar (la única cuenta del importe)
 -- ---------------------------------------------------------------------------
 -- Plan y ciclo de la suscripción + sucursales adicionales vigentes × su precio del MISMO ciclo, todo de la base. No bloquea
@@ -255,11 +275,24 @@ as $$
 declare
   v_quote jsonb;
   v_intent public.payment_intents%rowtype;
+  v_unpaid jsonb;
 begin
   if not private.is_org_owner(p_org) then
     return null;
   end if;
   v_quote := private.payment_quote(p_org);
+  -- Intenciones sin pagar de los últimos 30 días, aunque su link ya haya vencido: un aviso perdido se recupera con «Ya pagué,
+  -- verificar» mientras el pedido siga a la vista (Mercado Pago pudo cobrar justo antes de vencer).
+  select coalesce(jsonb_agg(jsonb_build_object('id', u.id, 'expires_at', u.expires_at) order by u.created_at desc), '[]'::jsonb)
+  into v_unpaid
+  from (
+    select i.id, i.expires_at, i.created_at
+    from public.payment_intents i
+    where i.organization_id = p_org and i.status in ('pending', 'expired') and i.created_at > now() - interval '30 days'
+    order by i.created_at desc
+    limit 5
+  ) u;
+  v_quote := v_quote || jsonb_build_object('unpaid_intents', v_unpaid);
   select * into v_intent
   from public.payment_intents i
   where i.organization_id = p_org and i.status = 'pending' and i.expires_at > now()
@@ -423,7 +456,11 @@ begin
     raise exception 'invalid_currency' using errcode = '22023';
   end if;
 
-  -- Sin lock todavía: solo para saber qué suscripción bloquear (el orden es siempre suscripción → intención).
+  -- Un candado por ID de pago, tomado ANTES que el de la suscripción (el orden es siempre pago → suscripción → intención): ordena este
+  -- registro contra la marca de una reversión del mismo pago (`system_flag_mp_reversal`), así no se pierde ninguna de las dos.
+  perform pg_advisory_xact_lock(hashtextextended('mercadopago:' || p_provider_payment_id, 0));
+
+  -- Sin lock de fila todavía: solo para saber qué suscripción bloquear.
   select * into v_intent from public.payment_intents i where i.id = p_intent;
   if not found then
     return jsonb_build_object('result', 'unknown_intent');
@@ -444,6 +481,12 @@ begin
     where r.provider_payment_id = p_provider_payment_id and r.reason <> 'payment_reversed'
   ) then
     return jsonb_build_object('result', 'review');
+  end if;
+
+  -- Si el pago ya se reembolsó o se revirtió (el aviso de la reversión se procesó antes que este registro), no se renueva nada.
+  if exists (select 1 from public.payment_reversals r where r.provider_payment_id = p_provider_payment_id) then
+    perform private.flag_payment_review(v_intent.organization_id, v_intent.id, p_provider_payment_id, 'payment_reversed', p_amount_cents, p_currency);
+    return jsonb_build_object('result', 'review', 'reason', 'payment_reversed');
   end if;
 
   v_prev := greatest(v_sub.current_period_end, v_sub.trial_ends_at);
@@ -510,7 +553,8 @@ $$;
 comment on function public.system_register_mp_payment(uuid, text, bigint, text, timestamptz) is
   'Registra un pago aprobado de Mercado Pago (ya verificado por el servidor contra la API) y extiende la vigencia. Idempotente; lo que no cuadra va a payment_reviews sin extender. Solo service_role.';
 
--- Reembolso o contracargo de un pago ya registrado: no quita la vigencia, queda a revisar (el SuperAdmin lo anula con admin_void_payment).
+-- Reembolso o contracargo: se guarda siempre por ID de pago. Si el pago ya está registrado queda a revisar (no quita la vigencia: el
+-- SuperAdmin lo anula con admin_void_payment) → 'flagged'; si todavía no, el registro lo verá y no renovará → 'recorded'.
 create function public.system_flag_mp_reversal(p_provider_payment_id text, p_status text)
 returns text
 language plpgsql
@@ -526,9 +570,14 @@ begin
   if p_status is null or p_status not in ('refunded', 'charged_back') then
     raise exception 'invalid_status' using errcode = '22023';
   end if;
+  -- Mismo candado que el registro: o este aviso corre primero (y el registro verá la reversión) o corre después (y verá el pago).
+  perform pg_advisory_xact_lock(hashtextextended('mercadopago:' || p_provider_payment_id, 0));
+  insert into public.payment_reversals (provider_payment_id, status) values (p_provider_payment_id, p_status)
+  on conflict (provider_payment_id) do nothing;
+
   select * into v_payment from public.payments p where p.provider = 'mercadopago' and p.provider_payment_id = p_provider_payment_id;
   if not found then
-    return 'ignored';
+    return 'recorded';
   end if;
   perform private.flag_payment_review(
     v_payment.organization_id, null, p_provider_payment_id, 'payment_reversed', v_payment.amount_cents, v_payment.currency

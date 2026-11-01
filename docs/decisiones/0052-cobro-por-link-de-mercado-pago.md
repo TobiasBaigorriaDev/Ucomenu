@@ -33,3 +33,4 @@ La mora ya se deriva de fechas (ADR 0006): registrar un pago es mover `current_p
 - Un pago se registra con un actor «sistema» fijo en `payments` y `audit_log`; el historial del Dueño lo muestra como un pago más.
 - Se agrega una tabla (`payment_intents`) con retención como `payments` (ADR 0027); no guarda datos personales del pagador.
 - Una intención abierta por suscripción: «Pagar» dos veces reutiliza el link vigente.
+- **Actualización 2026-11-01 (ronda 1 de revisión):** (a) el `ts` de la firma se acepta en segundos o en milisegundos (la documentación de Mercado Pago y su SDK no coinciden y el HMAC usa el texto tal cual); (b) un reembolso o contracargo se guarda siempre por ID de pago (`payment_reversals`) y un candado por ID de pago ordena el registro contra la reversión, para que ninguna se pierda aunque se procesen a la vez; (c) «Ya pagué, verificar» considera los pedidos sin pagar de los últimos 30 días, aunque su link haya vencido.

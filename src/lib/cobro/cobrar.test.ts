@@ -36,7 +36,7 @@ function fakeDb(over: Partial<CobroDb> = {}) {
     startIntent: vi.fn<CobroDb["startIntent"]>(over.startIntent ?? (async () => ok(intent()))),
     attachPreference: vi.fn<CobroDb["attachPreference"]>(over.attachPreference ?? (async () => ok(true))),
     registerPayment: vi.fn<CobroDb["registerPayment"]>(over.registerPayment ?? (async () => ok<RegisterOutcome>({ result: "registered" }))),
-    flagReversal: vi.fn<CobroDb["flagReversal"]>(over.flagReversal ?? (async () => ok<"flagged" | "ignored">("flagged"))),
+    flagReversal: vi.fn<CobroDb["flagReversal"]>(over.flagReversal ?? (async () => ok<"flagged" | "recorded">("flagged"))),
   };
 }
 function fakeMp(over: Partial<MercadoPagoClient> = {}) {
@@ -79,7 +79,12 @@ describe("aplicar un pago leído de Mercado Pago", () => {
     expect(await settlePayment(db, pago({ status: "charged_back" }))).toBe("reversal_flagged");
     expect(db.flagReversal).toHaveBeenNthCalledWith(1, "123456789", "refunded");
     expect(db.flagReversal).toHaveBeenNthCalledWith(2, "123456789", "charged_back");
-    expect(await settlePayment(fakeDb({ flagReversal: async () => ok("ignored") }), pago({ status: "refunded" }))).toBe("reversal_ignored");
+    // Si el pago todavía no estaba registrado, la base guarda la reversión para que el registro no renueve.
+    expect(await settlePayment(fakeDb({ flagReversal: async () => ok("recorded") }), pago({ status: "refunded" }))).toBe("reversal_recorded");
+    // Un reembolso de un pago ajeno a esta aplicación (sin intención como referencia) no se guarda.
+    const ajeno = fakeDb();
+    expect(await settlePayment(ajeno, pago({ status: "refunded", externalReference: null }))).toBe("ignored_reference");
+    expect(ajeno.flagReversal).not.toHaveBeenCalled();
     expect(db.registerPayment).not.toHaveBeenCalled();
   });
 
@@ -107,20 +112,31 @@ describe("«Ya pagué, verificar»", () => {
     const otro = pago({ id: "2", externalReference: "99999999-3a38-4a43-9d9e-0a2d1e9e0f11" });
     const mp = fakeMp({ searchPayments: async () => [pago(), otro, pago({ id: "3", status: "pending" })] });
     const db = fakeDb();
-    const result = await verifyIntentPayments(db, mp, INTENT);
+    const result = await verifyIntentPayments(db, mp, [INTENT]);
     expect(result).toEqual({ registered: 1, review: 0, pending: false });
     expect(db.registerPayment).toHaveBeenCalledTimes(1);
     expect(db.registerPayment.mock.calls[0][0].paymentId).toBe("123456789");
 
-    const revision = await verifyIntentPayments(fakeDb({ registerPayment: async () => ok({ result: "review", reason: "amount_mismatch" }) }), fakeMp(), INTENT);
+    const revision = await verifyIntentPayments(fakeDb({ registerPayment: async () => ok({ result: "review", reason: "amount_mismatch" }) }), fakeMp(), [INTENT]);
     expect(revision).toEqual({ registered: 0, review: 1, pending: false });
-    const ya = await verifyIntentPayments(fakeDb({ registerPayment: async () => ok({ result: "already_registered" }) }), fakeMp(), INTENT);
+    const ya = await verifyIntentPayments(fakeDb({ registerPayment: async () => ok({ result: "already_registered" }) }), fakeMp(), [INTENT]);
     expect(ya).toEqual({ registered: 0, review: 0, pending: false });
   });
 
   it("sin pagos aprobados sigue pendiente", async () => {
-    expect(await verifyIntentPayments(fakeDb(), fakeMp({ searchPayments: async () => [] }), INTENT)).toEqual({ registered: 0, review: 0, pending: true });
-    expect(await verifyIntentPayments(fakeDb(), fakeMp({ searchPayments: async () => [pago({ status: "pending" })] }), INTENT)).toEqual({ registered: 0, review: 0, pending: true });
+    expect(await verifyIntentPayments(fakeDb(), fakeMp({ searchPayments: async () => [] }), [INTENT])).toEqual({ registered: 0, review: 0, pending: true });
+    expect(await verifyIntentPayments(fakeDb(), fakeMp({ searchPayments: async () => [pago({ status: "pending" })] }), [INTENT])).toEqual({ registered: 0, review: 0, pending: true });
+    expect(await verifyIntentPayments(fakeDb(), fakeMp(), [])).toEqual({ registered: 0, review: 0, pending: true });
+  });
+
+  it("revisa TODAS las intenciones sin pagar (un pedido anterior, de un link ya vencido, también se recupera)", async () => {
+    const VIEJA = "11111111-3a38-4a43-9d9e-0a2d1e9e0f11";
+    const mp = fakeMp({
+      searchPayments: async (reference) => (reference === VIEJA ? [pago({ id: "777", externalReference: VIEJA })] : []),
+    });
+    const db = fakeDb();
+    expect(await verifyIntentPayments(db, mp, [INTENT, VIEJA])).toEqual({ registered: 1, review: 0, pending: false });
+    expect(db.registerPayment.mock.calls.map((call) => call[0].intentId)).toEqual([VIEJA]);
   });
 });
 

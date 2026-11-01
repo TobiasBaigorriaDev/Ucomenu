@@ -13,6 +13,15 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 
 export const SIGNATURE_TOLERANCE_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * El `ts` del encabezado no tiene una unidad confirmada: la documentación de Mercado Pago lo llama milisegundos y su SDK de Node lo
+ * trata como segundos. El HMAC se calcula con el texto tal cual llega, así que la unidad solo importa para la ventana de tiempo: un
+ * valor menor a 10^12 (en milisegundos sería antes de 2001) son segundos. Equivocarse acá rechazaría TODOS los avisos válidos.
+ */
+export function tsToMilliseconds(ts: number): number {
+  return ts < 1e12 ? ts * 1000 : ts;
+}
+
 export type SignatureCheck = { ok: true } | { ok: false; reason: "missing" | "malformed" | "stale" | "mismatch" };
 
 /** El texto que se firma. Mercado Pago pide el `data.id` en minúsculas cuando es alfanumérico. */
@@ -62,6 +71,6 @@ export function verifyMercadoPagoSignature(input: {
   if (!timingSafeEqual(Buffer.from(signature, "hex"), expected)) return { ok: false, reason: "mismatch" };
 
   const tolerance = input.toleranceMs ?? SIGNATURE_TOLERANCE_MS;
-  if (Math.abs(input.nowMs - Number(ts)) > tolerance) return { ok: false, reason: "stale" };
+  if (Math.abs(input.nowMs - tsToMilliseconds(Number(ts))) > tolerance) return { ok: false, reason: "stale" };
   return { ok: true };
 }

@@ -17,7 +17,7 @@ export type SettleOutcome =
   | "review"
   | "unknown_intent"
   | "reversal_flagged"
-  | "reversal_ignored"
+  | "reversal_recorded"
   | "not_found"
   | "ignored_status"
   | "ignored_reference"
@@ -30,9 +30,11 @@ const DETERMINISTIC = new Set(["22023", "22P02"]);
 /** Aplica un pago ya leído de la API de Mercado Pago: lo registra si está aprobado o marca la reversión si se devolvió. */
 export async function settlePayment(db: CobroDb, payment: MercadoPagoPayment): Promise<SettleOutcome> {
   if (payment.status === "refunded" || payment.status === "charged_back") {
+    // Solo los pagos de esta aplicación (con una intención como referencia): no se guarda nada de pagos ajenos de la misma cuenta.
+    if (!payment.externalReference) return "ignored_reference";
     const flagged = await db.flagReversal(payment.id, payment.status);
     if (!flagged.ok) return failureOutcome(flagged);
-    return flagged.data === "flagged" ? "reversal_flagged" : "reversal_ignored";
+    return flagged.data === "flagged" ? "reversal_flagged" : "reversal_recorded";
   }
   if (payment.status !== "approved") return "ignored_status";
   if (!payment.externalReference) return "ignored_reference";
@@ -66,15 +68,17 @@ export async function settlePaymentById(db: CobroDb, mp: MercadoPagoClient, paym
 
 export type VerifyResult = { registered: number; review: number; pending: boolean };
 
-/** «Ya pagué»: busca en Mercado Pago los pagos de la intención y aplica los aprobados. Idempotente. */
-export async function verifyIntentPayments(db: CobroDb, mp: MercadoPagoClient, intentId: string): Promise<VerifyResult> {
-  const payments = (await mp.searchPayments(intentId)).filter((payment) => payment.externalReference === intentId.toLowerCase());
+/** «Ya pagué»: busca en Mercado Pago los pagos de esas intenciones (las sin pagar de los últimos días, aunque el link ya haya vencido) y aplica los aprobados. Idempotente. */
+export async function verifyIntentPayments(db: CobroDb, mp: MercadoPagoClient, intentIds: string[]): Promise<VerifyResult> {
   const result: VerifyResult = { registered: 0, review: 0, pending: true };
-  for (const payment of payments) {
-    const outcome = await settlePayment(db, payment);
-    if (outcome === "registered") result.registered += 1;
-    else if (outcome === "review") result.review += 1;
-    if (outcome === "registered" || outcome === "already_registered" || outcome === "review") result.pending = false;
+  for (const intentId of intentIds) {
+    const payments = (await mp.searchPayments(intentId)).filter((payment) => payment.externalReference === intentId.toLowerCase());
+    for (const payment of payments) {
+      const outcome = await settlePayment(db, payment);
+      if (outcome === "registered") result.registered += 1;
+      else if (outcome === "review") result.review += 1;
+      if (outcome === "registered" || outcome === "already_registered" || outcome === "review") result.pending = false;
+    }
   }
   return result;
 }

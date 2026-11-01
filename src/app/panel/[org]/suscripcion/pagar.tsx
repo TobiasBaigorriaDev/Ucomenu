@@ -32,10 +32,13 @@ export function PaySection({ slug, quote, returned }: { slug: string; quote: Pay
         </p>
       ) : null}
 
-      {quote.pending ? (
+      {quote.unpaid.length > 0 ? (
         <div className="mt-5 border-t border-ink/15 pt-4" data-testid="pagar-pendiente">
           <p className="max-w-prose text-base text-muted">
-            Tenés un link de pago pendiente hasta el {formatDateWithYear(quote.pending.expiresAt)}. Si ya pagaste y tu suscripción no cambió, verificalo acá.
+            {quote.pending
+              ? `Tenés un link de pago pendiente hasta el ${formatDateWithYear(quote.pending.expiresAt)}. `
+              : "Tenés un pedido de pago de los últimos días sin confirmar. "}
+            Si ya pagaste y tu suscripción no cambió, verificalo acá.
           </p>
           <ActionForm action={verifyAction} className="mt-3">
             {hiddenOrg}

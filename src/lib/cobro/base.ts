@@ -30,7 +30,8 @@ export interface CobroDb {
   startIntent(orgId: string, userId: string): Promise<DbResult<PaymentIntent>>;
   attachPreference(intentId: string, preferenceId: string, checkoutUrl: string): Promise<DbResult<boolean>>;
   registerPayment(input: { intentId: string; paymentId: string; amountCents: number; currency: string; paidAt: string | null }): Promise<DbResult<RegisterOutcome>>;
-  flagReversal(paymentId: string, status: "refunded" | "charged_back"): Promise<DbResult<"flagged" | "ignored">>;
+  /** `flagged`: el pago ya estaba registrado y queda a revisar. `recorded`: todavía no estaba; el registro verá la reversión y no renovará. */
+  flagReversal(paymentId: string, status: "refunded" | "charged_back"): Promise<DbResult<"flagged" | "recorded">>;
 }
 
 const RESULTS = new Set(["registered", "already_registered", "review", "unknown_intent"]);
@@ -87,7 +88,7 @@ export function createCobroDb(admin: SupabaseClient<Database>): CobroDb {
     async flagReversal(paymentId, status) {
       const { data, error } = await admin.rpc("system_flag_mp_reversal", { p_provider_payment_id: paymentId, p_status: status });
       if (error) return failure(error);
-      return { ok: true, data: data === "flagged" ? "flagged" : "ignored" };
+      return { ok: true, data: data === "flagged" ? "flagged" : "recorded" };
     },
   };
 }

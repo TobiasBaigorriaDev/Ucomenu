@@ -48,16 +48,16 @@ export async function verifyAction(_previous: FormState, formData: FormData): Pr
   const mp = getMercadoPagoClient();
   if (!mp) return { error: "El pago en línea todavía no está disponible. Contactá a UcoMenu." };
 
-  // La intención sale de la lectura del Dueño (la base ya comprobó que lo sea): el navegador no manda ningún id.
+  // Las intenciones salen de la lectura del Dueño (la base ya comprobó que lo sea): el navegador no manda ningún id.
   const db = await createSessionClient();
   const { data, error } = await db.rpc("owner_payment_quote", { p_org: org.id });
   const quote = error ? null : parseQuote(data);
   if (!quote) return { error: "No pudimos leer el estado de tu pago. Probá de nuevo en unos minutos." };
-  if (!quote.pending) return { message: "No hay ningún pago pendiente para verificar. Si ya pagaste y tu suscripción está al día, no hace falta nada más." };
+  if (quote.unpaid.length === 0) return { message: "No hay ningún pedido de pago para verificar. Si ya pagaste y tu suscripción está al día, no hace falta nada más." };
 
   let result;
   try {
-    result = await verifyIntentPayments(createCobroDb(createAdminClient()), mp, quote.pending.id);
+    result = await verifyIntentPayments(createCobroDb(createAdminClient()), mp, quote.unpaid.map((intent) => intent.id));
   } catch (cause) {
     console.error(`[mercadopago] no se pudo verificar el pago: ${cause instanceof Error ? cause.message : String(cause)}`);
     return { error: "No pudimos consultar Mercado Pago. Probá de nuevo en unos minutos." };

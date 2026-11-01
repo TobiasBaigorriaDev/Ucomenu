@@ -18,12 +18,19 @@ describe("lectura de la cotización de la base", () => {
   it("lee una cotización disponible y el link pendiente", () => {
     const quote = parseQuote(disponible({ pending_intent: { id: "i-1", expires_at: "2026-11-05T12:00:00Z", amount_cents: 2_900_000 } }));
     expect(quote).toMatchObject({ available: true, planCode: "pro", billingCycle: "monthly", amountCents: 2_900_000, pending: { id: "i-1", expiresAt: "2026-11-05T12:00:00Z" } });
-    expect(parseQuote(disponible())).toMatchObject({ available: true, pending: null });
+    expect(parseQuote(disponible())).toMatchObject({ available: true, pending: null, unpaid: [] });
+    // Las intenciones sin pagar (aunque su link haya vencido) son las que «Ya pagué, verificar» consulta.
+    expect(
+      parseQuote(disponible({ unpaid_intents: [{ id: "i-2", expires_at: "2026-10-01T00:00:00Z" }, { id: 5 }, null, { id: "i-1", expires_at: "2026-09-01T00:00:00Z" }] }))?.unpaid,
+    ).toEqual([
+      { id: "i-2", expiresAt: "2026-10-01T00:00:00Z" },
+      { id: "i-1", expiresAt: "2026-09-01T00:00:00Z" },
+    ]);
   });
 
   it("lee el motivo cuando no se puede cobrar", () => {
-    expect(parseQuote({ available: false, reason: "no_list_price" })).toEqual({ available: false, reason: "no_list_price", pending: null });
-    expect(parseQuote({ available: false })).toEqual({ available: false, reason: "unknown", pending: null });
+    expect(parseQuote({ available: false, reason: "no_list_price" })).toEqual({ available: false, reason: "no_list_price", pending: null, unpaid: [] });
+    expect(parseQuote({ available: false })).toEqual({ available: false, reason: "unknown", pending: null, unpaid: [] });
   });
 
   it("lo que no tiene la forma esperada no se interpreta: no se inventa un importe", () => {

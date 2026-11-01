@@ -489,6 +489,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"payment_reversals": {
+                  Row: {
+                    "created_at": string,"provider_payment_id": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"provider_payment_id": string,"status": string
+                  }
+                  Update: {
+                    "created_at"?: string,"provider_payment_id"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"payment_reviews": {
                   Row: {
                     "amount_cents": number,"created_at": string,"currency": string,"id": string,"intent_id": string | null,"organization_id": string,"provider_payment_id": string,"reason": string,"resolution_note": string | null,"resolved_at": string | null,"resolved_by": string | null

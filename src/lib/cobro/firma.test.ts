@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SIGNATURE_TOLERANCE_MS, signatureManifest, signMercadoPagoNotification, verifyMercadoPagoSignature } from "./firma";
+import { SIGNATURE_TOLERANCE_MS, signatureManifest, signMercadoPagoNotification, tsToMilliseconds, verifyMercadoPagoSignature } from "./firma";
 
 const SECRET = "secreto-de-prueba-del-webhook";
 const NOW = 1_800_000_000_000;
@@ -35,6 +35,16 @@ describe("firma de los avisos de Mercado Pago", () => {
     expect(check(header.replace(`ts=${NOW}`, `ts=${NOW + 1}`))).toEqual({ ok: false, reason: "mismatch" });
     const digest = header.split("v1=")[1];
     expect(check(`ts=${NOW},v1=${digest.replace(/.$/, digest.endsWith("0") ? "1" : "0")}`)).toEqual({ ok: false, reason: "mismatch" });
+  });
+
+  it("acepta el ts en milisegundos Y en segundos (la unidad no está confirmada): el aviso válido nunca se rechaza por la unidad", () => {
+    expect(tsToMilliseconds(1_800_000_000)).toBe(1_800_000_000_000);
+    expect(tsToMilliseconds(1_800_000_000_000)).toBe(1_800_000_000_000);
+    const enSegundos = (ts: number) => signMercadoPagoNotification({ dataId: "123456", requestId: "req-1", ts }, SECRET);
+    expect(check(enSegundos(Math.floor(NOW / 1000)))).toEqual({ ok: true });
+    expect(check(enSegundos(NOW))).toEqual({ ok: true });
+    // La ventana también vale en segundos: un día y un segundo de antigüedad se rechaza.
+    expect(check(enSegundos(Math.floor(NOW / 1000) - 86_401))).toEqual({ ok: false, reason: "stale" });
   });
 
   it("rechaza lo muy viejo o del futuro lejano, pero acepta un reintento atrasado dentro de la ventana", () => {

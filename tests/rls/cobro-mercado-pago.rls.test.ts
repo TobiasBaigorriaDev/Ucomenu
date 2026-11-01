@@ -75,10 +75,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   purgeAuditLogWhere(`after->>'slug' like 'tt-cobro-%'`);
-  for (const id of orgs) sql(`delete from public.payment_reviews where organization_id = '${id}'`);
+  // `deleteOrg` también borra las revisiones de la organización (purgeOrgRecordsWhere). Son muchos locales de prueba: el cierre tiene su propio tiempo.
   for (const id of orgs) await deleteOrg(service, id);
   for (const u of users) await deleteUser(service, u);
-});
+}, 240_000);
 
 describe("quién puede: nadie por la API, solo el servidor", () => {
   it("anon, Dueño, Staff y SuperAdmin con sesión no ejecutan ninguna función system_* ni admin_resolve_payment_review", async () => {
@@ -419,9 +419,80 @@ describe("reembolso o contracargo", () => {
     expect(await revisiones(local.id)).toEqual([["payment_reversed", pagoId, "f"]]);
     expect((await suscripcion(local.id)).current_period_end).toBe(vigente);
 
-    expect((await service.rpc("system_flag_mp_reversal", { p_provider_payment_id: nuevoPagoId(), p_status: "refunded" })).data).toBe("ignored");
+    // Un pago que todavía no se registró: la reversión se guarda (el registro la verá) y no hay nada que revisar.
+    expect((await service.rpc("system_flag_mp_reversal", { p_provider_payment_id: nuevoPagoId(), p_status: "refunded" })).data).toBe("recorded");
     expect((await service.rpc("system_flag_mp_reversal", { p_provider_payment_id: pagoId, p_status: "approved" })).error?.message).toContain("invalid_status");
     expect((await service.rpc("system_flag_mp_reversal", { p_provider_payment_id: "x", p_status: "refunded" })).error?.message).toContain("invalid_payment_id");
+  });
+});
+
+describe("una reversión que llega ANTES de que se registre el pago (avisos concurrentes)", () => {
+  it("el reembolso ya guardado impide renovar: el pago queda a revisar y la vigencia no se mueve", async () => {
+    const local = await crearLocal();
+    const antes = await suscripcion(local.id);
+    const { id, amount } = await intencion(local);
+    const pagoId = nuevoPagoId();
+    // B vio el pago reembolsado y lo guardó; A, que lo había leído aprobado, recién ahora lo registra.
+    expect((await service.rpc("system_flag_mp_reversal", { p_provider_payment_id: pagoId, p_status: "refunded" })).data).toBe("recorded");
+    expect(resultado(await registrar(id, pagoId, amount))).toMatchObject({ result: "review", reason: "payment_reversed" });
+    expect(await pagos(local.id)).toHaveLength(0);
+    expect((await suscripcion(local.id)).current_period_end).toBe(antes.current_period_end);
+    expect(await revisiones(local.id)).toEqual([["payment_reversed", pagoId, "f"]]);
+    expect(await intenciones(local.id)).toEqual([["pending"]]);
+    // Repetir el registro no cambia nada.
+    expect(resultado(await registrar(id, pagoId, amount)).result).toBe("review");
+    expect(await pagos(local.id)).toHaveLength(0);
+  });
+
+  it("en paralelo, sea cual sea el orden, nunca queda un pago registrado sin su revisión", async () => {
+    for (let vuelta = 0; vuelta < 6; vuelta++) {
+      const local = await crearLocal();
+      const { id, amount } = await intencion(local);
+      const pagoId = nuevoPagoId();
+      const [registro, reversion] = await Promise.all([
+        registrar(id, pagoId, amount),
+        service.rpc("system_flag_mp_reversal", { p_provider_payment_id: pagoId, p_status: "refunded" }),
+      ]);
+      expect(registro.error).toBeNull();
+      expect(reversion.error).toBeNull();
+      const registrado = (await pagos(local.id)).length === 1;
+      const marcado = (await revisiones(local.id)).some((fila) => fila[0] === "payment_reversed");
+      // O se registró y la reversión lo marcó, o la reversión llegó primero y no se renovó nada. Nunca: registrado y sin marca.
+      expect(registrado ? marcado : true, `vuelta ${vuelta}: pago registrado sin revisión`).toBe(true);
+      if (!registrado) expect((resultado(registro) as Json).result).toBe("review");
+    }
+  });
+
+  it("el candado por ID de pago está en las DOS funciones (si alguien lo quita de una, el orden concurrente se puede perder)", async () => {
+    const cuerpos = sql(`select p.proname, pg_get_functiondef(p.oid) like '%pg_advisory_xact_lock(hashtextextended(''mercadopago:''%' from pg_proc p where p.proname in ('system_register_mp_payment', 'system_flag_mp_reversal') order by 1`);
+    expect(cuerpos).toEqual([["system_flag_mp_reversal", "t"], ["system_register_mp_payment", "t"]]);
+  });
+});
+
+describe("recuperar un aviso perdido después de que venció el link", () => {
+  it("las intenciones sin pagar de los últimos 30 días siguen a la vista del Dueño aunque su link haya vencido", async () => {
+    const local = await crearLocal();
+    const { id } = await intencion(local);
+    sql(`update public.payment_intents set status = 'expired', expires_at = now() - interval '2 days' where id = '${id}'`);
+    const quote = (await local.owner.db.rpc("owner_payment_quote", { p_org: local.id })).data as Json;
+    expect(quote.pending_intent).toBeUndefined();
+    expect((quote.unpaid_intents as Json[]).map((u) => u.id)).toEqual([id]);
+
+    // Un pago aprobado de esa intención vencida igual se registra (el dinero ya entró).
+    expect(resultado(await registrar(id, nuevoPagoId(), 2_900_000)).result).toBe("registered");
+    const despues = (await local.owner.db.rpc("owner_payment_quote", { p_org: local.id })).data as Json;
+    expect(despues.unpaid_intents).toEqual([]);
+  });
+
+  it("no ofrece intenciones pagadas ni de más de 30 días, ni de otra organización", async () => {
+    const local = await crearLocal();
+    const otro = await crearLocal();
+    const vieja = await intencion(local);
+    sql(`update public.payment_intents set status = 'expired', created_at = now() - interval '31 days', expires_at = now() - interval '28 days' where id = '${vieja.id}'`);
+    const ajena = await intencion(otro);
+    const quote = (await local.owner.db.rpc("owner_payment_quote", { p_org: local.id })).data as Json;
+    expect(quote.unpaid_intents).toEqual([]);
+    expect(JSON.stringify(quote)).not.toContain(ajena.id);
   });
 });
 

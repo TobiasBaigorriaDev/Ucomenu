@@ -9,6 +9,9 @@ import type { StartError } from "./cobrar";
 
 export type PendingIntent = { id: string; expiresAt: string };
 
+/** Las intenciones sin pagar de los últimos días (aunque su link haya vencido): lo que «Ya pagué, verificar» consulta. */
+type Unpaid = PendingIntent[];
+
 export type PaymentQuote =
   | {
       available: true;
@@ -20,8 +23,9 @@ export type PaymentQuote =
       extraBranchUnitCents: number;
       amountCents: number;
       pending: PendingIntent | null;
+      unpaid: Unpaid;
     }
-  | { available: false; reason: string; pending: PendingIntent | null };
+  | { available: false; reason: string; pending: PendingIntent | null; unpaid: Unpaid };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -34,7 +38,13 @@ export function parseQuote(raw: unknown): PaymentQuote | null {
       ? { id: pendingRaw.id, expiresAt: pendingRaw.expires_at }
       : null;
 
-  if (!raw.available) return { available: false, reason: typeof raw.reason === "string" ? raw.reason : "unknown", pending };
+  const unpaid: Unpaid = Array.isArray(raw.unpaid_intents)
+    ? raw.unpaid_intents.flatMap((item): PendingIntent[] =>
+        isRecord(item) && typeof item.id === "string" && typeof item.expires_at === "string" ? [{ id: item.id, expiresAt: item.expires_at }] : [],
+      )
+    : [];
+
+  if (!raw.available) return { available: false, reason: typeof raw.reason === "string" ? raw.reason : "unknown", pending, unpaid };
 
   const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : null);
   const planPrice = num(raw.plan_price_cents);
@@ -50,6 +60,7 @@ export function parseQuote(raw: unknown): PaymentQuote | null {
     extraBranchUnitCents: num(raw.extra_branch_unit_cents) ?? 0,
     amountCents: amount,
     pending,
+    unpaid,
   };
 }
 

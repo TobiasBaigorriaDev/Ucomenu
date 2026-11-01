@@ -94,7 +94,8 @@ test.describe("el Dueño paga con Mercado Pago", () => {
     // Mercado Pago aprueba el pago y avisa.
     const id = nuevoPagoId();
     await stubPayment({ id, externalReference: reference, amountCents });
-    const respuesta = await aviso(request, id);
+    // El ts en segundos (como lo trata el SDK de Mercado Pago) también se acepta.
+    const respuesta = await aviso(request, id, { ts: Math.floor(Date.now() / 1000) });
     expect(respuesta.status()).toBe(200);
     expect(await respuesta.json()).toMatchObject({ received: true, outcome: "registered" });
     expect(await pagos(t.orgId)).toHaveLength(1);
@@ -174,6 +175,7 @@ test.describe("el aviso (webhook): solo lo firmado y verificado mueve la vigenci
     expect((await aviso(request, id, { firma: "ts=1,v1=" + "0".repeat(64) })).status()).toBe(401);
     expect((await aviso(request, id, { secreto: "otro-secreto" })).status()).toBe(401);
     expect((await aviso(request, id, { ts: Date.now() - 3 * DIA_MS })).status()).toBe(401);
+    expect((await aviso(request, id, { ts: Math.floor((Date.now() - 3 * DIA_MS) / 1000) })).status()).toBe(401);
     // Firmado para otro pago: el data.id de la URL no coincide con el firmado.
     const ajena = signMercadoPagoNotification({ dataId: nuevoPagoId(), requestId: `req-${id}`, ts: Date.now() }, E2E_MP.webhookSecret);
     expect((await aviso(request, id, { firma: ajena })).status()).toBe(401);
