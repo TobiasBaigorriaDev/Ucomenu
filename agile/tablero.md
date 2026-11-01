@@ -18,6 +18,8 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado. De �
 
 ## Para verificar
 
+- [M] Ventas ficticias de La Bestia: cargadas en staging para probar Analítica → [ficha](cambios/ventas-demo-bestia.md)
+
 - [C] Precios en pesos: el catálogo `plans` pasa de USD a ARS (Básico 14.900 y 143.040; Pro 29.000 y 278.400; Premium sin precio de lista), la portada y Suscripción coinciden y una prueba RLS compara los precios — revisado por Codex (3 rondas, atendidas), aprobado por el usuario y **en staging con su migración `20261216100000` (Fly v89, 2026-10-31)**; falta ver Suscripción con una sesión real; solo en commits locales → [ficha](cambios/precios-en-pesos.md)
 - [M] Cierre de la revisión de preparación para producción: textos legales (reservas, proveedor de IA, gracia, baja, plazos), cabeceras de seguridad y `robots.txt`, avisos de `prod:check`, procedimiento de producción y recomendación de respaldos — en staging (Fly v89); quedan 7 marcadores legales que resolvés vos y tres tareas de `pg_cron` de staging por programar → [ficha](cambios/cierre-revision-de-lanzamiento.md)
 - [C] Reservas de mesa, fase 1 (el personal carga reservas a mano en la Sala, por día o todas las «Próximas», y les asigna una mesa; sin duración elegible: bloque fijo de 90 minutos; Pro y Premium; migración `20261215100000`) — aprobada por la revisión independiente (Codex, 3 rondas), en `origin/main` y en staging (Fly v88) con su migración; falta probarla con una sesión real y en teléfono → [ficha](cambios/reservas-de-mesa.md) · [ADR 0051](../docs/decisiones/0051-reservas.md)
