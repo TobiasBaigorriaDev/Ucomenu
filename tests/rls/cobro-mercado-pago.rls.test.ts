@@ -499,7 +499,8 @@ describe("recuperar un aviso perdido después de que venció el link", () => {
     // El pago de la más vieja de las doce igual se registra.
     expect(resultado(await registrar(primera.id, nuevoPagoId(), primera.amount)).result).toBe("registered");
 
-    // Más allá de la cota quedan fuera las MÁS VIEJAS, nunca las nuevas.
+    // Defensa en profundidad: si por otra vía (una migración o un arreglo a mano) hubiera más de 20, quedan fuera las MÁS VIEJAS,
+    // nunca las nuevas. Por la API del cobro no se puede llegar acá: `system_start_payment_intent` no crea el 21.º.
     const muchas = await crearLocal();
     const base = await intencion(muchas);
     sql(`update public.payment_intents set status = 'expired', created_at = now() - interval '29 days', expires_at = now() - interval '26 days' where id = '${base.id}'`);
@@ -510,6 +511,34 @@ describe("recuperar un aviso perdido después de que venció el link", () => {
     const idsTope = (tope.unpaid_intents as Json[]).map((u) => u.id);
     expect(idsTope).toHaveLength(20);
     expect(idsTope).not.toContain(base.id);
+  });
+
+  it("falla cerrado al pedido 21: con 20 sin pagar en 30 días no se crea otro (todo pedido queda recuperable), pero se sigue reutilizando el vigente", async () => {
+    const local = await crearLocal();
+    const base = await intencion(local);
+    sql(`update public.payment_intents set status = 'expired', created_at = now() - interval '29 days', expires_at = now() - interval '26 days' where id = '${base.id}'`);
+    const sembrar = (cuantas: number) =>
+      sql(`insert into public.payment_intents (organization_id, subscription_id, plan_code, billing_cycle, extra_branches, amount_cents, currency, status, expires_at, created_by, created_at)
+           select organization_id, subscription_id, plan_code, billing_cycle, extra_branches, amount_cents, currency, 'expired', now() - interval '1 hour', created_by, now() - (g || ' hours')::interval
+           from public.payment_intents, generate_series(2, ${cuantas + 1}) g where id = '${base.id}'`);
+
+    // 19 sin pagar (la base + 18): todavía se puede pedir el 20.º.
+    sembrar(18);
+    expect((await pedirLink(local)).error).toBeNull();
+    expect(Number(sql(`select count(*) from public.payment_intents where organization_id = '${local.id}' and status in ('pending', 'expired')`)[0][0])).toBe(20);
+
+    // Con 20 sin pagar: el vigente (pendiente, mismo importe) se reutiliza...
+    expect((await pedirLink(local)).error).toBeNull();
+    // ...pero uno nuevo, no: vence el vigente y ya no se crea el 21.º, falla cerrado y no cambia nada.
+    sql(`update public.payment_intents set expires_at = now() - interval '1 minute' where organization_id = '${local.id}' and status = 'pending'`);
+    const bloqueado = await pedirLink(local);
+    expect(bloqueado.error?.message).toContain("too_many_unpaid");
+    // La excepción deshace todo el pedido: no se creó ninguna intención más.
+    expect(Number(sql(`select count(*) from public.payment_intents where organization_id = '${local.id}'`)[0][0])).toBe(20);
+
+    // Todos están a la vista de «Ya pagué, verificar» (nada queda fuera de la cota).
+    const quote = (await local.owner.db.rpc("owner_payment_quote", { p_org: local.id })).data as Json;
+    expect((quote.unpaid_intents as Json[]).length).toBe(20);
   });
 
   it("no ofrece intenciones pagadas ni de más de 30 días, ni de otra organización", async () => {

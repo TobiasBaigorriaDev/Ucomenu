@@ -66,10 +66,11 @@ describe("desglose y textos", () => {
   });
 
   it("explica cada motivo y cada error de «Pagar» con palabras del Dueño", () => {
-    for (const reason of ["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "otro"]) {
+    for (const reason of ["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "too_many_unpaid", "otro"]) {
       expect(startErrorMessage({ notAvailable: reason })).toMatch(/\S/);
     }
     expect(startErrorMessage({ notAvailable: "already_covered" })).toContain("por adelantado");
+    expect(startErrorMessage({ notAvailable: "too_many_unpaid" })).toContain("Ya pagué, verificar");
     for (const error of ["not_configured", "forbidden", "unavailable"] as const) expect(startErrorMessage(error)).toMatch(/\S/);
   });
 

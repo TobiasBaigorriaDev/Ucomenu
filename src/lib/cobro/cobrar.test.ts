@@ -189,7 +189,7 @@ describe("«Pagar»", () => {
     const mp = fakeMp();
     const con = (message: string) => startPayment({ ...base, db: fakeDb({ startIntent: async () => fail(message, message === "not_owner" ? "42501" : "55000") }), mp });
     expect(await con("not_owner")).toEqual({ ok: false, error: "forbidden" });
-    for (const reason of ["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "organization_inactive", "subscription_not_found"]) {
+    for (const reason of ["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "too_many_unpaid", "organization_inactive", "subscription_not_found"]) {
       expect(await con(reason)).toEqual({ ok: false, error: { notAvailable: reason } });
     }
     const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);

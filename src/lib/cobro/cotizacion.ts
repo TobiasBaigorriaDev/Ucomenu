@@ -82,6 +82,7 @@ const NOT_AVAILABLE_MESSAGE: Record<string, string> = {
   no_list_price: "Tu plan no se paga desde acá. Contactá a UcoMenu.",
   price_unavailable: "Tu plan no se paga desde acá. Contactá a UcoMenu.",
   already_covered: "Tu suscripción ya tiene un período pagado por adelantado. No hace falta pagar de nuevo.",
+  too_many_unpaid: "Tenés muchos pedidos de pago sin confirmar. Si ya pagaste alguno, pulsá «Ya pagué, verificar»; si no se resuelve, contactá a UcoMenu.",
 };
 const GENERIC_NOT_AVAILABLE = "No pudimos preparar el pago para esta cuenta. Contactá a UcoMenu.";
 

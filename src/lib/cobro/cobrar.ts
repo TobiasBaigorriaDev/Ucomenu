@@ -87,7 +87,7 @@ export type StartError = "not_configured" | "forbidden" | "unavailable" | { notA
 export type StartResult = { ok: true; url: string } | { ok: false; error: StartError };
 
 /** El motivo por el que la base no ofrece cobrar (`payment_quote`): estos nombres son los de sus excepciones. */
-const NOT_AVAILABLE = new Set(["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "organization_inactive", "subscription_not_found"]);
+const NOT_AVAILABLE = new Set(["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "too_many_unpaid", "organization_inactive", "subscription_not_found"]);
 
 export function paymentTitle(intent: Pick<PaymentIntent, "planCode" | "billingCycle" | "extraBranches">): string {
   const plan = PLAN_NAME[intent.planCode] ?? intent.planCode;

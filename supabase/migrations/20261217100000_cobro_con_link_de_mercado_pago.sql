@@ -38,7 +38,8 @@
 --
 -- Errores (mensaje = nombre estable que lee el servidor):
 --   42501 not_owner / not_platform_admin · P0002 subscription_not_found / review_not_found ·
---   55000 organization_inactive / suspended_manually / no_list_price / price_unavailable / already_covered / review_already_resolved ·
+--   55000 organization_inactive / suspended_manually / no_list_price / price_unavailable / already_covered / too_many_unpaid /
+--         review_already_resolved ·
 --   22023 invalid_amount / invalid_currency / invalid_payment_id / invalid_preference / invalid_status / invalid_note.
 
 begin;
@@ -355,6 +356,15 @@ begin
   end if;
 
   if v_intent.id is null then
+    -- Cota de la recuperación: «Ya pagué, verificar» consulta (owner_payment_quote) hasta 20 pedidos sin pagar de los últimos 30 días.
+    -- Para que NINGUNO quede fuera, no se crea el 21.º: falla cerrado y el Dueño contacta a UcoMenu (pasa solo con un patrón anormal:
+    -- un pedido nuevo nace cada 72 h, o 10 en 30 días, o cuando el SuperAdmin cambia el importe).
+    if (
+      select count(*) from public.payment_intents i
+      where i.organization_id = p_org and i.status in ('pending', 'expired') and i.created_at > now() - interval '30 days'
+    ) >= 20 then
+      raise exception 'too_many_unpaid' using errcode = '55000';
+    end if;
     insert into public.payment_intents (
       organization_id, subscription_id, plan_code, billing_cycle, extra_branches, amount_cents, currency, expires_at, created_by
     )
