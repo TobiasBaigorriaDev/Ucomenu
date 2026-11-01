@@ -146,6 +146,27 @@ test.describe("el Dueño paga con Mercado Pago", () => {
     await expect(page.getByRole("button", { name: "Pagar con Mercado Pago" })).toHaveCount(0);
   });
 
+  test("un plan sin precio de lista (Premium) no muestra el bloque de pago, ni siquiera un título solo", async ({ page }) => {
+    const t = await local("mp-premium");
+    await service().from("subscriptions").update({ plan_code: "premium" }).eq("organization_id", t.orgId);
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(suscripcion(t.slug));
+    await expect(page.getByRole("heading", { name: "Suscripción", level: 1 })).toBeVisible();
+    await expect(page.getByTestId("pagar")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Pagar con Mercado Pago" })).toHaveCount(0);
+  });
+
+  test("«Lo que pagás» va al final de la pantalla, después de los pagos y del historial", async ({ page }) => {
+    const t = await local("mp-orden");
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(suscripcion(t.slug));
+    const precio = page.getByTestId("suscripcion-precio");
+    await expect(precio).toBeVisible();
+    const arriba = async (testId: string) => (await page.getByTestId(testId).boundingBox())!.y;
+    expect(await arriba("pagos")).toBeLessThan((await precio.boundingBox())!.y);
+    expect(await arriba("historial")).toBeLessThan((await precio.boundingBox())!.y);
+  });
+
   test("con la suscripción suspendida a mano no se ofrece pagar", async ({ page }) => {
     const t = await local("mp-suspendida");
     await service().from("subscriptions").update({ suspended_at: new Date().toISOString() }).eq("organization_id", t.orgId);

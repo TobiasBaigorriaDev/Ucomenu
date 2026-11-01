@@ -92,3 +92,8 @@ Cobro recurrente (Mercado Pago Suscripciones), tarjeta guardada, facturas, cambi
 - Verificación: `/`, `/login`, `/privacidad` y `/terminos` 200; `POST /api/mercadopago/webhook` sin firma **401** (el secreto está cargado; con el secreto ausente sería 503) y `GET` 405.
 - **Sigue sin probarse un pago real contra Mercado Pago** (crear el link, pagar con el comprador de prueba y recibir el aviso firmado).
 - Marcha atrás de la app: `--image registry.fly.io/ucomenu-staging:marca-98931b9-git` (v92).
+
+## Primera prueba en staging y ajuste de pantalla (2026-11-01)
+- El usuario probó con Aurelia y La Bestia y no vio el botón: **no es un fallo**. Ambos locales de demostración tienen el vencimiento en septiembre de 2028 (ciclo anual), así que la regla aprobada (no ofrecer pagar con más de un ciclo por delante) oculta el botón; además Aurelia es Premium, sin precio de lista. Comprobado con una consulta de solo lectura en staging y sin errores en los registros de la app. Para probar un pago hace falta un local Pro con vencimiento dentro de un ciclo (por ejemplo, uno nuevo creado desde `/admin/nueva`).
+- Ajuste pedido por el usuario: **«Lo que pagás» pasa al final de Suscripción y se vuelve discreto** (sin tarjeta de color, tamaño y colores sobrios; mismos `data-testid`). Además el bloque «Pagar con Mercado Pago» ya no se muestra con el título solo cuando no hay nada que ofrecer ni decir (`hasPayContent`; pasaba con Premium). Pruebas unitarias nuevas (93/93 en `cobro` y `cuenta`), lint, tipos y build correctos.
+- **No se corrieron los E2E de este ajuste** (Docker Desktop y la base local no respondían): quedan escritas y sin ejecutar «Premium no muestra el bloque de pago» y «Lo que pagás va después de Pagos y del historial». Sin desplegar a staging.

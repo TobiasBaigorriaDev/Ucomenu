@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
 import { mercadoPagoConfig, siteBaseUrl } from "@/lib/cobro/mercadopago";
-import { parseQuote } from "@/lib/cobro/cotizacion";
+import { hasPayContent, parseQuote } from "@/lib/cobro/cotizacion";
 import { loadExtraBranchYearlyPrice, loadOwnerAccount, loadPlanPrice, type Page } from "@/lib/cuenta/cargar";
 import { describeHistory, describePayment, formatDateTime, formatDay, parseCursor, type HistoryRow, type PaymentRow } from "@/lib/cuenta/lectura";
 import { describePrice } from "@/lib/cuenta/precio";
@@ -76,30 +76,6 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 lg:px-10 lg:py-12">
       <h1 className="font-display text-4xl leading-tight">Suscripción</h1>
 
-      {price ? (
-        <section aria-labelledby="precio-titulo" className="mt-6 rounded-3xl bg-brand p-5 text-white sm:p-6" data-testid="suscripcion-precio">
-          <h2 id="precio-titulo" className="font-display text-2xl">
-            Lo que pagás
-          </h2>
-          <p className="mt-2 font-display text-4xl leading-tight tabular-nums sm:text-5xl" data-testid="suscripcion-precio-valor">
-            {price.headline}
-          </p>
-          {price.lines.map((line) => (
-            <p key={line} className="mt-2 max-w-prose text-lg" data-testid="suscripcion-precio-linea">
-              {line}
-            </p>
-          ))}
-          {lastPayment && lastPaymentRow ? (
-            <p className="mt-2 max-w-prose text-base" data-testid="suscripcion-ultimo-pago">
-              Último pago: <span className="font-medium tabular-nums">{lastPayment.amount}</span>, recibido el {formatDay(lastPaymentRow.paidOn)}.
-            </p>
-          ) : null}
-          <p className="mt-4 max-w-prose border-t border-white/25 pt-3 text-sm" data-testid="suscripcion-precio-nota">
-            Son los precios de lista de tu plan. Lo que se cobró en cada período figura en Pagos, más abajo.
-          </p>
-        </section>
-      ) : null}
-
       {ent ? (
         <ul className="mt-6 panel-list">
           <Row label="Plan">{ent.plan ? (PLAN_NAME[ent.plan] ?? ent.plan) : "Sin datos"}</Row>
@@ -126,7 +102,7 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
         <p className="mt-6 max-w-prose text-muted">No pudimos leer el estado de tu cuenta. Probá de nuevo en unos minutos.</p>
       )}
 
-      {quote ? <PaySection slug={membership.org.slug} quote={quote} returned={query.pago} /> : null}
+      {quote && hasPayContent(quote, query.pago) ? <PaySection slug={membership.org.slug} quote={quote} returned={query.pago} /> : null}
 
       <p className="mt-8 max-w-prose leading-relaxed text-muted">
         {payOnline ? "Para cambiar de plan, contactá a UcoMenú." : "Para cambiar de plan o registrar un pago, contactá a UcoMenú."}
@@ -134,6 +110,30 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
 
       <PaymentsSection page={account.payments} more={account.payments?.next ? moreHref("pagos", account.payments.next) : null} first={!before.payments} />
       <HistorySection page={account.history} more={account.history?.next ? moreHref("cambios", account.history.next) : null} first={!before.history} />
+      {price ? (
+        // Al final y discreto: es información de referencia, no lo primero que el Dueño necesita (ficha cobro-con-link-de-mercado-pago).
+        <section aria-labelledby="precio-titulo" className="mt-12 border-t border-ink/15 pt-6" data-testid="suscripcion-precio">
+          <h2 id="precio-titulo" className="text-xl font-medium">
+            Lo que pagás
+          </h2>
+          <p className="mt-1 text-xl tabular-nums" data-testid="suscripcion-precio-valor">
+            {price.headline}
+          </p>
+          {price.lines.map((line) => (
+            <p key={line} className="mt-1 max-w-prose text-base text-muted" data-testid="suscripcion-precio-linea">
+              {line}
+            </p>
+          ))}
+          {lastPayment && lastPaymentRow ? (
+            <p className="mt-1 max-w-prose text-base text-muted" data-testid="suscripcion-ultimo-pago">
+              Último pago: <span className="font-medium tabular-nums text-ink">{lastPayment.amount}</span>, recibido el {formatDay(lastPaymentRow.paidOn)}.
+            </p>
+          ) : null}
+          <p className="mt-3 max-w-prose text-sm text-muted" data-testid="suscripcion-precio-nota">
+            Son los precios de lista de tu plan. Lo que se cobró en cada período figura en Pagos, más arriba.
+          </p>
+        </section>
+      ) : null}
     </main>
   );
 }

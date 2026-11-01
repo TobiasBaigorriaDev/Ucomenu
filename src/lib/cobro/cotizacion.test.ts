@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { describeQuote, parseQuote, returnNotice, startErrorMessage } from "./cotizacion";
+import { describeQuote, hasPayContent, parseQuote, returnNotice, startErrorMessage } from "./cotizacion";
 
 const disponible = (extra: Record<string, unknown> = {}) => ({
   available: true,
@@ -45,6 +45,25 @@ const plano = (summary: ReturnType<typeof describeQuote>) => ({
   ...summary,
   total: summary.total.replace(/ /g, " "),
   lines: summary.lines.map((line) => line.replace(/ /g, " ")),
+});
+
+describe("cuándo se muestra el bloque de pago", () => {
+  const q = (raw: unknown) => parseQuote(raw)!;
+
+  it("se muestra si se puede pagar, si ya está cubierto, si hay un pedido sin confirmar o si se vuelve de Mercado Pago", () => {
+    expect(hasPayContent(q(disponible()), undefined)).toBe(true);
+    expect(hasPayContent(q({ available: false, reason: "already_covered" }), undefined)).toBe(true);
+    expect(hasPayContent(q({ available: false, reason: "no_list_price", unpaid_intents: [{ id: "i-1", expires_at: "2026-11-05T12:00:00Z" }] }), undefined)).toBe(true);
+    expect(hasPayContent(q({ available: false, reason: "no_list_price" }), "exito")).toBe(true);
+  });
+
+  it("no se muestra (nada de título solo) cuando no hay qué ofrecer ni qué decir", () => {
+    for (const reason of ["no_list_price", "suspended_manually", "price_unavailable", "organization_inactive", "too_many_unpaid", "unknown"]) {
+      expect(hasPayContent(q({ available: false, reason }), undefined), reason).toBe(false);
+    }
+    // Un valor raro en `?pago=` no lo muestra.
+    expect(hasPayContent(q({ available: false, reason: "no_list_price" }), "<script>")).toBe(false);
+  });
 });
 
 describe("desglose y textos", () => {

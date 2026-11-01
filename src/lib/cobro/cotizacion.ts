@@ -77,6 +77,14 @@ export function describeQuote(quote: Extract<PaymentQuote, { available: true }>)
   return { total: formatMoney(quote.amountCents, quote.currency), period: yearly ? "por año" : "por mes", lines };
 }
 
+/**
+ * ¿Hay algo que mostrar en el bloque de pago? Cuando no se puede ofrecer pagar y tampoco hay nada que decir (Premium sin precio de lista,
+ * cuenta suspendida a mano, sin precio de la sucursal adicional...), el bloque no se muestra: un título solo, sin nada debajo, confunde.
+ */
+export function hasPayContent(quote: PaymentQuote, returned: unknown): boolean {
+  return quote.available || quote.reason === "already_covered" || quote.unpaid.length > 0 || returnNotice(returned) !== null;
+}
+
 const NOT_AVAILABLE_MESSAGE: Record<string, string> = {
   suspended_manually: "Tu cuenta está suspendida por UcoMenú. Contactanos para resolverlo.",
   no_list_price: "Tu plan no se paga desde acá. Contactá a UcoMenú.",
