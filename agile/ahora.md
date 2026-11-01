@@ -10,10 +10,10 @@ Con el MCP oficial de Mercado Pago se creó la aplicación «UcoMenu staging» (
 
 ## Bloqueos y próximo paso
 
-Staging corre el **release v95** (imagen `cobro-3b9c6d2-git`), con los secretos de Mercado Pago cargados. Verificado: `/`, `/login`, `/privacidad` y `/terminos` 200 y el aviso responde 401 sin firma. Marcha atrás: `--image registry.fly.io/ucomenu-staging:cobro-a79fc30-git` (v94). Sin migración.
+Staging está al día: **release v95** (imagen `cobro-3b9c6d2-git`, el último código), 0 migraciones pendientes y los secretos de Mercado Pago cargados. Marcha atrás: `--image registry.fly.io/ucomenu-staging:cobro-a79fc30-git` (v94).
 
-1. **Primer pago de prueba real registrado (2026-11-01).** Un pago del plan Básico (ARS 14.900) quedó en `payments` (una fila, pago `187247027918`), la vigencia avanzó un mes, la intención quedó pagada y no hay pagos a revisar. Lo registró un aviso firmado de Mercado Pago, o sea que firma, secreto y lectura contra su API funcionan. El botón gris no era nuestro: el usuario probaba con la cuenta de **vendedor** en vez de **comprador**.
-2. **Falta probar con Mercado Pago real:** «Ya pagué, verificar», un pago rechazado (titular `OTHE`), un reembolso o contracargo y los reintentos del aviso. Aurelia y La Bestia están pagadas hasta 2028 y no ofrecen «Pagar»: usar el local Pro de prueba o crear otro desde `/admin/nueva`.
-3. **Producción es lo siguiente.** Guía completa en `docs/produccion.md`; el cobro con Mercado Pago tiene su sección **3c** (decidir el titular de la cuenta de cobro, aplicación y webhook de producción, secretos, ensayo con dinero real). Falta además: datos legales, contador, abogado, Supabase y Fly de producción. Staging está al día: app v95 con el último código y 0 migraciones pendientes.
+1. **Primer pago de prueba real registrado (2026-11-01):** ARS 14.900 en `payments` (pago `187247027918`), vigencia +1 mes, intención pagada, 0 pagos a revisar. Lo registró un aviso firmado de Mercado Pago: firma, secreto y lectura contra su API funcionan. El botón gris era la cuenta de **vendedor** usada en vez de **comprador**.
+2. **Falta probar con Mercado Pago real:** «Ya pagué, verificar», un pago rechazado (titular `OTHE`), un reembolso y los reintentos del aviso. Aurelia y La Bestia están pagadas hasta 2028 y no ofrecen «Pagar»: usar el local de prueba o crear otro en `/admin/nueva`.
+3. **Producción es lo siguiente.** Guía en `docs/produccion.md`; el cobro tiene su sección **3c** (titular de la cuenta de cobro, aplicación y webhook de producción, secretos, ensayo con dinero real). Faltan también datos legales, contador, abogado, y Supabase y Fly de producción.
 
 Entorno: OneDrive provoca bloqueos de E2E (usar `--workers=4`) y Docker Desktop no responde (los E2E de «Lo que pagás» quedaron sin ejecutar). Falla previa: `owner-lectura`. Preservar los archivos locales sin seguimiento (`video/`, `.codegraph/`, capturas, skills, `skills-lock.json`, `.claude/launch.json`).
