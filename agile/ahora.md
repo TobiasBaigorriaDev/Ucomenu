@@ -4,15 +4,16 @@ Actualizado: 2026-11-01 · agente saliente: Codex.
 
 ## Punto de retomada
 
-En `main`, HEAD `a706edd`, con la corrección ortográfica de la marca preparada para commit y publicación autorizados por el usuario. El nombre correcto es **UcoMenú**, según el usuario. Se corrigieron los textos de la aplicación, metadatos, manifiesto de instalación, documentación, expectativas de pruebas y fuentes editables del video. Las rutas históricas, identificadores técnicos en minúsculas y el nombre de la tarea de Windows instalada conservan sus referencias reales. El cambio es S: solo texto; no modifica permisos, reglas de cobro ni estructura de la base. Para deshacerlo, revertir únicamente la sustitución de la marca y esta actualización del handoff; preservar el material local previo sin seguimiento.
+En `main`, corrección de marca confirmada en `98931b9` y subida a `origin/main`, junto con los commits previos del cobro con Mercado Pago. Este cierre documental se confirma por separado; consultar Git para su hash. El usuario autorizó el commit, push a `main` y migración a staging en esta sesión. La publicación de app y migración ya terminó; producción no se tocó.
 
-El trabajo anterior sigue siendo el **cobro con link de Mercado Pago** (nivel C), implementado y revisado: [ficha](cambios/cobro-con-link-de-mercado-pago.md) y [ADR 0052](../docs/decisiones/0052-cobro-por-link-de-mercado-pago.md). La revisión de Codex está aprobada y el usuario autorizó el commit, push a `main` y migración a staging en esta sesión. Publicación en curso; verificar Git y staging antes de retomarla. Migración `20261217100000` aplicada solo en local; siguiente libre `20261218100000`. Sin secretos configurados: sin `MERCADOPAGO_ACCESS_TOKEN` se mantiene el cobro manual.
+El nombre correcto es **UcoMenú**. Se corrigieron aplicación, metadatos, manifiesto de instalación, documentación y expectativas de pruebas. Las rutas históricas y nombres técnicos existentes conservan sus referencias reales. También se corrigieron las fuentes editables del video local, que sigue sin seguimiento y quedó fuera del commit y del despliegue para preservar ese trabajo previo.
+
+El **cobro con link de Mercado Pago** está publicado en staging, con revisión independiente aprobada. Alcance, autorización, evidencia de publicación, imagen anterior para recuperación y limitaciones en [la ficha](cambios/cobro-con-link-de-mercado-pago.md); decisiones en [ADR 0052](../docs/decisiones/0052-cobro-por-link-de-mercado-pago.md). La migración `20261217100000` está aplicada en local y staging; siguiente libre `20261218100000`. Si se modifica el esquema, agregar una migración nueva: esta versión ya salió de la máquina.
 
 ## Bloqueos y próximo paso
 
-1. Completar la publicación autorizada de la marca y del cobro en `origin/main`.
-2. Aplicar la migración pendiente y actualizar staging juntos; confirmar el historial remoto y la respuesta de la app.
-3. El usuario debe crear la aplicación de Mercado Pago y habilitar credenciales de prueba y webhook según `docs/operacion.md`. La integración con el proveedor real sigue pendiente.
-4. Antes de producción: resolver titular de la cuenta de cobro, pruebas manuales de staging, datos legales, contador y abogado (`docs/produccion.md`).
+1. El usuario debe crear la aplicación de Mercado Pago y habilitar credenciales de prueba y webhook según `docs/operacion.md`. No se configuraron secretos del proveedor; se conserva el cobro manual.
+2. Probar el circuito completo contra Mercado Pago real con un usuario de prueba en staging. Esa integración sigue pendiente.
+3. Antes de producción: obtener autorización, resolver titular de la cuenta de cobro, pruebas manuales, datos legales, contador y abogado (`docs/produccion.md`).
 
 Entorno: OneDrive provoca bloqueos intermitentes de E2E; usar `--workers=4`. Sigue registrado el fallo previo de `owner-lectura` por `account.deleted` en el historial local. Preservar los archivos locales sin seguimiento, incluidos videos, capturas, `.codegraph/`, skills, `skills-lock.json` y `.claude/launch.json`.
