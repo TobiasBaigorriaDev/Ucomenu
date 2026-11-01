@@ -134,7 +134,18 @@ export function parsePayment(raw: unknown): MercadoPagoPayment | null {
 
 type FetchLike = (input: string, init: RequestInit) => Promise<Response>;
 
-export function createMercadoPagoClient(config: MercadoPagoConfig, fetchImpl: FetchLike = fetch): MercadoPagoClient {
+/**
+ * Una fecha en el formato que muestra la documentación de Mercado Pago para el vencimiento de una preferencia:
+ * `aaaa-MM-dd'T'HH:mm:ss.SSS-03:00`. Argentina no tiene horario de verano, así que el desfase es fijo.
+ */
+export function toMercadoPagoDate(date: Date): string {
+  return new Date(date.getTime() - 3 * 60 * 60 * 1000).toISOString().replace("Z", "-03:00");
+}
+
+/** Cuánto antes de «ahora» empieza a valer un link: así un reloj levemente atrasado de Mercado Pago no lo deja «todavía no vigente». */
+const VALID_FROM_MARGIN_MS = 60_000;
+
+export function createMercadoPagoClient(config: MercadoPagoConfig, fetchImpl: FetchLike = fetch, now: () => Date = () => new Date()): MercadoPagoClient {
   async function call(method: string, path: string, body?: unknown): Promise<Response> {
     try {
       return await fetchImpl(`${config.apiBase}${path}`, {
@@ -167,8 +178,11 @@ export function createMercadoPagoClient(config: MercadoPagoConfig, fetchImpl: Fe
         back_urls: input.backUrls,
         // Mercado Pago solo acepta el regreso automático con direcciones https.
         ...(https ? { auto_return: "approved" } : {}),
+        // Con `expires: true` la documentación de Mercado Pago manda SIEMPRE los dos límites; con solo el final, el link puede quedar
+        // sin vigencia definida y el checkout dejar el botón de pagar deshabilitado.
         expires: true,
-        expiration_date_to: input.expiresAt.toISOString(),
+        expiration_date_from: toMercadoPagoDate(new Date(now().getTime() - VALID_FROM_MARGIN_MS)),
+        expiration_date_to: toMercadoPagoDate(input.expiresAt),
         statement_descriptor: "UCOMENU",
       });
       if (!response.ok) throw new MercadoPagoApiError(`Mercado Pago rechazó crear el link (${response.status})`, response.status);

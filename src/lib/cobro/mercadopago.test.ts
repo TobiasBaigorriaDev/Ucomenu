@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createMercadoPagoClient, isAllowedCheckoutUrl, mercadoPagoConfig, MercadoPagoApiError, parsePayment, resolveApiBase, siteBaseUrl } from "./mercadopago";
+import { createMercadoPagoClient, isAllowedCheckoutUrl, mercadoPagoConfig, MercadoPagoApiError, parsePayment, resolveApiBase, siteBaseUrl, toMercadoPagoDate } from "./mercadopago";
 
 const INTENT = "0b9c1c64-3a38-4a43-9d9e-0a2d1e9e0f11";
 const CONFIG = { accessToken: "APP_USR-secreto", apiBase: "https://api.mercadopago.com" };
@@ -71,6 +71,14 @@ describe("configuración", () => {
   });
 });
 
+describe("fechas de la preferencia", () => {
+  it("usa el formato aaaa-MM-ddTHH:mm:ss.SSS-03:00 de la documentación (Argentina, sin horario de verano)", () => {
+    expect(toMercadoPagoDate(new Date("2026-11-05T12:00:00.000Z"))).toBe("2026-11-05T09:00:00.000-03:00");
+    expect(toMercadoPagoDate(new Date("2026-01-01T02:30:15.123Z"))).toBe("2025-12-31T23:30:15.123-03:00");
+    expect(toMercadoPagoDate(new Date("2026-11-05T12:00:00.000Z"))).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}-03:00$/);
+  });
+});
+
 describe("lectura de un pago", () => {
   it("toma el importe en centavos y la referencia en minúsculas", () => {
     expect(parsePayment(payment())).toEqual({
@@ -108,7 +116,7 @@ describe("cliente", () => {
 
   it("crea el link con el importe, la referencia y el vencimiento, y devuelve solo un link de Mercado Pago", async () => {
     const { calls, fetchImpl } = fakeFetch(() => json({ id: "pref-1", init_point: "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref-1" }, 201));
-    const result = await createMercadoPagoClient(CONFIG, fetchImpl).createPreference(input);
+    const result = await createMercadoPagoClient(CONFIG, fetchImpl, () => new Date("2026-11-02T12:00:00.000Z")).createPreference(input);
     expect(result).toEqual({ id: "pref-1", url: "https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=pref-1" });
     expect(calls).toHaveLength(1);
     expect(calls[0].url).toBe("https://api.mercadopago.com/checkout/preferences");
@@ -119,7 +127,9 @@ describe("cliente", () => {
       items: [{ id: INTENT, quantity: 1, currency_id: "ARS", unit_price: 29000 }],
       notification_url: input.notificationUrl,
       expires: true,
-      expiration_date_to: "2026-11-05T12:00:00.000Z",
+      // Los dos límites, con el formato de la documentación de Mercado Pago (hora de Argentina): desde un minuto antes de «ahora».
+      expiration_date_from: "2026-11-02T08:59:00.000-03:00",
+      expiration_date_to: "2026-11-05T09:00:00.000-03:00",
       auto_return: "approved",
     });
     // Nada del comprador viaja en el pedido.
