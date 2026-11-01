@@ -1,19 +1,22 @@
-﻿# Ahora (handoff)
+# Ahora (handoff)
 
-Actualizado: 2026-11-01 · agente saliente: Codex.
+Actualizado: 2026-11-01 · agente saliente: Claude Code.
 
 ## Punto de retomada
 
-En `main`. Último commit al empezar esta tarea: `51961a7`. El usuario pidió poblar La Bestia Burger & Bar en staging para probar la pestaña Analítica como si hubiera vendido durante los últimos 80 días. La carga está aplicada en el proyecto `oasixhsdyigimwvcxtkx`, organización `la-bestia`, sucursal Centro. Alcance, identificación del lote, evidencia y recuperación en [la ficha](cambios/ventas-demo-bestia.md); SQL reproducible en `tools/ventas-bestia-staging.sql`. No volver a ejecutarlo: rechaza duplicados deliberadamente.
+En `main`, solo commits locales (nada en `origin`, nada desplegado). Último commit: `a43f64d`. Antes de esta tarea: `bdf97df`.
 
-No hubo cambios de aplicación ni despliegue en esta tarea. Los pedidos previos, el catálogo, los planes y los permisos se conservaron. El lote tiene únicamente pedidos terminados y datos ficticios. Los contadores de vistas anteriores tampoco se sobrescribieron. La comprobación fue con las funciones reales que lee Analítica; falta la inspección visual del usuario. Los gráficos consideran días calendario: hoy todavía puede aparecer vacío porque se cargaron los 80 días completos anteriores, hasta el 31 de octubre.
+Se implementó el **cobro de la suscripción con link de Mercado Pago** (nivel C): el Dueño paga desde Suscripción y el servidor registra el pago solo. Diseño en [ADR 0052](../docs/decisiones/0052-cobro-por-link-de-mercado-pago.md); alcance, evidencia, limitaciones y las cuatro rondas de revisión en [la ficha](cambios/cobro-con-link-de-mercado-pago.md). **Codex aprobó la ronda 4** (rechazó las tres primeras; todos sus hallazgos eran reales y están corregidos). Es una revisión, no la aprobación del usuario.
 
-Staging continúa en Fly v91, imagen `tutorial-bd0cd25-git`. El tutorial aparece dentro de «Primeros pasos» del Resumen mientras la guía esté pendiente y visible; respeta el ocultamiento existente. No requiere cambios de base. La migración aplicada era `20261216100000`; siguiente libre `20261217100000`. Consultar Git y Fly antes de continuar.
+Migración nueva `20261217100000`, aplicada **solo en la base local** (corregida en su lugar tras la revisión porque nunca salió de esta máquina; si se toca otra vez hay que revertirla primero). Siguiente libre: `20261218100000`. Sin dependencias nuevas. Sin secretos configurados en ningún entorno: sin `MERCADOPAGO_ACCESS_TOKEN` la pantalla sigue con el cobro manual.
 
 ## Bloqueos y próximo paso
 
-Próximo paso: abrir `/panel/la-bestia/analitica?dias=90` en staging con el dueño y explorar períodos, ventas, platos y categorías. El usuario también debe probar el tutorial en teléfono y Suscripción, y revisar los textos legales.
+1. El usuario aprueba subir esto a `origin` y a **staging** (migración y despliegue juntos: la app nueva necesita las funciones).
+2. El usuario crea la aplicación de Mercado Pago (hoy tiene una cuenta personal) y pasa las credenciales de **prueba**; configurarlas con `fly secrets set` en staging y el webhook `https://<dominio>/api/mercadopago/webhook` con el evento «Pagos» (`docs/operacion.md`).
+3. Probar contra Mercado Pago de verdad con un usuario de prueba: es lo **único sin probar** (formato de vencimiento, `source_news=webhooks`, búsqueda por referencia, reintentos y la unidad del `ts` de la firma).
+4. Antes de producción: decidir si cobra una cuenta personal o del negocio.
 
-Antes de producción siguen pendientes los datos legales y contacto definitivo, contador y abogado, infraestructura de producción y respaldo ensayado. Los cron pendientes están en `docs/produccion.md` (4.b, 4.c y 4.e). No se tocaron en esta sesión.
+Entorno: el repositorio está dentro de OneDrive y `OneDrive.Sync.Service` es el mayor consumidor de CPU; con 11 workers los E2E se cuelgan de forma intermitente, también en specs ajenos. Usar `--workers=4`. Falla previa, no de este cambio: `owner-lectura` (fila `account.deleted` en el `audit_log` local).
 
-Preservar los archivos ajenos sin seguimiento: `video/`, `.codegraph/`, capturas y herramientas locales, skills de terceros, `skills-lock.json` y `.claude/launch.json`.
+Siguen pendientes los de antes: pruebas manuales de staging, datos legales, contador, abogado y producción (`docs/produccion.md`). Preservar los archivos ajenos sin seguimiento: `video/`, `.codegraph/`, capturas, skills de terceros, `skills-lock.json` y `.claude/launch.json`.
