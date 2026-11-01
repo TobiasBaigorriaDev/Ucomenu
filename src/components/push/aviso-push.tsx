@@ -40,12 +40,12 @@ export function AvisoPush({ slug, publicKey, where }: { slug: string; publicKey:
         {push.state === "install" ? (
           <>
             <p className="mt-1 max-w-prose text-sm text-muted" data-testid="push-ayuda">
-              Apple solo muestra avisos con la app cerrada si instalás UcoMenu en la pantalla de inicio. Hace falta iOS 16.4 o superior.
+              Apple solo muestra avisos con la app cerrada si instalás UcoMenú en la pantalla de inicio. Hace falta iOS 16.4 o superior.
             </p>
             <ol className="mt-2 max-w-prose list-decimal space-y-1 pl-5 text-base" data-testid="push-instalar">
               <li>Abrí esta página en <strong>Safari</strong> y tocá el botón <strong>Compartir</strong> (el cuadrado con la flecha hacia arriba).</li>
               <li>Elegí <strong>Agregar a pantalla de inicio</strong> y confirmá.</li>
-              <li>Abrí <strong>UcoMenu</strong> desde el ícono nuevo, entrá a {where === "sala" ? "la sala" : "el panel"} y activá los avisos ahí.</li>
+              <li>Abrí <strong>UcoMenú</strong> desde el ícono nuevo, entrá a {where === "sala" ? "la sala" : "el panel"} y activá los avisos ahí.</li>
             </ol>
           </>
         ) : (

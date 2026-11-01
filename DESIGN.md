@@ -1,5 +1,5 @@
 ---
-name: UcoMenu, carta pública y panel
+name: UcoMenú, carta pública y panel
 description: Una revista de bolsillo en bento, impresa en el papel y los colores de cada local; el panel es su reverso de trabajo.
 colors:
   porcelain: "#f4efe4"
@@ -399,7 +399,7 @@ components:
     padding: "8px 12px"
 ---
 
-# Design System: UcoMenu, carta pública y panel
+# Design System: UcoMenú, carta pública y panel
 
 Alcance: este documento describe tres superficies: la carta y el panel comparten un mundo; la portada tiene el suyo.
 
@@ -414,7 +414,7 @@ Fuera de las tres queda cualquier ruta que no use `.carta`, `.panel` ni `.market
 
 **Creative North Star: "La revista de bolsillo del local"**
 
-La carta se lee como un número de revista armado en celdas: una cabecera editorial con el nombre del local en display grande, un índice de categorías en bento y, debajo, secciones con banda de color y cards de plato de escala variable. El local es el protagonista; la plataforma firma discretamente al pie («Hecho con UcoMenu»). Papel cálido, tinta oscura, un verde profundo como voz principal y terracota solo para precios y detalles.
+La carta se lee como un número de revista armado en celdas: una cabecera editorial con el nombre del local en display grande, un índice de categorías en bento y, debajo, secciones con banda de color y cards de plato de escala variable. El local es el protagonista; la plataforma firma discretamente al pie («Hecho con UcoMenú»). Papel cálido, tinta oscura, un verde profundo como voz principal y terracota solo para precios y detalles.
 
 El panel es su reverso: el mismo papel, la misma tipografía y los mismos ocho roles, puestos al servicio de trabajar. Un riel lateral en el verde profundo de la paleta lleva el nombre del local, y el lienzo de papel se arma en celdas de 24 px con filete. El Dueño reconoce su local por nombre, logo y color; SuperAdmin reconoce que está en la plataforma por el verde de UcoNext.
 
@@ -500,7 +500,7 @@ Paleta de UcoNext fija, sin variantes por local; variables `--mk-*` en `.marketi
 Escalones del panel (todos usados en el código, fuera de la rampa de la carta):
 - **Panel page title** (Gloock 400, `clamp(2.25rem, 1.5rem + 3vw, 3.5rem)`, 0.98, tracking -0.015em, `text-wrap: balance`, `overflow-wrap: anywhere`): el `h1` de cada página del panel.
 - **Panel section title** (Gloock 400, 1.75rem, 1.05, tracking -0.005em): `h2.font-display` dentro de celdas; un escalón sobre `text-2xl` para sostener la jerarquía frente a los campos.
-- **Rail name** (Gloock 400, 1.625rem en la cabecera de celular, 2rem desde `lg`, 1): nombre del local (o «UcoMenu») en el riel.
+- **Rail name** (Gloock 400, 1.625rem en la cabecera de celular, 2rem desde `lg`, 1): nombre del local (o «UcoMenú») en el riel.
 - **Nav link** (500, 0.9375rem): chips y enlaces del riel; igual en los enlaces «Mi cuenta» y «Salir».
 - **Nav group** (600, 0.8125rem, sin mayúsculas ni tracking, blanco al 75 %): rótulo de grupo del riel («Tu local», «Gestión», «Servicio»), solo visual y solo desde `lg`.
 - **Control** (500, 1rem): texto de botones y campos del panel; etiquetas de campo 0.875rem 500.
@@ -595,7 +595,7 @@ Solo en `/t/{token}`. Contenedor flotante porcelana al 95 %, filete `ink/15`, ra
 `<dialog>` modal nativo (`showModal`), hasta 36 rem, porcelana, radio 12 px, velo de tinta al 55 %; botón «Volver a la carta» con subrayado, foto 4:3, nombre en display, precio terracota, opciones completas y aviso de alérgenos.
 
 ### Pie
-Tres rombos (terracota, verde, rosa), aviso de alérgenos, enlaces legales y «Hecho con UcoMenu» en gris cálido.
+Tres rombos (terracota, verde, rosa), aviso de alérgenos, enlaces legales y «Hecho con UcoMenú» en gris cálido.
 
 ### Estilo de carta «Afiche»
 
@@ -609,7 +609,7 @@ Cuarto estilo elegible (`menu_layout = 'afiche'`, `data-layout="afiche"` en `.ca
 **The Poster Rule.** En el afiche la fuerza gráfica va a títulos y nombres; el precio es legible y fijo, no compite. Nada redondeado, nada de sombra fuera del dock.
 
 ### Riel del panel
-Cabecera de 17 rem desde `lg`, fondo verde profundo, texto blanco, padding de 20 px. Arriba: logo opcional en cuadrado blanco y nombre del local en display (o la marca de dos rombos y «UcoMenu» cuando no hay local activo), insignia de rol (Dueño, Personal, SuperAdmin) en píldora blanca al 15 % y «Cambiar de local» si hay varios. Al pie: «Mi cuenta» y «Salir» de 44 px (0,9375rem, hover blanco al 10 %). El salto «Saltar al contenido» es una píldora verde que aparece con el foco. El foco dentro del riel es blanco y solo desde 64 rem; en celular la cabecera es papel y se conserva el aro verde global.
+Cabecera de 17 rem desde `lg`, fondo verde profundo, texto blanco, padding de 20 px. Arriba: logo opcional en cuadrado blanco y nombre del local en display (o la marca de dos rombos y «UcoMenú» cuando no hay local activo), insignia de rol (Dueño, Personal, SuperAdmin) en píldora blanca al 15 % y «Cambiar de local» si hay varios. Al pie: «Mi cuenta» y «Salir» de 44 px (0,9375rem, hover blanco al 10 %). El salto «Saltar al contenido» es una píldora verde que aparece con el foco. El foco dentro del riel es blanco y solo desde 64 rem; en celular la cabecera es papel y se conserva el aro verde global.
 
 ### Navegación del panel
 Una `<nav>` con lista de ítems. En celular, chips de 44 px en píldora: rosa en reposo, arena al pasar, verde sólido con blanco para la sección actual, con desplazamiento horizontal. Desde `lg`, enlaces verticales de 44 px y radio 16 px con ícono SVG de 20 px (trazo 1,75 px): blanco sobre el verde profundo, hover blanco al 10 %, y la sección actual en porcelana con tinta. Rótulos de grupo en sentence-case («Tu local», «Gestión», «Servicio») solo visuales. La página actual lleva `aria-current="page"`. Transición de 180 ms con `cubic-bezier(0.22, 1, 0.36, 1)` solo bajo `prefers-reduced-motion: no-preference`.
@@ -640,7 +640,7 @@ Definidos en `styles.ts`, sin `"use client"` para poder importarse desde servido
 Transiciones de 180 ms (chips) a 500 ms (zoom de foto) con `cubic-bezier(0.22, 1, 0.36, 1)`, todas bajo `prefers-reduced-motion: no-preference`; la barra de categorías usa `motion-safe`. El foco global usa `--cobalt`, que dentro de `.carta` y `.panel` vale el verde de la paleta (el de UcoNext en SuperAdmin).
 
 ### Portada: barra, botones y celdas
-- **Barra píldora fija:** `.mk-nav` pegajosa a 12 px del borde (z 40), papel con filete, marca en verde 800 (rombos y «UcoMenu»), enlaces de 44 px que se tiñen de menta al pasar, «Ingresar» y botón pequeño; en celular el botón vive aquí.
+- **Barra píldora fija:** `.mk-nav` pegajosa a 12 px del borde (z 40), papel con filete, marca en verde 800 (rombos y «UcoMenú»), enlaces de 44 px que se tiñen de menta al pasar, «Ingresar» y botón pequeño; en celular el botón vive aquí.
 - **Botón píldora de 56 px:** verde con blanco (700, 1,0625rem, padding 12×28), hover verde profundo, flecha que se corre 3 px y baja 1 px al presionar; variante pequeña de 44 px; fantasma con filete de tinta al 45 %; blanco con texto verde profundo sobre verde y verde profundo (hover menta). Foco: aro blanco sobre verdes.
 - **Celdas:** 24 px, relleno `clamp(1.25rem, 1rem + 1.5vw, 2.25rem)`, con filete (arena, papel) o planas (menta, verde, profundo); `overflow: hidden`. La insignia de plan es una píldora menta de 28 px (translúcida sobre verdes).
 - **Escenario menta y bloque verde profundo:** fondos de 40 px de radio con relleno vertical `clamp(3rem, 2rem + 5vw, 6rem)`; el escenario aloja un bento de 6 columnas de celdas; el bloque profundo lleva la carta de ejemplo con QR (grande solo con mouse y desde 900 px).

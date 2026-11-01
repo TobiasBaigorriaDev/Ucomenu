@@ -22,7 +22,7 @@ test("la presentación se ofrece con controles y sin reproducirse ni descargarse
   const pedidosVideo: string[] = [];
   page.on("request", (req) => { if (req.url().includes("/portada/presentacion.mp4")) pedidosVideo.push(req.url()); });
   await page.goto("/");
-  const video = page.getByLabel("Presentación de UcoMenu");
+  const video = page.getByLabel("Presentación de UcoMenú");
   await expect(video).toHaveAttribute("controls", "");
   await expect(video).toHaveAttribute("preload", "none");
   await expect(video).not.toHaveAttribute("autoplay", "");
@@ -51,7 +51,7 @@ test("el titular y el botón principal abren WhatsApp con el mensaje prellenado"
   const boton = page.getByRole("link", { name: /Probalo 14 días gratis/ }).first();
   const href = new URL((await boton.getAttribute("href")) ?? "");
   expect(href.origin + href.pathname).toBe("https://wa.me/5492622230125");
-  expect(href.searchParams.get("text")).toBe("Hola, quiero probar UcoMenu 14 días gratis con mi local.");
+  expect(href.searchParams.get("text")).toBe("Hola, quiero probar UcoMenú 14 días gratis con mi local.");
   await expect(boton).toHaveAttribute("target", "_blank");
   await expect(boton).toHaveAttribute("rel", /noopener/);
 });

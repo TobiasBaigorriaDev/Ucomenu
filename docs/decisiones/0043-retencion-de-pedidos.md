@@ -14,7 +14,7 @@ El [ADR 0041](0041-pedidos-del-mozo.md) (decisión 8) fijó una retención de 2 
 
 ## Alternativas consideradas
 - **Purgar solo el registro de eventos y conservar los pedidos** — la analítica tendría historia, pero las tablas crecerían sin tope y el ADR 0041 pide 2 años.
-- **Purga manual por SuperAdmin con auditoría** (como los pagos, ADR 0027) — más control, pero nadie la ejecuta sola y los pedidos viejos se acumularían; los pagos son contabilidad de UcoMenu, los pedidos son datos operativos del local.
+- **Purga manual por SuperAdmin con auditoría** (como los pagos, ADR 0027) — más control, pero nadie la ejecuta sola y los pedidos viejos se acumularían; los pagos son contabilidad de UcoMenú, los pedidos son datos operativos del local.
 - **Permitir el `DELETE` en el trigger de solo-agregado con una variable de sesión** — evita el bloqueo de tabla, pero cualquiera que pueda fijar la variable y tenga privilegio de borrado (el dueño de la tabla) saltaría la protección; se mantiene el recurso ya revisado.
 - **Conservar sin plazo ni purga** — más simple, pero deja sin respuesta cuánto tiempo se guardan los datos.
 

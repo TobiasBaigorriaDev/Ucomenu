@@ -10,7 +10,7 @@ const sinCambios = () => () => {};
 
 /**
  * ¿Hay una página anterior de esta misma aplicación a la que volver? La API de navegación solo lista entradas del mismo origen:
- * `canGoBack` es verdadero únicamente si la persona venía de otra pantalla de UcoMenu (la carta, el login…). Sin esa API se usa el
+ * `canGoBack` es verdadero únicamente si la persona venía de otra pantalla de UcoMenú (la carta, el login…). Sin esa API se usa el
  * largo del historial (una pestaña nueva abierta directo en el texto legal tiene una sola entrada). No se guarda nada en el
  * navegador ni se manda nada al servidor: la carta promete no dejar datos locales, y la dirección de una carta abierta con un QR
  * lleva su token, que no debe viajar en un parámetro ni en un registro.

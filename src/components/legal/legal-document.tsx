@@ -11,7 +11,7 @@ export function LegalDocument({ title, intro, children }: { title: string; intro
       <LegalBack />
       <p className="mt-2 text-sm text-muted">
         <Link href="/" className="font-display text-cobalt underline-offset-2 hover:underline">
-          UcoMenu
+          UcoMenú
         </Link>
       </p>
       <h1 className="mt-4 font-display text-4xl leading-tight text-balance">{title}</h1>

@@ -1,4 +1,4 @@
-# Imagen de producción de UcoMenu (ADR 0015, docs/operacion.md): Node + Next.js en modo «standalone».
+# Imagen de producción de UcoMenú (ADR 0015, docs/operacion.md): Node + Next.js en modo «standalone».
 # Un contenedor corre igual en Fly.io, en un VPS o en cualquier servicio de contenedores: no hay dependencia de un proveedor.
 #
 # Las variables NEXT_PUBLIC_* se incrustan AL CONSTRUIR (son públicas): una imagen por entorno (staging y producción).

@@ -104,7 +104,7 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
         <ul className="mt-6 panel-list">
           <Row label="Plan">{ent.plan ? (PLAN_NAME[ent.plan] ?? ent.plan) : "Sin datos"}</Row>
           {ent.billingCycle ? <Row label="Facturación">{CYCLE_LABEL[ent.billingCycle] ?? ent.billingCycle}</Row> : null}
-          <Row label="Estado">{ent.suspendedManually ? "Suspendida por UcoMenu" : STATE_LABEL[ent.state]}</Row>
+          <Row label="Estado">{ent.suspendedManually ? "Suspendida por UcoMenú" : STATE_LABEL[ent.state]}</Row>
           {ent.trialStatus && ent.trialStatus !== "none" ? (
             <Row label="Prueba gratuita">
               {TRIAL_STATUS_LABEL[ent.trialStatus]}
@@ -129,7 +129,7 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
       {quote ? <PaySection slug={membership.org.slug} quote={quote} returned={query.pago} /> : null}
 
       <p className="mt-8 max-w-prose leading-relaxed text-muted">
-        {payOnline ? "Para cambiar de plan, contactá a UcoMenu." : "Para cambiar de plan o registrar un pago, contactá a UcoMenu."}
+        {payOnline ? "Para cambiar de plan, contactá a UcoMenú." : "Para cambiar de plan o registrar un pago, contactá a UcoMenú."}
       </p>
 
       <PaymentsSection page={account.payments} more={account.payments?.next ? moreHref("pagos", account.payments.next) : null} first={!before.payments} />
@@ -190,7 +190,7 @@ function HistorySection({ page, more, first }: { page: Page<HistoryRow>; more: s
       <h2 id="historial-titulo" className="font-display text-3xl leading-tight">
         Historial de cambios de la cuenta
       </h2>
-      <p className="mt-1 max-w-prose text-base text-muted">Los cambios que hizo el equipo de UcoMenu en tu cuenta.</p>
+      <p className="mt-1 max-w-prose text-base text-muted">Los cambios que hizo el equipo de UcoMenú en tu cuenta.</p>
       {page === null ? (
         <p role="status" className="mt-3 max-w-prose text-base text-muted" data-testid="historial-error">
           No pudimos leer el historial. Probá de nuevo en unos minutos.
@@ -209,7 +209,7 @@ function HistorySection({ page, more, first }: { page: Page<HistoryRow>; more: s
                   <span className="font-medium">{title}</span>
                   {lines.length ? ` · ${lines.join(" · ")}` : ""}
                 </p>
-                <p className="mt-1 text-sm text-muted">{formatDateTime(row.createdAt)} · Equipo de UcoMenu</p>
+                <p className="mt-1 text-sm text-muted">{formatDateTime(row.createdAt)} · Equipo de UcoMenú</p>
               </li>
             );
           })}

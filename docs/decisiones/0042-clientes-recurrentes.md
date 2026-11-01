@@ -20,6 +20,6 @@ El usuario quiere reconocer a clientes que vuelven, recordar preferencias y prep
 - **Identidad global entre locales** — expone datos entre organizaciones; contradice el invariante central.
 
 ## Consecuencias
-- Bloqueado hasta revisar con un abogado el texto de consentimiento, el rol de UcoMenu como encargado del tratamiento y la inscripción de la base ante la AAIP por parte del local.
+- Bloqueado hasta revisar con un abogado el texto de consentimiento, el rol de UcoMenú como encargado del tratamiento y la inscripción de la base ante la AAIP por parte del local.
 - Nivel C: aislamiento entre organizaciones, enmascarado y baja probados en RLS.
 - El teléfono identifica, no autentica: alguien podría dar un número ajeno; el impacto es acotado porque solo el personal opera.

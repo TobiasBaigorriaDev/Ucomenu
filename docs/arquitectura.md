@@ -1,4 +1,4 @@
-# Arquitectura — UcoMenu
+# Arquitectura — UcoMenú
 
 > Diseño **acordado pero todavía no implementado**: el repo no tiene código de aplicación. Cuando exista, contrastar este documento con la implementación y registrar las desviaciones. Los motivos de cada decisión están en `docs/decisiones/`.
 
@@ -166,7 +166,7 @@ Carta pública (/m/… o /t/…)
 ### Wallet y recordatorio por cercanía (fase 3)
 ```
 Alta del socio → loyalty_member + loyalty_card
-  ├─ Apple: el servidor arma y firma el .pkpass (tipo storeCard) con el certificado de UcoMenu
+  ├─ Apple: el servidor arma y firma el .pkpass (tipo storeCard) con el certificado de UcoMenú
   │    · locations (hasta 10: sucursal de alta + «Principales» si hay más de 10) + relevantText  → cercanía en pantalla de bloqueo
   │    · webServiceURL + authenticationToken           → el pase se puede actualizar
   └─ Google: LoyaltyClass por programa + LoyaltyObject por tarjeta; enlace «Agregar a Google Wallet» con JWT firmado
@@ -177,9 +177,9 @@ Sello (el personal escanea el QR del pase en /sala)
        ├─ Apple: push vacío por APNs → el teléfono pide el pase actualizado al web service
        └─ Google: PATCH del LoyaltyObject por la API REST
 ```
-- **UcoMenu es el único emisor** (un identificador de tipo de pase en Apple y una cuenta de emisor en Google) para todos los tenants; la marca del local va en el contenido del pase.
+- **UcoMenú es el único emisor** (un identificador de tipo de pase en Apple y una cuenta de emisor en Google) para todos los tenants; la marca del local va en el contenido del pase.
 - **Web service de Apple Wallet** a implementar: registrar y dar de baja dispositivos, listar pases modificados, entregar la última versión del pase y recibir logs.
-- **La cercanía la resuelve el sistema operativo** con las coordenadas incluidas en el pase: UcoMenu **no rastrea** la ubicación de nadie ni necesita un servicio de geolocalización propio. Cambiar las coordenadas de una sucursal obliga a actualizar los pases emitidos.
+- **La cercanía la resuelve el sistema operativo** con las coordenadas incluidas en el pase: UcoMenú **no rastrea** la ubicación de nadie ni necesita un servicio de geolocalización propio. Cambiar las coordenadas de una sucursal obliga a actualizar los pases emitidos.
 - La firma de pases usa criptografía de Node: esas rutas corren en runtime Node, no Edge.
 - **Secretos** (certificado y clave de Apple, clave APNs, cuenta de servicio de Google): solo en el gestor de secretos del hosting. Nunca en Git ni en la base.
 - Requisitos externos previos: Apple Developer Program (pago anual) y alta como emisor en Google Wallet con aprobación para producción.
@@ -189,7 +189,7 @@ Sello (el personal escanea el QR del pase en /sala)
 - **Abuso del llamado** con la foto de un QR desde fuera del local, o con una pestaña que quedó abierta. Mitigación: cooldown, un pendiente por tipo, límite por IP, silenciar mesa y regenerar QR; **ticket de visita de 3 horas** validado por la *server action* (implementado) y antigüedad del escaneo en la tarjeta de la sala. No se valida ubicación del comensal (decisión: ni GPS ni IP del Wi-Fi); recargar la URL renueva el ticket.
 - **Entrega en tiempo real no garantizada.** Mitigación: recarga al reconectar y sondeo de respaldo.
 - **Panel de sala en un celular en segundo plano** puede no sonar. Limitación del navegador; con el aviso por Web Push (ADR 0020) llega igual en Android y escritorio (en Windows, mientras Chrome/Edge sigan en ejecución); en iPhone y iPad (iOS 16.4 o superior) llega si la sala está instalada en la pantalla de inicio (manifiesto `public/sala.webmanifest`; ficha `aviso-push-iphone`).
-- **Peso y costo del video** (fase 2): datos móviles del comensal y transferencia y almacenamiento de UcoMenu. Mitigación: 30 s y 50 MB por video, cupo de 10 publicados, carga bajo demanda, póster previo y el spike de hosting con costo por local.
+- **Peso y costo del video** (fase 2): datos móviles del comensal y transferencia y almacenamiento de UcoMenú. Mitigación: 30 s y 50 MB por video, cupo de 10 publicados, carga bajo demanda, póster previo y el spike de hosting con costo por local.
 - **Abuso de comentarios y likes** (fase 2): solo desde la mesa con ticket de visita, límite por cliente, y comentarios sin publicar hasta que el local los aprueba.
 - **Cercanía de Wallet no garantizada ni medible**, máximo 10 ubicaciones por pase. Limitación de plataforma: hay que comunicarla al vender Premium.
 - **Vencimiento anual del certificado de Apple:** si vence, los pases dejan de actualizarse. Requiere recordatorio operativo.

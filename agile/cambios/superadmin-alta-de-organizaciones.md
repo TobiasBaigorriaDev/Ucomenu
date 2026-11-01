@@ -3,7 +3,7 @@ Estado: integrado a `main` (squash, 2026-10-15; sin subir a GitHub)
 Nivel: C (permisos: nace un rol de plataforma; dinero: asigna plan y vigencia; datos: crea cuentas y un registro de auditoría que no se borra)
 
 ## Objetivo
-Que una persona del equipo de UcoMenu (el **SuperAdmin**) pueda, desde `/admin`, **dar de alta una organización** con su **Dueño** inicial y su **plan**, y que quede un **registro inmutable de quién lo hizo y qué se cambió**. Hoy esto solo se hace por script local (`pnpm dev:crear-dueno`) o con `service_role` a mano, sin rastro. Es el primer pedazo del ítem «SuperAdmin» del tablero; el resto (cambiar/suspender plan, pagos, borrado) va en incrementos propios.
+Que una persona del equipo de UcoMenú (el **SuperAdmin**) pueda, desde `/admin`, **dar de alta una organización** con su **Dueño** inicial y su **plan**, y que quede un **registro inmutable de quién lo hizo y qué se cambió**. Hoy esto solo se hace por script local (`pnpm dev:crear-dueno`) o con `service_role` a mano, sin rastro. Es el primer pedazo del ítem «SuperAdmin» del tablero; el resto (cambiar/suspender plan, pagos, borrado) va en incrementos propios.
 
 ## Decisiones tomadas por mí — **confirmadas por el usuario el 2026-10-15**
 1. **Dueño inicial = cuenta nueva** con contraseña temporal (misma regla que el alta de personal: ≥ 10 caracteres, se la pasa el SuperAdmin a la persona). Si el email **ya tiene cuenta**, el alta se rechaza con un mensaje claro (el SuperAdmin es de confianza, así que sí se le dice) y **no se toca esa cuenta**. «Sumar una cuenta existente como Dueño de otra organización» queda como ítem aparte.
@@ -12,7 +12,7 @@ Que una persona del equipo de UcoMenu (el **SuperAdmin**) pueda, desde `/admin`,
 4. **Sin sucursal inicial** *(superado el 2026-10-16: el alta ya crea la primera sucursal, ver `alta-con-primera-sucursal.md`)*. La primera sucursal, la primera carta y los QR son el ítem «Alta guiada del dueño» (el panel todavía no tiene gestión de sucursales). Hasta entonces la carta pública de la organización nueva da 404 (no hay `/m/{org}/{sucursal}`) y el Dueño entra a un panel vacío.
 5. **`platform_admins` se alimenta solo por SQL del operador** (nadie lo escribe por la API ni desde la app). No hay pantalla para nombrar SuperAdmins.
 6. **Quién lee la auditoría: solo los SuperAdmin.** La arquitectura prevé que el Dueño lea la de su organización; queda para cuando haya algo que mostrarle (cambios de plan, pagos).
-7. **El email del Dueño no se guarda en el registro** (es un dato personal en una tabla que no se puede borrar): solo su `user_id`. El del actor (personal de UcoMenu) sí se guarda como instantánea, para que el registro siga siendo legible aunque esa cuenta se dé de baja.
+7. **El email del Dueño no se guarda en el registro** (es un dato personal en una tabla que no se puede borrar): solo su `user_id`. El del actor (personal de UcoMenú) sí se guarda como instantánea, para que el registro siga siendo legible aunque esa cuenta se dé de baja.
 
 ## Comportamiento y aceptación
 - [ ] Dado un SuperAdmin con sesión, cuando completa nombre, slug, email y contraseña temporal del Dueño, plan, ciclo y fecha, entonces existe la organización (activa), una cuenta de Auth con ese email, una membresía `owner`, una suscripción con ese plan/ciclo/fecha (sin `trial_ends_at`) y **una fila de auditoría** con el actor, la acción `organization.created`, la organización y el «después».

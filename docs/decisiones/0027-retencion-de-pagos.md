@@ -4,7 +4,7 @@
 - Fecha: 2026-10-20
 
 ## Contexto
-`payments` (ADR 0013) y `payment_voids` (ADR 0024) son los cobros de UcoMenu: plan, ciclo, monto, moneda, medio, referencia de operación (sin datos personales) y quién los registró. Solo se agregan y tenían `ON DELETE RESTRICT` hacia la organización y la suscripción, de modo que una organización con pagos no se podía borrar. A diferencia del historial de precios (ADR 0026), **no son datos del cliente: son la contabilidad de UcoMenu**, y borrarlos junto con la organización destruiría el registro de lo que se cobró. Había que decidir su retención para desbloquear el borrado de organizaciones.
+`payments` (ADR 0013) y `payment_voids` (ADR 0024) son los cobros de UcoMenú: plan, ciclo, monto, moneda, medio, referencia de operación (sin datos personales) y quién los registró. Solo se agregan y tenían `ON DELETE RESTRICT` hacia la organización y la suscripción, de modo que una organización con pagos no se podía borrar. A diferencia del historial de precios (ADR 0026), **no son datos del cliente: son la contabilidad de UcoMenú**, y borrarlos junto con la organización destruiría el registro de lo que se cobró. Había que decidir su retención para desbloquear el borrado de organizaciones.
 
 ## Decisión
 1. **Sobreviven al borrado de la organización.** Se quitan las cuatro claves foráneas hacia `organizations` y `subscriptions` (en `payments` y en `payment_voids`), como ya hace `audit_log`. `organization_id` y `subscription_id` quedan como ids sin clave foránea. Se conserva `payment_voids.payment_id → payments`: una anulación nunca queda sin su pago. Las ids las escribe solo la función que registra o anula, desde la suscripción bloqueada, y los UUID no se reutilizan.

@@ -80,7 +80,7 @@ export default async function AnalyticsPage({ params, searchParams }: PageProps<
         </p>
       ) : !hasAnalytics ? (
         <p className="panel-cell mt-6 max-w-prose text-base" data-testid="analitica-no-incluida">
-          La analítica está incluida desde el plan Pro. Para sumarla, contactá a UcoMenu: podés ver tu plan en{" "}
+          La analítica está incluida desde el plan Pro. Para sumarla, contactá a UcoMenú: podés ver tu plan en{" "}
           <Link href={`/panel/${membership.org.slug}/suscripcion`} className="font-medium underline underline-offset-4">
             Suscripción
           </Link>

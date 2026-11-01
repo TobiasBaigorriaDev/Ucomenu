@@ -6,7 +6,7 @@
 --
 -- Decisiones:
 --  * `payments` y `audit_log` NO reciben política de lectura para el Dueño: siguen siendo de SuperAdmin. Contienen datos que
---    el cliente no debe ver (quién del equipo de UcoMenu actuó, motivos escritos a mano, ids de usuarios de terceros).
+--    el cliente no debe ver (quién del equipo de UcoMenú actuó, motivos escritos a mano, ids de usuarios de terceros).
 --    En su lugar, dos funciones SECURITY DEFINER entregan una proyección elegida columna por columna y acción por acción.
 --  * Solo un Dueño ACTUAL de la organización recibe filas; cualquier otra identidad (Staff, Dueño de otro local, sin rol,
 --    anon, SuperAdmin sin membresía) recibe cero filas, igual que con un local inexistente.
@@ -68,7 +68,7 @@ comment on function public.owner_payments(uuid, integer, timestamptz, uuid) is
 -- Historial de cambios de la cuenta
 -- ---------------------------------------------------------------------------
 -- El detalle se arma clave por clave desde `before`/`after`: nunca sale el JSON crudo ni actor_id, actor_email, el motivo,
--- owner_user_id, el nombre o el slug de otras organizaciones. El autor siempre es «Equipo de UcoMenu» (lo pone la pantalla).
+-- owner_user_id, el nombre o el slug de otras organizaciones. El autor siempre es «Equipo de UcoMenú» (lo pone la pantalla).
 create function public.owner_account_history(
   p_org uuid,
   p_limit integer default 25,

@@ -93,7 +93,7 @@ export function paymentTitle(intent: Pick<PaymentIntent, "planCode" | "billingCy
   const plan = PLAN_NAME[intent.planCode] ?? intent.planCode;
   const cycle = intent.billingCycle === "yearly" ? "anual" : "mensual";
   const extra = intent.extraBranches > 0 ? ` + ${intent.extraBranches} ${intent.extraBranches === 1 ? "sucursal adicional" : "sucursales adicionales"}` : "";
-  return `UcoMenu · Plan ${plan} (${cycle})${extra}`;
+  return `UcoMenú · Plan ${plan} (${cycle})${extra}`;
 }
 
 /**

@@ -140,10 +140,10 @@ describe("historial", () => {
   it.each([
     ["organization.created", { plan: "pro", billing_cycle: "yearly", period_end: "2027-01-10T12:00:00+00:00" }, "Cuenta creada", ["Plan Pro, anual", "Vigente hasta el 10 de enero de 2027"]],
     ["subscription.plan_changed", { from_plan: "basic", from_billing_cycle: "monthly", plan: "premium", billing_cycle: "yearly" }, "Cambio de plan", ["De Básico, mensual a Premium, anual"]],
-    ["subscription.suspended", {}, "Cuenta suspendida por UcoMenu", []],
-    ["subscription.reactivated", { state: "active" }, "Cuenta reactivada por UcoMenu", ["La cuenta quedó al día"]],
-    ["subscription.reactivated", { state: "grace" }, "Cuenta reactivada por UcoMenu", ["Sigue vencida, en período de gracia"]],
-    ["subscription.reactivated", { state: "algo-raro" }, "Cuenta reactivada por UcoMenu", []],
+    ["subscription.suspended", {}, "Cuenta suspendida por UcoMenú", []],
+    ["subscription.reactivated", { state: "active" }, "Cuenta reactivada por UcoMenú", ["La cuenta quedó al día"]],
+    ["subscription.reactivated", { state: "grace" }, "Cuenta reactivada por UcoMenú", ["Sigue vencida, en período de gracia"]],
+    ["subscription.reactivated", { state: "algo-raro" }, "Cuenta reactivada por UcoMenú", []],
     ["owner.added", { promoted: false }, "Se sumó una persona como Dueño", []],
     ["owner.added", { promoted: true }, "Una persona del equipo pasó a Dueño", []],
   ])("%s", (accion, detalle, titulo, lineas) => {
@@ -177,7 +177,7 @@ describe("add-ons y reactivación (ficha addons-y-baja-de-organizaciones)", () =
     const { title, lines } = describeHistory(
       fila("addon.activated", { addon: "webar", extra_packs: 2, ends_at: "2026-12-01T02:59:59+00:00", reason: "nota interna", actor_email: "equipo@ucomenu.test" }),
     );
-    expect(title).toBe("WebAR activado por UcoMenu");
+    expect(title).toBe("WebAR activado por UcoMenú");
     expect(lines).toEqual(["2 packs extra", "Vigente hasta el 30 de noviembre de 2026"]);
     expect(JSON.stringify({ title, lines })).not.toMatch(/nota interna|equipo@/);
   });
@@ -189,23 +189,23 @@ describe("add-ons y reactivación (ficha addons-y-baja-de-organizaciones)", () =
 
   it("«add-on finalizado» dice cuándo terminó", () => {
     const { title, lines } = describeHistory(fila("addon.ended", { addon: "webar", ends_at: "2026-10-19T14:30:00+00:00" }));
-    expect(title).toBe("WebAR finalizado por UcoMenu");
+    expect(title).toBe("WebAR finalizado por UcoMenú");
     expect(lines).toEqual(["Finalizó el 19 de octubre de 2026"]);
   });
 
   it("un add-on desconocido se muestra con su código y la reactivación va sin detalle", () => {
-    expect(describeHistory(fila("addon.ended", { addon: "otro" })).title).toBe("otro finalizado por UcoMenu");
-    expect(describeHistory(fila("organization.reactivated", { reason: "x" }))).toEqual({ title: "Local reactivado por UcoMenu", lines: [] });
+    expect(describeHistory(fila("addon.ended", { addon: "otro" })).title).toBe("otro finalizado por UcoMenú");
+    expect(describeHistory(fila("organization.reactivated", { reason: "x" }))).toEqual({ title: "Local reactivado por UcoMenú", lines: [] });
   });
 });
 
 describe("sucursales adicionales en el historial (ficha sucursal-adicional)", () => {
   it("se cuentan sucursales, no «packs», y no se muestra fin ni motivo", () => {
     const activado = describeHistory(fila("addon.activated", { addon: "extra_branch", extra_packs: 1, ends_at: null, reason: "nota interna" }));
-    expect(activado).toEqual({ title: "Sucursales adicionales activadas por UcoMenu", lines: ["1 sucursal adicional"] });
+    expect(activado).toEqual({ title: "Sucursales adicionales activadas por UcoMenú", lines: ["1 sucursal adicional"] });
     const cambiado = describeHistory(fila("addon.changed", { addon: "extra_branch", extra_packs: 3 }));
-    expect(cambiado).toEqual({ title: "Sucursales adicionales modificadas por UcoMenu", lines: ["3 sucursales adicionales"] });
+    expect(cambiado).toEqual({ title: "Sucursales adicionales modificadas por UcoMenú", lines: ["3 sucursales adicionales"] });
     const finalizado = describeHistory(fila("addon.ended", { addon: "extra_branch", ends_at: "2026-10-19T14:30:00+00:00" }));
-    expect(finalizado).toEqual({ title: "Sucursales adicionales finalizadas por UcoMenu", lines: ["Finalizaron el 19 de octubre de 2026"] });
+    expect(finalizado).toEqual({ title: "Sucursales adicionales finalizadas por UcoMenú", lines: ["Finalizaron el 19 de octubre de 2026"] });
   });
 });

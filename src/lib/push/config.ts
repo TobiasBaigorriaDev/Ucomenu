@@ -1,5 +1,5 @@
 /**
- * Claves VAPID del servidor (identifican a UcoMenu ante los servicios de push). Sin las tres variables el aviso con la
+ * Claves VAPID del servidor (identifican a UcoMenú ante los servicios de push). Sin las tres variables el aviso con la
  * pestaña cerrada queda apagado y todo lo demás sigue igual (la sala sondea como siempre).
  *  - VAPID_PUBLIC_KEY: pública; viaja al navegador por la página de la sala (en tiempo de ejecución, no se incrusta al construir).
  *  - VAPID_PRIVATE_KEY: SECRETO de servidor. Nunca a Git, a la imagen ni a una variable NEXT_PUBLIC_*.

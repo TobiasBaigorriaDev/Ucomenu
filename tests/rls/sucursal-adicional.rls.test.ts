@@ -395,8 +395,8 @@ describe("lo que ve y puede cada uno", () => {
     expect(error).toBeNull();
     const filas = parseHistory(data)!;
     const titulos = filas.map((f) => describeHistory(f).title);
-    expect(titulos).toContain("Sucursales adicionales activadas por UcoMenu");
-    expect(titulos).toContain("Sucursales adicionales finalizadas por UcoMenu");
+    expect(titulos).toContain("Sucursales adicionales activadas por UcoMenú");
+    expect(titulos).toContain("Sucursales adicionales finalizadas por UcoMenú");
     const texto = JSON.stringify(data);
     expect(texto).not.toContain("motivo interno");
     expect(texto).not.toContain("deactivated_branches");

@@ -157,7 +157,7 @@ describe("«Pagar»", () => {
     expect(db.startIntent).toHaveBeenCalledWith("o", "u");
     expect(mp.createPreference).toHaveBeenCalledWith({
       intentId: INTENT,
-      title: "UcoMenu · Plan Pro (mensual)",
+      title: "UcoMenú · Plan Pro (mensual)",
       amountCents: 2_900_000,
       currency: "ARS",
       expiresAt: new Date("2026-11-05T12:00:00.000Z"),
@@ -215,7 +215,7 @@ describe("«Pagar»", () => {
   });
 
   it("el título cuenta el plan, el ciclo y las sucursales adicionales", () => {
-    expect(paymentTitle({ planCode: "pro", billingCycle: "yearly", extraBranches: 2 })).toBe("UcoMenu · Plan Pro (anual) + 2 sucursales adicionales");
-    expect(paymentTitle({ planCode: "basic", billingCycle: "monthly", extraBranches: 1 })).toBe("UcoMenu · Plan Básico (mensual) + 1 sucursal adicional");
+    expect(paymentTitle({ planCode: "pro", billingCycle: "yearly", extraBranches: 2 })).toBe("UcoMenú · Plan Pro (anual) + 2 sucursales adicionales");
+    expect(paymentTitle({ planCode: "basic", billingCycle: "monthly", extraBranches: 1 })).toBe("UcoMenú · Plan Básico (mensual) + 1 sucursal adicional");
   });
 });

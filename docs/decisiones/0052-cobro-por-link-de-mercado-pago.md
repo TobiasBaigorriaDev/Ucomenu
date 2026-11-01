@@ -29,7 +29,7 @@ La mora ya se deriva de fechas (ADR 0006): registrar un pago es mover `current_p
 - Dos secretos nuevos por entorno (token de acceso y secreto del webhook; en staging, credenciales de **prueba**). Un token filtrado permite crear links y leer pagos; no mover dinero. Se guardan solo como secretos de Fly y nunca en Git, memoria ni prompts.
 - La ruta del webhook es **pública** (sin sesión): su única defensa es la firma y la verificación contra la API.
 - Un **contracargo** o reembolso posterior no quita la vigencia automáticamente: hay ventana entre el cobro revertido y que el SuperAdmin lo note.
-- La comisión de Mercado Pago la absorbe UcoMenu: el precio de lista no cambia.
+- La comisión de Mercado Pago la absorbe UcoMenú: el precio de lista no cambia.
 - Un pago se registra con un actor «sistema» fijo en `payments` y `audit_log`; el historial del Dueño lo muestra como un pago más.
 - Se agrega una tabla (`payment_intents`) con retención como `payments` (ADR 0027); no guarda datos personales del pagador.
 - Una intención abierta por suscripción: «Pagar» dos veces reutiliza el link vigente.

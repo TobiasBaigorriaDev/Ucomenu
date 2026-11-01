@@ -1,6 +1,6 @@
 # Operación: configuración, respaldos y criterios para subir de plan
 
-Guía para operar UcoMenu al empezar (estrategia del ADR 0015). La evidencia de staging y de recuperación vive en la [ficha de salida](../agile/cambios/salida-a-produccion.md). Los pasos para publicar están en `docs/produccion.md`. Los límites y precios de abajo se leyeron en las páginas oficiales el **2026-10-16** y cambian: volver a mirarlos antes de contratar.
+Guía para operar UcoMenú al empezar (estrategia del ADR 0015). La evidencia de staging y de recuperación vive en la [ficha de salida](../agile/cambios/salida-a-produccion.md). Los pasos para publicar están en `docs/produccion.md`. Los límites y precios de abajo se leyeron en las páginas oficiales el **2026-10-16** y cambian: volver a mirarlos antes de contratar.
 
 ## 1. Entornos y configuración
 

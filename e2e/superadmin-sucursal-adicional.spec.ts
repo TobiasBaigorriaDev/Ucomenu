@@ -54,7 +54,7 @@ test.describe("sucursal adicional", () => {
       const dueno = await browser.newPage();
       await login(dueno, t.owner.email, t.owner.password, `/panel/${t.slug}/suscripcion`);
       await expect(dueno.getByTestId("suscripcion-sucursales")).toHaveText("2 de 3 (2 del plan + 1 adicional · ARS 12.000/mes)");
-      await expect(dueno.getByText("Sucursales adicionales activadas por UcoMenu")).toBeVisible();
+      await expect(dueno.getByText("Sucursales adicionales activadas por UcoMenú")).toBeVisible();
       await expect(dueno.getByText("Contrató una sucursal")).toHaveCount(0);
 
       // Con 3 activas, quitar la adicional exige elegir cuál se desactiva.
@@ -94,7 +94,7 @@ test.describe("sucursal adicional", () => {
       await conPlan(pro.orgId, "pro");
       await sucursal(pro.orgId, "norte");
       await login(page, pro.owner.email, pro.owner.password, `/panel/${pro.slug}/sucursales`);
-      await expect(page.getByTestId("aviso-tope")).toContainText("Pedí una sucursal adicional a UcoMenu (ARS 12.000/mes cada una)");
+      await expect(page.getByTestId("aviso-tope")).toContainText("Pedí una sucursal adicional a UcoMenú (ARS 12.000/mes cada una)");
       await expectNoHorizontalOverflow(page);
 
       await conPlan(basico.orgId, "basic");

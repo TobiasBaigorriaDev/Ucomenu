@@ -79,7 +79,7 @@ export function PrimerosPasos({ guide, slug, dismissed = false }: { guide: Guide
       <p className="mt-1 max-w-prose text-base text-ink/80">Tres pasos para que tus clientes vean tu carta desde la mesa.</p>
       <div className="mt-5" data-testid="tutorial-primeros-pasos">
         <h3 id="tutorial-titulo" className="text-lg font-medium">Mirá cómo empezar</h3>
-        <p className="mt-1 text-base text-ink/80">Un recorrido de menos de 3 minutos para dar tus primeros pasos en UcoMenu.</p>
+        <p className="mt-1 text-base text-ink/80">Un recorrido de menos de 3 minutos para dar tus primeros pasos en UcoMenú.</p>
         <video
           controls
           playsInline

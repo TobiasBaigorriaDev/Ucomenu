@@ -1,12 +1,12 @@
 # Salida a producción: procedimiento
 
-Procedimiento ordenado para publicar UcoMenu. La estrategia (planes, hosting, staging, monitoreo) está decidida en el ADR 0015; los límites, los respaldos y los criterios para subir de plan, en `docs/operacion.md`. Cada paso marca quién lo aprueba. **Staging ya se ejecutó (2026-10-16, ficha `agile/cambios/salida-a-produccion.md`); producción no.** Todo lo que toca un servicio remoto, una compra o un dominio necesita aprobación explícita del usuario (`AGENTS.md`, «Límites de autonomía»). Lo único verificable sin salir de la máquina es `pnpm prod:check` y el respaldo local.
+Procedimiento ordenado para publicar UcoMenú. La estrategia (planes, hosting, staging, monitoreo) está decidida en el ADR 0015; los límites, los respaldos y los criterios para subir de plan, en `docs/operacion.md`. Cada paso marca quién lo aprueba. **Staging ya se ejecutó (2026-10-16, ficha `agile/cambios/salida-a-produccion.md`); producción no.** Todo lo que toca un servicio remoto, una compra o un dominio necesita aprobación explícita del usuario (`AGENTS.md`, «Límites de autonomía»). Lo único verificable sin salir de la máquina es `pnpm prod:check` y el respaldo local.
 
 El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/operacion.md` sección 5); la imagen corre igual en cualquier servicio de contenedores. Los comandos de Fly de abajo se ejecutaron y validaron en staging; producción es igual con `fly.toml`.
 
 ## 0. Antes de empezar (el usuario)
 - **Hosting:** decidido (Fly.io, contenedor en São Paulo). La cuenta y `flyctl` ya existen (staging).
-- **Un proyecto de Supabase por entorno, no por cliente:** UcoMenu es multi-inquilino (organizaciones y sucursales en las mismas tablas, aisladas por RLS). Cada negocio nuevo se da de alta desde `/admin`; no se crea ningún proyecto. En total: staging y producción.
+- **Un proyecto de Supabase por entorno, no por cliente:** UcoMenú es multi-inquilino (organizaciones y sucursales en las mismas tablas, aisladas por RLS). Cada negocio nuevo se da de alta desde `/admin`; no se crea ningún proyecto. En total: staging y producción.
 - **Dominio:** **`ucomenu.com`, confirmado como definitivo por el usuario (2026-10-26)**; ya es suyo y su DNS está en Cloudflare. Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción lo usa como `NEXT_PUBLIC_SITE_URL=https://ucomenu.com`; hay que apuntarlo (sección 5) **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
 - **Legal** (fichas `agile/cambios/textos-legales.md` e `informacion-alimentaria-y-textos-legales.md`): revisión de un abogado argentino de `/terminos`, `/privacidad` y `/alergenos`, y las decisiones del usuario que hoy aparecen como `[Pendiente de definir antes del lanzamiento: …]` en esas páginas. Razón social, CUIT y domicilio se completan en `LEGAL_ENTITY` (`src/lib/legal.ts`). **No publicar mientras alguna página muestre un pendiente.** Estado al 2026-10-31: `/terminos` ya no tiene marcadores propios; en `/privacidad` quedan 5 (plazo de pedidos y de pagos con un contador, registro de auditoría, cifrado de las copias y transferencias internacionales) más el responsable y el correo de contacto. Hay un test E2E que exige que ya no figuren los resueltos.
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
@@ -22,7 +22,7 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 Es el ensayo general: mismo procedimiento que producción, con datos ficticios y en otra organización para que siga gratis cuando producción pase a Pro (ADR 0015).
 
 **En el panel (supabase.com/dashboard)**
-1. **Organización nueva:** *New organization*, nombre `UcoMenu Staging`, plan **Free**. Tiene que ser distinta de la de producción.
+1. **Organización nueva:** *New organization*, nombre `UcoMenú Staging`, plan **Free**. Tiene que ser distinta de la de producción.
 2. **Proyecto nuevo** en esa organización: nombre `ucomenu-staging`, región **South America (São Paulo)**, plan Free. Generar una contraseña de base larga y guardarla en un gestor de contraseñas (no en el repositorio ni en el chat).
 3. Cuando termine de crearse, anotar (también fuera del repositorio): la **Reference ID** (Project Settings → General), la **clave pública** (*publishable*) y la **clave secreta** (*secret*) (Project Settings → API Keys) y la URL `https://<ref>.supabase.co`.
 4. **Auth** (Authentication): apagar *Allow new users to sign up* y poner la contraseña mínima en 10. No hace falta configurar correo: las cuentas las crea el servidor.

@@ -47,7 +47,7 @@ test("los términos fijan las reglas de los comentarios para comensales y locale
 test("los términos no eximen de forma absoluta ni dan prioridad al personal sobre la carta", async ({ page }) => {
   await page.goto("/terminos");
   const body = page.locator("main");
-  // Antes: «UcoMenu no es responsable por … la información de alérgenos» y «vale lo que te informe el personal».
+  // Antes: «UcoMenú no es responsable por … la información de alérgenos» y «vale lo que te informe el personal».
   await expect(body).not.toContainText("no es responsable por el contenido");
   await expect(body).not.toContainText("información de alérgenos que el local brinde");
   await expect(body).not.toContainText("vale lo que te informe el personal");

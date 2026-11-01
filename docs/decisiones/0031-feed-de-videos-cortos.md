@@ -8,7 +8,7 @@
 > El modelo de producto, de negocio (plan Premium, interacción desde la mesa, aprobación previa, límites) y el **almacenamiento y reproducción en Mux Video** están **aceptados por el usuario** (2026-10-21).
 
 ## Contexto
-La fase 2 iba a ser un add-on de realidad aumentada (ADR 0002). El usuario la descartó por no ser buena idea para el producto: cada plato exigía producir y validar dos modelos 3D a escala real, el costo era de UcoMenu y en iOS la experiencia ocurría fuera de la página. Lo que se busca en cambio es que la carta muestre **el local vivo** (ambiente, preparación y presentación de los platos) en un formato que el comensal ya conoce, y que genere interacción.
+La fase 2 iba a ser un add-on de realidad aumentada (ADR 0002). El usuario la descartó por no ser buena idea para el producto: cada plato exigía producir y validar dos modelos 3D a escala real, el costo era de UcoMenú y en iOS la experiencia ocurría fuera de la página. Lo que se busca en cambio es que la carta muestre **el local vivo** (ambiente, preparación y presentación de los platos) en un formato que el comensal ya conoce, y que genere interacción.
 
 El comensal es anónimo y sin registro; la única escritura pública que existe hoy (el llamado al mozo) pasa por una función de base con el ticket de visita de la mesa (ADR 0010). Un comentario es contenido de un tercero que se publica en la carta del local.
 
@@ -31,7 +31,7 @@ El comensal es anónimo y sin registro; la única escritura pública que existe 
 - **Supabase Storage con MP4 directo, FFmpeg en Fly.io o Bunny / Cloudflare Stream**: se descartó **Supabase Storage con MP4 directo** porque los iPhone graban por defecto en `.mov` HEVC/10-bit que falla con pantalla negra en muchos Android Chrome, un MP4 sin el átomo `moov` al inicio bloquea el arranque en iOS Safari, y videos de hasta 50 MB / 30 s (~13,3 Mbps) traban el 4G del salón y agotan los 5 GB de Supabase Free en ~100 vistas (o consumen 60–300 GB/mes por local en Supabase Pro); se descartó **transcodificar con FFmpeg en Fly.io** porque la máquina de 512 MB de RAM sufriría OOM y saturación de CPU; y frente a **Bunny Stream / Cloudflare Stream** (~USD 1,10–2,05/mes por local), **Mux Video** ofrece plan Free sin tarjeta para staging y USD 20/mes de crédito + 100.000 min/mes gratis en producción.
 
 ## Consecuencias
-- UcoMenu publica contenido de terceros: hace falta una cola de moderación para Dueño y Staff, y actualizar `/terminos` y `/privacidad` antes de producción.
+- UcoMenú publica contenido de terceros: hace falta una cola de moderación para Dueño y Staff, y actualizar `/terminos` y `/privacidad` antes de producción.
 - Con **Mux Video** el tráfico de video no pasa por Supabase Storage ni adelanta la subida a Supabase Pro. Las credenciales de API de Mux (`MUX_TOKEN_ID`, `MUX_TOKEN_SECRET`, `MUX_WEBHOOK_SECRET`) viven solo en el servidor. Borrar un video en el panel debe borrar también el asset en Mux.
 - El feed se carga bajo demanda; no puede penalizar el LCP de la carta (objetivo < 2,5 s en 4G).
 - Las funciones de add-ons de ADR 0025 (`admin_set_addon`, `admin_end_addon`) quedan sin add-ons en el catálogo; se conservan para futuros add-ons.

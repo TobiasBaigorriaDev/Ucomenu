@@ -1,7 +1,7 @@
 {
   "id": "/sala",
-  "name": "UcoMenu · Sala",
-  "short_name": "UcoMenu",
+  "name": "UcoMenú · Sala",
+  "short_name": "UcoMenú",
   "description": "La sala en vivo y el panel de tu local: avisos de llamados de las mesas.",
   "lang": "es-AR",
   "start_url": "/sala",

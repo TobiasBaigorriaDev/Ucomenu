@@ -1,4 +1,4 @@
-/** Marca de UcoMenu: dos rombos, el vivo sobre el profundo (el mismo gesto que los rombos del pie de la carta). */
+/** Marca de UcoMenú: dos rombos, el vivo sobre el profundo (el mismo gesto que los rombos del pie de la carta). */
 export function Mark({ className }: { className?: string }) {
   return (
     <svg aria-hidden viewBox="0 0 28 16" className={className}>

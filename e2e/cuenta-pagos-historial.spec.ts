@@ -77,12 +77,12 @@ test.describe("Suscripción: pagos y historial", () => {
     const cambios = page.getByTestId("cambio");
     await expect(cambios).toHaveCount(4);
     // El más nuevo primero.
-    await expect(cambios.nth(0)).toContainText("Cuenta reactivada por UcoMenu");
-    await expect(cambios.nth(1)).toContainText("Cuenta suspendida por UcoMenu");
+    await expect(cambios.nth(0)).toContainText("Cuenta reactivada por UcoMenú");
+    await expect(cambios.nth(1)).toContainText("Cuenta suspendida por UcoMenú");
     await expect(cambios.nth(2)).toContainText("Cambio de plan");
     await expect(cambios.nth(2)).toContainText("De Pro, mensual a Premium, anual");
     await expect(cambios.nth(3)).toContainText("Pago registrado");
-    for (const c of await cambios.all()) await expect(c).toContainText("Equipo de UcoMenu");
+    for (const c of await cambios.all()) await expect(c).toContainText("Equipo de UcoMenú");
 
     // Lo que no debe verse: el motivo interno, el email de quien actuó, ids.
     const html = await page.content();

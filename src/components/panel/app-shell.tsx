@@ -104,7 +104,7 @@ export function AppShell({ area, org, role, hasSeveralOrgs, fontClass = cartaFon
           ) : (
             <Link href={`/${area}`} className="flex items-center gap-2.5 font-display text-[1.625rem] leading-none text-brand lg:text-[2rem] lg:text-white">
               <Mark className="h-4 w-7 shrink-0 text-brand lg:text-white" />
-              UcoMenu
+              UcoMenú
             </Link>
           )}
           {role ? (

@@ -54,7 +54,7 @@ function pedirAdicional(ent: Entitlements | null): string | null {
     typeof ent?.extraBranchPriceCents === "number" && ent.extraBranchCurrency
       ? ` (${formatMonthlyPrice(ent.extraBranchPriceCents, ent.extraBranchCurrency)}/mes cada una)`
       : "";
-  return `Pedí una sucursal adicional a UcoMenu${precio}`;
+  return `Pedí una sucursal adicional a UcoMenú${precio}`;
 }
 
 /** Mensaje del tope de sucursales. El número sale de `org_entitlements` (los límites viven en la base), nunca del texto del error. */
@@ -66,7 +66,7 @@ export function branchLimitMessage(ent: Entitlements | null): string {
       : "Llegaste al tope de sucursales de tu plan. ";
   const adicional = pedirAdicional(ent);
   if (adicional) return `${incluye}${adicional} o desactivá una.`;
-  return `${incluye}Para sumar otra, desactivá una o contactá a UcoMenu para cambiar de plan.`;
+  return `${incluye}Para sumar otra, desactivá una o contactá a UcoMenú para cambiar de plan.`;
 }
 
 /** Reactivar también ocupa un cupo del plan: mismo número (de `org_entitlements`), otra salida. */
@@ -78,7 +78,7 @@ export function branchReactivateLimitMessage(ent: Entitlements | null): string {
       : "Llegaste al tope de sucursales activas de tu plan. ";
   const adicional = pedirAdicional(ent);
   if (adicional) return `${incluye}${adicional} o desactivá otra para reactivar esta. No se reactivó.`;
-  return `${incluye}Para reactivar esta, desactivá otra o contactá a UcoMenu para cambiar de plan. No se reactivó.`;
+  return `${incluye}Para reactivar esta, desactivá otra o contactá a UcoMenú para cambiar de plan. No se reactivó.`;
 }
 
 export function sucursalesErrorMessage(error: SucursalesError, ent: Entitlements | null): string {

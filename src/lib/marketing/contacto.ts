@@ -3,10 +3,10 @@
  * en los componentes. Ficha: agile/cambios/portada-ucomenu.md.
  */
 
-/** Número de WhatsApp de UcoMenu en formato internacional, sin «+» ni espacios (54 = Argentina, 9 = celular). */
+/** Número de WhatsApp de UcoMenú en formato internacional, sin «+» ni espacios (54 = Argentina, 9 = celular). */
 export const WHATSAPP_NUMERO = "5492622230125";
 
-export const WHATSAPP_MENSAJE = "Hola, quiero probar UcoMenu 14 días gratis con mi local.";
+export const WHATSAPP_MENSAJE = "Hola, quiero probar UcoMenú 14 días gratis con mi local.";
 
 /** Enlace de WhatsApp con el mensaje prellenado. */
 export function whatsappUrl(mensaje: string = WHATSAPP_MENSAJE): string {

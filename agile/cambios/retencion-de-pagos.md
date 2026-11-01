@@ -3,7 +3,7 @@ Estado: **aprobado por el usuario, integrado en `main`, subido a `origin` y desp
 Nivel: C (dinero + eliminación irreversible de registros contables)
 
 ## Objetivo
-Decidir qué pasa con los cobros de UcoMenu cuando se borra una organización y dejar construido el único camino para purgarlos, para desbloquear el borrado definitivo en SuperAdmin. Motivos duraderos: [ADR 0027](../../docs/decisiones/0027-retencion-de-pagos.md).
+Decidir qué pasa con los cobros de UcoMenú cuando se borra una organización y dejar construido el único camino para purgarlos, para desbloquear el borrado definitivo en SuperAdmin. Motivos duraderos: [ADR 0027](../../docs/decisiones/0027-retencion-de-pagos.md).
 
 ## Decisiones
 1. **Política (usuario, 2026-10-20):** los pagos y anulaciones se **conservan** al borrar la organización (sin clave foránea), por **10 años**, y se entrega **ahora** la función de purga por vencimiento.

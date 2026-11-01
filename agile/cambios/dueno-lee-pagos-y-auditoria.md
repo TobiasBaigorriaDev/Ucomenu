@@ -1,14 +1,14 @@
 # Cambio: El Dueño lee los pagos y el historial de cambios de su cuenta
 Estado: integrado a `main` — revisado por Codex (2 rondas, aprobado) y aprobado por el usuario tras verlo en su Chrome local (2026-10-18); la migración se aplicó a staging junto con la de analítica (2026-10-19, aprobado por el usuario)
-Nivel: C (exposición de información —datos de dinero y de operaciones del equipo de UcoMenu hacia el cliente— y autorización: quién lee qué de la facturación)
+Nivel: C (exposición de información —datos de dinero y de operaciones del equipo de UcoMenú hacia el cliente— y autorización: quién lee qué de la facturación)
 
 ## Objetivo
-Que el **Dueño** de un local vea, en `/panel/{slug}/suscripcion`, (1) los **pagos** que UcoMenu registró para su cuenta y (2) el **historial de cambios de su cuenta** (alta, cambios de plan, suspensiones y reactivaciones, pagos registrados, Dueños sumados). Hoy solo lo ven los SuperAdmin y el Dueño tiene que preguntar («El Dueño no ve sus pagos ni la auditoría todavía», ficha `superadmin-planes-pagos`, A8; ADR 0013). El Staff no ve nada de esto (ADR 0006: el plan y los importes son del Dueño).
+Que el **Dueño** de un local vea, en `/panel/{slug}/suscripcion`, (1) los **pagos** que UcoMenú registró para su cuenta y (2) el **historial de cambios de su cuenta** (alta, cambios de plan, suspensiones y reactivaciones, pagos registrados, Dueños sumados). Hoy solo lo ven los SuperAdmin y el Dueño tiene que preguntar («El Dueño no ve sus pagos ni la auditoría todavía», ficha `superadmin-planes-pagos`, A8; ADR 0013). El Staff no ve nada de esto (ADR 0006: el plan y los importes son del Dueño).
 
 ## Decisiones
 - **Por funciones de base con una proyección segura, no por una política sobre las tablas.** `payments` y `audit_log` siguen cerradas a la API para el Dueño (solo SuperAdmin leen). Dos funciones `SECURITY DEFINER`, `owner_payments(p_org, p_limit, p_before)` y `owner_account_history(p_org, p_limit, p_before)`, devuelven **solo** los datos que el cliente puede ver, **solo si quien llama es Dueño actual de esa organización** (`private.is_org_owner`); si no, cero filas (igual que un local inexistente). Es el mismo patrón del historial de precios: la tabla no se abre, se entrega una vista acotada.
 - **Qué ve de los pagos:** día en que se recibió, plan y ciclo de entonces, importe y moneda, medio, referencia, **cuándo se registró** y hasta cuándo cubre **con el vencimiento anterior** («cubre hasta el X (antes vencía el Y)»: no se afirma «desde» una fecha, porque un pago de una cuenta vencida no cubre el hueco). **No** ve quién lo registró (`registered_by`) ni ids internos de usuarios.
-- **Qué ve del historial:** la fecha y un detalle **elegido acción por acción** (no el JSON): alta (plan, ciclo, vence); cambio de plan (de → a); suspensión; reactivación (estado resultante); pago (importe, medio, plan, período cubierto); Dueño sumado (si fue ascenso de alguien que ya era del local). El autor figura siempre como **«Equipo de UcoMenu»**: no se muestra el email de la persona.
+- **Qué ve del historial:** la fecha y un detalle **elegido acción por acción** (no el JSON): alta (plan, ciclo, vence); cambio de plan (de → a); suspensión; reactivación (estado resultante); pago (importe, medio, plan, período cubierto); Dueño sumado (si fue ascenso de alguien que ya era del local). El autor figura siempre como **«Equipo de UcoMenú»**: no se muestra el email de la persona.
 - **Qué NO ve nunca:** `actor_id`, `actor_email`, el **motivo** escrito por el SuperAdmin (puede ser una nota interna), `owner_user_id` ni otros ids o emails de terceros, el `slug`/`name` de otras organizaciones (el detalle «en otros locales» de «Dueño sumado» queda afuera), ni el JSON crudo `before`/`after`.
 - **Lista blanca de acciones:** solo las seis conocidas. Una acción nueva que se agregue a `audit_log` **no** se muestra al Dueño hasta que alguien la sume a propósito a la función.
 - **Referencia del pago: se muestra** (es el número de operación de su propio pago, útil para conciliar). Si el usuario prefiere ocultarla, se quita de la función sin otro cambio.
@@ -42,7 +42,7 @@ Ejecutado el 2026-10-18 sobre la rama `feat/dueno-lee-pagos-auditoria` (base loc
 ## (C) Invariantes
 1. Solo un **Dueño actual** de la organización recibe filas de ESA organización; cualquier otra identidad, cero filas, sin distinguir «no existe» de «no es tuyo».
 2. Las funciones **solo leen**: `payments` y `audit_log` siguen de solo-agregado y cerradas a la API para el Dueño.
-3. La salida es una **lista blanca**: ningún dato de personas del equipo de UcoMenu ni de terceros, ni notas internas, ni otras organizaciones.
+3. La salida es una **lista blanca**: ningún dato de personas del equipo de UcoMenú ni de terceros, ni notas internas, ni otras organizaciones.
 4. Una acción de auditoría nueva queda **oculta** hasta que se la incluya a propósito.
 5. Leer no cambia el estado de la cuenta ni bloquea nada: un fallo de lectura solo vacía esa sección.
 

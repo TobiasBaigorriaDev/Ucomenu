@@ -41,7 +41,7 @@ formas simples o creadas para la demo, sin marcas de terceros.
 | `panel-carta-la-bestia.jpg` | Panel de La Bestia Burger & Bar, pantalla Carta: la categoría Burgers con platos, fotos y precios | captura propia, staging |
 | `menufeed.mp4`, `menufeed-poster.jpg` | Muestra del feed de videos: video mudo de 6 s (H.264, 362 × 812 px, sin pista de audio) y su primer fotograma como imagen de portada | grabación propia del feed, recortada |
 | `og.jpg` | Imagen para compartir (1200 × 630) | captura del hero de la propia portada |
-| `presentacion.mp4` | Presentación horizontal narrada de UcoMenu | copia de `video/entregas/ucomenu-presentacion-youtube-narrado.mp4`; origen y licencias en `video/README.md` |
+| `presentacion.mp4` | Presentación horizontal narrada de UcoMenú | copia de `video/entregas/ucomenu-presentacion-youtube-narrado.mp4`; origen y licencias en `video/README.md` |
 | `presentacion-poster.jpg`, `presentacion-es.vtt` | Fotograma y subtítulos de la presentación | fotograma a los 12 s y guion de `video/voz/guion.json` |
 
 **Video del feed (`menufeed.mp4`):** el usuario grabó el feed en uso (`MuestraMenuFeed.mp4`, 14,9 s). Se publica **solo la parte

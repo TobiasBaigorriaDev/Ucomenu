@@ -4,7 +4,7 @@
 - Fecha: 2026-10-13
 
 ## Contexto
-UcoMenu es un SaaS multi-tenant mobile-first que necesita, desde el MVP: una carta pública muy rápida, aislamiento estricto entre organizaciones, tiempo real para el llamado al mozo, autenticación con roles y almacenamiento de archivos (fotos y, más adelante, modelos 3D). El equipo es chico: cada pieza de infraestructura propia es tiempo que no va al producto.
+UcoMenú es un SaaS multi-tenant mobile-first que necesita, desde el MVP: una carta pública muy rápida, aislamiento estricto entre organizaciones, tiempo real para el llamado al mozo, autenticación con roles y almacenamiento de archivos (fotos y, más adelante, modelos 3D). El equipo es chico: cada pieza de infraestructura propia es tiempo que no va al producto.
 
 ## Decisión
 Next.js (App Router, TypeScript, Tailwind) desplegado en Vercel, con Supabase como backend: PostgreSQL con Row Level Security, Auth, Realtime y Storage.

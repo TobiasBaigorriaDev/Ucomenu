@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Respaldo propio de UcoMenu (docs/operacion.md): base de datos + archivos de Storage, con un manifiesto verificable.
+ * Respaldo propio de UcoMenú (docs/operacion.md): base de datos + archivos de Storage, con un manifiesto verificable.
  * Existe porque el plan Free de Supabase no hace respaldos y porque NINGÚN plan incluye los archivos de Storage en ellos.
  *
  * Uso (desde la raíz):

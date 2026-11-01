@@ -78,19 +78,19 @@ export function describeQuote(quote: Extract<PaymentQuote, { available: true }>)
 }
 
 const NOT_AVAILABLE_MESSAGE: Record<string, string> = {
-  suspended_manually: "Tu cuenta está suspendida por UcoMenu. Contactanos para resolverlo.",
-  no_list_price: "Tu plan no se paga desde acá. Contactá a UcoMenu.",
-  price_unavailable: "Tu plan no se paga desde acá. Contactá a UcoMenu.",
+  suspended_manually: "Tu cuenta está suspendida por UcoMenú. Contactanos para resolverlo.",
+  no_list_price: "Tu plan no se paga desde acá. Contactá a UcoMenú.",
+  price_unavailable: "Tu plan no se paga desde acá. Contactá a UcoMenú.",
   already_covered: "Tu suscripción ya tiene un período pagado por adelantado. No hace falta pagar de nuevo.",
-  too_many_unpaid: "Tenés muchos pedidos de pago sin confirmar. Si ya pagaste alguno, pulsá «Ya pagué, verificar»; si no se resuelve, contactá a UcoMenu.",
+  too_many_unpaid: "Tenés muchos pedidos de pago sin confirmar. Si ya pagaste alguno, pulsá «Ya pagué, verificar»; si no se resuelve, contactá a UcoMenú.",
 };
-const GENERIC_NOT_AVAILABLE = "No pudimos preparar el pago para esta cuenta. Contactá a UcoMenu.";
+const GENERIC_NOT_AVAILABLE = "No pudimos preparar el pago para esta cuenta. Contactá a UcoMenú.";
 
 export function startErrorMessage(error: StartError): string {
   if (typeof error === "object") return NOT_AVAILABLE_MESSAGE[error.notAvailable] ?? GENERIC_NOT_AVAILABLE;
   switch (error) {
     case "not_configured":
-      return "El pago en línea todavía no está disponible. Contactá a UcoMenu.";
+      return "El pago en línea todavía no está disponible. Contactá a UcoMenú.";
     case "forbidden":
       return "Solo el Dueño puede pagar la suscripción.";
     case "unavailable":
@@ -113,7 +113,7 @@ export function returnNotice(raw: unknown): { tone: "info" | "warning"; text: st
     case "ya_registrado":
       return { tone: "info", text: "Tu pago ya estaba registrado." };
     case "revision":
-      return { tone: "warning", text: "Recibimos tu pago, pero UcoMenu tiene que revisarlo antes de actualizar tu suscripción. Te vamos a avisar." };
+      return { tone: "warning", text: "Recibimos tu pago, pero UcoMenú tiene que revisarlo antes de actualizar tu suscripción. Te vamos a avisar." };
     default:
       return null;
   }

@@ -3,7 +3,7 @@
 --
 -- Dos cambios:
 --  (1) Se quitan las claves foráneas `ON DELETE RESTRICT` de `payments` y `payment_voids` hacia `organizations` y
---      `subscriptions`: los pagos SOBREVIVEN al borrado de la organización (son la contabilidad de UcoMenu; no tienen datos
+--      `subscriptions`: los pagos SOBREVIVEN al borrado de la organización (son la contabilidad de UcoMenú; no tienen datos
 --      personales del cliente). Se conserva `payment_voids.payment_id → payments`: una anulación nunca queda sin su pago.
 --  (2) `private.purge_expired_payments(p_actor, p_reason)`: borra los pagos (y sus anulaciones) de organizaciones que YA NO
 --      EXISTEN y que se registraron hace más de 10 años, y deja una auditoría `payments.purged`. Se amplía el `check` de

@@ -80,7 +80,7 @@ export default async function VideosPage({ params }: PageProps<"/panel/[org]/vid
             !canWrite
               ? "Tu cuenta está en solo lectura: no se pueden subir videos hasta regularizar el pago."
               : !uploadConfigured
-                ? "La subida de videos todavía no está configurada en este servidor. Avisale al equipo de UcoMenu."
+                ? "La subida de videos todavía no está configurada en este servidor. Avisale al equipo de UcoMenú."
                 : null
           }
         />

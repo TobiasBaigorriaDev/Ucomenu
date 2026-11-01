@@ -82,7 +82,7 @@ describe("mensajes", () => {
     expect(branchLimitMessage(ent({ limits: { branches: 2 } }))).toContain("incluye 2 sucursales y");
     expect(branchLimitMessage(null)).toContain("tope de sucursales");
     expect(sucursalesErrorMessage("limit", ent({ limits: { branches: 2 } }))).toBe(branchLimitMessage(ent({ limits: { branches: 2 } })));
-    expect(branchLimitMessage(ent())).toContain("contactá a UcoMenu");
+    expect(branchLimitMessage(ent())).toContain("contactá a UcoMenú");
   });
 
   it("reactivar sin cupo explica la salida (desactivar otra) con el número del plan y dice que no se reactivó", () => {
@@ -142,7 +142,7 @@ describe("sucursales adicionales (ficha sucursal-adicional)", () => {
 
   it("al llegar al tope, el Dueño de Pro lee «Pedí una sucursal adicional» con el precio", () => {
     const mensaje = branchLimitMessage(conAdicional(0));
-    expect(mensaje).toContain("Pedí una sucursal adicional a UcoMenu (ARS 12.000/mes cada una)");
+    expect(mensaje).toContain("Pedí una sucursal adicional a UcoMenú (ARS 12.000/mes cada una)");
     expect(mensaje).toContain("desactivá una");
     expect(mensaje).not.toContain("cambiar de plan");
     const reactivar = sucursalesErrorMessage("limit_reactivate", conAdicional(1));
@@ -153,7 +153,7 @@ describe("sucursales adicionales (ficha sucursal-adicional)", () => {
   it("sin oferta (Básico, Premium, Staff o ya en el máximo) queda la salida de siempre y nunca un precio", () => {
     for (const e of [ent(), conAdicional(3), ent({ extraBranchMax: undefined, extraBranches: undefined })]) {
       const mensaje = branchLimitMessage(e);
-      expect(mensaje).toContain("contactá a UcoMenu para cambiar de plan");
+      expect(mensaje).toContain("contactá a UcoMenú para cambiar de plan");
       expect(mensaje).not.toMatch(/ARS|12\.000/);
     }
   });

@@ -5,23 +5,23 @@ import { LegalDocument, LegalSection } from "@/components/legal/legal-document";
 
 export const metadata: Metadata = {
   title: "Términos de uso",
-  description: "Condiciones para usar UcoMenu como comensal o como local.",
+  description: "Condiciones para usar UcoMenú como comensal o como local.",
 };
 
 export default function TermsPage() {
   return (
     <LegalDocument
       title="Términos de uso"
-      intro="Estas condiciones rigen el uso de UcoMenu, la plataforma de cartas digitales para restaurantes, bares y cafeterías. Al usar el servicio, aceptás lo que sigue."
+      intro="Estas condiciones rigen el uso de UcoMenú, la plataforma de cartas digitales para restaurantes, bares y cafeterías. Al usar el servicio, aceptás lo que sigue."
     >
-      <LegalSection title="1. Qué es UcoMenu">
+      <LegalSection title="1. Qué es UcoMenú">
         <p>
-          UcoMenu les permite a los locales publicar su carta y recibir avisos de sus mesas, y a los comensales consultarla desde
-          el celular. Cada carta pertenece al local que la publica; UcoMenu pone la plataforma. La plataforma la opera{" "}
+          UcoMenú les permite a los locales publicar su carta y recibir avisos de sus mesas, y a los comensales consultarla desde
+          el celular. Cada carta pertenece al local que la publica; UcoMenú pone la plataforma. La plataforma la opera{" "}
           <LegalEntityText />.
         </p>
         <p>
-          UcoMenu muestra la información que carga cada local, tal como la cargó. No la elabora, no la verifica ni certifica que un
+          UcoMenú muestra la información que carga cada local, tal como la cargó. No la elabora, no la verifica ni certifica que un
           plato cumpla una dieta o esté libre de un alérgeno.
         </p>
       </LegalSection>
@@ -91,7 +91,7 @@ export default function TermsPage() {
           <li>
             Marcá una etiqueta solo si podés confirmarla para la receta vigente y para la forma real de prepararla en tu cocina,
             incluido el contacto con otros ingredientes (contaminación cruzada). Ante la duda, no la marques. Las etiquetas de
-            UcoMenu no reemplazan ni certifican nada: cumplir las normas que te correspondan por tu actividad (alimentos,
+            UcoMenú no reemplazan ni certifican nada: cumplir las normas que te correspondan por tu actividad (alimentos,
             manipulación, enfermedad celíaca y las demás aplicables) es responsabilidad tuya.
           </li>
           <li>
@@ -127,7 +127,7 @@ export default function TermsPage() {
           aviso con los días de atraso. Al regularizar el pago, todo vuelve a funcionar.
         </p>
         <p>
-          UcoMenu también puede suspender o dar de baja una cuenta o una carta que incumpla estas condiciones, por ejemplo si
+          UcoMenú también puede suspender o dar de baja una cuenta o una carta que incumpla estas condiciones, por ejemplo si
           publica contenido ilícito o información alimentaria que pueda poner en riesgo a las personas, avisando al local por el
           medio de contacto que tenga registrado cuando sea posible. Una baja no borra los datos del local de inmediato: el borrado
           definitivo es una decisión posterior y se rige por la{" "}
@@ -156,7 +156,7 @@ export default function TermsPage() {
           dietarias y fotos), de la preparación y calidad de sus productos, de la atención y de lo que aprueba como comentario.
         </p>
         <p>
-          <strong>UcoMenu</strong> es responsable de sus propias obligaciones y actuaciones: operar la plataforma con diligencia, mostrar
+          <strong>UcoMenú</strong> es responsable de sus propias obligaciones y actuaciones: operar la plataforma con diligencia, mostrar
           fielmente lo que el local cargó (sin alterarlo ni agregarle afirmaciones), actualizar la carta publicada cuando el local
           guarda un cambio, proteger los datos conforme a la política de privacidad y atender los reportes de la sección 7. Responde
           por los daños que causen sus propios incumplimientos y fallas técnicas, según la legislación aplicable.
@@ -179,7 +179,7 @@ export default function TermsPage() {
           <LegalContactText /> indicando el local, el plato y qué está mal. Los reportes sobre alimentos y salud los tratamos como
           prioritarios: pedimos al local que corrija o retire el plato y, si el riesgo es evidente, podemos suspender la carta
           mientras se resuelve. Como el contenido es del local, la corrección definitiva depende de él. Los atiende el equipo de
-          UcoMenu desde ese correo: respondemos en un máximo de 24 horas los reportes que puedan afectar la salud (por ejemplo, un
+          UcoMenú desde ese correo: respondemos en un máximo de 24 horas los reportes que puedan afectar la salud (por ejemplo, un
           alérgeno que falta) y en un máximo de 3 días hábiles los demás (por ejemplo, un precio o un dato equivocado).
         </p>
       </LegalSection>

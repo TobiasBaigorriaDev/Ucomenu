@@ -31,7 +31,7 @@ export default function AllergenNoticePage() {
 
       <LegalSection title="3. Quién declara la información">
         <p>
-          Las etiquetas las declara el local y no son una certificación. UcoMenu muestra lo que el local cargó: no lo verifica, no
+          Las etiquetas las declara el local y no son una certificación. UcoMenú muestra lo que el local cargó: no lo verifica, no
           lo analiza ni lo certifica. Las recetas, los proveedores y los ingredientes cambian: es posible que la carta no refleje
           un cambio reciente o que una etiqueta esté desactualizada.
         </p>

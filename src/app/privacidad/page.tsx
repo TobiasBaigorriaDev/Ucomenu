@@ -6,14 +6,14 @@ import { PENDING_RETENTION_DAYS, REJECTED_RETENTION_DAYS } from "@/lib/videos/re
 
 export const metadata: Metadata = {
   title: "Privacidad",
-  description: "Qué datos trata UcoMenu, para qué, por cuánto tiempo y cómo ejercer tus derechos.",
+  description: "Qué datos trata UcoMenú, para qué, por cuánto tiempo y cómo ejercer tus derechos.",
 };
 
 export default function PrivacyPage() {
   return (
     <LegalDocument
       title="Política de privacidad"
-      intro="UcoMenu es una carta digital para restaurantes, bares y cafeterías. Acá te contamos quién trata tus datos, cuáles, por cuánto tiempo y cómo podés ejercer tus derechos, según seas comensal o parte del equipo de un local."
+      intro="UcoMenú es una carta digital para restaurantes, bares y cafeterías. Acá te contamos quién trata tus datos, cuáles, por cuánto tiempo y cómo podés ejercer tus derechos, según seas comensal o parte del equipo de un local."
     >
       <LegalSection title="1. Quién es el responsable y cómo contactarlo">
         <p>
@@ -69,8 +69,8 @@ export default function PrivacyPage() {
         <p>
           Como en cualquier sitio web, el servidor que te entrega la página y su proveedor de alojamiento pueden registrar datos
           técnicos de la conexión (por ejemplo, tu dirección IP y el navegador) en sus registros de funcionamiento y seguridad.
-          UcoMenu no usa esos registros para identificarte ni para publicidad. El plazo de esos registros lo fija cada proveedor según
-          sus propias políticas; UcoMenu no los copia a sus respaldos.
+          UcoMenú no usa esos registros para identificarte ni para publicidad. El plazo de esos registros lo fija cada proveedor según
+          sus propias políticas; UcoMenú no los copia a sus respaldos.
         </p>
       </LegalSection>
 
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
           anotó o cambió un pedido y quién modificó el precio de un plato. Los pedidos que el personal anota (mesa, platos y
           cantidades) no llevan datos que identifiquen al comensal, pero sus observaciones son texto libre y pueden mencionar, por
           ejemplo, una alergia que el comensal le indica al mozo para la cocina; el personal no debe escribir ahí datos personales
-          que no hagan falta. Las acciones del equipo de UcoMenu sobre las organizaciones (por ejemplo, el
+          que no hagan falta. Las acciones del equipo de UcoMenú sobre las organizaciones (por ejemplo, el
           alta de un local) quedan en un registro de auditoría que no se modifica.
         </p>
         <p>
@@ -116,7 +116,7 @@ export default function PrivacyPage() {
         </p>
         <p>
           El local puede pedir que se corrija o se quite lo que haya cargado. Los datos de cobro del servicio (pagos registrados
-          de cada local) los conserva UcoMenu como registro contable.
+          de cada local) los conserva UcoMenú como registro contable.
         </p>
       </LegalSection>
 
@@ -162,9 +162,9 @@ export default function PrivacyPage() {
           </li>
           <li>
             Cuenta, carta y datos de un local: mientras el local use el servicio. Si el local se da de baja, sus datos se conservan
-            y el borrado definitivo lo decide el equipo de UcoMenu después de al menos 30 días de baja; el historial de precios se
+            y el borrado definitivo lo decide el equipo de UcoMenú después de al menos 30 días de baja; el historial de precios se
             borra con el local. Las cuentas de acceso del personal no se borran automáticamente con el local: se conservan hasta que el equipo de
-            UcoMenu las borra a mano, a pedido de la persona o cuando revisa las cuentas que quedaron sin ningún local, lo que hace
+            UcoMenú las borra a mano, a pedido de la persona o cuando revisa las cuentas que quedaron sin ningún local, lo que hace
             al menos una vez al año.
           </li>
           <li>

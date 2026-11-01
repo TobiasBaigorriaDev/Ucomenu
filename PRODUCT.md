@@ -12,11 +12,11 @@ web
 
 - **Comensal (usuario principal de esta superficie).** Sentado a una mesa de un café, bar o restaurante argentino, con el celular en una mano y a veces poca luz. Entra escaneando el QR de su mesa o con el enlace de la sucursal. Es anónimo: sin cuenta ni app. Trabajo: ver la carta al instante, encontrar lo que puede comer (también por dieta) y, si entró por QR, llamar al mozo o pedir la cuenta sin levantar la mano.
 - **Dueño y Staff del local.** Usan el panel (`/panel`) y la sala (`/sala`), no la carta pública. Importan acá porque eligen la apariencia de su carta (logo y paleta) y declaran etiquetas y disponibilidad de cada plato.
-- **SuperAdmin de UcoMenu.** Equipo interno; no interviene en la carta pública.
+- **SuperAdmin de UcoMenú.** Equipo interno; no interviene en la carta pública.
 
 ## Product Purpose
 
-UcoMenu es una plataforma web mobile-first y multi-tenant, vendida por suscripción, que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, más adelante, un feed de videos cortos del local (con likes y comentarios desde la mesa) y tarjeta de fidelidad. Éxito para la carta pública: el comensal entiende en segundos de qué local y sucursal es, encuentra su plato sin fricción y el local siente que la carta es suya.
+UcoMenú es una plataforma web mobile-first y multi-tenant, vendida por suscripción, que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo y, más adelante, un feed de videos cortos del local (con likes y comentarios desde la mesa) y tarjeta de fidelidad. Éxito para la carta pública: el comensal entiende en segundos de qué local y sucursal es, encuentra su plato sin fricción y el local siente que la carta es suya.
 
 ## Positioning
 
@@ -42,7 +42,7 @@ La carta de cada local lleva su propia identidad (logo y paleta) y convive con e
 ## Brand Commitments
 
 - El local es el protagonista visual de la carta: su nombre, su logo y su paleta mandan.
-- Firma discreta «Hecho con UcoMenu» al pie, como vitrina del producto, nunca en el encabezado.
+- Firma discreta «Hecho con UcoMenú» al pie, como vitrina del producto, nunca en el encabezado.
 - Voseo cercano en español rioplatense, cálido, claro y breve («Probá con otro nombre», «consultá al personal»).
 - Dirección de rediseño fijada por el usuario: Bento + Editorial + Card-based, con tipografía nueva que él aprueba antes de aplicarla y las cuatro paletas actuales sin cambios.
 

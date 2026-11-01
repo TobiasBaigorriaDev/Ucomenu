@@ -46,7 +46,7 @@ export async function payAction(_previous: FormState, formData: FormData): Promi
 export async function verifyAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const { org } = await ownerFor(formData);
   const mp = getMercadoPagoClient();
-  if (!mp) return { error: "El pago en línea todavía no está disponible. Contactá a UcoMenu." };
+  if (!mp) return { error: "El pago en línea todavía no está disponible. Contactá a UcoMenú." };
 
   // Las intenciones salen de la lectura del Dueño (la base ya comprobó que lo sea): el navegador no manda ningún id.
   const db = await createSessionClient();

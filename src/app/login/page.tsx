@@ -31,7 +31,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <Mark className="absolute -top-6 -right-8 h-28 w-auto text-white/10 lg:-top-10 lg:-right-12 lg:h-56" />
           <p className="relative flex items-center gap-2.5 font-display text-[1.625rem] leading-none">
             <Mark className="h-4 w-7 shrink-0 text-white" />
-            UcoMenu
+            UcoMenú
           </p>
           <div className="relative">
             <p className="font-display text-[clamp(2.25rem,1.5rem+4vw,3.5rem)] leading-[0.98] tracking-[-0.015em] text-balance">
@@ -46,7 +46,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             <LoginForm next={next} />
           </div>
           <p className="mt-8 max-w-prose text-sm leading-relaxed text-muted">
-            ¿Olvidaste tu contraseña? Pedile al dueño del local que te la cambie. Si sos el dueño, contactá a UcoMenu.
+            ¿Olvidaste tu contraseña? Pedile al dueño del local que te la cambie. Si sos el dueño, contactá a UcoMenú.
           </p>
           <LegalLinks className="mt-4 text-muted" />
         </main>

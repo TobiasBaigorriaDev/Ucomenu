@@ -11,7 +11,7 @@
 | Docker | https://www.docker.com | 29.4.3 (instalado en la máquina) | Contenedores del Supabase local | 2026-10-13 | Sin imágenes de terceros fuera de las que usa la CLI de Supabase |
 | Context7 (MCP) | MCP ya conectado en el entorno | Servicio remoto, sin versión fija | Consultar documentación actual de librerías | 2026-10-13 | Solo lectura. No enviar secretos ni datos de clientes en las consultas |
 | Playwright (plugin MCP y paquete de pruebas) | MCP ya conectado en el entorno + registro npm | `@playwright/test` 1.64.0; Chromium descargado con `playwright install chromium` | Pruebas E2E y verificación visual de la app **local** | 2026-10-13 | Navegar solo a `localhost` y a documentación pública; la descarga de navegadores de pruebas queda incluida |
-| `frontend-design` (skill de plugin) | Plugin ya instalado en el entorno | La que trae el plugin | Guía de diseño de la carta pública y de las vistas de UcoMenu | 2026-10-13 | Solo orienta el diseño; no ejecuta código propio |
+| `frontend-design` (skill de plugin) | Plugin ya instalado en el entorno | La que trae el plugin | Guía de diseño de la carta pública y de las vistas de UcoMenú | 2026-10-13 | Solo orienta el diseño; no ejecuta código propio |
 
 ## Checklist antes de aprobar
 - [ ] Fuente oficial y autor identificados

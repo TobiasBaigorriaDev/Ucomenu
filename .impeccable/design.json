@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
   "generatedAt": "2026-10-28T12:00:00.000Z",
-  "title": "Design System: UcoMenu, carta pública y panel",
+  "title": "Design System: UcoMenú, carta pública y panel",
   "extensions": {
     "colorMeta": {
       "porcelain": {
@@ -260,7 +260,7 @@
       },
       "rail-name": {
         "displayName": "Nombre en el riel",
-        "purpose": "Nombre del local o UcoMenu; 1.625rem, 2rem desde lg."
+        "purpose": "Nombre del local o UcoMenú; 1.625rem, 2rem desde lg."
       },
       "nav-link": {
         "displayName": "Enlace de navegación",
@@ -499,7 +499,7 @@
       "kind": "nav",
       "refersTo": "portada-nav",
       "description": "Barra fija arriba en papel con filete; enlaces de 44 px y botón pequeño.",
-      "html": "<nav class=\"ds-mkn\"><a class=\"ds-mkn-b\" href=\"#\">UcoMenu</a><a class=\"ds-mkn-l\" href=\"#\">Precios</a><a class=\"ds-mkn-l\" href=\"#\">Preguntas</a><a class=\"ds-mkn-c\" href=\"#\">Probalo gratis</a></nav>",
+      "html": "<nav class=\"ds-mkn\"><a class=\"ds-mkn-b\" href=\"#\">UcoMenú</a><a class=\"ds-mkn-l\" href=\"#\">Precios</a><a class=\"ds-mkn-l\" href=\"#\">Preguntas</a><a class=\"ds-mkn-c\" href=\"#\">Probalo gratis</a></nav>",
       "css": ".ds-mkn{font-family:Schibsted Grotesk,system-ui,sans-serif;display:flex;align-items:center;gap:8px;max-width:640px;padding:8px 8px 8px 20px;border-radius:9999px;background:#f6f5f0;box-shadow:inset 0 0 0 1px rgb(36 38 33/.14);color:#242621}.ds-mkn-b{margin-right:auto;color:#155b20;font-weight:800;font-size:22px;letter-spacing:-.03em;text-decoration:none}.ds-mkn-l{display:inline-flex;align-items:center;min-height:44px;padding:0 14px;border-radius:9999px;color:#242621;font-weight:500;text-decoration:none}.ds-mkn-l:hover{background:#dcebd3}.ds-mkn-c{display:inline-flex;align-items:center;min-height:44px;padding:8px 20px;border-radius:9999px;background:#155b20;color:#fff;font-weight:700;font-size:15px;text-decoration:none}.ds-mkn-c:hover{background:#0f4318}.ds-mkn a:focus-visible{outline:3px solid #155b20;outline-offset:3px}"
     },
     {

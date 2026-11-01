@@ -55,7 +55,7 @@ function Plan({ plan, destacado, anual }: { plan: PlanVendido; destacado?: boole
           Probalo 14 días gratis<span className="sr-only"> (se abre WhatsApp)</span>
         </a>
       ) : (
-        <a className="mk-btn mk-btn-ghost" href={whatsappUrl("Hola, quiero consultar por el plan Básico de UcoMenu.")} target="_blank" rel="noopener noreferrer">
+        <a className="mk-btn mk-btn-ghost" href={whatsappUrl("Hola, quiero consultar por el plan Básico de UcoMenú.")} target="_blank" rel="noopener noreferrer">
           Consultar por Básico<span className="sr-only"> (se abre WhatsApp)</span>
         </a>
       )}

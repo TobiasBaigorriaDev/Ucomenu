@@ -8,5 +8,5 @@ import type { Metadata } from "next";
 export const appInstalable: Pick<Metadata, "manifest" | "icons" | "appleWebApp"> = {
   manifest: "/sala.webmanifest",
   icons: { apple: "/icons/apple-touch-icon.png" },
-  appleWebApp: { capable: true, title: "UcoMenu", statusBarStyle: "default" },
+  appleWebApp: { capable: true, title: "UcoMenú", statusBarStyle: "default" },
 };

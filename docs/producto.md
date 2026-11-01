@@ -1,13 +1,13 @@
-# Producto — UcoMenu
+# Producto — UcoMenú
 
 > Fuente de verdad de **qué debería hacer el producto**. Todo lo que figura acá está **aceptado por el usuario** (entrevista del 2026-10-13 y cierre de preguntas abiertas del mismo día), salvo lo marcado como *Supuesto (nuevo)*: valores de trabajo derivados por el agente al cerrar las definiciones, reversibles y a confirmar al iterar.
 
 ## Problema
 Los restaurantes, bares y cafeterías dependen de cartas impresas o PDF que no se actualizan, no muestran bien el producto y no generan ningún vínculo con el cliente. En el salón, el comensal pierde tiempo esperando que el mozo lo vea para pedir algo o la cuenta. Y una vez que se va, el local no tiene forma barata de hacerlo volver.
 
-UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscripción (SaaS), que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo, un feed de videos cortos del local (desde el plan Pro) y, más adelante, una tarjeta de fidelidad en la billetera del teléfono.
+UcoMenú es una plataforma web **mobile-first**, multi-tenant, vendida por suscripción (SaaS), que le da a cada local una carta digital de alto impacto, un canal directo mesa → mozo, un feed de videos cortos del local (desde el plan Pro) y, más adelante, una tarjeta de fidelidad en la billetera del teléfono.
 
-- **Nombre comercial:** UcoMenu. **Dominio:** `ucomenu.com`, propiedad del usuario (confirmado 2026-10-26; DNS en Cloudflare). Los QR definitivos codifican este dominio.
+- **Nombre comercial:** UcoMenú. **Dominio:** `ucomenu.com`, propiedad del usuario (confirmado 2026-10-26; DNS en Cloudflare). Los QR definitivos codifican este dominio.
 - **Mercado inicial:** Argentina (es-AR). Precios de catálogo y de portada en pesos argentinos (ARS), sin tipo de cambio; el cobro manual se registra en ARS (la base admite también USD).
 
 ## Usuarios
@@ -17,12 +17,12 @@ UcoMenu es una plataforma web **mobile-first**, multi-tenant, vendida por suscri
 | **Staff / Mozo** | Atender llamados desde el panel de sala; sumar sellos escaneando pases; mantener platos, precios, stock y mesas | Usuario con login, limitado a su organización. Acceso operativo completo (ver *Roles y permisos*) |
 | **Cocinero** | Ver los pedidos que anotó el mozo, marcar cada plato **listo** para entregar y marcar **agotado** lo que se terminó | Usuario con login, limitado a su organización y a la pantalla de cocina; sin precios ni acceso a la Sala ni al panel. Pro y Premium ([ADR 0048](decisiones/0048-rol-cocinero.md)) |
 | **Dueño del restaurante** | Todo lo del Staff más sucursales, personal, apariencia, y ver su plan y su facturación | Administrador de su organización (tenant). No ve datos de otras organizaciones |
-| **SuperAdmin SaaS** | Dar de alta organizaciones, asignar y suspender planes y add-ons, dar soporte | Equipo de UcoMenu. Toda acción sobre planes queda auditada |
+| **SuperAdmin SaaS** | Dar de alta organizaciones, asignar y suspender planes y add-ons, dar soporte | Equipo de UcoMenú. Toda acción sobre planes queda auditada |
 
 ## Propuesta de valor
 - **Para el local:** carta siempre actualizada y que vende mejor, salón más ágil, y herramientas de recompra que hoy solo tienen las cadenas grandes; todo sin instalar nada ni comprar hardware.
 - **Para el comensal:** escanea y ve la carta en segundos, filtra por su dieta, llama al mozo con un toque.
-- **Para UcoMenu:** ingreso recurrente escalonado; cada pilar es un motivo de upgrade.
+- **Para UcoMenú:** ingreso recurrente escalonado; cada pilar es un motivo de upgrade.
 
 ## Módulos
 ### 1. Menú digital interactivo (core) — MVP
@@ -142,7 +142,7 @@ Se cuenta desde el vencimiento del período pagado (o del fin de la prueba, *Sup
 - Los datos de suscripción (plan, fechas, add-ons) los escribe **exclusivamente el servidor**, desde las acciones del SuperAdmin.
 - **Gestión manual del SuperAdmin** *(hecha, 2026-10-17; ficha `superadmin-planes-pagos.md`; los puntos marcados como supuesto esperan confirmación del usuario)*, en `/admin/organizaciones/{slug}`, siempre con auditoría:
   - **Cambiar plan y ciclo**, con motivo obligatorio. Rige en el acto, sin prorrateo y sin tocar fechas; bajar de plan no borra nada. *(Supuesto: durante la prueba, un plan superior rige sin pago hasta el fin de la prueba.)*
-  - **Suspender y reactivar a mano**, con motivo obligatorio. Suspendida a mano equivale a suspendida por mora (carta oculta, panel en solo lectura, datos intactos) aunque las fechas estén al día; el Dueño ve «suspendida por UcoMenu». *(Supuesto: reactivar no agrega tiempo: la cuenta vuelve al estado que digan sus fechas, y registrar un pago no levanta una suspensión manual.)*
+  - **Suspender y reactivar a mano**, con motivo obligatorio. Suspendida a mano equivale a suspendida por mora (carta oculta, panel en solo lectura, datos intactos) aunque las fechas estén al día; el Dueño ve «suspendida por UcoMenú». *(Supuesto: reactivar no agrega tiempo: la cuenta vuelve al estado que digan sus fechas, y registrar un pago no levanta una suspensión manual.)*
   - **Registrar un pago**: importe, moneda (ARS o USD), medio (transferencia, link de pago, efectivo u otro), referencia opcional, fecha del pago y «cubre hasta». Mueve el vencimiento a esa fecha (fin de ese día en Argentina) y, si había mora, restablece la cuenta. El pago queda fijo: no se edita ni se borra. *(Supuesto: «cubre hasta» debe ser posterior al vencimiento actual y a hoy, y a lo sumo a 2 años; un pago adelantado extiende desde el vencimiento actual, nunca lo acorta, y un pago mal cargado se **anula** desde la ficha, con motivo: solo el último pago vigente, el pago queda en el historial como anulado y el vencimiento vuelve al de antes del pago; para corregirlo se registra el correcto — ADR 0024.)*
   - **Prueba de 14 días como concepto aparte**: estado propio (en prueba, vencida, o ya con período propio), con su fecha, distinto de la mora. *(Supuesto: la prueba vencida sigue la misma degradación de mora, contada desde su fin.)*
 

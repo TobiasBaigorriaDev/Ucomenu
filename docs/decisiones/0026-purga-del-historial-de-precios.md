@@ -19,7 +19,7 @@ El ADR 0012 dejó `price_history` como un registro de solo agregado (ni la API, 
 - **Exportar a un archivo antes de purgar** — sirve si hubiera que entregárselo al cliente; no se pidió y agrega un archivo con datos personales fuera de la base.
 - **Procedimiento manual con `psql`** — sin prueba automática ni auditoría atómica; depende de que quien lo corre no olvide volver a encender el trigger.
 - **Una bandera de sesión que el trigger respete** (`set_config`) — cualquiera con SQL la activaría sin dejar rastro; apagar el trigger dentro de una función solo para `postgres` es una barrera más fuerte.
-- **Purgar también `payments` y `payment_voids`** — son registros de cobro propios de UcoMenu y tienen su propio tema de conservación (contable y legal). Se deciden en el ítem de borrado de organizaciones.
+- **Purgar también `payments` y `payment_voids`** — son registros de cobro propios de UcoMenú y tienen su propio tema de conservación (contable y legal). Se deciden en el ítem de borrado de organizaciones.
 
 ## Consecuencias
 - **Todavía no se puede borrar una organización:** `payments` y `payment_voids` siguen con `RESTRICT` y la función de borrado no existe. Este ADR cierra la parte de `price_history`; el ítem del tablero sigue bloqueado por la retención de los pagos.

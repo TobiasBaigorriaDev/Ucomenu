@@ -27,7 +27,7 @@ create table public.platform_admins (
   created_at timestamptz not null default now()
 );
 comment on table public.platform_admins is
-  'Personas del equipo de UcoMenu con acceso a /admin. Solo las agrega el operador con SQL; la API no escribe.';
+  'Personas del equipo de UcoMenú con acceso a /admin. Solo las agrega el operador con SQL; la API no escribe.';
 
 alter table public.platform_admins enable row level security;
 

@@ -15,18 +15,18 @@ import { Presentacion } from "@/components/marketing/presentacion";
 import { ScrollReveal } from "@/components/marketing/scroll-reveal";
 import "@/components/marketing/marketing.css";
 
-const TITULO = "UcoMenu · Carta digital con QR y llamado al mozo";
+const TITULO = "UcoMenú · Carta digital con QR y llamado al mozo";
 const DESCRIPCION =
   "La carta digital de tu bar, café o restaurante: tus clientes escanean el QR de la mesa, ven tu carta con tu logo y tus colores, y llaman al mozo con un toque. Probala 14 días gratis, sin tarjeta.";
 
-const IMAGEN = { url: "/portada/og.jpg", width: 1200, height: 630, alt: "La carta de UcoMenu en el celular de cada mesa, con llamado al mozo." };
+const IMAGEN = { url: "/portada/og.jpg", width: 1200, height: 630, alt: "La carta de UcoMenú en el celular de cada mesa, con llamado al mozo." };
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITIO_URL),
   title: { absolute: TITULO },
   description: DESCRIPCION,
   alternates: { canonical: "/" },
-  openGraph: { type: "website", locale: "es_AR", siteName: "UcoMenu", title: TITULO, description: DESCRIPCION, url: "/", images: [IMAGEN] },
+  openGraph: { type: "website", locale: "es_AR", siteName: "UcoMenú", title: TITULO, description: DESCRIPCION, url: "/", images: [IMAGEN] },
   twitter: { card: "summary_large_image", title: TITULO, description: DESCRIPCION, images: [IMAGEN.url] },
 };
 

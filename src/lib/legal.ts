@@ -9,7 +9,7 @@
 export const LEGAL_UPDATED_AT = "31 de octubre de 2026";
 
 /**
- * Responsable de UcoMenu (Ley 25.326, art. 6: la política tiene que decir quién es el responsable del archivo). PENDIENTE DE
+ * Responsable de UcoMenú (Ley 25.326, art. 6: la política tiene que decir quién es el responsable del archivo). PENDIENTE DE
  * DECISIÓN DEL USUARIO: no se inventa razón social, CUIT ni domicilio. Mientras sea `null`, las páginas muestran que el dato
  * está pendiente y `docs/produccion.md` bloquea la salida a producción. Se completa acá, con los datos reales, al decidirlos.
  */

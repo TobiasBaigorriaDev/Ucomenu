@@ -210,7 +210,7 @@ test.describe("aviso de mora", () => {
         await expect(bannerDueno).toBeVisible();
         await expect(bannerDueno).toHaveAttribute("data-tone", caso.tono);
         await expect(bannerDueno).toContainText(caso.dueno);
-        await expect(bannerDueno).toContainText(/Contactá a UcoMenu/);
+        await expect(bannerDueno).toContainText(/Contactá a UcoMenú/);
 
         const ctxStaff = await browser.newContext({ viewport: { width: 390, height: 844 } });
         const pageStaff = await ctxStaff.newPage();

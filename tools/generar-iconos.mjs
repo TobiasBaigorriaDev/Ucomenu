@@ -1,4 +1,4 @@
-// Genera los íconos de la app instalada (sala y panel) a partir de la marca de UcoMenu: dos rombos sobre el verde de UcoNext (como `components/panel/mark.tsx`).
+// Genera los íconos de la app instalada (sala y panel) a partir de la marca de UcoMenú: dos rombos sobre el verde de UcoNext (como `components/panel/mark.tsx`).
 // Uso:  node tools/generar-iconos.mjs
 // Escribe public/icons/*.png. No tiene dependencias nuevas: usa Playwright (ya instalado para las pruebas) y su Chromium.
 // Los PNG se versionan; solo hay que volver a correrlo si cambia la marca o el color.

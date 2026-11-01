@@ -190,7 +190,7 @@ test("portugués: el selector ofrece los tres idiomas y los textos fijos cambian
   await expect(page.getByText("1 prato no cardápio")).toBeVisible();
   // Lo que falta traducir queda en español (la categoría y la descripción no tienen versión en portugués).
   await expect(page.getByRole("heading", { level: 2, name: "Cafetería" })).toBeVisible();
-  await expect(page.getByText("Feito com UcoMenu")).toBeVisible();
+  await expect(page.getByText("Feito com UcoMenú")).toBeVisible();
   await expectNoHorizontalOverflow(page);
 });
 

@@ -131,14 +131,14 @@ test.describe("suspender y reactivar", () => {
       await expect(page.getByTestId("suscripcion")).toContainText("Según sus fechas");
       await expect(page.getByTestId("auditoria").filter({ hasText: "Suspensión a mano" })).toContainText("motivo: pago rechazado");
 
-      // La carta pública se oculta en el acto y el Dueño ve que la suspendió UcoMenu.
+      // La carta pública se oculta en el acto y el Dueño ve que la suspendió UcoMenú.
       await publico.goto(`/m/${t.slug}/centro`);
       await expect(publico.getByText("Carta temporalmente no disponible")).toBeVisible();
       const dueno = await browser.newPage();
       await login(dueno, t.owner.email, t.owner.password, `/panel/${t.slug}`);
-      await expect(dueno.getByTestId("mora-banner")).toContainText("Tu cuenta fue suspendida por UcoMenu");
+      await expect(dueno.getByTestId("mora-banner")).toContainText("Tu cuenta fue suspendida por UcoMenú");
       await dueno.goto(`/panel/${t.slug}/suscripcion`);
-      await expect(dueno.getByText("Suspendida por UcoMenu", { exact: true })).toBeVisible();
+      await expect(dueno.getByText("Suspendida por UcoMenú", { exact: true })).toBeVisible();
 
       // Reactivar.
       const reactivar = suspender;

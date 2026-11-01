@@ -235,7 +235,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
           Las reservas están incluidas desde el plan Pro.{" "}
           {membership.role === "owner" ? (
             <>
-              Para sumarlas, contactá a UcoMenu: podés ver tu plan en{" "}
+              Para sumarlas, contactá a UcoMenú: podés ver tu plan en{" "}
               <Link href={`/panel/${slug}/suscripcion`} className="font-medium underline underline-offset-4">
                 Suscripción
               </Link>
@@ -272,7 +272,7 @@ export default async function ReservasPage({ params, searchParams }: PageProps<"
             <p role="status" className="mt-6 max-w-prose rounded-3xl border border-danger p-4 text-base font-medium text-danger" data-testid="reservas-truncada">
               {mode === "proximas"
                 ? `Mostramos las próximas ${UPCOMING_LIMIT} reservas: hay más. Las mesas libres solo se ofrecen donde se pueden calcular con lo que se muestra.`
-                : `Este día tiene más reservas de las que podemos mostrar (${PAGE_LIMIT}): la lista puede estar incompleta. Probá con otra sucursal o consultá a UcoMenu.`}
+                : `Este día tiene más reservas de las que podemos mostrar (${PAGE_LIMIT}): la lista puede estar incompleta. Probá con otra sucursal o consultá a UcoMenú.`}
             </p>
           ) : null}
           {ok ? (

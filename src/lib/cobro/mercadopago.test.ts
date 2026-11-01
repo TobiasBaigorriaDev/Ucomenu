@@ -85,7 +85,7 @@ describe("lectura de un pago", () => {
 describe("cliente", () => {
   const input = {
     intentId: INTENT,
-    title: "UcoMenu · Plan Pro (mensual)",
+    title: "UcoMenú · Plan Pro (mensual)",
     amountCents: 2_900_000,
     currency: "ARS",
     expiresAt: new Date("2026-11-05T12:00:00.000Z"),

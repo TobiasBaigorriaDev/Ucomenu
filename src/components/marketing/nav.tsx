@@ -18,7 +18,7 @@ export function Nav() {
       <nav className="mk-nav-bar" aria-label="Principal">
         <Link href="/" className="mk-brand">
           <Mark />
-          UcoMenu
+          UcoMenú
         </Link>
         <div className="mk-nav-links">
           {ENLACES.map(([href, texto]) => (

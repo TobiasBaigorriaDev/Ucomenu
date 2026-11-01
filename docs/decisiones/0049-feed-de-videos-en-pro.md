@@ -28,7 +28,7 @@ más adelante, con juegos, más cupo de videos, Wallet y lo que se agregue.
 
 ## Consecuencias
 - Las organizaciones en Pro ganan el feed al aplicarse la migración: pueden subir, publicar, recibir likes y comentarios, hasta 10
-  videos publicados. El costo variable de Mux (almacenamiento y reproducción) lo asume UcoMenu; el cupo lo acota, pero conviene
+  videos publicados. El costo variable de Mux (almacenamiento y reproducción) lo asume UcoMenú; el cupo lo acota, pero conviene
   contrastarlo con el precio de Pro cuando haya uso real.
 - Básico sigue sin feed y con cupo 0. Un plan sin la función no puede crear ni publicar videos ni recibir likes o comentarios, y la lectura pública no los muestra, aunque tenga videos.
 - Los locales que quedan en Premium (staging) conservan todo, y bajar a Pro ya no les quita el feed.

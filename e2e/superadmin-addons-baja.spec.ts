@@ -105,8 +105,8 @@ test.describe("add-ons", () => {
         // El Dueño lo ve en su historial, sin el motivo.
         const dueno = await browser.newPage();
         await login(dueno, t.owner.email, t.owner.password, `/panel/${t.slug}/suscripcion`);
-        await expect(dueno.getByText(`${ADDON} modificado por UcoMenu`)).toBeVisible();
-        await expect(dueno.getByText(`${ADDON} activado por UcoMenu`)).toBeVisible();
+        await expect(dueno.getByText(`${ADDON} modificado por UcoMenú`)).toBeVisible();
+        await expect(dueno.getByText(`${ADDON} activado por UcoMenú`)).toBeVisible();
         await expect(dueno.getByText("Pidió otro pack")).toHaveCount(0);
         await expect(dueno.getByText("Contrató el ensayo con dos packs")).toHaveCount(0);
 

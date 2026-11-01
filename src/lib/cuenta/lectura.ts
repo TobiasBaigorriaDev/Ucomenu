@@ -153,7 +153,7 @@ const STATE_AFTER_REACTIVATION: Record<string, string> = {
   suspended: "Sigue suspendida por la fecha de vencimiento",
 };
 
-/** Cómo se ve cada movimiento: un título y las líneas de detalle. El autor es siempre el equipo de UcoMenu. */
+/** Cómo se ve cada movimiento: un título y las líneas de detalle. El autor es siempre el equipo de UcoMenú. */
 export function describeHistory(row: HistoryRow): { title: string; lines: string[] } {
   const d = row.detail;
   const lines: string[] = [];
@@ -172,11 +172,11 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
       return { title: "Cambio de plan", lines };
     }
     case "subscription.suspended":
-      return { title: "Cuenta suspendida por UcoMenu", lines };
+      return { title: "Cuenta suspendida por UcoMenú", lines };
     case "subscription.reactivated": {
       const state = isStr(d.state) ? STATE_AFTER_REACTIVATION[d.state] : undefined;
       if (state) lines.push(state);
-      return { title: "Cuenta reactivada por UcoMenu", lines };
+      return { title: "Cuenta reactivada por UcoMenú", lines };
     }
     case "payment.registered": {
       if (typeof d.amount_cents === "number" && isStr(d.currency)) lines.push(formatMoney(d.amount_cents, d.currency));
@@ -195,7 +195,7 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
     case "owner.added":
       return { title: d.promoted === true ? "Una persona del equipo pasó a Dueño" : "Se sumó una persona como Dueño", lines };
     case "organization.reactivated":
-      return { title: "Local reactivado por UcoMenu", lines };
+      return { title: "Local reactivado por UcoMenú", lines };
     case "addon.activated":
     case "addon.changed":
     case "addon.ended": {
@@ -203,11 +203,11 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
         // Sucursales adicionales (ficha sucursal-adicional): se cuentan sucursales, no «packs».
         if (row.action === "addon.ended") {
           if (isDate(d.ends_at)) lines.push(`Finalizaron el ${formatDateWithYear(d.ends_at)}`);
-          return { title: "Sucursales adicionales finalizadas por UcoMenu", lines };
+          return { title: "Sucursales adicionales finalizadas por UcoMenú", lines };
         }
         if (typeof d.extra_packs === "number") lines.push(d.extra_packs === 1 ? "1 sucursal adicional" : `${d.extra_packs} sucursales adicionales`);
         return {
-          title: row.action === "addon.activated" ? "Sucursales adicionales activadas por UcoMenu" : "Sucursales adicionales modificadas por UcoMenu",
+          title: row.action === "addon.activated" ? "Sucursales adicionales activadas por UcoMenú" : "Sucursales adicionales modificadas por UcoMenú",
           lines,
         };
       }
@@ -215,10 +215,10 @@ export function describeHistory(row: HistoryRow): { title: string; lines: string
       if (row.action !== "addon.ended" && typeof d.extra_packs === "number") lines.push(d.extra_packs === 0 ? "Sin packs extra" : `${d.extra_packs} packs extra`);
       if (row.action === "addon.ended") {
         if (isDate(d.ends_at)) lines.push(`Finalizó el ${formatDateWithYear(d.ends_at)}`);
-        return { title: `${name} finalizado por UcoMenu`, lines };
+        return { title: `${name} finalizado por UcoMenú`, lines };
       }
       lines.push(isDate(d.ends_at) ? `Vigente hasta el ${formatDateWithYear(d.ends_at)}` : "Sin fecha de fin");
-      return { title: row.action === "addon.activated" ? `${name} activado por UcoMenu` : `${name} modificado por UcoMenu`, lines };
+      return { title: row.action === "addon.activated" ? `${name} activado por UcoMenú` : `${name} modificado por UcoMenú`, lines };
     }
   }
 }

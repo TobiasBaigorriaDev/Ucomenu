@@ -11,7 +11,7 @@
 El plan Premium ofrece una tarjeta de fidelidad sin app y un recordatorio cuando el cliente pasa cerca del local. Una web no puede leer la ubicación en segundo plano, así que la cercanía solo es posible apoyándose en capacidades del sistema operativo.
 
 ## Decisión
-Emitir la tarjeta como **pase nativo**: `.pkpass` tipo *storeCard* firmado por UcoMenu para Apple Wallet, y `LoyaltyClass`/`LoyaltyObject` para Google Wallet, con UcoMenu como **único emisor** para todos los tenants. La cercanía se delega al sistema: `locations` + `relevantText` en Apple y `merchantLocations` en Google, con las coordenadas de las sucursales. El saldo de sellos se actualiza por el web service de PassKit + APNs (Apple) y por la API REST (Google). Las promociones puntuales se envían como actualización del pase.
+Emitir la tarjeta como **pase nativo**: `.pkpass` tipo *storeCard* firmado por UcoMenú para Apple Wallet, y `LoyaltyClass`/`LoyaltyObject` para Google Wallet, con UcoMenú como **único emisor** para todos los tenants. La cercanía se delega al sistema: `locations` + `relevantText` en Apple y `merchantLocations` en Google, con las coordenadas de las sucursales. El saldo de sellos se actualiza por el web service de PassKit + APNs (Apple) y por la API REST (Google). Las promociones puntuales se envían como actualización del pase.
 
 ## Alternativas consideradas
 - **Web Push con geolocalización** — inviable: los navegadores no exponen la ubicación en segundo plano; solo serviría con la web abierta.
@@ -20,7 +20,7 @@ Emitir la tarjeta como **pase nativo**: `.pkpass` tipo *storeCard* firmado por U
 - **Un emisor por restaurante** — cada local tendría que abrir y mantener sus cuentas de Apple y Google. Inviable comercialmente.
 
 ## Consecuencias
-- Sin app y sin rastrear ubicaciones: UcoMenu no almacena posiciones de clientes, lo que simplifica privacidad y cumplimiento.
+- Sin app y sin rastrear ubicaciones: UcoMenú no almacena posiciones de clientes, lo que simplifica privacidad y cumplimiento.
 - **La cercanía no se garantiza ni se mide.** Límites verificados:
   - Máximo 10 ubicaciones por pase en ambas plataformas.
   - Apple: acceso destacado al pase en pantalla de bloqueo con texto propio; el radio lo define Apple según el tipo de pase.

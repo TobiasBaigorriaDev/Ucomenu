@@ -3,7 +3,7 @@ Estado: **hecho** — revisado por Codex (solo lectura, *aprobar* hasta `65d801a
 Nivel: C
 
 ## Objetivo
-Que el Dueño y el personal entren a UcoMenu con su cuenta y vean solo lo que les corresponde: login por email y contraseña, sesión por cookies, `/panel` (carta, mesas, a futuro) y `/sala` (operación en vivo) protegidos **en el servidor** por rol, el Dueño dando de alta, bajando y gestionando a su personal desde el panel, y el aviso de mora visible. Desbloquea «Gestión de carta» y «Panel de sala».
+Que el Dueño y el personal entren a UcoMenú con su cuenta y vean solo lo que les corresponde: login por email y contraseña, sesión por cookies, `/panel` (carta, mesas, a futuro) y `/sala` (operación en vivo) protegidos **en el servidor** por rol, el Dueño dando de alta, bajando y gestionando a su personal desde el panel, y el aviso de mora visible. Desbloquea «Gestión de carta» y «Panel de sala».
 
 ## Decisiones del usuario (2026-10-14)
 1. **Login:** email y contraseña. Sin registro público (el alta de organizaciones llega con SuperAdmin / alta guiada).
@@ -19,7 +19,7 @@ Que el Dueño y el personal entren a UcoMenu con su cuenta y vean solo lo que le
 - **Sin cliente de Supabase en el navegador**: el login, el cierre y los cambios son *server actions*; las cookies de sesión van `httpOnly`.
 - **`service_role` solo en el servidor** (`SUPABASE_SERVICE_ROLE_KEY`, sin `NEXT_PUBLIC_`), y solo en el módulo de personal. Antes de usarla, el servidor comprueba con el **cliente de la persona** (RLS) que es `owner` de la organización del pedido, y que el objetivo pertenece a **esa** organización.
 - **No se amplía la superficie de la Data API**: ninguna función `SECURITY DEFINER` nueva en `public`, ningún permiso de escritura nuevo sobre `memberships`.
-- **Cuentas de varias organizaciones:** el Dueño **no puede** restablecer la contraseña ni borrar la cuenta de alguien que pertenece también a otra organización (sería tomar una cuenta ajena); solo puede quitarle la membresía. Tampoco puede dar de alta un email ya registrado: el error es genérico («No se pudo crear la cuenta con ese email») para no revelar quién usa UcoMenu. La pertenencia a varias organizaciones se asigna por script/SuperAdmin, no desde el panel.
+- **Cuentas de varias organizaciones:** el Dueño **no puede** restablecer la contraseña ni borrar la cuenta de alguien que pertenece también a otra organización (sería tomar una cuenta ajena); solo puede quitarle la membresía. Tampoco puede dar de alta un email ya registrado: el error es genérico («No se pudo crear la cuenta con ese email») para no revelar quién usa UcoMenú. La pertenencia a varias organizaciones se asigna por script/SuperAdmin, no desde el panel.
 - **Quién puede qué sobre el personal:** el alta y **subir a Dueño** requieren cuenta que puede escribir (`active`/`grace`); **la baja, bajar de rol y el restablecimiento de contraseña se permiten siempre** (cortar o reducir un acceso no puede depender del pago). El Dueño restablece solo contraseñas de `staff`; la suya y la de otro Dueño las cambia cada uno en `/cuenta`. En la UI el Dueño no se quita ni se baja a sí mismo (la base lo permitiría si queda otro Dueño).
 - **Baja:** se borra la membresía; si la persona no tiene otra, se borra también su cuenta de Auth (libera el email y mata los refresh tokens). El acceso se corta al instante porque la autorización sale de `memberships`.
 - **Contraseña:** mínimo 10 caracteres (app + `config.toml`). La temporal **no** se fuerza a cambiar en el primer ingreso en este ítem (riesgo registrado).

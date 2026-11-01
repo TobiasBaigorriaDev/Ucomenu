@@ -11,7 +11,7 @@ related_targets: ["src/app/t/[token]/page.tsx"]
 Carta pública de una sucursal: `/m/{org}/{sucursal}` y `/t/{token}` (misma vista, esta última con mesa y barra de llamado). Modo **Persuade** con restricciones de escaneo rápido: el comensal decide qué pedir, pero busca y filtra con una mano.
 
 ## Audience, job, constraints
-Comensal anónimo, celular a 390 px, mesa de salón con poca luz. Trabajo: entender de qué local es, encontrar su plato (por categoría, búsqueda o dieta), abrir el detalle y, si hay mesa, llamar al mozo. Restricciones: solo presentación; cuatro paletas por local (variables CSS dentro de `.carta`, contraste AA ya probado) y logo opcional; con y sin foto; cartas de 5 a 300 platos; tipografía nueva sujeta a aprobación del usuario; sin dependencias nuevas sin aprobación; firma «Hecho con UcoMenu» al pie; voseo es-AR.
+Comensal anónimo, celular a 390 px, mesa de salón con poca luz. Trabajo: entender de qué local es, encontrar su plato (por categoría, búsqueda o dieta), abrir el detalle y, si hay mesa, llamar al mozo. Restricciones: solo presentación; cuatro paletas por local (variables CSS dentro de `.carta`, contraste AA ya probado) y logo opcional; con y sin foto; cartas de 5 a 300 platos; tipografía nueva sujeta a aprobación del usuario; sin dependencias nuevas sin aprobación; firma «Hecho con UcoMenú» al pie; voseo es-AR.
 
 ## Direction
 Fijada por el usuario (gana al sorteo): Bento + Editorial + Card-based. Bento en portada y categorías, platos destacados y todo el listado; editorial como jerarquía de revista y asimetría con quiebres de grilla. Memorable moment: la carta se lee como un número de revista armado en celdas, no como una lista.

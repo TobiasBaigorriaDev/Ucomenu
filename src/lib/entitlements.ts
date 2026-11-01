@@ -27,7 +27,7 @@ export type Entitlements = {
   /** Solo para el Dueño. */
   trialStatus?: TrialStatus;
   trialEndsAt?: string;
-  /** Solo para el Dueño: la cuenta la suspendió a mano el equipo de UcoMenu (no es mora). */
+  /** Solo para el Dueño: la cuenta la suspendió a mano el equipo de UcoMenú (no es mora). */
   suspendedManually?: boolean;
   /**
    * Solo para el Dueño de un plan que admite sucursales adicionales (Pro): cuántas tiene vigentes, el precio mensual de cada una
@@ -210,7 +210,7 @@ export function moraNotice(ent: Entitlements | null, role: Role): MoraNotice | n
     return {
       tone: "grace",
       title: `Tu suscripción venció hace ${plural(dias, "día", "días")}`,
-      body: `Podés seguir trabajando con normalidad${hasta}; después la cuenta pasa a solo lectura. Contactá a UcoMenu para registrar el pago.`,
+      body: `Podés seguir trabajando con normalidad${hasta}; después la cuenta pasa a solo lectura. Contactá a UcoMenú para registrar el pago.`,
     };
   }
 
@@ -226,15 +226,15 @@ export function moraNotice(ent: Entitlements | null, role: Role): MoraNotice | n
     return {
       tone: "read_only",
       title: "Tu cuenta está en solo lectura",
-      body: `Podés ver todo, pero no editar la carta.${hasta} Contactá a UcoMenu para registrar el pago.`,
+      body: `Podés ver todo, pero no editar la carta.${hasta} Contactá a UcoMenú para registrar el pago.`,
     };
   }
 
   if (owner && ent.suspendedManually) {
     return {
       tone: "suspended",
-      title: "Tu cuenta fue suspendida por UcoMenu",
-      body: "La carta no se muestra a tus clientes. Tus datos están a salvo. Contactá a UcoMenu para saber el motivo y reactivarla.",
+      title: "Tu cuenta fue suspendida por UcoMenú",
+      body: "La carta no se muestra a tus clientes. Tus datos están a salvo. Contactá a UcoMenú para saber el motivo y reactivarla.",
     };
   }
 
@@ -242,7 +242,7 @@ export function moraNotice(ent: Entitlements | null, role: Role): MoraNotice | n
     ? {
         tone: "suspended",
         title: "Tu cuenta está suspendida",
-        body: "La carta no se muestra a tus clientes. Tus datos están a salvo. Contactá a UcoMenu para registrar el pago y reactivarla.",
+        body: "La carta no se muestra a tus clientes. Tus datos están a salvo. Contactá a UcoMenú para registrar el pago y reactivarla.",
       }
     : {
         tone: "suspended",

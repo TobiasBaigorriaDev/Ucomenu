@@ -14,7 +14,7 @@ const hanken = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: { default: "UcoMenu", template: "%s | UcoMenu" },
+  title: { default: "UcoMenú", template: "%s | UcoMenú" },
   description: "Menú digital para restaurantes, bares y cafeterías.",
 };
 

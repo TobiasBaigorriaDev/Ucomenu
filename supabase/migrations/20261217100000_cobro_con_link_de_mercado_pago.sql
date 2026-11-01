@@ -357,7 +357,7 @@ begin
 
   if v_intent.id is null then
     -- Cota de la recuperación: «Ya pagué, verificar» consulta (owner_payment_quote) hasta 20 pedidos sin pagar de los últimos 30 días.
-    -- Para que NINGUNO quede fuera, no se crea el 21.º: falla cerrado y el Dueño contacta a UcoMenu (pasa solo con un patrón anormal:
+    -- Para que NINGUNO quede fuera, no se crea el 21.º: falla cerrado y el Dueño contacta a UcoMenú (pasa solo con un patrón anormal:
     -- un pedido nuevo nace cada 72 h, o 10 en 30 días, o cuando el SuperAdmin cambia el importe).
     if (
       select count(*) from public.payment_intents i

@@ -187,9 +187,9 @@ describe("entitlements: prueba y suspensión manual (solo Dueño)", () => {
     expect(parseEntitlements({ ...dueno, suspended_manually: "yes" })?.suspendedManually).toBeUndefined();
   });
 
-  it("el Dueño de una cuenta suspendida a mano ve que la suspendió UcoMenu; el Staff, el aviso de siempre", () => {
+  it("el Dueño de una cuenta suspendida a mano ve que la suspendió UcoMenú; el Staff, el aviso de siempre", () => {
     const ent = parseEntitlements(dueno)!;
-    expect(moraNotice(ent, "owner")?.title).toContain("suspendida por UcoMenu");
+    expect(moraNotice(ent, "owner")?.title).toContain("suspendida por UcoMenú");
     expect(moraNotice(ent, "owner")?.body).toContain("a salvo");
     const staff = moraNotice({ ...ent, suspendedManually: undefined, plan: undefined, periodEnd: undefined, daysLate: undefined }, "staff");
     expect(`${staff?.title} ${staff?.body}`).toContain("dueño");

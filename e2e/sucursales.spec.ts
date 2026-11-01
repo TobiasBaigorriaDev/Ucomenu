@@ -208,7 +208,7 @@ test.describe("tope de sucursales del plan", () => {
 
     await expect(page.getByTestId("sucursales-uso")).toContainText("1 de 1");
     await expect(page.getByTestId("aviso-tope")).toContainText("Tu plan incluye 1 sucursal y ya las usás");
-    await expect(page.getByTestId("aviso-tope")).toContainText("contactá a UcoMenu");
+    await expect(page.getByTestId("aviso-tope")).toContainText("contactá a UcoMenú");
     await expect(page.getByRole("button", { name: "Crear sucursal" })).toHaveCount(0);
 
     await sucursal(page, "Centro").locator("summary", { hasText: "Renombrar" }).click();

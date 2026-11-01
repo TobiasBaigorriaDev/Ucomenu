@@ -1,22 +1,18 @@
 # Ahora (handoff)
 
-Actualizado: 2026-11-01 · agente saliente: Claude Code.
+Actualizado: 2026-11-01 · agente saliente: Codex.
 
 ## Punto de retomada
 
-En `main`, solo commits locales (nada en `origin`, nada desplegado). Último commit: `a43f64d`. Antes de esta tarea: `bdf97df`.
+En `main`, HEAD `a706edd`, con la corrección ortográfica de la marca preparada para commit y publicación autorizados por el usuario. El nombre correcto es **UcoMenú**, según el usuario. Se corrigieron los textos de la aplicación, metadatos, manifiesto de instalación, documentación, expectativas de pruebas y fuentes editables del video. Las rutas históricas, identificadores técnicos en minúsculas y el nombre de la tarea de Windows instalada conservan sus referencias reales. El cambio es S: solo texto; no modifica permisos, reglas de cobro ni estructura de la base. Para deshacerlo, revertir únicamente la sustitución de la marca y esta actualización del handoff; preservar el material local previo sin seguimiento.
 
-Se implementó el **cobro de la suscripción con link de Mercado Pago** (nivel C): el Dueño paga desde Suscripción y el servidor registra el pago solo. Diseño en [ADR 0052](../docs/decisiones/0052-cobro-por-link-de-mercado-pago.md); alcance, evidencia, limitaciones y las cuatro rondas de revisión en [la ficha](cambios/cobro-con-link-de-mercado-pago.md). **Codex aprobó la ronda 4** (rechazó las tres primeras; todos sus hallazgos eran reales y están corregidos). Es una revisión, no la aprobación del usuario.
-
-Migración nueva `20261217100000`, aplicada **solo en la base local** (corregida en su lugar tras la revisión porque nunca salió de esta máquina; si se toca otra vez hay que revertirla primero). Siguiente libre: `20261218100000`. Sin dependencias nuevas. Sin secretos configurados en ningún entorno: sin `MERCADOPAGO_ACCESS_TOKEN` la pantalla sigue con el cobro manual.
+El trabajo anterior sigue siendo el **cobro con link de Mercado Pago** (nivel C), implementado y revisado: [ficha](cambios/cobro-con-link-de-mercado-pago.md) y [ADR 0052](../docs/decisiones/0052-cobro-por-link-de-mercado-pago.md). La revisión de Codex está aprobada y el usuario autorizó el commit, push a `main` y migración a staging en esta sesión. Publicación en curso; verificar Git y staging antes de retomarla. Migración `20261217100000` aplicada solo en local; siguiente libre `20261218100000`. Sin secretos configurados: sin `MERCADOPAGO_ACCESS_TOKEN` se mantiene el cobro manual.
 
 ## Bloqueos y próximo paso
 
-1. El usuario aprueba subir esto a `origin` y a **staging** (migración y despliegue juntos: la app nueva necesita las funciones).
-2. El usuario crea la aplicación de Mercado Pago (hoy tiene una cuenta personal) y pasa las credenciales de **prueba**; configurarlas con `fly secrets set` en staging y el webhook `https://<dominio>/api/mercadopago/webhook` con el evento «Pagos» (`docs/operacion.md`).
-3. Probar contra Mercado Pago de verdad con un usuario de prueba: es lo **único sin probar** (formato de vencimiento, `source_news=webhooks`, búsqueda por referencia, reintentos y la unidad del `ts` de la firma).
-4. Antes de producción: decidir si cobra una cuenta personal o del negocio.
+1. Completar la publicación autorizada de la marca y del cobro en `origin/main`.
+2. Aplicar la migración pendiente y actualizar staging juntos; confirmar el historial remoto y la respuesta de la app.
+3. El usuario debe crear la aplicación de Mercado Pago y habilitar credenciales de prueba y webhook según `docs/operacion.md`. La integración con el proveedor real sigue pendiente.
+4. Antes de producción: resolver titular de la cuenta de cobro, pruebas manuales de staging, datos legales, contador y abogado (`docs/produccion.md`).
 
-Entorno: el repositorio está dentro de OneDrive y `OneDrive.Sync.Service` es el mayor consumidor de CPU; con 11 workers los E2E se cuelgan de forma intermitente, también en specs ajenos. Usar `--workers=4`. Falla previa, no de este cambio: `owner-lectura` (fila `account.deleted` en el `audit_log` local).
-
-Siguen pendientes los de antes: pruebas manuales de staging, datos legales, contador, abogado y producción (`docs/produccion.md`). Preservar los archivos ajenos sin seguimiento: `video/`, `.codegraph/`, capturas, skills de terceros, `skills-lock.json` y `.claude/launch.json`.
+Entorno: OneDrive provoca bloqueos intermitentes de E2E; usar `--workers=4`. Sigue registrado el fallo previo de `owner-lectura` por `account.deleted` en el historial local. Preservar los archivos locales sin seguimiento, incluidos videos, capturas, `.codegraph/`, skills, `skills-lock.json` y `.claude/launch.json`.

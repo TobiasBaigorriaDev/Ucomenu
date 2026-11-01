@@ -56,7 +56,7 @@ export function Pie() {
           <div>
             <Link href="/" className="mk-brand">
               <Mark />
-              UcoMenu
+              UcoMenú
             </Link>
             <p style={{ marginTop: "0.75rem" }}>La carta digital con QR y llamado al mozo para bares, cafés y restaurantes.</p>
           </div>
@@ -72,7 +72,7 @@ export function Pie() {
             <LegalLinks className="text-muted" />
           </div>
         </div>
-        <p className="mk-small">© {new Date().getFullYear()} UcoMenu. Las capturas de esta página son de locales de ejemplo con platos y precios ficticios.</p>
+        <p className="mk-small">© {new Date().getFullYear()} UcoMenú. Las capturas de esta página son de locales de ejemplo con platos y precios ficticios.</p>
       </div>
     </footer>
   );

@@ -13,9 +13,9 @@ export function LegalPending({ children }: { children: ReactNode }) {
   );
 }
 
-/** Quién opera UcoMenu: razón social, CUIT y domicilio, o el aviso de que faltan. */
+/** Quién opera UcoMenú: razón social, CUIT y domicilio, o el aviso de que faltan. */
 export function LegalEntityText() {
-  if (!LEGAL_ENTITY) return <LegalPending>razón social, CUIT y domicilio de quien opera UcoMenu</LegalPending>;
+  if (!LEGAL_ENTITY) return <LegalPending>razón social, CUIT y domicilio de quien opera UcoMenú</LegalPending>;
   return (
     <>
       {LEGAL_ENTITY.name}, CUIT {LEGAL_ENTITY.taxId}, con domicilio en {LEGAL_ENTITY.address}

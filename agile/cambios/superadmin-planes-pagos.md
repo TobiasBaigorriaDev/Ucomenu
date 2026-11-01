@@ -3,7 +3,7 @@ Estado: integrado a `main`, publicado en `origin` y migración aplicada en stagi
 Nivel: C (dinero: plan, vigencia y pagos; autorización: nuevas escrituras solo de SuperAdmin; datos: registros que no se borran)
 
 ## Objetivo
-Que el equipo de UcoMenu (SuperAdmin), desde la ficha de una organización en `/admin/organizaciones/{slug}`, pueda: **cambiar su plan y ciclo**, **suspenderla y reactivarla** a mano, **registrar los pagos** (efecto sobre la vigencia y la mora) y ver la **prueba gratuita de 14 días** como un estado propio, distinto de la mora. Todo auditado de forma que no se pueda reescribir, solo por `service_role`/SuperAdmin, sin ninguna vía de escritura para Dueño ni Staff.
+Que el equipo de UcoMenú (SuperAdmin), desde la ficha de una organización en `/admin/organizaciones/{slug}`, pueda: **cambiar su plan y ciclo**, **suspenderla y reactivarla** a mano, **registrar los pagos** (efecto sobre la vigencia y la mora) y ver la **prueba gratuita de 14 días** como un estado propio, distinto de la mora. Todo auditado de forma que no se pueda reescribir, solo por `service_role`/SuperAdmin, sin ninguna vía de escritura para Dueño ni Staff.
 
 ## Decisiones
 Las que dependen del producto y no estaban definidas se tomaron por la opción **más conservadora** (no regalar tiempo, no acortar vigencia, no borrar nada) y quedan **A CONFIRMAR POR EL USUARIO**: no están cerradas.
@@ -28,7 +28,7 @@ Las que dependen del producto y no estaban definidas se tomaron por la opción *
 
 ## Aceptación
 - [x] Dado un SuperAdmin, cuando cambia plan y ciclo con motivo, entonces cambian `plan_code`/`billing_cycle`, las fechas no se tocan, y hay **una** fila de auditoría (`subscription.plan_changed`) con actor, antes, después y motivo; los límites y features nuevos rigen en el acto y bajar de plan no borra nada.
-- [x] Cuando suspende, la cuenta pasa a `suspended` aunque las fechas estén al día: escrituras bloqueadas (`42501`/0 filas), carta pública «no disponible», datos intactos, el Dueño ve que la suspendió UcoMenu y el Staff solo el estado. Reactivar quita la suspensión **sin mover fechas**. Suspender dos veces o reactivar sin suspensión da error claro y no agrega auditoría.
+- [x] Cuando suspende, la cuenta pasa a `suspended` aunque las fechas estén al día: escrituras bloqueadas (`42501`/0 filas), carta pública «no disponible», datos intactos, el Dueño ve que la suspendió UcoMenú y el Staff solo el estado. Reactivar quita la suspensión **sin mover fechas**. Suspender dos veces o reactivar sin suspensión da error claro y no agrega auditoría.
 - [x] Cuando registra un pago válido, se guarda el pago (importe, moneda, medio, referencia, fecha, plan/ciclo del momento, vencimiento anterior y nuevo), la vigencia pasa a «cubre hasta», la cuenta en gracia/solo lectura/mora vuelve a `active` y queda auditoría (sin la referencia).
 - [x] Un pago que no extiende (fecha anterior o igual al vencimiento actual, o ya vencida), repetido, con importe/moneda/medio/fechas inválidos o a más de 731 días **no deja ni pago, ni cambio de vigencia, ni auditoría**.
 - [x] Dos pagos simultáneos iguales dejan uno; dos distintos terminan en la fecha más lejana sin acortar nunca.

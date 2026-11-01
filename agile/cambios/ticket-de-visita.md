@@ -9,7 +9,7 @@ Mitigar el riesgo documentado en ADR 0009 y 0010: un comensal que se fue conserv
 - **A. Ticket de visita con TTL** — *elegida.* Sin fricción para quien está en la mesa, sin permisos ni cuentas, casi sin base de datos.
 - **B1. Cerrar la sesión al atender «Pedir la cuenta»** — pospuesta: cubre la salida real pero depende de A (hay que tener tickets que invalidar) y de que se pida la cuenta.
 - **B2. «Liberar mesa» manual** — descartada: si el mozo olvida abrir o liberar, bloquea a clientes legítimos (peor que el problema).
-- **C. Geolocalización al tocar** — descartada: permiso invasivo en el peor momento, GPS impreciso adentro, falseable, choca con la postura de privacidad (`arquitectura.md`: «UcoMenu no rastrea la ubicación») y suma datos personales (ley 25.326).
+- **C. Geolocalización al tocar** — descartada: permiso invasivo en el peor momento, GPS impreciso adentro, falseable, choca con la postura de privacidad (`arquitectura.md`: «UcoMenú no rastrea la ubicación») y suma datos personales (ley 25.326).
 - **D2 IP del Wi-Fi del local** (la mayoría usa datos móviles), **D3 horario de atención**, **D4 QR dinámico o PIN**: descartadas.
 
 ## Decisiones (las del usuario son «A + D1 con la recomendación»; los valores marcados *revisable* son los que propuse y no se objetaron)
