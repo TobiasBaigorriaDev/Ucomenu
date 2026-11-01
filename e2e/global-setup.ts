@@ -1,4 +1,5 @@
 import { startGeminiStub } from "./gemini-stub";
+import { startMpStub } from "./mp-stub";
 import { startMuxStub } from "./mux-stub";
 import { pauseQrResetJob } from "../tests/cron-local";
 
@@ -9,9 +10,13 @@ export default async function globalSetup() {
     await stub.close();
     throw error;
   });
+  const mp = await startMpStub().catch(async (error) => {
+    await Promise.all([stub.close(), gemini.close()]);
+    throw error;
+  });
   let restoreCron: () => void;
-  try { restoreCron = pauseQrResetJob(); } catch (error) { await Promise.all([stub.close(), gemini.close()]); throw error; }
+  try { restoreCron = pauseQrResetJob(); } catch (error) { await Promise.all([stub.close(), gemini.close(), mp.close()]); throw error; }
   return async () => {
-    try { restoreCron(); } finally { await Promise.all([stub.close(), gemini.close()]); }
+    try { restoreCron(); } finally { await Promise.all([stub.close(), gemini.close(), mp.close()]); }
   };
 }

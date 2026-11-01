@@ -1,5 +1,6 @@
 import { defineConfig } from "@playwright/test";
 import { E2E_GEMINI_KEY, GEMINI_STUB_URL } from "./e2e/gemini-stub";
+import { E2E_MP, MP_STUB_URL } from "./e2e/mp-stub";
 import { E2E_MUX, MUX_STUB_URL } from "./e2e/mux-stub";
 
 // El servidor de prueba hereda estas variables: la clave de servicio (solo en .env.test.local) llega a la app
@@ -30,6 +31,13 @@ process.env.MUX_TOKEN_SECRET = E2E_MUX.tokenSecret;
 process.env.MUX_WEBHOOK_SECRET = E2E_MUX.webhookSecret;
 process.env.MUX_API_URL = MUX_STUB_URL;
 
+// Cobro con link de Mercado Pago (ficha cobro-con-link-de-mercado-pago): el servidor de pruebas habla con un Mercado Pago de MENTIRA
+// (`e2e/mp-stub.ts`) y usa un token y un secreto de pruebas, SIEMPRE, para que las credenciales reales de `.env.local` no lleguen
+// nunca a un E2E ni se cree un link o se cobre nada de verdad.
+process.env.MERCADOPAGO_ACCESS_TOKEN = E2E_MP.accessToken;
+process.env.MERCADOPAGO_WEBHOOK_SECRET = E2E_MP.webhookSecret;
+process.env.MERCADOPAGO_API_URL = MP_STUB_URL;
+
 // Sugerencia de traducciones (ficha traduccion-automatica): el servidor de pruebas habla con un Gemini de MENTIRA
 // (`e2e/gemini-stub.ts`) y una clave de pruebas, SIEMPRE, para que la clave real de `.env.local` no llegue a un E2E ni se gaste cuota.
 process.env.GEMINI_API_KEY = E2E_GEMINI_KEY;
@@ -38,6 +46,9 @@ delete process.env.GEMINI_MODEL;
 
 // `E2E_PORT` permite que dos worktrees corran E2E a la vez (cada uno con su propio Supabase local y su puerto).
 const PORT = Number(process.env.E2E_PORT ?? 3100);
+// El link de pago y el aviso de Mercado Pago se arman con la dirección pública de la app: en las pruebas, la del propio servidor de
+// pruebas (la misma que ya usan los QR de las mesas cuando no se define). Si el entorno trae otra, se respeta.
+process.env.NEXT_PUBLIC_SITE_URL ||= `http://localhost:${PORT}`;
 // Con E2E_BASE_URL las pruebas apuntan a un servidor ya levantado (por ejemplo, el contenedor de Docker) en vez de `next start`.
 const EXTERNAL_BASE_URL = process.env.E2E_BASE_URL;
 

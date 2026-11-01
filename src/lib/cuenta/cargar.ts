@@ -39,6 +39,12 @@ export async function loadOwnerAccount(db: Db, orgId: string, before: { payments
   };
 }
 
+/** Precio ANUAL de una sucursal adicional (`addons`, de lectura con sesión), o `null` si no se puede leer o no se vende por año. */
+export async function loadExtraBranchYearlyPrice(db: Db): Promise<number | null> {
+  const { data, error } = await db.from("addons").select("yearly_price_cents").eq("code", "extra_branch").maybeSingle();
+  return error || !data ? null : data.yearly_price_cents;
+}
+
 /** Precio de lista del plan en el catálogo (centavos de su moneda, hoy pesos), o `null` si no se puede leer. La tabla `plans` es de lectura con sesión. */
 export async function loadPlanPrice(db: Db, planCode: string): Promise<PlanCatalogPrice | null> {
   const { data, error } = await db.from("plans").select("monthly_price_cents, yearly_price_cents, price_currency").eq("code", planCode).maybeSingle();

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { deleteOrganization } from "@/lib/admin/delete-organization";
 import { ADMIN_ERROR_MESSAGE, createOrganization, type AdminContext } from "@/lib/admin/organizations";
-import { changePlan, endAddon, endFeaturePreview, registerPayment, setAddon, setExtraBranches, setFeaturePreview, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
+import { changePlan, endAddon, endFeaturePreview, registerPayment, resolvePaymentReview, setAddon, setExtraBranches, setFeaturePreview, setOrganizationActive, setSuspension, voidPayment } from "@/lib/admin/subscriptions";
 import { parseSlug } from "@/lib/admin/validation";
 import { correctBranchSlug } from "@/lib/admin/branches";
 import { addExistingOwner, type Affiliation } from "@/lib/admin/owners";
@@ -160,6 +160,20 @@ export async function voidPaymentAction(_previous: FormState, formData: FormData
   revalidatePath("/admin");
   revalidatePath(prepared.page);
   return { ok: true, message: "Listo: el pago quedó anulado y el vencimiento volvió al de antes. Si había que cargarlo bien, registrá el pago correcto." };
+}
+
+/** Pagos de Mercado Pago a revisar (ADR 0052): un acuse con nota; el dinero se corrige con las demás acciones. */
+export async function resolveReviewAction(_previous: FormState, formData: FormData): Promise<FormState> {
+  const prepared = await organizationContext(formData);
+  const values = { note: text(formData, "note") };
+  if (!prepared) return { error: NOT_CONFIGURED, values };
+
+  const result = await resolvePaymentReview(prepared.ctx, { slug: prepared.slug, reviewId: text(formData, "reviewId"), note: values.note });
+  if (!result.ok) return { error: ADMIN_ERROR_MESSAGE[result.error], values };
+
+  revalidatePath("/admin");
+  revalidatePath(prepared.page);
+  return { ok: true, message: "Listo: el pago a revisar quedó resuelto." };
 }
 
 // ---------------------------------------------------------------------------

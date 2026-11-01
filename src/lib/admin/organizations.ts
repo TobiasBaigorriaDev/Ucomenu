@@ -62,6 +62,9 @@ export type AdminError =
   | "payment_already_voided"
   | "payment_not_latest"
   | "payment_history_inconsistent"
+  // Pagos de Mercado Pago a revisar (ficha cobro-con-link-de-mercado-pago)
+  | "review_not_found"
+  | "review_already_resolved"
   // Add-ons y baja de organizaciones (ficha addons-y-baja-de-organizaciones)
   | "invalid_addon"
   | "invalid_packs"
@@ -148,6 +151,8 @@ export const ADMIN_ERROR_MESSAGE: Record<AdminError, string> = {
   payment_already_voided: "Ese pago ya está anulado: no hay nada que hacer. Si hace falta, registrá el pago correcto.",
   payment_not_latest:
     "Solo se puede anular el último pago vigente, el que define el vencimiento actual. Si hay pagos más nuevos, anulá primero esos; también puede que la página esté desactualizada: recargala.",
+  review_not_found: "No encontramos ese pago a revisar en esta organización.",
+  review_already_resolved: "Ese pago a revisar ya estaba resuelto. Recargá la página.",
   payment_history_inconsistent:
     "Los pagos de esta organización no cuadran entre sí (se tocaron a mano), así que no se anula automáticamente. No se cambió nada: hay que revisarlo con acceso a la base.",
   invalid_addon: "Elegí un add-on válido.",

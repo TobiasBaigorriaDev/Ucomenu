@@ -17,6 +17,11 @@ import type { Database } from "./database.types";
  *    `release_analytics_summary_claim` y `save_analytics_summary`, tras `requireOwner` y con el resumen ya validado. Las funciones
  *    vuelven a comprobar que quien pidió sea Dueño con el plan; ningún rol de la API puede ejecutarlas (así el Dueño no escribe por la
  *    API un texto que no pasó la validación ni esquiva el tiempo mínimo entre generaciones).
+ *  - Excepción acotada (ADR 0052): `src/app/panel/[org]/suscripcion/actions.ts` y `src/app/api/mercadopago/webhook/route.ts` lo usan solo
+ *    para las funciones `system_*` del cobro con Mercado Pago (crear la intención de pago, guardar su link, registrar un pago ya verificado
+ *    contra la API de Mercado Pago y marcar un reembolso). La primera la llama tras `requireOwner` y la base vuelve a comprobar que sea
+ *    Dueño; la segunda, sin sesión, solo tras validar la firma del aviso y leer el pago desde la API de Mercado Pago. Ningún rol de la API
+ *    puede ejecutarlas, y el importe y la vigencia los calcula la base.
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

@@ -79,6 +79,8 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   record_promotion_change: [true, false, false], // trigger de promotions, promotion_targets y promotion_branches: escribe promotion_history (la API no tiene INSERT)
   promotion_history_append_only: [false, false, false], // trigger de promotion_history: rechaza UPDATE, DELETE y TRUNCATE
   purge_organization_promotion_history: [true, false, false], // purga del historial de promociones al borrar una organización (ADR 0040): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
+  payment_quote: [true, false, false], // cobro con Mercado Pago (ADR 0052): la única cuenta del importe y de si se puede cobrar; la usan owner_payment_quote y system_start_payment_intent; sin EXECUTE para la API
+  flag_payment_review: [true, false, false], // cobro con Mercado Pago (ADR 0052): deja un pago a revisar (idempotente); solo la llaman las funciones system_*; sin EXECUTE para la API
   translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
 };
 
@@ -102,6 +104,12 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_create_organization: [false, false], // SuperAdmin (ADR 0013): solo service_role, desde la acción de servidor
   admin_register_payment: [false, false], // SuperAdmin: registra un pago y mueve la vigencia; solo service_role
   admin_set_suspension: [false, false], // SuperAdmin: suspende o reactiva a mano; solo service_role
+  admin_resolve_payment_review: [false, false], // SuperAdmin (ADR 0052): acusa un pago de Mercado Pago a revisar, con nota y auditoría; solo service_role
+  system_start_payment_intent: [false, false], // cobro con Mercado Pago (ADR 0052): crea o reutiliza la intención de pago con el importe congelado; recomprueba que quien pide sea Dueño; solo service_role
+  system_attach_payment_preference: [false, false], // cobro con Mercado Pago (ADR 0052): guarda el link de la intención (una sola vez); solo service_role
+  system_register_mp_payment: [false, false], // cobro con Mercado Pago (ADR 0052): registra un pago aprobado y ya verificado contra la API, idempotente, y mueve la vigencia; solo service_role
+  system_flag_mp_reversal: [false, false], // cobro con Mercado Pago (ADR 0052): marca a revisar un reembolso o contracargo; no quita la vigencia; solo service_role
+  owner_payment_quote: [false, true], // el Dueño ve lo que pagaría y su link pendiente (ADR 0052): vuelve a comprobar que sea Dueño; solo lectura
   admin_void_payment: [false, false], // SuperAdmin (ficha anular-pagos): anula el último pago vigente y restaura la vigencia; solo service_role
   drop_push_subscriptions: [false, false], // aviso de llamados (ADR 0020): limpia suscripciones muertas; solo service_role
   submit_video_comment: [false, false], // única puerta de alta de video_comments; solo service_role, la llama la acción de servidor tras verificar ticket y conexión (ADR 0031, 0038)
@@ -312,6 +320,7 @@ describe("RLS y permisos de tablas", () => {
       ["admin_list_orphan_accounts", "f", "f", "f", "t"],
       ["admin_record_account_deleted", "f", "f", "f", "t"],
       ["admin_register_payment", "f", "f", "f", "t"],
+      ["admin_resolve_payment_review", "f", "f", "f", "t"],
       ["admin_set_addon", "f", "f", "f", "t"],
       ["admin_set_extra_branches", "f", "f", "f", "t"],
       ["admin_set_feature_preview", "f", "f", "f", "t"],
@@ -347,6 +356,37 @@ describe("RLS y permisos de tablas", () => {
       expect(permisos("authenticated", tabla), `${tabla}: authenticated`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
       expect(permisos("service_role", tabla), `${tabla}: service_role`).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
     }
+  });
+
+  it("payment_intents y payment_reviews (cobro con Mercado Pago, ADR 0052): nada se escribe por la API ni por service_role; solo el SuperAdmin lee las revisiones", () => {
+    const permisos = (rol: string, tabla: string) =>
+      sql(
+        `select ${["select", "insert", "update", "delete", "truncate", "references", "trigger"]
+          .map((p) => `has_table_privilege('${rol}', 'public.${tabla}', '${p}')`)
+          .join(", ")}`,
+      )[0];
+
+    for (const rol of ["anon", "authenticated", "service_role"]) {
+      expect(permisos(rol, "payment_intents"), `payment_intents: ${rol}`).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    }
+    expect(permisos("anon", "payment_reviews")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    expect(permisos("service_role", "payment_reviews")).toEqual(["f", "f", "f", "f", "f", "f", "f"]);
+    // authenticated lee (la política deja pasar solo al SuperAdmin) y no escribe.
+    expect(permisos("authenticated", "payment_reviews")).toEqual(["t", "f", "f", "f", "f", "f", "f"]);
+  });
+
+  it("las funciones system_* del cobro con Mercado Pago: solo service_role puede ejecutarlas", () => {
+    const filas = sql(`
+      select p.proname, has_function_privilege('anon', p.oid, 'execute'), has_function_privilege('authenticated', p.oid, 'execute'),
+             has_function_privilege('public', p.oid, 'execute'), has_function_privilege('service_role', p.oid, 'execute')
+      from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'public' and p.proname like 'system\_%' order by 1`);
+    expect(filas).toEqual([
+      ["system_attach_payment_preference", "f", "f", "f", "t"],
+      ["system_flag_mp_reversal", "f", "f", "f", "t"],
+      ["system_register_mp_payment", "f", "f", "f", "t"],
+      ["system_start_payment_intent", "f", "f", "f", "t"],
+    ]);
   });
 
   it("private.account_leases: nadie la toca por la API (ni anon, ni authenticated, ni service_role); solo las funciones definer", () => {

@@ -78,6 +78,9 @@ const DB_ERRORS: Record<string, AdminError> = {
   branches_selection_invalid: "branches_selection_invalid",
   extra_branches_must_end: "extra_branches_must_end",
   addon_has_own_action: "addon_has_own_action",
+  review_not_found: "review_not_found",
+  review_already_resolved: "review_already_resolved",
+  invalid_note: "invalid_reason",
   invalid_feature: "invalid_preview_feature",
   invalid_preview_end: "invalid_preview_end",
   feature_in_plan: "feature_in_plan",
@@ -223,6 +226,56 @@ export async function voidPayment(ctx: AdminContext, input: VoidPaymentInput): P
   if (error) return dbFailure(error);
   if (typeof data !== "string") return fail("uncertain_change");
   return ok({ voidId: data });
+}
+
+/** Un pago de Mercado Pago que no se registró solo, o que se revirtió (ADR 0052). */
+export type PaymentReviewRow = { id: string; createdAt: string; reason: string; amountCents: number; currency: string; providerPaymentId: string };
+
+/**
+ * Los pagos de Mercado Pago sin resolver de una organización. Se leen con la sesión del SuperAdmin (la política de lectura de
+ * `payment_reviews` es solo de SuperAdmin; la clave de servicio no tiene acceso a la tabla). `null` si no se pudieron leer.
+ */
+export async function listPaymentReviews(ctx: AdminContext, orgId: string): Promise<PaymentReviewRow[] | null> {
+  if (!(await isPlatformAdmin(ctx))) return null;
+  const { data, error } = await ctx.session
+    .from("payment_reviews")
+    .select("id, created_at, reason, amount_cents, currency, provider_payment_id")
+    .eq("organization_id", orgId)
+    .is("resolved_at", null)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) return null;
+  return data.map((row) => ({
+    id: row.id,
+    createdAt: row.created_at,
+    reason: row.reason,
+    amountCents: row.amount_cents,
+    currency: row.currency,
+    providerPaymentId: row.provider_payment_id,
+  }));
+}
+
+export type ResolveReviewInput = { slug: unknown; reviewId: unknown; note: unknown };
+
+/**
+ * Marca como resuelto un pago a revisar (ADR 0052). Es un acuse con nota: la corrección del dinero (registrar a mano, anular,
+ * reembolsar en Mercado Pago) se hace con las acciones que ya existen. La revisión tiene que ser de ESA organización.
+ */
+export async function resolvePaymentReview(ctx: AdminContext, input: ResolveReviewInput): Promise<Result> {
+  if (!(await isPlatformAdmin(ctx))) return fail("forbidden");
+  const note = parseReason(input.note);
+  if (!note) return fail("invalid_reason");
+  const reviewId = asUuid(input.reviewId);
+  if (!reviewId) return fail("review_not_found");
+  const org = await findOrgId(ctx, input.slug);
+  if (!org.ok) return org;
+
+  const found = await ctx.session.from("payment_reviews").select("id").eq("id", reviewId).eq("organization_id", org.data).maybeSingle();
+  if (found.error) return fail("unexpected");
+  if (!found.data) return fail("review_not_found");
+
+  const { error } = await ctx.admin.rpc("admin_resolve_payment_review", { p_actor: ctx.actorId, p_review: reviewId, p_note: note });
+  return error ? dbFailure(error) : ok(undefined);
 }
 
 export type OrganizationActiveInput = { slug: unknown; active: boolean; reason: unknown };

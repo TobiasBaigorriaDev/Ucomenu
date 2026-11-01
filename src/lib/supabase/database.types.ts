@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "addons": {
                   Row: {
-                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at": string,"currency": string | null,"grants_limit": string | null,"max_packs": number | null,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number,"price_cents": number | null,"quota_per_pack": number | null
+                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at": string,"currency": string | null,"grants_limit": string | null,"max_packs": number | null,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number,"price_cents": number | null,"quota_per_pack": number | null,"yearly_price_cents": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at"?: string,"currency"?: string | null,"grants_limit"?: string | null,"max_packs"?: number | null,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number,"price_cents"?: number | null,"quota_per_pack"?: number | null
+                    "allowed_plans": (string)[],"base_model_quota": number,"code": string,"created_at"?: string,"currency"?: string | null,"grants_limit"?: string | null,"max_packs"?: number | null,"monthly_price_usd_cents": number,"name": string,"pack_monthly_price_usd_cents": number,"pack_size": number,"price_cents"?: number | null,"quota_per_pack"?: number | null,"yearly_price_cents"?: number | null
                   }
                   Update: {
-                    "allowed_plans"?: (string)[],"base_model_quota"?: number,"code"?: string,"created_at"?: string,"currency"?: string | null,"grants_limit"?: string | null,"max_packs"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"pack_monthly_price_usd_cents"?: number,"pack_size"?: number,"price_cents"?: number | null,"quota_per_pack"?: number | null
+                    "allowed_plans"?: (string)[],"base_model_quota"?: number,"code"?: string,"created_at"?: string,"currency"?: string | null,"grants_limit"?: string | null,"max_packs"?: number | null,"monthly_price_usd_cents"?: number,"name"?: string,"pack_monthly_price_usd_cents"?: number,"pack_size"?: number,"price_cents"?: number | null,"quota_per_pack"?: number | null,"yearly_price_cents"?: number | null
                   }
                   Relationships: [
                     
@@ -463,6 +463,46 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"payment_intents": {
+                  Row: {
+                    "amount_cents": number,"billing_cycle": string,"checkout_url": string | null,"created_at": string,"created_by": string,"currency": string,"expires_at": string,"extra_branches": number,"id": string,"mp_preference_id": string | null,"organization_id": string,"paid_at": string | null,"plan_code": string,"provider_payment_id": string | null,"status": string,"subscription_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"billing_cycle": string,"checkout_url"?: string | null,"created_at"?: string,"created_by": string,"currency": string,"expires_at": string,"extra_branches": number,"id"?: string,"mp_preference_id"?: string | null,"organization_id": string,"paid_at"?: string | null,"plan_code": string,"provider_payment_id"?: string | null,"status"?: string,"subscription_id": string
+                  }
+                  Update: {
+                    "amount_cents"?: number,"billing_cycle"?: string,"checkout_url"?: string | null,"created_at"?: string,"created_by"?: string,"currency"?: string,"expires_at"?: string,"extra_branches"?: number,"id"?: string,"mp_preference_id"?: string | null,"organization_id"?: string,"paid_at"?: string | null,"plan_code"?: string,"provider_payment_id"?: string | null,"status"?: string,"subscription_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "payment_intents_organization_id_fkey"
+      columns: ["organization_id"]
+isOneToOne: false
+      referencedRelation: "organizations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "payment_intents_subscription_id_fkey"
+      columns: ["subscription_id"]
+isOneToOne: false
+      referencedRelation: "subscriptions"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"payment_reviews": {
+                  Row: {
+                    "amount_cents": number,"created_at": string,"currency": string,"id": string,"intent_id": string | null,"organization_id": string,"provider_payment_id": string,"reason": string,"resolution_note": string | null,"resolved_at": string | null,"resolved_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "amount_cents": number,"created_at"?: string,"currency": string,"id"?: string,"intent_id"?: string | null,"organization_id": string,"provider_payment_id": string,"reason": string,"resolution_note"?: string | null,"resolved_at"?: string | null,"resolved_by"?: string | null
+                  }
+                  Update: {
+                    "amount_cents"?: number,"created_at"?: string,"currency"?: string,"id"?: string,"intent_id"?: string | null,"organization_id"?: string,"provider_payment_id"?: string,"reason"?: string,"resolution_note"?: string | null,"resolved_at"?: string | null,"resolved_by"?: string | null
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"payment_voids": {
                   Row: {
                     "created_at": string,"id": string,"organization_id": string,"payment_id": string,"period_end_after": string,"period_end_before": string,"reason": string,"subscription_id": string,"voided_by": string
@@ -485,14 +525,14 @@ isOneToOne: true
                   ]
                 },"payments": {
                   Row: {
-                    "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"organization_id": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference": string | null,"registered_by": string,"subscription_id": string
+                    "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at": string,"currency": string,"id": string,"method": string,"organization_id": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"provider": string | null,"provider_payment_id": string | null,"reference": string | null,"registered_by": string,"subscription_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at"?: string,"currency": string,"id"?: string,"method": string,"organization_id": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"reference"?: string | null,"registered_by": string,"subscription_id": string
+                    "amount_cents": number,"billing_cycle": string,"covers_until": string,"created_at"?: string,"currency": string,"id"?: string,"method": string,"organization_id": string,"paid_on": string,"plan_code": string,"previous_period_end": string,"provider"?: string | null,"provider_payment_id"?: string | null,"reference"?: string | null,"registered_by": string,"subscription_id": string
                   }
                   Update: {
-                    "amount_cents"?: number,"billing_cycle"?: string,"covers_until"?: string,"created_at"?: string,"currency"?: string,"id"?: string,"method"?: string,"organization_id"?: string,"paid_on"?: string,"plan_code"?: string,"previous_period_end"?: string,"reference"?: string | null,"registered_by"?: string,"subscription_id"?: string
+                    "amount_cents"?: number,"billing_cycle"?: string,"covers_until"?: string,"created_at"?: string,"currency"?: string,"id"?: string,"method"?: string,"organization_id"?: string,"paid_on"?: string,"plan_code"?: string,"previous_period_end"?: string,"provider"?: string | null,"provider_payment_id"?: string | null,"reference"?: string | null,"registered_by"?: string,"subscription_id"?: string
                   }
                   Relationships: [
                     
@@ -942,6 +982,9 @@ isOneToOne: false
 "admin_register_payment":
 { Args: { "p_actor": string,"p_amount_cents": number,"p_covers_until": string,"p_currency": string,"p_method": string,"p_org": string,"p_paid_on": string,"p_reference": string }; Returns: string
                            },
+"admin_resolve_payment_review":
+{ Args: { "p_actor": string,"p_note": string,"p_review": string }; Returns: undefined
+                           },
 "admin_set_addon":
 { Args: { "p_actor": string,"p_addon": string,"p_ends_at": string,"p_extra_packs": number,"p_org": string,"p_reason": string }; Returns: undefined
                            },
@@ -1019,6 +1062,9 @@ isOneToOne: false
 { Args: { "p_branch"?: string,"p_org": string }; Returns: {
               "bill": number,"hour_of_day": number,"waiter": number
             }[]
+                           },
+"owner_payment_quote":
+{ Args: { "p_org": string }; Returns: Json
                            },
 "owner_payments":
 { Args: { "p_before"?: string,"p_before_id"?: string,"p_limit"?: number,"p_org": string }; Returns: {
@@ -1127,6 +1173,18 @@ isOneToOne: false
                            },
 "submit_video_comment":
 { Args: { "p_alias"?: string,"p_body": string,"p_rate"?: string,"p_token": string,"p_video": string,"p_visit_started_at"?: string }; Returns: Json
+                           },
+"system_attach_payment_preference":
+{ Args: { "p_checkout_url": string,"p_intent": string,"p_preference_id": string }; Returns: boolean
+                           },
+"system_flag_mp_reversal":
+{ Args: { "p_provider_payment_id": string,"p_status": string }; Returns: string
+                           },
+"system_register_mp_payment":
+{ Args: { "p_amount_cents": number,"p_currency": string,"p_intent": string,"p_paid_at": string,"p_provider_payment_id": string }; Returns: Json
+                           },
+"system_start_payment_intent":
+{ Args: { "p_org": string,"p_user": string }; Returns: Json
                            },
 "unregister_push_subscription":
 { Args: { "p_endpoint": string,"p_org"?: string }; Returns: undefined

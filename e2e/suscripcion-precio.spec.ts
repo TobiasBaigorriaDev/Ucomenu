@@ -67,6 +67,16 @@ test.describe("Suscripción: lo que paga el Dueño", () => {
     await expect(page.getByTestId("suscripcion-ultimo-pago")).toHaveCount(0);
   });
 
+  test("plan Pro anual con una sucursal adicional: la adicional se cobra por año (con descuento), no por mes", async ({ page }) => {
+    const t = await local("precio-anual-adicional", "pro", "yearly");
+    const alta = await service().from("subscription_addons").insert({ organization_id: t.orgId, addon_code: "extra_branch", extra_packs: 1 });
+    expect(alta.error).toBeNull();
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(`/panel/${t.slug}/suscripcion`);
+    await expect(page.getByTestId("suscripcion-precio-valor")).toHaveText(/\$\s?278\.400 ARS por año/);
+    expect(plain(await page.getByTestId("suscripcion-precio-linea").textContent())).toBe("Más $ 115.200 ARS por año por 1 sucursal adicional.");
+  });
+
   test("en la prueba gratuita no cuesta nada y dice qué viene después", async ({ page }) => {
     const t = await local("precio-prueba", "basic", "monthly");
     const fin = new Date(Date.now() + 5 * DIA_MS).toISOString();

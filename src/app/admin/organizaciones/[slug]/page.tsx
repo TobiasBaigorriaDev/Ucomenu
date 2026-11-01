@@ -3,10 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { canDeleteNow, DELETION_WAIT_DAYS, deletionAvailableAt } from "@/lib/admin/delete-organization";
-import { CYCLE_LABEL, formatMoney, METHOD_LABEL } from "@/lib/admin/format";
+import { CYCLE_LABEL, formatMoney, METHOD_LABEL, REVIEW_REASON_LABEL } from "@/lib/admin/format";
 import { AUDIT_LIMIT } from "@/lib/admin/organizations";
 import { listAdminBranches } from "@/lib/admin/branches";
-import { getOrganizationDetail, isVoidable, PAYMENTS_LIMIT, previewableFeatures, type PaymentRow } from "@/lib/admin/subscriptions";
+import { getOrganizationDetail, isVoidable, listPaymentReviews, PAYMENTS_LIMIT, previewableFeatures, type PaymentRow } from "@/lib/admin/subscriptions";
 import { isBillingCycle, MAX_EXTRA_PACKS, MAX_PREVIEW_DAYS, PREVIEW_FEATURE_LABEL, proposeCoversUntil, todayInArgentina } from "@/lib/admin/validation";
 import { requirePlatformAdmin } from "@/lib/auth/session";
 import { accountState, BILLING_STATE_LABEL, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL } from "@/lib/entitlements";
@@ -14,7 +14,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createSessionClient } from "@/lib/supabase/server";
 import { AuditItem } from "../../audit";
 import { StatusPill } from "../../status-pill";
-import { AddOwnerForm, AddonForm, ChangePlanForm, DeleteOrganizationForm, EndAddonForm, EndFeaturePreviewForm, ExtraBranchesForm, FeaturePreviewForm, OrganizationActiveForm, PaymentForm, SuspensionForm, VoidPaymentForm } from "./forms";
+import { AddOwnerForm, AddonForm, ChangePlanForm, DeleteOrganizationForm, EndAddonForm, EndFeaturePreviewForm, ExtraBranchesForm, FeaturePreviewForm, OrganizationActiveForm, PaymentForm, ResolveReviewForm, SuspensionForm, VoidPaymentForm } from "./forms";
 import { BranchSlugForm } from "./branch-slug-form";
 
 export const metadata: Metadata = { title: "Organización" };
@@ -105,7 +105,9 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
   }
 
   const org = result.data;
-  const branches = await listAdminBranches({ session: await createSessionClient(), admin: createAdminClient(), actorId: user.id }, org.id);
+  const adminCtx = { session: await createSessionClient(), admin: createAdminClient(), actorId: user.id };
+  const branches = await listAdminBranches(adminCtx, org.id);
+  const reviews = await listPaymentReviews(adminCtx, org.id);
   const now = new Date();
   // Lo que el plan ya incluye no se ofrece: una vista previa no agrega nada (y la base la rechazaría).
   const previewable = previewableFeatures(org.featurePreviews);
@@ -411,6 +413,38 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
           proposedCoversUntil={proposeCoversUntil(org.periodEnd, cycle, now)}
         />
       </section>
+
+      {reviews === null || reviews.length > 0 ? (
+        <section aria-labelledby="seccion-revision" className="panel-cell mt-6" data-testid="pagos-a-revisar">
+          <h2 id="seccion-revision" className="font-display text-2xl">
+            Pagos de Mercado Pago a revisar
+          </h2>
+          {reviews === null ? (
+            <p role="status" className="mt-3 text-muted">
+              No pudimos leer los pagos a revisar. Probá de nuevo en unos minutos.
+            </p>
+          ) : (
+            <>
+              <p className="mt-2 max-w-prose leading-relaxed text-muted">
+                Estos pagos se aprobaron en Mercado Pago pero NO movieron el vencimiento solos. Corregilos con «Registrar un pago» o «Anular»
+                y marcalos como resueltos.
+              </p>
+              <ul className="mt-3 panel-list">
+                {reviews.map((review) => (
+                  <li key={review.id} className="border-b border-ink/15 py-3" data-testid="pago-a-revisar">
+                    <p className="text-base break-words">
+                      <span className="font-medium">{formatMoney(review.amountCents, review.currency)}</span> · pago de Mercado Pago{" "}
+                      <span className="font-mono text-sm">{review.providerPaymentId}</span> · {dateTime.format(new Date(review.createdAt))}
+                    </p>
+                    <p className="mt-1 text-base break-words">{REVIEW_REASON_LABEL[review.reason] ?? review.reason}</p>
+                    <ResolveReviewForm slug={org.slug} reviewId={review.id} />
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </section>
+      ) : null}
 
       <section aria-labelledby="seccion-pagos" className="panel-cell mt-6">
         <h2 id="seccion-pagos" className="font-display text-2xl">

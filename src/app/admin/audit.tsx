@@ -10,6 +10,7 @@ export const ACTION_LABEL: Record<string, string> = {
   "subscription.reactivated": "Reactivación a mano",
   "payment.registered": "Pago registrado",
   "payment.voided": "Pago anulado",
+  "payment_review.resolved": "Pago a revisar resuelto",
   "owner.added": "Dueño sumado",
   "organization.deactivated": "Baja de la organización",
   "organization.reactivated": "Organización reactivada",

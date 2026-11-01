@@ -11,6 +11,7 @@ import {
   endAddonAction,
   endFeaturePreviewAction,
   registerPaymentAction,
+  resolveReviewAction,
   setAddonAction,
   setExtraBranchesAction,
   setFeaturePreviewAction,
@@ -287,6 +288,44 @@ export function VoidPaymentForm({ slug, paymentId, consequence }: { slug: string
               <SubmitButton pendingLabel="Anulando…" className={dangerButtonClass}>
                 Anular pago
               </SubmitButton>
+            </div>
+          </>
+        )}
+      </ActionForm>
+    </details>
+  );
+}
+
+/**
+ * Marcar como resuelto un pago de Mercado Pago a revisar (ADR 0052). Es un acuse con nota de qué se hizo: no mueve dinero ni
+ * fechas (eso se hace registrando o anulando un pago).
+ */
+export function ResolveReviewForm({ slug, reviewId }: { slug: string; reviewId: string }) {
+  return (
+    <details className="mt-2">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-base underline underline-offset-2">Marcar como resuelto</summary>
+      <ActionForm action={resolveReviewAction} className="mt-2 grid max-w-md gap-4">
+        {(state) => (
+          <>
+            <input type="hidden" name="slug" value={slug} />
+            <input type="hidden" name="reviewId" value={reviewId} />
+            <div>
+              <label htmlFor={`resolver-nota-${reviewId}`} className={labelClass}>
+                Qué se hizo
+              </label>
+              <input
+                id={`resolver-nota-${reviewId}`}
+                name="note"
+                type="text"
+                required
+                maxLength={200}
+                autoComplete="off"
+                defaultValue={state.values?.note ?? ""}
+                className={`${inputClass} mt-1`}
+              />
+            </div>
+            <div>
+              <SubmitButton pendingLabel="Guardando…">Marcar como resuelto</SubmitButton>
             </div>
           </>
         )}

@@ -27,6 +27,26 @@ describe("planPriceText", () => {
   });
 });
 
+describe("describePrice: sucursales adicionales en una cuenta anual", () => {
+  const anual = (over: Partial<Entitlements> = {}) => ent({ billingCycle: "yearly", extraBranches: 2, extraBranchPriceCents: 1_200_000, extraBranchCurrency: "ARS", ...over });
+
+  it("se cobran por año con el precio anual, no el mensual rotulado «por mes»", () => {
+    expect(summary(describePrice(anual(), { ...catalog }, 11_520_000))!.lines).toEqual(["Más $ 230.400 ARS por año por 2 sucursales adicionales."]);
+    expect(summary(describePrice(anual({ trialStatus: "in_trial" }), { ...catalog }, 11_520_000))!.lines.at(-1)).toBe(
+      "Más $ 230.400 ARS por año por 2 sucursales adicionales (cuando termine la prueba).",
+    );
+  });
+
+  it("sin el precio anual no se dice ninguno (no se inventa ni se muestra el mensual)", () => {
+    expect(summary(describePrice(anual(), { ...catalog }, null))!.lines).toEqual([]);
+    expect(summary(describePrice(anual(), { ...catalog }))!.lines).toEqual([]);
+  });
+
+  it("una cuenta mensual sigue mostrando el precio mensual aunque llegue el anual", () => {
+    expect(summary(describePrice(anual({ billingCycle: "monthly" }), catalog, 11_520_000))!.lines).toEqual(["Más $ 24.000 ARS por mes por 2 sucursales adicionales."]);
+  });
+});
+
 describe("describePrice", () => {
   it("plan mensual: el precio del plan y nada más", () => {
     expect(summary(describePrice(ent(), catalog))).toEqual({ headline: "$ 29.000 ARS por mes", lines: [] });

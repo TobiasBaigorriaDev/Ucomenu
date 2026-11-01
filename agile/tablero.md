@@ -102,7 +102,8 @@ Actualizado: 2026-10-31. «Hecho» indica alcance implementado e integrado. De �
 
 ### Fase 4 — Posterior al MVP
 
-- [C] Cobro automático de la suscripción (Mercado Pago Suscripciones) con activación y suspensión por webhook
+- [C] Cobro por link de Mercado Pago con registro automático del pago (paso intermedio; implementado en local el 2026-11-01 con pruebas verdes; falta la revisión independiente, la aprobación del usuario y probarlo contra Mercado Pago real con credenciales de prueba en staging) → [ficha](cambios/cobro-con-link-de-mercado-pago.md) · ADR 0052
+- [C] Cobro automático de la suscripción (Mercado Pago Suscripciones) con activación y suspensión por webhook — posterior al anterior
 - [M] Subdominio o dominio propio por organización
 
 ## Hecho

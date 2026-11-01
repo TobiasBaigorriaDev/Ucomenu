@@ -28,8 +28,12 @@ export function planPriceText(cycle: string | undefined, catalog: PlanCatalogPri
   return null;
 }
 
-/** El resumen de lo que cuesta la cuenta, o `null` si no hay con qué armarlo (sin plan, o sin ciclo y sin prueba): no se inventa un precio. */
-export function describePrice(ent: Entitlements | null, catalog: PlanCatalogPrice | null): PriceSummary | null {
+/**
+ * El resumen de lo que cuesta la cuenta, o `null` si no hay con qué armarlo (sin plan, o sin ciclo y sin prueba): no se inventa un precio.
+ * `extraYearlyCents`: el precio ANUAL de una sucursal adicional (`addons.yearly_price_cents`); en una cuenta anual las adicionales se
+ * cobran por año, así que sin ese dato no se dice un precio de ellas (nunca el mensual rotulado «por mes»).
+ */
+export function describePrice(ent: Entitlements | null, catalog: PlanCatalogPrice | null, extraYearlyCents?: number | null): PriceSummary | null {
   if (!ent?.plan) return null;
   const plan = planPriceText(ent.billingCycle, catalog);
   const inTrial = ent.trialStatus === "in_trial";
@@ -40,8 +44,12 @@ export function describePrice(ent: Entitlements | null, catalog: PlanCatalogPric
 
   const extra = ent.extraBranches ?? 0;
   if (extra > 0 && typeof ent.extraBranchPriceCents === "number" && ent.extraBranchCurrency) {
-    const total = formatMoney(ent.extraBranchPriceCents * extra, ent.extraBranchCurrency);
-    lines.push(`Más ${total} por mes por ${plural(extra, "sucursal adicional", "sucursales adicionales")}${inTrial ? " (cuando termine la prueba)" : ""}.`);
+    const yearly = ent.billingCycle === "yearly";
+    const unit = yearly ? extraYearlyCents : ent.extraBranchPriceCents;
+    if (typeof unit === "number") {
+      const total = formatMoney(unit * extra, ent.extraBranchCurrency);
+      lines.push(`Más ${total} por ${yearly ? "año" : "mes"} por ${plural(extra, "sucursal adicional", "sucursales adicionales")}${inTrial ? " (cuando termine la prueba)" : ""}.`);
+    }
   }
   return { headline: inTrial ? "Sin costo durante la prueba" : plan!, lines };
 }

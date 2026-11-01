@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getEntitlements, requireOwner } from "@/lib/auth/session";
-import { loadOwnerAccount, loadPlanPrice, type Page } from "@/lib/cuenta/cargar";
+import { mercadoPagoConfig, siteBaseUrl } from "@/lib/cobro/mercadopago";
+import { parseQuote } from "@/lib/cobro/cotizacion";
+import { loadExtraBranchYearlyPrice, loadOwnerAccount, loadPlanPrice, type Page } from "@/lib/cuenta/cargar";
 import { describeHistory, describePayment, formatDateTime, formatDay, parseCursor, type HistoryRow, type PaymentRow } from "@/lib/cuenta/lectura";
 import { describePrice } from "@/lib/cuenta/precio";
 import { branchBreakdown, formatDateWithYear, PLAN_NAME, TRIAL_STATUS_LABEL, type BillingState } from "@/lib/entitlements";
 import { createSessionClient } from "@/lib/supabase/server";
+import { PaySection } from "./pagar";
 
 export const metadata: Metadata = { title: "Suscripción" };
 
@@ -36,13 +39,19 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
   const before = { payments: parseCursor(query.pagos_antes), history: parseCursor(query.cambios_antes) };
   const ent = await getEntitlements(membership.org.id);
   const db = await createSessionClient();
-  const [account, catalog] = await Promise.all([
+  // El pago en línea solo se ofrece si el servidor tiene Mercado Pago configurado (token y dirección pública).
+  const payOnline = mercadoPagoConfig() !== null && siteBaseUrl() !== null;
+  const [account, catalog, quote, extraYearly] = await Promise.all([
     // La base vuelve a comprobar que sea Dueño y entrega solo lo que puede ver (ADR 0021).
     loadOwnerAccount(db, membership.org.id, before),
     // Precio de lista del plan (catálogo en pesos, de lectura con sesión): con el ciclo de la cuenta da lo que cuesta por mes o por año.
     ent?.plan ? loadPlanPrice(db, ent.plan) : null,
+    // Lo que pagaría hoy, calculado por la base (ficha cobro-con-link-de-mercado-pago).
+    payOnline ? db.rpc("owner_payment_quote", { p_org: membership.org.id }).then((r) => (r.error ? null : parseQuote(r.data))) : null,
+    // En una cuenta anual, las sucursales adicionales se cobran por año.
+    ent?.billingCycle === "yearly" && (ent.extraBranches ?? 0) > 0 ? loadExtraBranchYearlyPrice(db) : null,
   ]);
-  const price = describePrice(ent, catalog);
+  const price = describePrice(ent, catalog, extraYearly);
   // El último pago vigente (solo en la primera página de la lista: en las siguientes las filas son anteriores).
   const lastPaymentRow = before.payments ? null : (account.payments?.rows.find((row) => !describePayment(row).voided) ?? null);
   const lastPayment = lastPaymentRow ? describePayment(lastPaymentRow) : null;
@@ -117,8 +126,10 @@ export default async function SubscriptionPage({ params, searchParams }: PagePro
         <p className="mt-6 max-w-prose text-muted">No pudimos leer el estado de tu cuenta. Probá de nuevo en unos minutos.</p>
       )}
 
+      {quote ? <PaySection slug={membership.org.slug} quote={quote} returned={query.pago} /> : null}
+
       <p className="mt-8 max-w-prose leading-relaxed text-muted">
-        Para cambiar de plan o registrar un pago, contactá a UcoMenu.
+        {payOnline ? "Para cambiar de plan, contactá a UcoMenu." : "Para cambiar de plan o registrar un pago, contactá a UcoMenu."}
       </p>
 
       <PaymentsSection page={account.payments} more={account.payments?.next ? moreHref("pagos", account.payments.next) : null} first={!before.payments} />

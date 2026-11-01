@@ -135,6 +135,7 @@ export function purgeOrgRecordsWhere(condicionOrg: string): void {
     `delete from public.order_events where organization_id in ${orgs}; ` +
     `delete from public.payment_voids where organization_id in ${orgs}; ` +
     `delete from public.payments where organization_id in ${orgs}; ` +
+    `delete from public.payment_reviews where organization_id in ${orgs}; ` +
     `alter table public.price_history enable trigger price_history_no_update_delete; ` +
     `alter table public.payments enable trigger payments_no_update_delete; ` +
     `alter table public.promotion_history enable trigger promotion_history_no_update_delete; ` +
