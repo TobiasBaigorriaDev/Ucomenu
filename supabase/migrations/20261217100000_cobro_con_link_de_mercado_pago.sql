@@ -282,7 +282,9 @@ begin
   end if;
   v_quote := private.payment_quote(p_org);
   -- Intenciones sin pagar de los últimos 30 días, aunque su link ya haya vencido: un aviso perdido se recupera con «Ya pagué,
-  -- verificar» mientras el pedido siga a la vista (Mercado Pago pudo cobrar justo antes de vencer).
+  -- verificar» mientras el pedido siga a la vista (Mercado Pago pudo cobrar justo antes de vencer). Cota: 20. Una intención nueva solo
+  -- nace cuando la anterior venció (cada 72 h, o sea 10 en 30 días) o cuando cambió el importe por un cambio de plan o de sucursales
+  -- hecho por el SuperAdmin; llegar a 20 sin pagar ninguna no ocurre de forma natural. Cada una cuesta una consulta a Mercado Pago.
   select coalesce(jsonb_agg(jsonb_build_object('id', u.id, 'expires_at', u.expires_at) order by u.created_at desc), '[]'::jsonb)
   into v_unpaid
   from (
@@ -290,7 +292,7 @@ begin
     from public.payment_intents i
     where i.organization_id = p_org and i.status in ('pending', 'expired') and i.created_at > now() - interval '30 days'
     order by i.created_at desc
-    limit 5
+    limit 20
   ) u;
   v_quote := v_quote || jsonb_build_object('unpaid_intents', v_unpaid);
   select * into v_intent

@@ -484,6 +484,34 @@ describe("recuperar un aviso perdido después de que venció el link", () => {
     expect(despues.unpaid_intents).toEqual([]);
   });
 
+  it("se recuperan los pedidos más allá de los últimos cinco (hasta la cota de 20, los más nuevos primero)", async () => {
+    const local = await crearLocal();
+    const primera = await intencion(local);
+    sql(`update public.payment_intents set status = 'expired', created_at = now() - interval '29 days', expires_at = now() - interval '26 days' where id = '${primera.id}'`);
+    // Once más, todas vencidas y sin pagar, entre la primera y hoy: la primera queda 12.ª en antigüedad.
+    sql(`insert into public.payment_intents (organization_id, subscription_id, plan_code, billing_cycle, extra_branches, amount_cents, currency, status, expires_at, created_by, created_at)
+         select organization_id, subscription_id, plan_code, billing_cycle, extra_branches, amount_cents, currency, 'expired', now() - interval '1 day', created_by, now() - (g || ' days')::interval
+         from public.payment_intents, generate_series(2, 12) g where id = '${primera.id}'`);
+    const quote = (await local.owner.db.rpc("owner_payment_quote", { p_org: local.id })).data as Json;
+    const ids = (quote.unpaid_intents as Json[]).map((u) => u.id);
+    expect(ids).toHaveLength(12);
+    expect(ids).toContain(primera.id);
+    // El pago de la más vieja de las doce igual se registra.
+    expect(resultado(await registrar(primera.id, nuevoPagoId(), primera.amount)).result).toBe("registered");
+
+    // Más allá de la cota quedan fuera las MÁS VIEJAS, nunca las nuevas.
+    const muchas = await crearLocal();
+    const base = await intencion(muchas);
+    sql(`update public.payment_intents set status = 'expired', created_at = now() - interval '29 days', expires_at = now() - interval '26 days' where id = '${base.id}'`);
+    sql(`insert into public.payment_intents (organization_id, subscription_id, plan_code, billing_cycle, extra_branches, amount_cents, currency, status, expires_at, created_by, created_at)
+         select organization_id, subscription_id, plan_code, billing_cycle, extra_branches, amount_cents, currency, 'expired', now() - interval '1 hour', created_by, now() - (g || ' hours')::interval
+         from public.payment_intents, generate_series(2, 24) g where id = '${base.id}'`);
+    const tope = (await muchas.owner.db.rpc("owner_payment_quote", { p_org: muchas.id })).data as Json;
+    const idsTope = (tope.unpaid_intents as Json[]).map((u) => u.id);
+    expect(idsTope).toHaveLength(20);
+    expect(idsTope).not.toContain(base.id);
+  });
+
   it("no ofrece intenciones pagadas ni de más de 30 días, ni de otra organización", async () => {
     const local = await crearLocal();
     const otro = await crearLocal();
