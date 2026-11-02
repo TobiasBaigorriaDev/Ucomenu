@@ -243,7 +243,7 @@ describe("qué NO sale", () => {
     try {
       sql(
         `alter table public.audit_log drop constraint audit_log_action_check; ` +
-          `alter table public.audit_log add constraint audit_log_action_check check (action in ('organization.created','subscription.plan_changed','subscription.suspended','subscription.reactivated','payment.registered','owner.added','internal.note'))`,
+          `alter table public.audit_log add constraint audit_log_action_check check (action in ('organization.created','organization.self_registered','subscription.plan_changed','subscription.suspended','subscription.reactivated','payment.registered','owner.added','internal.note'))`,
       );
       sql(
         `insert into public.audit_log (actor_id, actor_email, action, organization_id, before, after) values ` +

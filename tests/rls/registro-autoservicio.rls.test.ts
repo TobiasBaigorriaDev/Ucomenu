@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { addMembership, anonClient, BRANCH_CAFE, createOrg, createUser, deleteOrg, deleteUser, DIA_MS, ORG_CAFE, PRODUCT_ESPRESSO, serviceClient, sql, type Db, type TestUser } from "./helpers";
 
@@ -146,6 +147,42 @@ describe("una cuenta sin local", () => {
   });
 });
 
+describe("confirmar el email", () => {
+  const conClave = () => sql(`select 1`) && `reg-clave-${sufijo}-${siguiente()}@example.test`;
+  const CLAVE_AJENA = "contrasena-del-intruso-1";
+  const claveDe = (id: string) => sql(`select coalesce(encrypted_password, '') from auth.users where id = '${id}'`)[0]?.[0] ?? "";
+
+  it("borra en esa misma escritura la contraseña cargada antes: nadie entra con ella", async () => {
+    const email = conClave();
+    const creada = await service.auth.admin.createUser({ email, password: CLAVE_AJENA });
+    const id = creada.data.user!.id;
+    authIds.push(id);
+    expect(claveDe(id)).not.toBe("");
+
+    sql(`update auth.users set email_confirmed_at = now() where id = '${id}'`);
+
+    expect(claveDe(id)).toBe("");
+    const intento = await anonClient().auth.signInWithPassword({ email, password: CLAVE_AJENA });
+    expect(intento.error).not.toBeNull();
+  });
+
+  it("no toca una contraseña que llega en la misma escritura, ni la de una cuenta ya confirmada", async () => {
+    const email = conClave();
+    const creada = await service.auth.admin.createUser({ email, password: CLAVE_AJENA });
+    const id = creada.data.user!.id;
+    authIds.push(id);
+    const nueva = await service.auth.admin.updateUserById(id, { password: "contrasena-del-titular-1", email_confirm: true });
+    expect(nueva.error).toBeNull();
+    expect((await anonClient().auth.signInWithPassword({ email, password: "contrasena-del-titular-1" })).error).toBeNull();
+
+    const usuario = await createUser(service, "reg-ya-confirmada");
+    users.push(usuario);
+    const antes = claveDe(usuario.id);
+    sql(`update auth.users set email_confirmed_at = now() where id = '${usuario.id}'`);
+    expect(claveDe(usuario.id)).toBe(antes);
+  });
+});
+
 describe("self_register_organization", () => {
   it("crea el local con Pro por 14 días, Dueño, sucursal, origen, reclamo y auditoría", async () => {
     const user = await cuentaConfirmada();
@@ -216,6 +253,35 @@ describe("self_register_organization", () => {
     expect((await alta(user, "admin")).error?.message).toContain("slug_reserved");
     expect((await alta(user, "UcoMenu")).error?.message).toContain("slug_reserved");
     expect((await alta(user, `tt-reg-${sufijo}-t`, "")).error?.message).toContain("invalid_terms");
+  });
+
+  it("con altas simultáneas no se pasa del tope: la segunda espera a la primera y la cuenta", async () => {
+    const yaHay = Number(sql(`select count(*) from public.organizations where origin = 'self_service' and created_at > now() - interval '1 hour'`)[0][0]);
+    const relleno = Array.from({ length: 29 - yaHay }, (_, i) => `tt-reg-tope-${sufijo}-${i}`);
+    sql(`insert into public.organizations (slug, name, origin) values ${relleno.map((s) => `('${s}', '${s}', 'self_service')`).join(", ")}`);
+    const [primera, segunda] = [await cuentaConfirmada(), await cuentaConfirmada()];
+    const slugPrimera = `tt-reg-tope-${sufijo}-p`;
+    try {
+      // La primera alta queda abierta en otra conexión, sin confirmar: sin el candado, la segunda contaría 29 y también entraría.
+      const abierta = spawn("docker", ["exec", "-i", process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu", "psql", "-U", "postgres", "-q", "-v", "ON_ERROR_STOP=1"], { stdio: ["pipe", "ignore", "pipe"] });
+      const termino = new Promise<number>((resolve) => abierta.on("close", (code) => resolve(code ?? 1)));
+      abierta.stdin.write(`begin;
+select public.self_register_organization('${primera}', '${slugPrimera}', 'Primera', 'principal', 'Principal', '${TERMINOS}');
+select pg_sleep(2);
+commit;
+`);
+      abierta.stdin.end();
+      await new Promise((resolve) => setTimeout(resolve, 700));
+
+      const r = await alta(segunda, `tt-reg-tope-${sufijo}-s`);
+      expect(await termino).toBe(0);
+      if (typeof r.data === "string") orgs.push(r.data);
+      expect(r.error?.message).toContain("signups_throttled");
+    } finally {
+      const creada = sql(`select id from public.organizations where slug = '${slugPrimera}'`)[0]?.[0];
+      if (creada) await deleteOrg(service, creada);
+      sql(`delete from public.organizations where slug like 'tt-reg-tope-${sufijo}-%'`);
+    }
   });
 
   it("corta las altas si llega una ola", async () => {
@@ -385,6 +451,32 @@ describe("plan elegido al pagar", () => {
     const r = await registrar(intent.intent_id, nuevoPagoId(), intent.amount_cents);
     expect(r.data).toMatchObject({ result: "review", reason: "over_plan_limit" });
     expect(await sub(l.id)).toEqual(antes);
+  });
+
+  it("un plato que se está creando mientras se acredita Básico se cuenta: va a revisar", async () => {
+    const l = await local();
+    const tope = Number(sql(`select max_active_products from public.plans where code = 'basic'`)[0][0]);
+    const categoria = sql(`insert into public.categories (organization_id, name) values ('${l.id}', 'Cat') returning id`)[0][0];
+    sql(`insert into public.products (organization_id, category_id, name, price_cents, is_active)
+         select '${l.id}', '${categoria}', 'Plato ' || g, 100, true from generate_series(1, ${tope}) g`);
+    const intent = (await pedir(l, "basic", "monthly")).data as { intent_id: string; amount_cents: number };
+    expect(intent.intent_id).toBeTruthy();
+
+    // Otra conexión con el alta abierta: tiene el candado del trigger y todavía no confirmó.
+    const alta = spawn("docker", ["exec", "-i", process.env.SUPABASE_DB_CONTAINER ?? "supabase_db_ucomenu", "psql", "-U", "postgres", "-q", "-v", "ON_ERROR_STOP=1"], { stdio: ["pipe", "ignore", "pipe"] });
+    const termino = new Promise<number>((resolve) => alta.on("close", (code) => resolve(code ?? 1)));
+    alta.stdin.write(`begin;
+insert into public.products (organization_id, category_id, name, price_cents, is_active) values ('${l.id}', '${categoria}', 'De más', 100, true);
+select pg_sleep(2);
+commit;
+`);
+    alta.stdin.end();
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
+    const r = await registrar(intent.intent_id, nuevoPagoId(), intent.amount_cents);
+    expect(await termino).toBe(0);
+    expect(r.data).toMatchObject({ result: "review", reason: "over_plan_limit" });
+    expect((await sub(l.id)).plan_code).toBe("pro");
   });
 
   it("si el SuperAdmin cambió el plan con el link abierto, va a revisar", async () => {

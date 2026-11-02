@@ -63,7 +63,7 @@ Recupero: `/recuperar` → correo → `/auth/confirmar` → `/cuenta/nueva-contr
 
 ## Aceptación
 - [x] Registro por correo de punta a punta en local (E2E con Mailpit): termina en el panel, con Pro y 14 días.
-- [x] Un email ajeno precargado con contraseña por la API deja de entrar después de crear el local.
+- [x] Un email ajeno precargado con contraseña por la API deja de entrar en el momento de confirmar, antes de crear el local.
 - [x] Recupero de contraseña de punta a punta.
 - [x] Una cuenta sin local no ve ni escribe nada que `anon` no pueda.
 - [x] Segunda prueba con el mismo email, o con su variante `+etiqueta`, rechazada.
@@ -94,3 +94,16 @@ Sobre el diff de la rama, antes del commit de revisión (2026-11-02):
 - Capturas a 390 px revisadas: registro, correo, crear local y elegir plan.
 
 **Sin probar:** Google, Turnstile real y Resend real (necesitan cuentas; solo hay pruebas unitarias de la verificación de Turnstile). La pantalla «elegir plan» no tiene prueba E2E de pago contra el doble de Mercado Pago; el cambio de plan al pagar se prueba en RLS.
+
+**Tras la ronda 1 de revisión (2026-11-02):** `pnpm test:rls` 1643/1643; E2E de registro, acceso, cobro, cuentas sin local y portada: 68 pasaron y 1 falló (`portada.spec.ts:92`, el intermitente de arriba). `pnpm typecheck` y `pnpm lint` limpios; `pnpm test`: 2 tiempos agotados en `revision-claude.test.ts` con la máquina cargada, que no toca este cambio.
+
+Mutaciones contra la base local, restaurada después con `pnpm db:reset`: sin el efecto del trigger falla «borra en esa misma escritura»; sin los candados de límites falla «un plato que se está creando»; sin el candado global falla «con altas simultáneas». Las tres pruebas retienen una transacción real en otra conexión, o confirman directo en la base.
+
+**A probar en staging:** el trigger depende de que Auth cree las cuentas del servidor en una sola transacción (insertar y confirmar). Si la versión de Auth en la nube usara otra transacción, esas cuentas perderían la contraseña y entrarían por `/recuperar`: crear un mozo y entrar con su contraseña antes de abrir el registro.
+
+## Revisión y aprobación
+- **Ronda 1 (Codex, sobre `4a36227`): RECHAZAR**, informe `output/revisiones/2026-11-02T17-41-36-commit-HEAD.md`. Tres hallazgos, los tres reales:
+  1. Bloqueante: la contraseña precargada valía entre confirmar y crear el local, y su JWT sobrevivía al cierre de sesión. Corregido en la raíz con un trigger que la borra en la misma escritura que confirma. La primera versión también borraba la de las cuentas del servidor; lo detectaron las pruebas y se acotó a cuentas anteriores a la transacción.
+  2. Carrera al acreditar Básico contra altas de platos y mesas. Corregido tomando los mismos candados que los triggers de límites.
+  3. El tope de altas se podía superar con pedidos simultáneos. Corregido serializando las altas propias.
+- **Aprobación del usuario:** pendiente, y también la decisión sobre los límites de Básico.

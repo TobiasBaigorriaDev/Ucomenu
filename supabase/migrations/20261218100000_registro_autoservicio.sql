@@ -13,6 +13,8 @@
 -- Rollback (en UNA transacción; requiere que no haya intenciones pendientes con cambio de plan):
 --   begin;
 --   drop function public.purge_unconfirmed_accounts(interval, integer);
+--   drop trigger auth_users_drop_password_on_confirmation on auth.users;
+--   drop function private.drop_password_on_email_confirmation();
 --   drop function public.self_register_organization(uuid, text, text, text, text, text);
 --   drop function private.normalized_email_hash(text);
 --   drop table public.trial_claims;
@@ -20,7 +22,7 @@
 --   drop function public.system_start_payment_intent(uuid, uuid, text, text);
 --   y volver a crear con 20261217100000 `private.payment_quote`, `public.owner_payment_quote`,
 --   `public.system_start_payment_intent(uuid, uuid)` y `public.system_register_mp_payment`; con 20261117100000,
---   `public.admin_list_orphan_accounts`; drop de `private.payment_quote_for` y `private.plan_fit_problem`.
+--   `public.admin_list_orphan_accounts`; drop de `private.payment_quote_for`, `private.plan_fit_problem` y `private.lock_plan_limits`.
 --   `payment_intents.from_*` se pueden quitar; los checks de `audit_log` y `payment_reviews` se restauran solo si no hay filas con los
 --   valores nuevos.
 --   commit;
@@ -112,6 +114,34 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- Una contraseña cargada antes de confirmar el email no sobrevive a la confirmación
+-- ---------------------------------------------------------------------------
+-- Con el registro abierto, cualquiera puede crear por la API de Auth una cuenta sin confirmar con un email ajeno y una contraseña propia.
+-- Si la persona dueña del correo confirma, esa contraseña seguiría valiendo. Se borra en la MISMA escritura que confirma: no hay ningún
+-- instante con el email confirmado y esa contraseña viva, y antes de confirmar Auth no deja entrar con ella (ADR 0053, decisión 1).
+-- Solo actúa sobre cuentas que ya existían antes de esta transacción y si la escritura no trae una contraseña nueva. Auth crea las cuentas
+-- del servidor (`email_confirm: true`) en dos pasos dentro de una transacción, insertar y confirmar: esas conservan su contraseña.
+
+create function private.drop_password_on_email_confirmation()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if old.email_confirmed_at is null and new.email_confirmed_at is not null
+     and new.encrypted_password is not distinct from old.encrypted_password
+     and old.xmin <> pg_catalog.pg_current_xact_id()::xid then
+    new.encrypted_password := null;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger auth_users_drop_password_on_confirmation
+  before update of email_confirmed_at on auth.users
+  for each row execute function private.drop_password_on_email_confirmation();
+
+-- ---------------------------------------------------------------------------
 -- Alta propia
 -- ---------------------------------------------------------------------------
 
@@ -148,9 +178,10 @@ begin
     raise exception 'slug_reserved' using errcode = '22023';
   end if;
 
-  -- Dos pedidos del mismo buzón se ordenan acá; el reclamo de abajo es la garantía final.
+  -- Las altas propias van de a una: así no se cuela nadie por encima del tope de abajo, y dos pedidos del mismo buzón se ordenan.
+  -- Duran milisegundos y el tope las limita a 30 por hora: la fila no molesta.
   v_hash := private.normalized_email_hash(v_email);
-  perform pg_advisory_xact_lock(hashtextextended('self_register:' || v_hash, 0));
+  perform pg_advisory_xact_lock(hashtextextended('self_register', 0));
 
   if exists (select 1 from public.memberships m where m.user_id = p_user and m.role = 'owner') then
     raise exception 'already_owner' using errcode = '55000';
@@ -327,6 +358,26 @@ begin
     return 'products';
   end if;
   return null;
+end;
+$$;
+
+-- Los mismos candados que toman los triggers de límites. Quien va a cambiar de plan los toma ANTES de contar: un alta en curso termina y
+-- se cuenta, y una posterior espera y ya lee el plan nuevo. El orden es fijo (sucursales, mesas por sucursal, platos) y esos triggers no
+-- bloquean la suscripción, así que no hay ciclo con el candado de la suscripción que ya tiene quien llama.
+create function private.lock_plan_limits(p_org uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_branch uuid;
+begin
+  perform pg_advisory_xact_lock(hashtextextended('limit:branches:' || p_org::text, 0));
+  for v_branch in select b.id from public.branches b where b.organization_id = p_org order by b.id loop
+    perform pg_advisory_xact_lock(hashtextextended('limit:tables:' || v_branch::text, 0));
+  end loop;
+  perform pg_advisory_xact_lock(hashtextextended('limit:active_products:' || p_org::text, 0));
 end;
 $$;
 
@@ -672,6 +723,9 @@ begin
   v_prev := greatest(v_sub.current_period_end, v_sub.trial_ends_at);
   v_cycle := case when v_intent.billing_cycle = 'yearly' then interval '1 year' else interval '1 month' end;
   v_changing := v_sub.plan_code <> v_intent.plan_code or v_sub.billing_cycle <> v_intent.billing_cycle;
+  if v_changing then
+    perform private.lock_plan_limits(v_intent.organization_id);
+  end if;
 
   v_reason := case
     when v_intent.status = 'paid' then 'intent_already_paid'
@@ -759,7 +813,9 @@ $$;
 
 revoke all on function
   private.normalized_email_hash(text),
+  private.drop_password_on_email_confirmation(),
   private.plan_fit_problem(uuid, text),
+  private.lock_plan_limits(uuid),
   private.payment_quote_for(uuid, text, text),
   public.self_register_organization(uuid, text, text, text, text, text),
   public.purge_unconfirmed_accounts(interval, integer),

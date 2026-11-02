@@ -80,6 +80,8 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   promotion_history_append_only: [false, false, false], // trigger de promotion_history: rechaza UPDATE, DELETE y TRUNCATE
   purge_organization_promotion_history: [true, false, false], // purga del historial de promociones al borrar una organización (ADR 0040): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
   normalized_email_hash: [false, false, false], // registro autoservicio (ADR 0053): pura; solo la usa self_register_organization
+  drop_password_on_email_confirmation: [false, false, false], // trigger de auth.users (ADR 0053): borra la contraseña previa en la misma escritura que confirma el email
+  lock_plan_limits: [true, false, false], // plan elegido al pagar (ADR 0053): toma los candados de los triggers de límites antes de contar; solo la usa system_register_mp_payment
   plan_fit_problem: [true, false, false], // plan elegido al pagar (ADR 0053): dice si el local entra en un plan; la usan payment_quote_for y system_register_mp_payment
   payment_quote_for: [true, false, false], // plan elegido al pagar (ADR 0053): la cuenta del importe para un plan y un ciclo; sin EXECUTE para la API
   payment_quote: [true, false, false], // cobro con Mercado Pago (ADR 0052): la única cuenta del importe y de si se puede cobrar; la usan owner_payment_quote y system_start_payment_intent; sin EXECUTE para la API

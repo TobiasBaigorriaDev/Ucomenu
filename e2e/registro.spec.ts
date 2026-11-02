@@ -116,7 +116,7 @@ test("abrir el enlace no lo gasta: solo el botón confirma", async ({ page, requ
   await expect(page).toHaveURL(/\/crear-local$/);
 });
 
-test("una contraseña cargada por la API con un email ajeno deja de valer al crear el local", async ({ page, request }) => {
+test("una contraseña cargada por la API con un email ajeno deja de valer al confirmar el correo", async ({ page, request }) => {
   const email = emailNuevo("ajena");
   const slug = `e2e-local-${randomUUID().slice(0, 8)}`;
   const claveAjena = "contrasena-del-intruso-1";
@@ -127,12 +127,16 @@ test("una contraseña cargada por la API con un email ajeno deja de valer al cre
   // La dueña real del correo confirma y crea su local.
   await page.goto(await enlaceDelCorreo(email));
   await page.getByRole("button", { name: "Confirmar" }).click();
+  await expect(page).toHaveURL(/\/crear-local$/);
+
+  // Recién confirmado, todavía sin local: la contraseña ajena ya no entra. No hay ventana.
+  const ingresar = () => request.post(`${auth}/auth/v1/token?grant_type=password`, { headers, data: { email, password: claveAjena } });
+  expect((await ingresar()).status()).toBe(400);
+
   await crearLocal(page, "Local con intruso", slug);
   await expect(page).toHaveURL(new RegExp(`/panel/${slug}$`));
   await orgDe(slug);
-
-  const intruso = await request.post(`${auth}/auth/v1/token?grant_type=password`, { headers, data: { email, password: claveAjena } });
-  expect(intruso.status()).toBe(400);
+  expect((await ingresar()).status()).toBe(400);
 });
 
 test("recuperar la contraseña: responde igual exista o no la cuenta y deja elegir una nueva", async ({ page }) => {
