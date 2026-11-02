@@ -99,11 +99,14 @@ Sobre el diff de la rama, antes del commit de revisión (2026-11-02):
 
 Mutaciones contra la base local, restaurada después con `pnpm db:reset`: sin el efecto del trigger falla «borra en esa misma escritura»; sin los candados de límites falla «un plato que se está creando»; sin el candado global falla «con altas simultáneas». Las tres pruebas retienen una transacción real en otra conexión, o confirman directo en la base.
 
-**A probar en staging:** el trigger depende de que Auth cree las cuentas del servidor en una sola transacción (insertar y confirmar). Si la versión de Auth en la nube usara otra transacción, esas cuentas perderían la contraseña y entrarían por `/recuperar`: crear un mozo y entrar con su contraseña antes de abrir el registro.
+**Tras la ronda 2 de revisión (2026-11-02):** `pnpm test:rls` 1645/1645; `pnpm test` 1449/1449; `pnpm typecheck` y `pnpm lint` limpios. E2E de registro, acceso, cobro y cuentas sin local: 54 pasaron y 1 falló (`registro.spec.ts:142`, el recupero sobre una cuenta precargada). No se pudo reproducir: pasó sola y en 3 repeticiones bajo carga, y el registro de Auth muestra `invalid_credentials` para la contraseña ajena; la causa de ese fallo aislado queda sin determinar. En `registro` + `acceso` × 3: 125 pasaron y 1 caída de worker (`0xC0000409`) ajena al cambio. Mutaciones: con la condición anterior (`xmin`) falla «también la borra si la transacción escribió la fila antes»; sin la marca de creación falla «conserva su contraseña».
+
+**A probar en staging:** el trigger depende de que Auth cree las cuentas del servidor en una sola transacción (insertar y confirmar). Si la versión de Auth en la nube usara otra transacción, esas cuentas perderían la contraseña y entrarían por `/recuperar`: crear un mozo y entrar con su contraseña antes de abrir el registro. Hay que correrlo también después de cada actualización de Auth.
 
 ## Revisión y aprobación
 - **Ronda 1 (Codex, sobre `4a36227`): RECHAZAR**, informe `output/revisiones/2026-11-02T17-41-36-commit-HEAD.md`. Tres hallazgos, los tres reales:
   1. Bloqueante: la contraseña precargada valía entre confirmar y crear el local, y su JWT sobrevivía al cierre de sesión. Corregido en la raíz con un trigger que la borra en la misma escritura que confirma. La primera versión también borraba la de las cuentas del servidor; lo detectaron las pruebas y se acotó a cuentas anteriores a la transacción.
   2. Carrera al acreditar Básico contra altas de platos y mesas. Corregido tomando los mismos candados que los triggers de límites.
   3. El tope de altas se podía superar con pedidos simultáneos. Corregido serializando las altas propias.
+- **Ronda 2 (Codex, sobre `711cc17`): RECHAZAR**, informe `output/revisiones/2026-11-02T19-08-10-commit-HEAD.md`. Límites y tope, corregidos. Bloqueante, parcial: al recuperar, Auth escribe la fila antes de confirmarla en la misma transacción, y `old.xmin` la confundía con una cuenta recién creada. Corregido con un trigger de INSERT que marca qué cuenta nació en la transacción; sin la marca, la contraseña se borra.
 - **Aprobación del usuario:** pendiente, y también la decisión sobre los límites de Básico.

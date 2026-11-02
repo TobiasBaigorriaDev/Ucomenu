@@ -15,6 +15,8 @@
 --   drop function public.purge_unconfirmed_accounts(interval, integer);
 --   drop trigger auth_users_drop_password_on_confirmation on auth.users;
 --   drop function private.drop_password_on_email_confirmation();
+--   drop trigger auth_users_mark_created_in_transaction on auth.users;
+--   drop function private.mark_user_created_in_transaction();
 --   drop function public.self_register_organization(uuid, text, text, text, text, text);
 --   drop function private.normalized_email_hash(text);
 --   drop table public.trial_claims;
@@ -119,8 +121,24 @@ $$;
 -- Con el registro abierto, cualquiera puede crear por la API de Auth una cuenta sin confirmar con un email ajeno y una contraseña propia.
 -- Si la persona dueña del correo confirma, esa contraseña seguiría valiendo. Se borra en la MISMA escritura que confirma: no hay ningún
 -- instante con el email confirmado y esa contraseña viva, y antes de confirmar Auth no deja entrar con ella (ADR 0053, decisión 1).
--- Solo actúa sobre cuentas que ya existían antes de esta transacción y si la escritura no trae una contraseña nueva. Auth crea las cuentas
--- del servidor (`email_confirm: true`) en dos pasos dentro de una transacción, insertar y confirmar: esas conservan su contraseña.
+-- Auth crea las cuentas del servidor (`email_confirm: true`) en dos pasos dentro de una transacción, insertar y confirmar: esas conservan su
+-- contraseña. Se marca de forma explícita cuál nació en esta transacción, con un valor local que vence al confirmarla; cualquier otra cuenta
+-- la pierde, salvo que la misma escritura traiga una contraseña nueva. Sin la marca se borra: falla cerrado.
+
+create function private.mark_user_created_in_transaction()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  perform pg_catalog.set_config('ucomenu.user_created_in_transaction', new.id::text, true);
+  return new;
+end;
+$$;
+
+create trigger auth_users_mark_created_in_transaction
+  before insert on auth.users
+  for each row execute function private.mark_user_created_in_transaction();
 
 create function private.drop_password_on_email_confirmation()
 returns trigger
@@ -130,7 +148,7 @@ as $$
 begin
   if old.email_confirmed_at is null and new.email_confirmed_at is not null
      and new.encrypted_password is not distinct from old.encrypted_password
-     and old.xmin <> pg_catalog.pg_current_xact_id()::xid then
+     and coalesce(pg_catalog.current_setting('ucomenu.user_created_in_transaction', true), '') <> old.id::text then
     new.encrypted_password := null;
   end if;
   return new;
@@ -813,6 +831,7 @@ $$;
 
 revoke all on function
   private.normalized_email_hash(text),
+  private.mark_user_created_in_transaction(),
   private.drop_password_on_email_confirmation(),
   private.plan_fit_problem(uuid, text),
   private.lock_plan_limits(uuid),

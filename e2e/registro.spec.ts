@@ -139,6 +139,29 @@ test("una contraseña cargada por la API con un email ajeno deja de valer al con
   expect((await ingresar()).status()).toBe(400);
 });
 
+test("recuperar sobre una cuenta precargada por la API también anula la contraseña ajena", async ({ page, request }) => {
+  const email = emailNuevo("ajena-recupero");
+  const claveAjena = "contrasena-del-intruso-2";
+  const headers = { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "", "Content-Type": "application/json" };
+  const auth = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  expect((await request.post(`${auth}/auth/v1/signup`, { headers, data: { email, password: claveAjena } })).ok()).toBe(true);
+  await enlaceDelCorreo(email);
+  await page.waitForTimeout(1500); // `max_frequency` local: 1 s entre correos a la misma dirección.
+
+  await page.goto("/recuperar");
+  await page.getByLabel("Email").fill(email);
+  await page.getByRole("button", { name: "Enviarme el enlace" }).click();
+  await page.getByRole("status").waitFor();
+
+  await page.goto(await enlaceDelCorreo(email, 1));
+  await page.getByRole("button", { name: "Continuar" }).click();
+  await expect(page).toHaveURL(/\/cuenta\/nueva-contrasena$/);
+
+  // Confirmado por el recupero y antes de elegir la contraseña nueva: la ajena ya no entra.
+  const intruso = await request.post(`${auth}/auth/v1/token?grant_type=password`, { headers, data: { email, password: claveAjena } });
+  expect(intruso.status()).toBe(400);
+});
+
 test("recuperar la contraseña: responde igual exista o no la cuenta y deja elegir una nueva", async ({ page }) => {
   const email = emailNuevo("recupero");
   const creada = await service().auth.admin.createUser({ email, password: "contrasena-vieja-1234", email_confirm: true });

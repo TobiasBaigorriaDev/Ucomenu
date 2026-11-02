@@ -166,6 +166,25 @@ describe("confirmar el email", () => {
     expect(intento.error).not.toBeNull();
   });
 
+  it("también la borra si la transacción escribió la fila antes de confirmar, como hace Auth al recuperar", async () => {
+    const email = conClave();
+    const creada = await service.auth.admin.createUser({ email, password: CLAVE_AJENA });
+    const id = creada.data.user!.id;
+    authIds.push(id);
+
+    sql(`begin; update auth.users set recovery_token = '' where id = '${id}'; update auth.users set email_confirmed_at = now() where id = '${id}'; commit;`);
+
+    expect(claveDe(id)).toBe("");
+    expect((await anonClient().auth.signInWithPassword({ email, password: CLAVE_AJENA })).error).not.toBeNull();
+  });
+
+  it("una cuenta creada y confirmada en la misma operación conserva su contraseña", async () => {
+    const email = conClave();
+    const creada = await service.auth.admin.createUser({ email, password: CLAVE_AJENA, email_confirm: true });
+    authIds.push(creada.data.user!.id);
+    expect((await anonClient().auth.signInWithPassword({ email, password: CLAVE_AJENA })).error).toBeNull();
+  });
+
   it("no toca una contraseña que llega en la misma escritura, ni la de una cuenta ya confirmada", async () => {
     const email = conClave();
     const creada = await service.auth.admin.createUser({ email, password: CLAVE_AJENA });
