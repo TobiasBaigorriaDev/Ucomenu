@@ -10,7 +10,7 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 ## En curso
 
-- [C] Registro autoservicio de dueños: correo o Google, local creado solo con Pro por 14 días y plan elegido al pagar — implementado en la rama `feat/registro-autoservicio`, solo en local; falta revisión independiente, aprobación y configurar Resend, Google y Turnstile → [ficha](cambios/registro-autoservicio.md) · [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md)
+- [C] Registro autoservicio de dueños: correo o Google, local creado solo con Pro por 14 días y plan elegido al pagar — implementado en la rama `feat/registro-autoservicio`, solo en local; aprobado por Codex (3 rondas); falta la aprobación del usuario, su decisión sobre los límites de Básico y configurar Resend, Google y Turnstile → [ficha](cambios/registro-autoservicio.md) · [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md)
 - [M] Alta unificada de platos — en staging Fly v78 (con el selector de idioma y el botón Reiniciar QR en Mesas); falta la prueba manual con sesión real → [ficha](cambios/alta-unificada-de-platos.md)
 
 ## Seleccionado

@@ -1,5 +1,5 @@
 # Cambio: Registro autoservicio de dueños
-Estado: **en curso** (rama `feat/registro-autoservicio`, solo local).
+Estado: **implementado y aprobado por la revisión independiente** (rama `feat/registro-autoservicio`, solo local); falta la aprobación del usuario y configurar staging.
 Nivel: **C** — abre el registro público (autorización), cambia planes y cobro (dinero), trata datos personales de terceros nuevos y purga cuentas (eliminación irreversible). Motivos en [ADR 0053](../../docs/decisiones/0053-registro-autoservicio.md).
 
 ## Objetivo
@@ -33,7 +33,7 @@ Recupero: `/recuperar` → correo → `/auth/confirmar` → `/cuenta/nueva-contr
 - [x] H. Portada, FAQ y `/login`: botones a `/registro`; WhatsApp queda para consultas.
 - [x] I. `/terminos`, `/privacidad` (Resend, Google, Turnstile, hash del email), `.env.example`, `prod:check`, `docs/producto.md`, `docs/arquitectura.md`, `docs/operacion.md`, `docs/produccion.md`, enmienda al ADR 0007.
 - [x] J. Pruebas: RLS, unitarias y E2E con el buzón local (Mailpit).
-- [ ] K. Revisión independiente (Codex) y aprobación del usuario.
+- [x] K. Revisión independiente (Codex, 3 rondas). Falta la aprobación del usuario.
 - [ ] L. Staging y producción, con aprobación aparte (ver «Lo que necesita al usuario»).
 
 ## Invariantes
@@ -109,4 +109,5 @@ Mutaciones contra la base local, restaurada después con `pnpm db:reset`: sin el
   2. Carrera al acreditar Básico contra altas de platos y mesas. Corregido tomando los mismos candados que los triggers de límites.
   3. El tope de altas se podía superar con pedidos simultáneos. Corregido serializando las altas propias.
 - **Ronda 2 (Codex, sobre `711cc17`): RECHAZAR**, informe `output/revisiones/2026-11-02T19-08-10-commit-HEAD.md`. Límites y tope, corregidos. Bloqueante, parcial: al recuperar, Auth escribe la fila antes de confirmarla en la misma transacción, y `old.xmin` la confundía con una cuenta recién creada. Corregido con un trigger de INSERT que marca qué cuenta nació en la transacción; sin la marca, la contraseña se borra.
+- **Ronda 3 (Codex, sobre `d94d06b`): APROBAR**, sin hallazgos ni regresiones, informe `output/revisiones/2026-11-02T19-42-11-commit-HEAD.md`. Codex revisó el código sin ejecutar pruebas.
 - **Aprobación del usuario:** pendiente, y también la decisión sobre los límites de Básico.
