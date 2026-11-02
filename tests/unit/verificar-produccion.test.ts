@@ -16,6 +16,9 @@ const BUENO: Record<string, string> = {
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_" + "b".repeat(20),
   SUPABASE_SERVICE_ROLE_KEY: SERVICIO,
   WAITER_CALL_CLIENT_SECRET: "c".repeat(64),
+  TURNSTILE_SITE_KEY: "0x4AAAAAAA",
+  TURNSTILE_SECRET_KEY: "0x4AAAAAAB",
+  GOOGLE_LOGIN_ENABLED: "1",
   NEXT_PUBLIC_SITE_URL: "https://ucomenu.com",
   NEXT_PUBLIC_CONTACT_EMAIL: "hola@ucomenu.com",
   VAPID_PUBLIC_KEY: "B".repeat(87),
@@ -40,7 +43,12 @@ describe("evaluarEntorno", () => {
     expect(r.avisos).toHaveLength(1);
     expect(r.avisos[0]).toContain("GEMINI_API_KEY");
     expect(r.avisos[0]).toContain("facturación");
-    expect(r.correctos.length).toBe(9);
+    expect(r.correctos.length).toBe(10);
+  });
+
+  it("exige las dos claves de Turnstile: sin ellas el registro queda sin comprobación y con una sola rechaza todo", () => {
+    expect(evaluarEntorno(con({ TURNSTILE_SITE_KEY: undefined, TURNSTILE_SECRET_KEY: undefined })).errores.join(" ")).toContain("faltan");
+    expect(evaluarEntorno(con({ TURNSTILE_SECRET_KEY: undefined })).errores.join(" ")).toContain("falta una");
   });
 
   it("sin Mux avisa que los videos quedan sin configurar; con Mux a medias es un error; completo no avisa", () => {

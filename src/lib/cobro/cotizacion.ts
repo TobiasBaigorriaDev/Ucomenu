@@ -12,6 +12,11 @@ export type PendingIntent = { id: string; expiresAt: string };
 /** Las intenciones sin pagar de los últimos días (aunque su link haya vencido): lo que «Ya pagué, verificar» consulta. */
 type Unpaid = PendingIntent[];
 
+/** Un plan y ciclo que el Dueño puede elegir, con su importe, o el motivo por el que no se puede (ADR 0053). */
+export type PlanOption =
+  | { plan: string; cycle: string; available: true; amountCents: number; currency: string }
+  | { plan: string; cycle: string; available: false; reason: string; limit: string | null };
+
 export type PaymentQuote =
   | {
       available: true;
@@ -24,8 +29,9 @@ export type PaymentQuote =
       amountCents: number;
       pending: PendingIntent | null;
       unpaid: Unpaid;
+      options: PlanOption[];
     }
-  | { available: false; reason: string; pending: PendingIntent | null; unpaid: Unpaid };
+  | { available: false; reason: string; pending: PendingIntent | null; unpaid: Unpaid; options: PlanOption[] };
 
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -44,7 +50,17 @@ export function parseQuote(raw: unknown): PaymentQuote | null {
       )
     : [];
 
-  if (!raw.available) return { available: false, reason: typeof raw.reason === "string" ? raw.reason : "unknown", pending, unpaid };
+  const options: PlanOption[] = Array.isArray(raw.options)
+    ? raw.options.flatMap((item): PlanOption[] => {
+        if (!isRecord(item) || typeof item.plan_code !== "string" || typeof item.billing_cycle !== "string") return [];
+        if (item.available === true && typeof item.amount_cents === "number" && item.amount_cents > 0 && typeof item.currency === "string") {
+          return [{ plan: item.plan_code, cycle: item.billing_cycle, available: true, amountCents: item.amount_cents, currency: item.currency }];
+        }
+        return [{ plan: item.plan_code, cycle: item.billing_cycle, available: false, reason: typeof item.reason === "string" ? item.reason : "unknown", limit: typeof item.limit === "string" ? item.limit : null }];
+      })
+    : [];
+
+  if (!raw.available) return { available: false, reason: typeof raw.reason === "string" ? raw.reason : "unknown", pending, unpaid, options };
 
   const num = (value: unknown) => (typeof value === "number" && Number.isFinite(value) ? value : null);
   const planPrice = num(raw.plan_price_cents);
@@ -61,7 +77,28 @@ export function parseQuote(raw: unknown): PaymentQuote | null {
     amountCents: amount,
     pending,
     unpaid,
+    options,
   };
+}
+
+/** Se ofrece elegir si hay más de una opción posible o si la única no es la suscripción actual. */
+export function canChoosePlan(quote: PaymentQuote): boolean {
+  const available = quote.options.filter((option) => option.available);
+  if (available.length === 0) return false;
+  if (available.length > 1) return true;
+  return !quote.available || available[0].plan !== quote.planCode || available[0].cycle !== quote.billingCycle;
+}
+
+const LIMIT_REASON: Record<string, string> = {
+  extra_branches: "tenés sucursales adicionales: pedile a UcoMenú que las finalice",
+  branches: "tenés más sucursales activas de las que permite: desactivá las que sobran",
+  tables: "una sucursal tiene más mesas de las que permite",
+  products: "tenés más platos activos de los que permite",
+};
+
+/** Por qué un plan no se puede elegir ahora, en palabras. `null` si no hay nada útil que decir. */
+export function optionProblem(option: Extract<PlanOption, { available: false }>): string | null {
+  return option.reason === "over_plan_limit" && option.limit ? (LIMIT_REASON[option.limit] ?? null) : null;
 }
 
 export type QuoteSummary = { total: string; period: string; lines: string[] };
@@ -82,7 +119,7 @@ export function describeQuote(quote: Extract<PaymentQuote, { available: true }>)
  * cuenta suspendida a mano, sin precio de la sucursal adicional...), el bloque no se muestra: un título solo, sin nada debajo, confunde.
  */
 export function hasPayContent(quote: PaymentQuote, returned: unknown): boolean {
-  return quote.available || quote.reason === "already_covered" || quote.unpaid.length > 0 || returnNotice(returned) !== null;
+  return quote.available || canChoosePlan(quote) || quote.reason === "already_covered" || quote.unpaid.length > 0 || returnNotice(returned) !== null;
 }
 
 const NOT_AVAILABLE_MESSAGE: Record<string, string> = {
@@ -90,6 +127,8 @@ const NOT_AVAILABLE_MESSAGE: Record<string, string> = {
   no_list_price: "Tu plan no se paga desde acá. Contactá a UcoMenú.",
   price_unavailable: "Tu plan no se paga desde acá. Contactá a UcoMenú.",
   already_covered: "Tu suscripción ya tiene un período pagado por adelantado. No hace falta pagar de nuevo.",
+  paid_period_active: "Tu período pago sigue vigente: podés cambiar de plan cuando venza. Si lo necesitás antes, contactá a UcoMenú.",
+  over_plan_limit: "Tu local supera lo que permite ese plan. Recargá la página para ver qué falta ajustar.",
   too_many_unpaid: "Tenés muchos pedidos de pago sin confirmar. Si ya pagaste alguno, pulsá «Ya pagué, verificar»; si no se resuelve, contactá a UcoMenú.",
 };
 const GENERIC_NOT_AVAILABLE = "No pudimos preparar el pago para esta cuenta. Contactá a UcoMenú.";

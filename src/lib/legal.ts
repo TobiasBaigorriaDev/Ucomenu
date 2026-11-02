@@ -6,7 +6,7 @@
  * producción» en el tablero).
  */
 
-export const LEGAL_UPDATED_AT = "31 de octubre de 2026";
+export const LEGAL_UPDATED_AT = "1 de noviembre de 2026";
 
 /**
  * Responsable de UcoMenú (Ley 25.326, art. 6: la política tiene que decir quién es el responsable del archivo). PENDIENTE DE

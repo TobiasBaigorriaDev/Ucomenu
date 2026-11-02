@@ -79,6 +79,9 @@ const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authen
   record_promotion_change: [true, false, false], // trigger de promotions, promotion_targets y promotion_branches: escribe promotion_history (la API no tiene INSERT)
   promotion_history_append_only: [false, false, false], // trigger de promotion_history: rechaza UPDATE, DELETE y TRUNCATE
   purge_organization_promotion_history: [true, false, false], // purga del historial de promociones al borrar una organización (ADR 0040): apaga el trigger de solo-agregado; sin EXECUTE para ningún rol de la API
+  normalized_email_hash: [false, false, false], // registro autoservicio (ADR 0053): pura; solo la usa self_register_organization
+  plan_fit_problem: [true, false, false], // plan elegido al pagar (ADR 0053): dice si el local entra en un plan; la usan payment_quote_for y system_register_mp_payment
+  payment_quote_for: [true, false, false], // plan elegido al pagar (ADR 0053): la cuenta del importe para un plan y un ciclo; sin EXECUTE para la API
   payment_quote: [true, false, false], // cobro con Mercado Pago (ADR 0052): la única cuenta del importe y de si se puede cobrar; la usan owner_payment_quote y system_start_payment_intent; sin EXECUTE para la API
   flag_payment_review: [true, false, false], // cobro con Mercado Pago (ADR 0052): deja un pago a revisar (idempotente); solo la llaman las funciones system_*; sin EXECUTE para la API
   translations_valid: [false, false, true], // CHECK de las traducciones (ADR 0023): pura, la evalúa quien escribe (authenticated); no es SECURITY DEFINER
@@ -105,6 +108,8 @@ const PUBLIC_FUNCTIONS: Record<string, [anon: boolean, authenticated: boolean]> 
   admin_register_payment: [false, false], // SuperAdmin: registra un pago y mueve la vigencia; solo service_role
   admin_set_suspension: [false, false], // SuperAdmin: suspende o reactiva a mano; solo service_role
   admin_resolve_payment_review: [false, false], // SuperAdmin (ADR 0052): acusa un pago de Mercado Pago a revisar, con nota y auditoría; solo service_role
+  self_register_organization: [false, false], // registro autoservicio (ADR 0053): única puerta del alta propia; recomprueba en Auth que el email esté confirmado; solo service_role
+  purge_unconfirmed_accounts: [false, false], // registro autoservicio (ADR 0053): borra cuentas sin confirmar de más de 7 días; solo service_role
   system_start_payment_intent: [false, false], // cobro con Mercado Pago (ADR 0052): crea o reutiliza la intención de pago con el importe congelado; recomprueba que quien pide sea Dueño; solo service_role
   system_attach_payment_preference: [false, false], // cobro con Mercado Pago (ADR 0052): guarda el link de la intención (una sola vez); solo service_role
   system_register_mp_payment: [false, false], // cobro con Mercado Pago (ADR 0052): registra un pago aprobado y ya verificado contra la API, idempotente, y mueve la vigencia; solo service_role

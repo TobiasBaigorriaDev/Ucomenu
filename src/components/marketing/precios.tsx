@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { whatsappUrl } from "@/lib/marketing/contacto";
 import { PLANES, precioArs, SUCURSAL_ADICIONAL_ARS, type PlanVendido } from "@/lib/marketing/planes";
@@ -51,9 +52,9 @@ function Plan({ plan, destacado, anual }: { plan: PlanVendido; destacado?: boole
         ))}
       </ul>
       {destacado ? (
-        <a className="mk-btn" href={whatsappUrl()} target="_blank" rel="noopener noreferrer">
-          Probalo 14 días gratis<span className="sr-only"> (se abre WhatsApp)</span>
-        </a>
+        <Link className="mk-btn" href="/registro">
+          Probalo 14 días gratis
+        </Link>
       ) : (
         <a className="mk-btn mk-btn-ghost" href={whatsappUrl("Hola, quiero consultar por el plan Básico de UcoMenú.")} target="_blank" rel="noopener noreferrer">
           Consultar por Básico<span className="sr-only"> (se abre WhatsApp)</span>

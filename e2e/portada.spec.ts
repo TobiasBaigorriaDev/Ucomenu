@@ -40,20 +40,16 @@ test("la presentación se ofrece con controles y sin reproducirse ni descargarse
 });
 
 /**
- * Portada de ucomenu.com (ficha portada-ucomenu): el botón abre WhatsApp con el mensaje, cabe en el teléfono, los precios cambian
+ * Portada de ucomenu.com (ficha portada-ucomenu): el botón lleva al registro, cabe en el teléfono, los precios cambian
  * con el período, las pestañas de estilos funcionan y la página no promete lo que el producto no hace.
  */
 
-test("el titular y el botón principal abren WhatsApp con el mensaje prellenado", async ({ page }) => {
+test("el titular y el botón principal llevan al registro", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("Tu carta digital con QR");
   await expect(page.getByRole("heading", { level: 1 })).toContainText("que también llama al mozo");
   const boton = page.getByRole("link", { name: /Probalo 14 días gratis/ }).first();
-  const href = new URL((await boton.getAttribute("href")) ?? "");
-  expect(href.origin + href.pathname).toBe("https://wa.me/5492622230125");
-  expect(href.searchParams.get("text")).toBe("Hola, quiero probar UcoMenú 14 días gratis con mi local.");
-  await expect(boton).toHaveAttribute("target", "_blank");
-  await expect(boton).toHaveAttribute("rel", /noopener/);
+  await expect(boton).toHaveAttribute("href", "/registro");
 });
 
 test("en el teléfono cabe sin desborde y el botón se ve sin bajar", async ({ page }) => {

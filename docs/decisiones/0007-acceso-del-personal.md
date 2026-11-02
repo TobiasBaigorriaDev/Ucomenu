@@ -2,6 +2,7 @@
 
 - Estado: aceptada
 - Fecha: 2026-10-14
+- Enmienda (2026-11-01): [ADR 0053](0053-registro-autoservicio.md) reemplaza la decisión 1 en lo que hace al registro: los dueños se registran solos y existe el recupero por correo. El personal lo sigue dando de alta el Dueño.
 
 ## Contexto
 El ADR 0005 fija que la autorización sale de `memberships` y que solo el servidor las escribe. Faltaba decidir cómo entra la gente (login y sesión), cómo se protege cada ruta, cómo se da de alta y de baja al personal sin abrir una superficie de escalada, y cómo se evita dejar a una organización sin Dueño.

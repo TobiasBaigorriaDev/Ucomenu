@@ -4,6 +4,7 @@ import { adminFontClass } from "@/components/panel/admin-fonts";
 import { AppShell } from "@/components/panel/app-shell";
 import { isPlatformAdmin } from "@/lib/admin/organizations";
 import { getMemberships, requireUser } from "@/lib/auth/session";
+import { hasEmailIdentity } from "@/lib/registro/registro";
 import { createSessionClient } from "@/lib/supabase/server";
 import { ChangePasswordForm } from "./change-password-form";
 
@@ -35,7 +36,17 @@ export default async function AccountPage() {
           <h2 id="clave" className="font-display text-2xl">
             Cambiar mi contraseña
           </h2>
-          <ChangePasswordForm />
+          {hasEmailIdentity(user.identities) ? (
+            <ChangePasswordForm />
+          ) : (
+            <p className="mt-3 max-w-prose text-base text-muted">
+              Ingresás con Google, así que tu cuenta no tiene contraseña. Si querés una,{" "}
+              <Link href="/recuperar" className="text-cobalt underline underline-offset-2">
+                pedí un enlace por correo
+              </Link>
+              .
+            </p>
+          )}
         </section>
 
         <p className="mt-10 flex flex-wrap gap-x-6 gap-y-2">

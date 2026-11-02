@@ -154,7 +154,7 @@ describe("«Pagar»", () => {
     const db = fakeDb();
     const mp = fakeMp();
     expect(await startPayment({ ...base, db, mp })).toEqual({ ok: true, url: LINK });
-    expect(db.startIntent).toHaveBeenCalledWith("o", "u");
+    expect(db.startIntent).toHaveBeenCalledWith("o", "u", undefined);
     expect(mp.createPreference).toHaveBeenCalledWith({
       intentId: INTENT,
       title: "UcoMenú · Plan Pro (mensual)",

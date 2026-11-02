@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Mark } from "@/components/panel/mark";
-import { WhatsappLink } from "./whatsapp-link";
 
 const ENLACES = [
   ["#como-funciona", "Cómo funciona"],
@@ -31,7 +30,7 @@ export function Nav() {
           <Link href="/login" className="mk-login">
             Acceder
           </Link>
-          <WhatsappLink className="mk-btn mk-btn-sm">Probalo gratis</WhatsappLink>
+          <Link href="/registro" className="mk-btn mk-btn-sm">Probalo gratis</Link>
         </div>
       </nav>
     </div>

@@ -180,6 +180,11 @@ export default function PrivacyPage() {
       </LegalSection>
 
       <LegalSection title="7. Con quién compartimos los datos y dónde se guardan">
+        <p>
+          Si creás un local por tu cuenta, guardamos tu email y la versión de los términos que aceptaste. Para que la prueba gratis sea
+          una por persona conservamos un código derivado de tu email (un hash) aunque borres la cuenta o el local. Una cuenta que
+          nunca confirmó su email se borra a los 7 días.
+        </p>
         <p>No vendemos ni cedemos datos personales. Para funcionar usamos proveedores que tratan datos por nuestra cuenta y solo para prestar el servicio:</p>
         <ul>
           <li>Supabase: base de datos, autenticación y archivos (fotos y logos).</li>
@@ -189,7 +194,12 @@ export default function PrivacyPage() {
             El servicio de notificaciones de tu navegador (por ejemplo, el de Google, Apple o Mozilla), solo si el personal activa
             los avisos con la pestaña cerrada.
           </li>
-          <li>Cloudflare, para el sistema de nombres de dominio (DNS) de la aplicación.</li>
+          <li>
+            Cloudflare, para el sistema de nombres de dominio (DNS) de la aplicación y para comprobar que quien se registra o pide
+            recuperar su contraseña es una persona (Turnstile): recibe datos técnicos de tu navegador y tu dirección IP.
+          </li>
+          <li>Resend, para enviar los correos de acceso: recibe tu email y el contenido del mensaje.</li>
+          <li>Google, solo si elegís ingresar con tu cuenta de Google: nos informa tu email y tu nombre.</li>
           <li>
             Google (servicio Gemini), solo si el local usa la sugerencia de traducciones o el resumen de la analítica: se envían
             los nombres y descripciones de su carta, o cifras agregadas de ventas, nunca datos personales de comensales. Si

@@ -15,11 +15,11 @@ export function Cierre() {
         <h2 className="mk-h2 mk-center" id="cierre-titulo">
           Tu carta, lista para que la escaneen
         </h2>
-        <p className="mk-lead mk-center">Escribinos por WhatsApp y empezá tu prueba de 14 días con el plan Pro.</p>
-        <WhatsappLink className="mk-btn">
+        <p className="mk-lead mk-center">Creá tu cuenta y empezá hoy tu prueba de 14 días con el plan Pro.</p>
+        <Link href="/registro" className="mk-btn">
           Probalo 14 días gratis
           <IconArrow />
-        </WhatsappLink>
+        </Link>
         <p className="mk-close-note">Sin tarjeta de crédito · Sin instalar nada</p>
       </div>
       <Mark className="mk-close-mark" />

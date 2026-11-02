@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { getEntitlements, getMemberships, requireKitchen, requireMembership, requireUser } from "@/lib/auth/session";
 import { moraNotice } from "@/lib/entitlements";
+import { createSessionClient } from "@/lib/supabase/server";
 import { toneFor } from "@/components/menu/tones";
 import { AppShell, ROLE_LABEL } from "./app-shell";
 import { LlamadosBanner } from "./llamados-banner";
@@ -35,8 +36,14 @@ export async function OrgArea({ area, slug, children }: { area: "panel" | "sala"
   );
 }
 
+async function hasNoMembershipAtAll(userId: string): Promise<boolean> {
+  const session = await createSessionClient();
+  const { data, error } = await session.from("memberships").select("id").eq("user_id", userId).limit(1);
+  return !error && data.length === 0;
+}
+
 /**
- * Entrada de `/panel`, `/sala` y `/cocina`: sin locales muestra un aviso, con uno entra directo y con varios
+ * Entrada de `/panel`, `/sala` y `/cocina`: sin locales lleva a crear uno (o muestra un aviso), con uno entra directo y con varios
  * muestra el selector. La organización activa vive en la URL, no en una cookie. Quien solo es cocinero y entra al panel
  * o a la sala va a su pantalla.
  */
@@ -45,6 +52,8 @@ export async function OrgEntry({ area }: { area: "panel" | "sala" | "cocina" }) 
   const all = await getMemberships(user.id);
   const memberships = visibleIn(area, all);
   if (memberships.length === 0 && all.length > 0) redirect(all.length === 1 ? `/cocina/${all[0].org.slug}` : "/cocina");
+  // Sin ninguna membresía, también por fuera de lo visible (un local dado de baja no aparece): es alguien que recién se registró.
+  if (area === "panel" && all.length === 0 && (await hasNoMembershipAtAll(user.id))) redirect("/crear-local");
 
   if (memberships.length === 1) redirect(`/${area}/${memberships[0].org.slug}`);
 

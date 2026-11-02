@@ -130,6 +130,7 @@ export default async function OrganizationAdminPage({ params }: PageProps<"/admi
         <span className="rounded-full bg-sand px-2.5 py-0.5 text-base text-ink ring-1 ring-inset ring-ink/15">
           {PLAN_NAME[org.plan] ?? org.plan}, {(CYCLE_LABEL[org.billingCycle] ?? org.billingCycle).toLowerCase()}
         </span>
+        {org.selfService ? <span className="rounded-full border border-ink/25 px-2.5 py-0.5 text-base">Alta propia</span> : null}
         {org.isActive ? null : <span className="rounded-full bg-suspended-bg px-2.5 py-0.5 text-base text-suspended-ink">inactiva</span>}
       </p>
       <p className="mt-2 text-lg break-words text-muted">

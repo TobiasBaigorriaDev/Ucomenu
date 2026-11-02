@@ -42,6 +42,7 @@ function OrganizationItem({ org }: { org: OrganizationRow }) {
             {org.name}
           </Link>
           <span className="min-w-0 font-mono text-sm text-muted [overflow-wrap:anywhere]">({org.slug})</span>
+          {org.selfService ? <span className="rounded-full border border-ink/25 px-2.5 py-0.5 text-sm">Alta propia</span> : null}
           {org.isActive ? null : <span className="rounded-full bg-suspended-bg px-2.5 py-0.5 text-sm text-suspended-ink">inactiva</span>}
         </p>
         <p className="mt-1 text-base break-words text-muted">{subscriptionLine(org)}</p>

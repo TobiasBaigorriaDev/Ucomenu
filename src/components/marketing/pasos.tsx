@@ -1,10 +1,10 @@
 import Image from "next/image";
+import Link from "next/link";
 import { DEMO_CARTA_URL } from "@/lib/marketing/contacto";
 import { IconArrow, IconCheck } from "./icons";
 import { IMG } from "./imagenes";
 import { Phone } from "./phone";
 import { QrSvg } from "./qr-svg";
-import { WhatsappLink } from "./whatsapp-link";
 
 function Tildes({ items }: { items: string[] }) {
   return (
@@ -20,10 +20,10 @@ function Tildes({ items }: { items: string[] }) {
 }
 
 const Cta = () => (
-  <WhatsappLink className="mk-btn">
+  <Link href="/registro" className="mk-btn">
     Probalo 14 días gratis
     <IconArrow />
-  </WhatsappLink>
+  </Link>
 );
 
 export function Pasos() {

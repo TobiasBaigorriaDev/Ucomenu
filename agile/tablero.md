@@ -10,6 +10,7 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 ## En curso
 
+- [C] Registro autoservicio de dueños: correo o Google, local creado solo con Pro por 14 días y plan elegido al pagar — implementado en la rama `feat/registro-autoservicio`, solo en local; falta revisión independiente, aprobación y configurar Resend, Google y Turnstile → [ficha](cambios/registro-autoservicio.md) · [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md)
 - [M] Alta unificada de platos — en staging Fly v78 (con el selector de idioma y el botón Reiniciar QR en Mesas); falta la prueba manual con sesión real → [ficha](cambios/alta-unificada-de-platos.md)
 
 ## Seleccionado
@@ -104,6 +105,7 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 ### Fase 4 — Posterior al MVP
 
+- [M] Recordatorios por correo antes de que termine la prueba y antes de cada vencimiento (hoy solo el aviso del panel); lo habilita el correo del registro autoservicio
 - [C] Cobro por link de Mercado Pago con registro automático del pago (publicado en staging; primer pago de prueba real registrado el 2026-11-01; faltan probar «Ya pagué», rechazos y reembolsos, y antes de producción decidir la cuenta de cobro) → [ficha](cambios/cobro-con-link-de-mercado-pago.md) · ADR 0052
 - [C] Cobro automático de la suscripción (Mercado Pago Suscripciones) con activación y suspensión por webhook — posterior al anterior
 - [M] Subdominio o dominio propio por organización

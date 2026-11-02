@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth/session";
-import { createCobroDb } from "@/lib/cobro/base";
+import { isBillingCycle, isPlanCode } from "@/lib/admin/validation";
+import { createCobroDb, type PlanChoice } from "@/lib/cobro/base";
 import { startPayment, verifyIntentPayments } from "@/lib/cobro/cobrar";
 import { parseQuote, startErrorMessage } from "@/lib/cobro/cotizacion";
 import { getMercadoPagoClient, mercadoPagoConfig, resolveApiBase, siteBaseUrl } from "@/lib/cobro/mercadopago";
@@ -13,8 +14,8 @@ import { createSessionClient } from "@/lib/supabase/server";
 
 /**
  * Pagar la suscripción con Mercado Pago (ficha cobro-con-link-de-mercado-pago, ADR 0052). Solo el Dueño: `requireOwner` prueba la
- * sesión y la base vuelve a comprobar que sea Dueño de ESA organización antes de crear nada. El navegador no manda importe, plan ni
- * período: manda solo el local, y todo lo demás lo decide la base. La clave de servicio se usa únicamente para las funciones
+ * sesión y la base vuelve a comprobar que sea Dueño de ESA organización antes de crear nada. El navegador no manda importe ni
+ * período: manda el local y, si se puede elegir, un plan y un ciclo; todo lo demás lo decide la base. La clave de servicio se usa únicamente para las funciones
  * `system_*` de este flujo (ninguna rol de la API puede ejecutarlas).
  */
 
@@ -25,9 +26,17 @@ async function ownerFor(formData: FormData) {
   return { user, org: membership.org };
 }
 
+function parseChoice(raw: FormDataEntryValue | null): PlanChoice | null {
+  if (typeof raw !== "string") return null;
+  const [plan, cycle] = raw.split(":");
+  return isPlanCode(plan) && isBillingCycle(cycle) ? { plan, cycle } : null;
+}
+
 /** «Pagar»: crea (o reutiliza) el link y manda al Dueño a Mercado Pago. */
 export async function payAction(_previous: FormState, formData: FormData): Promise<FormState> {
   const { user, org } = await ownerFor(formData);
+  // La elección son solo dos nombres: la base decide si se puede y cuánto cuesta (ADR 0053).
+  const choice = parseChoice(formData.get("eleccion"));
   const result = await startPayment({
     db: createCobroDb(createAdminClient()),
     mp: getMercadoPagoClient(),
@@ -36,6 +45,7 @@ export async function payAction(_previous: FormState, formData: FormData): Promi
     orgId: org.id,
     slug: org.slug,
     userId: user.id,
+    choice,
   });
   if (!result.ok) return { error: startErrorMessage(result.error) };
   // Fuera del flujo normal de React: `redirect` lanza, así que va al final y sin try/catch.

@@ -1,8 +1,9 @@
 import { ActionForm, SubmitButton } from "@/components/panel/action-form";
 import { secondaryButtonClass } from "@/components/panel/styles";
-import { describeQuote, returnNotice, startErrorMessage, type PaymentQuote } from "@/lib/cobro/cotizacion";
+import { canChoosePlan, describeQuote, returnNotice, startErrorMessage, type PaymentQuote } from "@/lib/cobro/cotizacion";
 import { formatDateWithYear } from "@/lib/entitlements";
 import { payAction, verifyAction } from "./actions";
+import { PlanChooser } from "./elegir-plan";
 
 /**
  * Pagar la suscripción con Mercado Pago (ficha cobro-con-link-de-mercado-pago). El importe que se muestra es el que calcula la base;
@@ -24,7 +25,9 @@ export function PaySection({ slug, quote, returned }: { slug: string; quote: Pay
         </p>
       ) : null}
 
-      {quote.available ? (
+      {canChoosePlan(quote) ? (
+        <PlanChooser slug={slug} options={quote.options} current={quote.available ? `${quote.planCode}:${quote.billingCycle}` : null} extraBranches={quote.available ? quote.extraBranches : 0} />
+      ) : quote.available ? (
         <Available quote={quote} hiddenOrg={hiddenOrg} />
       ) : quote.reason === "already_covered" ? (
         <p className="mt-3 max-w-prose text-base text-muted" data-testid="pagar-cubierto">

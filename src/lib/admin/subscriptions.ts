@@ -522,6 +522,8 @@ export type OrganizationDetail = {
   slug: string;
   name: string;
   isActive: boolean;
+  /** Se creó solo (ADR 0053). */
+  selfService: boolean;
   /** Cuándo se dio de baja (baja auditada vigente), o `null` si está activa o no hay baja auditada: el borrado la exige. */
   deactivatedAt: string | null;
   ownerEmails: string[];
@@ -560,7 +562,7 @@ export async function getOrganizationDetail(
   const slug = parseSlug(rawSlug);
   if (!slug) return fail("org_not_found");
 
-  const org = await ctx.admin.from("organizations").select("id, slug, name, is_active").eq("slug", slug).maybeSingle();
+  const org = await ctx.admin.from("organizations").select("id, slug, name, is_active, origin").eq("slug", slug).maybeSingle();
   if (org.error) return fail("unexpected");
   if (!org.data) return fail("org_not_found");
 
@@ -704,6 +706,7 @@ export async function getOrganizationDetail(
     slug: org.data.slug,
     name: org.data.name,
     isActive: org.data.is_active,
+    selfService: org.data.origin === "self_service",
     deactivatedAt,
     ownerEmails: emails.sort(),
     plan: sub.data.plan_code,

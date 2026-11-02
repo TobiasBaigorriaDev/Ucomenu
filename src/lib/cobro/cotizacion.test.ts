@@ -29,8 +29,8 @@ describe("lectura de la cotización de la base", () => {
   });
 
   it("lee el motivo cuando no se puede cobrar", () => {
-    expect(parseQuote({ available: false, reason: "no_list_price" })).toEqual({ available: false, reason: "no_list_price", pending: null, unpaid: [] });
-    expect(parseQuote({ available: false })).toEqual({ available: false, reason: "unknown", pending: null, unpaid: [] });
+    expect(parseQuote({ available: false, reason: "no_list_price" })).toEqual({ available: false, reason: "no_list_price", pending: null, unpaid: [], options: [] });
+    expect(parseQuote({ available: false })).toEqual({ available: false, reason: "unknown", pending: null, unpaid: [], options: [] });
   });
 
   it("lo que no tiene la forma esperada no se interpreta: no se inventa un importe", () => {

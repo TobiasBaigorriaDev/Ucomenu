@@ -22,6 +22,9 @@ import type { Database } from "./database.types";
  *    contra la API de Mercado Pago y marcar un reembolso). La primera la llama tras `requireOwner` y la base vuelve a comprobar que sea
  *    Dueño; la segunda, sin sesión, solo tras validar la firma del aviso y leer el pago desde la API de Mercado Pago. Ningún rol de la API
  *    puede ejecutarlas, y el importe y la vigencia los calcula la base.
+ *  - Excepción acotada (ADR 0053): `src/app/crear-local/actions.ts` lo usa solo para comprobar si una dirección está libre y para llamar a
+ *    `self_register_organization`, con el id de `requireUser`. La función vuelve a exigir en Auth un email confirmado; ningún rol de la
+ *    API puede ejecutarla.
  */
 export function createAdminClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

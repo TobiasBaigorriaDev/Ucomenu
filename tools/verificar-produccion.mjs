@@ -97,6 +97,13 @@ export function evaluarEntorno(env) {
     bien("WAITER_CALL_CLIENT_SECRET: presente y largo.");
   }
 
+  // Registro autoservicio (ADR 0053). Sin las dos claves de Turnstile, `/registro` no pide comprobación; con una sola, rechaza todo.
+  const turnstile = [env.TURNSTILE_SITE_KEY, env.TURNSTILE_SECRET_KEY].filter((valor) => !vacio(valor)).length;
+  if (turnstile === 1) error("TURNSTILE_SITE_KEY y TURNSTILE_SECRET_KEY: falta una; `/registro` y `/recuperar` rechazarían todos los pedidos.");
+  else if (turnstile === 0) error("TURNSTILE_SITE_KEY y TURNSTILE_SECRET_KEY: faltan; `/registro` quedaría abierto sin comprobación.");
+  else bien("Turnstile: las dos claves están.");
+  if (env.GOOGLE_LOGIN_ENABLED !== "1") aviso("GOOGLE_LOGIN_ENABLED: no está en 1; el botón de Google no se muestra.");
+
   // Aviso de llamados con la pestaña cerrada (Web Push, ADR 0020). Opcional: sin las tres variables queda apagado.
   const vapid = ["VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY"];
   const hayVapid = vapid.some((nombre) => !vacio(env[nombre]));

@@ -329,6 +329,8 @@ export type OrganizationRow = {
   name: string;
   isActive: boolean;
   createdAt: string;
+  /** Se creó solo (ADR 0053): sin revisión previa de nadie. */
+  selfService: boolean;
   plan: string | null;
   billingCycle: string | null;
   /** Fin efectivo: el mayor entre `current_period_end` y `trial_ends_at`. */
@@ -352,7 +354,7 @@ export async function listOrganizations(ctx: AdminContext, now: Date = new Date(
 
   const orgs = await ctx.admin
     .from("organizations")
-    .select("id, slug, name, is_active, created_at")
+    .select("id, slug, name, is_active, created_at, origin")
     .order("created_at", { ascending: false })
     .limit(ORGANIZATIONS_LIMIT);
   if (orgs.error) return fail("unexpected");
@@ -388,6 +390,7 @@ export async function listOrganizations(ctx: AdminContext, now: Date = new Date(
         name: o.name,
         isActive: o.is_active,
         createdAt: o.created_at,
+        selfService: o.origin === "self_service",
         plan: sub?.plan_code ?? null,
         billingCycle: sub?.billing_cycle ?? null,
         periodEnd,

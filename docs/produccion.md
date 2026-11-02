@@ -15,7 +15,7 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 ## 1. Proyecto de Supabase (aprobación: crea recursos)
 1. Crear el proyecto, en Free al comienzo (ADR 0015), en la región de **São Paulo** (la misma ciudad que la app en Fly).
 2. Aplicar las migraciones con `supabase link` y `supabase db push`. **Nunca** `db reset` ni el `seed.sql` (son datos ficticios y el reset borra todo). La migración `20261204100000` ejecuta `create extension if not exists pg_cron` y **programa sola** la tarea `reset-scheduled-table-turns` (paso 4.e): si el `db push` falla ahí, activar `pg_cron` en el panel (Database → Extensions) y repetirlo.
-3. Configuración de Auth en el panel de Supabase (el `config.toml` solo vale en local): registro público apagado; contraseña mínima de 10; sin proveedores sociales. Las cuentas las crea el servidor (SuperAdmin y Dueño).
+3. Configuración de Auth en el panel de Supabase (el `config.toml` solo vale en local): contraseña mínima de 10 y el registro autoservicio de la sección **1c**. El personal lo sigue dando de alta el Dueño.
 4. Verificar que el bucket `product-images` quedó **público**, con tipos JPEG/PNG/WebP y 2 MB por archivo (ADR 0008; lo crea la migración).
 5. Guardar las claves: la **pública** (publishable) y la de **servicio** (secret), y la **conexión directa** a la base (para `pnpm respaldo`).
 
@@ -41,6 +41,22 @@ pnpm exec supabase db push                        # las aplica al STAGING
 - *Database → Migrations* lista todas las migraciones; *Storage* tiene el bucket `product-images`, público.
 - El SQL de seguimiento de `docs/operacion.md`, sección 3, corre sin errores.
 - Si tu red no tiene IPv6, para `pnpm respaldo` usar la cadena del **Session pooler** (Connect → Session pooler) y no la directa.
+
+## 1c. Registro autoservicio: Auth, correo, Google y Turnstile (aprobación: cuentas, DNS y secretos)
+
+Motivos en [ADR 0053](decisiones/0053-registro-autoservicio.md). Nada de esto viaja en las migraciones: **se repite en cada proyecto**. Hacerlo en staging primero. Hasta completarlo, `/registro` existe pero el correo no sale.
+
+1. **Resend:** crear la cuenta, agregar el dominio `ucomenu.com`, cargar en Cloudflare los registros DNS que indica (SPF y DKIM, en «Solo DNS») y esperar a que quede verificado. Crear una clave de API con permiso de solo envío.
+2. **Auth → SMTP:** host `smtp.resend.com`, puerto `465`, usuario `resend`, contraseña = la clave de API, remitente `UcoMenú <no-responder@ucomenu.com>`. Subir **Auth → Rate Limits → emails por hora** de 2 a 100 (el plan gratis de Resend tiene el mismo tope por día).
+3. **Auth → Sign In / Providers → Email:** registro **encendido** y confirmación de email **encendida**.
+4. **Auth → URL Configuration:** *Site URL* = la dirección del entorno (`https://ucomenu.com`), porque las plantillas arman el enlace con ella. *Redirect URLs* = `<dirección>/auth/callback`.
+5. **Auth → Email Templates:** pegar el asunto y el HTML de `supabase/templates/` (`confirmacion.html` en *Confirm signup*, `enlace.html` en *Magic Link* y `recuperacion.html` en *Reset password*; los asuntos están en `supabase/config.toml`). Sin esto los enlaces no pasan por `/auth/confirmar`.
+6. **Google:** en Google Cloud, crear un proyecto y una pantalla de consentimiento con el nombre UcoMenú, y un cliente OAuth «Aplicación web» con la URI de redirección `https://<proyecto>.supabase.co/auth/v1/callback`. Cargar el ID y el secreto en **Auth → Providers → Google**, y `GOOGLE_LOGIN_ENABLED=1` en la app. No encender «Allow users without an email».
+7. **Turnstile:** en Cloudflare, crear un widget «Managed» con el dominio del entorno. Cargar `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY` con `fly secrets set`. **No encender** Auth → Attack Protection → CAPTCHA: también se exigiría en cada login (ADR 0053, decisión 6). `pnpm prod:check` falla sin las dos claves.
+8. **Purga de cuentas sin confirmar:** programarla (sección 4.f).
+9. **Probar:** registrarse con un correo real y con Google, crear un local, salir, recuperar la contraseña y confirmar que el correo llega con remitente `@ucomenu.com` y sin ir a spam.
+
+**Marcha atrás:** apagar el registro (`Allow new users to sign up`) cierra las altas nuevas al instante; los locales creados siguen funcionando. Las personas ya registradas siguen entrando.
 
 ## 2. Primer SuperAdmin (a mano; aprobación: toca producción)
 1. Crear la cuenta en el panel de Auth de Supabase con una contraseña larga. **No** usar las del seed (`admin@ucomenu.test` y similares no existen en producción).
@@ -209,6 +225,16 @@ select cron.schedule(
 Para dar de baja: `select cron.unschedule('prune-cron-history');`. Con 7 días alcanza para ver una purga fallida (las comprobaciones de arriba miran las últimas ejecuciones); las cifras de lo borrado no se guardan ahí de todos modos.
 - **Estado en staging (2026-10-31):** `purge-waiter-calls`, `reset-scheduled-table-turns` y `purge-expired-reservations` están programadas; `purge-video-comments`, `purge-expired-orders` y `prune-cron-history` **todavía no** (nunca corrieron por cron, solo a mano). El SQL listo está en las secciones 4.b, 4.c y arriba; ese día se comprobó, solo leyendo, que en staging no había nada vencido que borrar (0 comentarios y 0 pedidos) y que el disparador de solo-agregado de `order_events` está encendido (`O`). Programarlas en staging y mirar `cron.job_run_details` tras la primera ejecución es el ensayo que falta antes de repetirlo en producción.
 
+### 4.f Programar la purga de cuentas sin confirmar (aprobación: infraestructura)
+
+`purge_unconfirmed_accounts` borra por lotes las cuentas de más de 7 días que nunca confirmaron su email, y nunca una con membresía, de SuperAdmin o con reserva vigente (ADR 0053). Sin programarla, un email ajeno cargado por la API de Auth puede trabar el alta de esa persona por el SuperAdmin.
+
+```sql
+select cron.schedule('purge-unconfirmed-accounts', '30 6 * * *', $$select public.purge_unconfirmed_accounts()$$);
+```
+
+Después de la primera ejecución, mirar `cron.job_run_details`.
+
 ## 5. Dominio (aprobación: DNS y app de producción)
 `ucomenu.com` ya es del usuario (DNS en Cloudflare). Este paso se hace cuando exista la app de producción en Fly (`fly.toml`, hoy plantilla):
 1. Agregar el dominio a Fly: `fly certs add ucomenu.com -c fly.toml` (y `www.ucomenu.com` si se quiere; redirigirlo al raíz). `fly certs show ucomenu.com -c fly.toml` indica los registros exactos.
@@ -235,6 +261,7 @@ Con la app publicada y sin datos reales todavía:
 - No hay cookies en la carta pública (`/m/...`).
 - **Cabeceras y robots:** `curl -I https://ucomenu.com/` muestra `strict-transport-security`, `x-content-type-options: nosniff` y `x-frame-options: SAMEORIGIN`, y no muestra `x-powered-by`; `https://ucomenu.com/robots.txt` permite `/` y prohíbe `/panel/`, `/sala/`, `/cocina/`, `/admin/` y `/t/` (en staging prohíbe todo).
 - **Videos:** subir un video corto desde un local de ensayo y ver que sale de «Procesando» (confirma las claves de Mux y el webhook).
+- **Registro autoservicio** (sección 1c): `/registro` muestra la comprobación de Turnstile y el botón de Google; un registro con un correo real llega hasta el panel con Pro por 14 días; el nuevo local aparece en `/admin` con «Alta propia».
 - **Cobro con Mercado Pago** (si se activó, sección 3c): en un local de ensayo Pro con vencimiento cercano, Suscripción muestra «Pagar con Mercado Pago»; `curl -X POST https://ucomenu.com/api/mercadopago/webhook` sin firma responde 401 (con 503 falta algún secreto) y un pago de ensayo queda registrado y renueva la vigencia.
 - **IA:** con la clave de pago cargada, «Sugerir con IA» y «Generar resumen» responden; sin clave, los botones no aparecen.
 - La purga programada corrió y no quedan llamados de más de 14 días (paso 4).
@@ -246,6 +273,7 @@ Con la app publicada y sin datos reales todavía:
 ## Marcha atrás
 - **Aplicación:** volver a la versión anterior (`fly releases` y `fly deploy --image <imagen anterior>`).
 - **Base:** las migraciones traen su rollback en el encabezado. No se baja una migración en una base con datos reales sin aprobación; la purga de `waiter_calls` es irreversible y no tiene respaldo (aceptado, ADR 0014).
+- **Registro autoservicio:** apagar el registro en Auth (sección 1c) cierra las altas nuevas; los locales creados no se tocan.
 - **Cobro con Mercado Pago:** quitar los dos secretos (`flyctl secrets unset`, sección 3c) apaga «Pagar» y el aviso sin desplegar; los pagos ya registrados no se tocan y el cobro manual sigue.
 - **Purga mal programada:** `cron.unschedule('purge-waiter-calls')`, `cron.unschedule('purge-video-comments')`, `cron.unschedule('purge-expired-orders')`, `cron.unschedule('purge-expired-reservations')` o `cron.unschedule('prune-cron-history')`.
 - **Datos perdidos o dañados:** restaurar desde el último respaldo propio (`docs/operacion.md`, sección 2).

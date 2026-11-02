@@ -68,13 +68,16 @@ test.describe("sin sesión", () => {
     }
   });
 
-  test("no hay registro público", async ({ request }) => {
-    const respuesta = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/signup`, {
-      headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "", "Content-Type": "application/json" },
-      data: { email: `intruso-${Date.now()}@example.test`, password: "contrasena-larga-123" },
-    });
-    expect(respuesta.status()).toBe(422);
-    expect((await respuesta.json()).error_code).toBe("signup_disabled");
+  test("una cuenta creada por la API de Auth no entra sin confirmar su email", async ({ request }) => {
+    const headers = { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? "", "Content-Type": "application/json" };
+    const credenciales = { email: `intruso-${Date.now()}@example.test`, password: "contrasena-larga-123" };
+    const alta = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/signup`, { headers, data: credenciales });
+    expect(alta.ok()).toBe(true);
+    expect((await alta.json()).access_token).toBeUndefined();
+
+    const ingreso = await request.post(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/token?grant_type=password`, { headers, data: credenciales });
+    expect(ingreso.status()).toBe(400);
+    expect((await ingreso.json()).error_code).toBe("email_not_confirmed");
   });
 });
 
@@ -97,7 +100,7 @@ test.describe("el Dueño", () => {
     // Suscripción: plan y estado visibles solo al Dueño.
     await nav.getByRole("link", { name: "Suscripción" }).click();
     await expect(page.getByRole("heading", { name: "Suscripción" })).toBeVisible();
-    await expect(page.getByText("Básico")).toBeVisible();
+    await expect(page.getByText("Básico", { exact: true })).toBeVisible();
     await expect(page.getByText("Al día")).toBeVisible();
   });
 

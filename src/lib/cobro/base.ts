@@ -21,13 +21,16 @@ export type PaymentIntent = {
   checkoutUrl: string | null;
 };
 
+/** Lo que el Dueño elige al pagar. Solo nombres: el importe lo pone la base, que además decide si se puede elegir. */
+export type PlanChoice = { plan: string; cycle: string };
+
 export type RegisterOutcome = {
   result: "registered" | "already_registered" | "review" | "unknown_intent";
   reason?: string;
 };
 
 export interface CobroDb {
-  startIntent(orgId: string, userId: string): Promise<DbResult<PaymentIntent>>;
+  startIntent(orgId: string, userId: string, choice?: PlanChoice | null): Promise<DbResult<PaymentIntent>>;
   attachPreference(intentId: string, preferenceId: string, checkoutUrl: string): Promise<DbResult<boolean>>;
   registerPayment(input: { intentId: string; paymentId: string; amountCents: number; currency: string; paidAt: string | null }): Promise<DbResult<RegisterOutcome>>;
   /** `flagged`: el pago ya estaba registrado y queda a revisar. `recorded`: todavía no estaba; el registro verá la reversión y no renovará. */
@@ -60,8 +63,12 @@ function parseIntent(raw: unknown): PaymentIntent | null {
 /** Las funciones de base sobre el cliente real. */
 export function createCobroDb(admin: SupabaseClient<Database>): CobroDb {
   return {
-    async startIntent(orgId, userId) {
-      const { data, error } = await admin.rpc("system_start_payment_intent", { p_org: orgId, p_user: userId });
+    async startIntent(orgId, userId, choice) {
+      const { data, error } = await admin.rpc("system_start_payment_intent", {
+        p_org: orgId,
+        p_user: userId,
+        ...(choice ? { p_plan: choice.plan, p_cycle: choice.cycle } : {}),
+      });
       if (error) return failure(error);
       const intent = parseIntent(data);
       return intent ? { ok: true, data: intent } : { ok: false, code: null, message: "respuesta ilegible" };

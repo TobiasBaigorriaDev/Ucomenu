@@ -1,5 +1,5 @@
 import { PLAN_NAME } from "@/lib/entitlements";
-import type { CobroDb, PaymentIntent } from "./base";
+import type { CobroDb, PaymentIntent, PlanChoice } from "./base";
 import { isAllowedCheckoutUrl, MercadoPagoApiError, type MercadoPagoClient, type MercadoPagoPayment } from "./mercadopago";
 
 /**
@@ -87,7 +87,7 @@ export type StartError = "not_configured" | "forbidden" | "unavailable" | { notA
 export type StartResult = { ok: true; url: string } | { ok: false; error: StartError };
 
 /** El motivo por el que la base no ofrece cobrar (`payment_quote`): estos nombres son los de sus excepciones. */
-const NOT_AVAILABLE = new Set(["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "too_many_unpaid", "organization_inactive", "subscription_not_found"]);
+const NOT_AVAILABLE = new Set(["suspended_manually", "no_list_price", "price_unavailable", "already_covered", "too_many_unpaid", "organization_inactive", "subscription_not_found", "paid_period_active", "over_plan_limit"]);
 
 export function paymentTitle(intent: Pick<PaymentIntent, "planCode" | "billingCycle" | "extraBranches">): string {
   const plan = PLAN_NAME[intent.planCode] ?? intent.planCode;
@@ -108,11 +108,12 @@ export async function startPayment(input: {
   orgId: string;
   slug: string;
   userId: string;
+  choice?: PlanChoice | null;
 }): Promise<StartResult> {
   const { db, mp, siteUrl } = input;
   if (!mp || !siteUrl) return { ok: false, error: "not_configured" };
 
-  const started = await db.startIntent(input.orgId, input.userId);
+  const started = await db.startIntent(input.orgId, input.userId, input.choice);
   if (!started.ok) {
     if (started.message.includes("not_owner")) return { ok: false, error: "forbidden" };
     const reason = [...NOT_AVAILABLE].find((name) => started.message.includes(name));

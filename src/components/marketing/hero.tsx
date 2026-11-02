@@ -2,7 +2,6 @@ import { DEMO_CARTA_PATH } from "@/lib/marketing/contacto";
 import Link from "next/link";
 import { IconArrow, IconCheck } from "./icons";
 import { HeroFan } from "./hero-fan";
-import { WhatsappLink } from "./whatsapp-link";
 
 const TILDES = ["14 días gratis con el plan Pro", "Sin tarjeta de crédito", "Sin instalar nada"];
 
@@ -26,10 +25,10 @@ export function Hero() {
           ))}
         </ul>
         <div className="mk-cta-row">
-          <WhatsappLink className="mk-btn">
+          <Link href="/registro" className="mk-btn">
             Probalo 14 días gratis
             <IconArrow />
-          </WhatsappLink>
+          </Link>
           <Link href={DEMO_CARTA_PATH} className="mk-link">
             Ver una carta de ejemplo
             <IconArrow />

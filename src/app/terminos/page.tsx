@@ -99,6 +99,10 @@ export default function TermsPage() {
             inmediato.
           </li>
           <li>
+            Podés crear tu local por tu cuenta, con un email que controles. La prueba gratis de 14 días con el plan Pro es una por
+            persona y no pide tarjeta. Al terminar elegís un plan y lo pagás para seguir usando el servicio; si no, se aplican los plazos de mora de esta página.
+          </li>
+          <li>
             Cuidá las credenciales de tu equipo. Las acciones hechas con una cuenta se atribuyen a su titular. Si dejás de
             trabajar con una persona, dala de baja desde el panel.
           </li>

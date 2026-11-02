@@ -33,11 +33,11 @@ const PREGUNTAS: { q: string; a: ReactNode }[] = [
   },
   {
     q: "¿Cómo empiezo?",
-    a: "Nos escribís por WhatsApp, damos de alta tu local con el plan Pro por 14 días y empezás a cargar tu carta. No pedimos tarjeta de crédito.",
+    a: "Creás tu cuenta con tu email o con Google, ponés el nombre de tu local y ya podés cargar tu carta, con el plan Pro por 14 días. No pedimos tarjeta de crédito.",
   },
   {
     q: "¿Qué pasa cuando terminan los 14 días?",
-    a: "Elegís Básico o Pro y acordamos el pago por transferencia o link de pago. Si elegís un plan menor no perdés nada: tu carta y tus datos se conservan.",
+    a: "Elegís Básico o Pro desde tu panel y pagás con Mercado Pago. Tu carta y tus datos se conservan; si elegís Básico, antes tu local tiene que entrar en sus límites de sucursales, mesas y platos.",
   },
   {
     q: "¿Tengo que comprar algo?",

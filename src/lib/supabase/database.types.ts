@@ -451,28 +451,28 @@ isOneToOne: false
                   ]
                 },"organizations": {
                   Row: {
-                    "call_tone": string,"cover_path": string | null,"created_at": string,"id": string,"instagram_handle": string | null,"is_active": boolean,"logo_path": string | null,"menu_ambient": string,"menu_density": string,"menu_font": string,"menu_layout": string,"menu_palette": string,"menu_shape": string,"menu_tagline": string | null,"menu_theme": string,"menu_theme_from": string | null,"menu_theme_until": string | null,"name": string,"opening_hours": string | null,"ready_tone": string,"slug": string,"vibration": string,"whatsapp_number": string | null
+                    "call_tone": string,"cover_path": string | null,"created_at": string,"id": string,"instagram_handle": string | null,"is_active": boolean,"logo_path": string | null,"menu_ambient": string,"menu_density": string,"menu_font": string,"menu_layout": string,"menu_palette": string,"menu_shape": string,"menu_tagline": string | null,"menu_theme": string,"menu_theme_from": string | null,"menu_theme_until": string | null,"name": string,"opening_hours": string | null,"origin": string,"ready_tone": string,"slug": string,"vibration": string,"whatsapp_number": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "call_tone"?: string,"cover_path"?: string | null,"created_at"?: string,"id"?: string,"instagram_handle"?: string | null,"is_active"?: boolean,"logo_path"?: string | null,"menu_ambient"?: string,"menu_density"?: string,"menu_font"?: string,"menu_layout"?: string,"menu_palette"?: string,"menu_shape"?: string,"menu_tagline"?: string | null,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name": string,"opening_hours"?: string | null,"ready_tone"?: string,"slug": string,"vibration"?: string,"whatsapp_number"?: string | null
+                    "call_tone"?: string,"cover_path"?: string | null,"created_at"?: string,"id"?: string,"instagram_handle"?: string | null,"is_active"?: boolean,"logo_path"?: string | null,"menu_ambient"?: string,"menu_density"?: string,"menu_font"?: string,"menu_layout"?: string,"menu_palette"?: string,"menu_shape"?: string,"menu_tagline"?: string | null,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name": string,"opening_hours"?: string | null,"origin"?: string,"ready_tone"?: string,"slug": string,"vibration"?: string,"whatsapp_number"?: string | null
                   }
                   Update: {
-                    "call_tone"?: string,"cover_path"?: string | null,"created_at"?: string,"id"?: string,"instagram_handle"?: string | null,"is_active"?: boolean,"logo_path"?: string | null,"menu_ambient"?: string,"menu_density"?: string,"menu_font"?: string,"menu_layout"?: string,"menu_palette"?: string,"menu_shape"?: string,"menu_tagline"?: string | null,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name"?: string,"opening_hours"?: string | null,"ready_tone"?: string,"slug"?: string,"vibration"?: string,"whatsapp_number"?: string | null
+                    "call_tone"?: string,"cover_path"?: string | null,"created_at"?: string,"id"?: string,"instagram_handle"?: string | null,"is_active"?: boolean,"logo_path"?: string | null,"menu_ambient"?: string,"menu_density"?: string,"menu_font"?: string,"menu_layout"?: string,"menu_palette"?: string,"menu_shape"?: string,"menu_tagline"?: string | null,"menu_theme"?: string,"menu_theme_from"?: string | null,"menu_theme_until"?: string | null,"name"?: string,"opening_hours"?: string | null,"origin"?: string,"ready_tone"?: string,"slug"?: string,"vibration"?: string,"whatsapp_number"?: string | null
                   }
                   Relationships: [
                     
                   ]
                 },"payment_intents": {
                   Row: {
-                    "amount_cents": number,"billing_cycle": string,"checkout_url": string | null,"created_at": string,"created_by": string,"currency": string,"expires_at": string,"extra_branches": number,"id": string,"mp_preference_id": string | null,"organization_id": string,"paid_at": string | null,"plan_code": string,"provider_payment_id": string | null,"status": string,"subscription_id": string
+                    "amount_cents": number,"billing_cycle": string,"checkout_url": string | null,"created_at": string,"created_by": string,"currency": string,"expires_at": string,"extra_branches": number,"from_billing_cycle": string | null,"from_plan_code": string | null,"id": string,"mp_preference_id": string | null,"organization_id": string,"paid_at": string | null,"plan_code": string,"provider_payment_id": string | null,"status": string,"subscription_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "amount_cents": number,"billing_cycle": string,"checkout_url"?: string | null,"created_at"?: string,"created_by": string,"currency": string,"expires_at": string,"extra_branches": number,"id"?: string,"mp_preference_id"?: string | null,"organization_id": string,"paid_at"?: string | null,"plan_code": string,"provider_payment_id"?: string | null,"status"?: string,"subscription_id": string
+                    "amount_cents": number,"billing_cycle": string,"checkout_url"?: string | null,"created_at"?: string,"created_by": string,"currency": string,"expires_at": string,"extra_branches": number,"from_billing_cycle"?: string | null,"from_plan_code"?: string | null,"id"?: string,"mp_preference_id"?: string | null,"organization_id": string,"paid_at"?: string | null,"plan_code": string,"provider_payment_id"?: string | null,"status"?: string,"subscription_id": string
                   }
                   Update: {
-                    "amount_cents"?: number,"billing_cycle"?: string,"checkout_url"?: string | null,"created_at"?: string,"created_by"?: string,"currency"?: string,"expires_at"?: string,"extra_branches"?: number,"id"?: string,"mp_preference_id"?: string | null,"organization_id"?: string,"paid_at"?: string | null,"plan_code"?: string,"provider_payment_id"?: string | null,"status"?: string,"subscription_id"?: string
+                    "amount_cents"?: number,"billing_cycle"?: string,"checkout_url"?: string | null,"created_at"?: string,"created_by"?: string,"currency"?: string,"expires_at"?: string,"extra_branches"?: number,"from_billing_cycle"?: string | null,"from_plan_code"?: string | null,"id"?: string,"mp_preference_id"?: string | null,"organization_id"?: string,"paid_at"?: string | null,"plan_code"?: string,"provider_payment_id"?: string | null,"status"?: string,"subscription_id"?: string
                   }
                   Relationships: [
                     {
@@ -891,6 +891,20 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"trial_claims": {
+                  Row: {
+                    "claimed_at": string,"email_hash": string,"terms_version": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "claimed_at"?: string,"email_hash": string,"terms_version": string
+                  }
+                  Update: {
+                    "claimed_at"?: string,"email_hash"?: string,"terms_version"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"video_comments": {
                   Row: {
                     "alias": string | null,"body": string,"created_at": string,"id": string,"moderated_at": string | null,"organization_id": string,"rate_key": string | null,"status": string,"video_id": string
@@ -1119,6 +1133,9 @@ isOneToOne: false
 "purge_expired_reservations":
 { Args: { "p_batch"?: number,"p_retention"?: string }; Returns: number
                            },
+"purge_unconfirmed_accounts":
+{ Args: { "p_limit"?: number,"p_older_than"?: string }; Returns: number
+                           },
 "purge_video_comments":
 { Args: { "p_batch"?: number,"p_pending_retention"?: string,"p_rejected_retention"?: string }; Returns: number
                            },
@@ -1167,6 +1184,9 @@ isOneToOne: false
 "save_promotion":
 { Args: { "p_all_branches": boolean,"p_branches": (string)[],"p_categories": (string)[],"p_discount_type": string,"p_discount_value": number,"p_end_minute": number,"p_ends_on": string,"p_id": string,"p_is_active": boolean,"p_name": string,"p_org": string,"p_products": (string)[],"p_start_minute": number,"p_starts_on": string,"p_weekdays_mask": number }; Returns: string
                            },
+"self_register_organization":
+{ Args: { "p_branch_name": string,"p_branch_slug": string,"p_name": string,"p_slug": string,"p_terms_version": string,"p_user": string }; Returns: string
+                           },
 "set_kitchen_availability":
 { Args: { "p_available": boolean,"p_branch": string,"p_org": string,"p_product": string }; Returns: Json
                            },
@@ -1198,7 +1218,7 @@ isOneToOne: false
 { Args: { "p_amount_cents": number,"p_currency": string,"p_intent": string,"p_paid_at": string,"p_provider_payment_id": string }; Returns: Json
                            },
 "system_start_payment_intent":
-{ Args: { "p_org": string,"p_user": string }; Returns: Json
+{ Args: { "p_cycle"?: string,"p_org": string,"p_plan"?: string,"p_user": string }; Returns: Json
                            },
 "unregister_push_subscription":
 { Args: { "p_endpoint": string,"p_org"?: string }; Returns: undefined
