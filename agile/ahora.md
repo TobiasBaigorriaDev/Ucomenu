@@ -15,7 +15,7 @@ Migración `20261218100000` aplicada en local y staging: si cambia el esquema, m
 3. **Después, con aprobación:** integrar a `main`. El trigger de `auth.users` ya se comprobó contra el Auth de staging; repetirlo tras cada actualización de Auth.
 4. **Producción** sigue bloqueada por lo de siempre (`docs/produccion.md`): datos legales, abogado (ahora también con Resend, Google y Turnstile), contador, Supabase y Fly de producción y cuenta de cobro de Mercado Pago.
 
-Pendiente del cobro en staging: probar «Ya pagué, verificar», un pago rechazado y un reembolso, ahora también con la elección de plan. Staging sigue en Fly v95.
+Pendiente del cobro en staging: probar «Ya pagué, verificar», un pago rechazado y un reembolso, ahora también con la elección de plan.
 
 Fallas previas ajenas a este cambio: `alta-guiada.spec.ts:183` y `:196` y `resumen-panel.spec.ts:57` fallan igual en `main`. Intermitentes: `portada.spec.ts:92`, `videos-mux.spec.ts:145`, `revision-claude.test.ts` (tiempos agotados) y caídas de worker `0xC0000409`.
 
