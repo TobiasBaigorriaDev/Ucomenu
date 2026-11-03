@@ -18,7 +18,7 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 ## Para verificar
 
-- [C] Registro autoservicio de dueños: correo o Google, local creado solo con Pro por 14 días, plan elegido al pagar y recupero por correo — en `main` y en staging, probado por el usuario con cuentas reales (2026-11-02); falta ver un pago real que cambie de plan → [ficha](cambios/registro-autoservicio.md) · [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md)
+- [C] Registro autoservicio de dueños: correo o Google, local creado solo con Pro por 14 días, plan elegido al pagar y recupero por correo — en `main` y en staging, probado por el usuario con cuentas reales (2026-11-02); cambio de plan y reembolso vistos con Mercado Pago de prueba (2026-11-03) → [ficha](cambios/registro-autoservicio.md) · [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md)
 - [M] Ventas ficticias de La Bestia: cargadas en staging para probar Analítica → [ficha](cambios/ventas-demo-bestia.md)
 
 - [C] Precios en pesos: el catálogo `plans` pasa de USD a ARS (Básico 14.900 y 143.040; Pro 29.000 y 278.400; Premium sin precio de lista), la portada y Suscripción coinciden y una prueba RLS compara los precios — revisado por Codex (3 rondas, atendidas), aprobado por el usuario y **en staging con su migración `20261216100000` (Fly v89, 2026-10-31)**; falta ver Suscripción con una sesión real; solo en commits locales → [ficha](cambios/precios-en-pesos.md)

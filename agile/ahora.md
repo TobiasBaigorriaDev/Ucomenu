@@ -10,7 +10,7 @@ Migración `20261218100000` aplicada en local y staging; la siguiente libre es `
 
 ## Bloqueos y próximo paso
 
-1. **Falta ver con Mercado Pago de prueba:** un pago que cambie de plan (de Pro a Básico). El pago real registrado fue Pro sobre Pro; el cambio de plan está probado en la base y contra el doble. También siguen sin probar un pago rechazado y un reembolso.
+1. **Falta con Mercado Pago de prueba:** anular desde `/admin` el pago devuelto de `tobi-prueba` y resolver su revisión, y probar un pago rechazado. El cambio de plan y el reembolso ya se vieron funcionar (ficha).
 2. **Sugerido antes de producción:** registro DMARC en `ucomenu.com` y decidir el dominio propio de Auth, porque la pantalla de Google muestra la dirección de Supabase.
 3. **Producción** sigue bloqueada (`docs/produccion.md`, secciones 1c y 3c): datos legales, abogado (ahora también con Resend, Google y Turnstile), contador, Supabase y Fly de producción y cuenta de cobro. Repetir la configuración de Auth de la sección 1c y programar la purga de la 4.f. Tras cada actualización de Auth, comprobar que una cuenta creada por el servidor entra con su contraseña.
 
