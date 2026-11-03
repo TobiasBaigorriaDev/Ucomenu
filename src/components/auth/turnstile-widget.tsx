@@ -4,7 +4,7 @@ import Script from "next/script";
 import { useEffect, useRef, useState } from "react";
 
 type TurnstileApi = {
-  render: (element: HTMLElement, options: { sitekey: string; language: string }) => string;
+  render: (element: HTMLElement, options: { sitekey: string; language: string; size: "flexible" }) => string;
   reset: (id: string) => void;
   remove: (id: string) => void;
 };
@@ -27,7 +27,7 @@ export function TurnstileWidget({ siteKey, resetKey }: { siteKey: string | null;
   useEffect(() => {
     if (!siteKey || !loaded || !container.current || !window.turnstile) return;
     const api = window.turnstile;
-    const id = api.render(container.current, { sitekey: siteKey, language: "es" });
+    const id = api.render(container.current, { sitekey: siteKey, language: "es", size: "flexible" });
     widget.current = id;
     return () => {
       widget.current = null;
