@@ -1,22 +1,19 @@
 # Ahora (handoff)
 
-Actualizado: 2026-11-02 · agente saliente: Claude Code.
+Actualizado: 2026-11-03 · agente saliente: Claude Code.
 
 ## Punto de retomada
 
-Rama `feat/registro-autoservicio`, sin subir ni integrar a `main`: **registro autoservicio de dueños**, nivel C, en staging (Fly v100, imagen `registro-cd80cb4-git`). Revisión de Codex aprobada en la ronda 3. Alcance, evidencia y límites en [la ficha](cambios/registro-autoservicio.md); decisiones en [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md).
+En `main`. El **registro autoservicio de dueños** (nivel C) está integrado, subido a `origin/main` y en staging: correo o Google, local creado solo con Pro por 14 días, recupero por correo y plan elegido al pagar. Revisión de Codex aprobada en la ronda 3 y aprobación del usuario del 2026-11-02. Alcance, evidencia y límites en [la ficha](cambios/registro-autoservicio.md); decisiones en [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md).
 
-Migración `20261218100000` aplicada en local y staging: si cambia el esquema, migración nueva, `20261219100000`. Marcha atrás: `--image registry.fly.io/ucomenu-staging:cobro-3b9c6d2-git` (v95). `pnpm db:start` ahora levanta Mailpit: `registro.spec.ts` lo necesita.
+Migración `20261218100000` aplicada en local y staging; la siguiente libre es `20261219100000`. Marcha atrás de la app: `--image registry.fly.io/ucomenu-staging:registro-cd80cb4-git` (v100), o `cobro-3b9c6d2-git` (v95) para quitar el registro. `pnpm db:start` ahora levanta Mailpit: `registro.spec.ts` lo necesita.
 
 ## Bloqueos y próximo paso
 
-1. **El usuario decide:** ¿quien supera los límites de Básico puede elegirlo al pagar? Hoy no (ver «Decisión pendiente» en la ficha). Además falta su aprobación para integrar a `main`.
-2. **Falta probar en staging:** el recupero con correo real y pagar eligiendo plan. El registro con correo real y con Google ya los probó el usuario (detalle en la ficha). Propuesto y sin aprobar: corregir el aviso «Tu cuenta no tiene ningún local» para el Dueño de un local dado de baja.
-3. **Después, con aprobación:** integrar a `main`. El trigger de `auth.users` ya se comprobó contra el Auth de staging; repetirlo tras cada actualización de Auth.
-4. **Producción** sigue bloqueada por lo de siempre (`docs/produccion.md`): datos legales, abogado (ahora también con Resend, Google y Turnstile), contador, Supabase y Fly de producción y cuenta de cobro de Mercado Pago.
+1. **Falta ver con Mercado Pago de prueba:** un pago que cambie de plan (de Pro a Básico). El pago real registrado fue Pro sobre Pro; el cambio de plan está probado en la base y contra el doble. También siguen sin probar un pago rechazado y un reembolso.
+2. **Sugerido antes de producción:** registro DMARC en `ucomenu.com` y decidir el dominio propio de Auth, porque la pantalla de Google muestra la dirección de Supabase.
+3. **Producción** sigue bloqueada (`docs/produccion.md`, secciones 1c y 3c): datos legales, abogado (ahora también con Resend, Google y Turnstile), contador, Supabase y Fly de producción y cuenta de cobro. Repetir la configuración de Auth de la sección 1c y programar la purga de la 4.f. Tras cada actualización de Auth, comprobar que una cuenta creada por el servidor entra con su contraseña.
 
-Pendiente del cobro en staging: probar «Ya pagué, verificar», un pago rechazado y un reembolso, ahora también con la elección de plan.
-
-Fallas previas ajenas a este cambio: `alta-guiada.spec.ts:183` y `:196` y `resumen-panel.spec.ts:57` fallan igual en `main`. Intermitentes: `portada.spec.ts:92`, `videos-mux.spec.ts:145`, `revision-claude.test.ts` (tiempos agotados) y caídas de worker `0xC0000409`.
+Fallas previas ajenas: `alta-guiada.spec.ts:183` y `:196` (cuentan un enlace del tutorial) y `resumen-panel.spec.ts:57` (sin investigar; falló y pasó según la corrida). Intermitentes: `portada.spec.ts:92`, `videos-mux.spec.ts:145`, `revision-claude.test.ts` (tiempos agotados) y caídas de worker `0xC0000409`.
 
 Entorno: Docker Desktop se apaga solo y hay que reiniciarlo; OneDrive provoca bloqueos de E2E (usar `--workers=4`). Preservar los archivos locales sin seguimiento (`video/`, `.codegraph/`, capturas, skills, `skills-lock.json`, `.claude/launch.json`).
