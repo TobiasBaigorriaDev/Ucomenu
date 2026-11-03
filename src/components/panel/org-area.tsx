@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { getEntitlements, getMemberships, requireKitchen, requireMembership, requireUser } from "@/lib/auth/session";
 import { moraNotice } from "@/lib/entitlements";
 import { createSessionClient } from "@/lib/supabase/server";
+import { WhatsappLink } from "@/components/marketing/whatsapp-link";
 import { toneFor } from "@/components/menu/tones";
 import { AppShell, ROLE_LABEL } from "./app-shell";
 import { LlamadosBanner } from "./llamados-banner";
@@ -36,10 +37,12 @@ export async function OrgArea({ area, slug, children }: { area: "panel" | "sala"
   );
 }
 
-async function hasNoMembershipAtAll(userId: string): Promise<boolean> {
+/** ¿Tiene membresías, aunque su local no se vea (dado de baja)? `unknown` si la base no respondió: no se afirma nada. */
+async function membershipPresence(userId: string): Promise<"none" | "some" | "unknown"> {
   const session = await createSessionClient();
   const { data, error } = await session.from("memberships").select("id").eq("user_id", userId).limit(1);
-  return !error && data.length === 0;
+  if (error) return "unknown";
+  return data.length === 0 ? "none" : "some";
 }
 
 /**
@@ -52,20 +55,31 @@ export async function OrgEntry({ area }: { area: "panel" | "sala" | "cocina" }) 
   const all = await getMemberships(user.id);
   const memberships = visibleIn(area, all);
   if (memberships.length === 0 && all.length > 0) redirect(all.length === 1 ? `/cocina/${all[0].org.slug}` : "/cocina");
+  const presence = all.length === 0 ? await membershipPresence(user.id) : "some";
   // Sin ninguna membresía, también por fuera de lo visible (un local dado de baja no aparece): es alguien que recién se registró.
-  if (area === "panel" && all.length === 0 && (await hasNoMembershipAtAll(user.id))) redirect("/crear-local");
+  if (area === "panel" && presence === "none") redirect("/crear-local");
 
   if (memberships.length === 1) redirect(`/${area}/${memberships[0].org.slug}`);
 
   return (
     <AppShell area={area}>
       <main className="mx-auto max-w-5xl px-4 py-10 sm:px-8 lg:px-10 lg:py-12">
-        {memberships.length === 0 ? (
+        {memberships.length === 0 && presence === "some" ? (
+          <>
+            <h1 className="font-display">Tu local fue dado de baja</h1>
+            <p className="mt-4 max-w-prose text-lg leading-relaxed text-muted">
+              Ingresaste como {user.email}. El local de esta cuenta está dado de baja y por eso no aparece acá. Para reactivarlo,{" "}
+              <WhatsappLink className="text-cobalt underline underline-offset-2" mensaje="Hola, quiero reactivar mi local en UcoMenú.">
+                escribinos por WhatsApp
+              </WhatsappLink>
+              .
+            </p>
+          </>
+        ) : memberships.length === 0 ? (
           <>
             <h1 className="font-display">Tu cuenta no tiene ningún local</h1>
             <p className="mt-4 max-w-prose text-lg leading-relaxed text-muted">
-              Ingresaste como {user.email}, pero esta cuenta todavía no está asociada a un local. Pedile al dueño que te dé de
-              alta, o contactá a UcoMenú. Si tu local estaba asociado y dejó de aparecer, puede haber sido dado de baja: también escribinos.
+              Ingresaste como {user.email}, pero esta cuenta todavía no está asociada a un local. Si trabajás en uno, pedile al dueño que te dé de alta.
             </p>
           </>
         ) : (

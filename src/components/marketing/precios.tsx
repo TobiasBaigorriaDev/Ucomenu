@@ -3,34 +3,11 @@
 import Link from "next/link";
 import { useState } from "react";
 import { whatsappUrl } from "@/lib/marketing/contacto";
-import { PLANES, precioArs, SUCURSAL_ADICIONAL_ARS, type PlanVendido } from "@/lib/marketing/planes";
+import { PLAN_INCLUYE, PLANES, precioArs, SUCURSAL_ADICIONAL_ARS, type PlanVendido } from "@/lib/marketing/planes";
 import { IconCheck } from "./icons";
 
 const basico = PLANES[0];
 const pro = PLANES[1];
-
-const INCLUYE: Record<PlanVendido["code"], string[]> = {
-  basic: [
-    "Carta digital con un QR por cada mesa",
-    "Tu logo, 12 paletas y 5 estilos de carta",
-    `${basico.maxSucursales} sucursal`,
-    `Hasta ${basico.maxMesasPorSucursal} mesas`,
-    `Hasta ${basico.maxPlatosActivos} platos activos`,
-  ],
-  pro: [
-    "Todo lo del plan Básico",
-    "Llamar al mozo, pedir la cuenta y Mesas en vivo",
-    "Pedidos que anota el mozo y pantalla de cocina",
-    "Gestión de reservas y asignación de mesas",
-    "Promociones y Happy Hour programados",
-    "Invitación a dejar una reseña en Google",
-    "Analítica con resumen de IA",
-    "Videos cortos en tu carta, con me gusta y comentarios (hasta 10 publicados)",
-    `Hasta ${pro.maxSucursales} sucursales (y hasta 3 adicionales)`,
-    `Hasta ${pro.maxMesasPorSucursal} mesas por sucursal`,
-    `Hasta ${pro.maxPlatosActivos} platos activos`,
-  ],
-};
 
 function Plan({ plan, destacado, anual }: { plan: PlanVendido; destacado?: boolean; anual: boolean }) {
   return (
@@ -44,7 +21,7 @@ function Plan({ plan, destacado, anual }: { plan: PlanVendido; destacado?: boole
         <p className="mk-nota">{anual ? `Equivale a ARS ${(plan.anualArs / 12).toLocaleString("es-AR")} por mes.` : "Pagás mes a mes."}</p>
       </div>
       <ul className="mk-plan-list">
-        {INCLUYE[plan.code].map((i) => (
+        {PLAN_INCLUYE[plan.code].map((i) => (
           <li key={i}>
             <IconCheck />
             {i}

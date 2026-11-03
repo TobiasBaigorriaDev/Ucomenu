@@ -100,7 +100,7 @@ test.describe("el Dueño", () => {
     // Suscripción: plan y estado visibles solo al Dueño.
     await nav.getByRole("link", { name: "Suscripción" }).click();
     await expect(page.getByRole("heading", { name: "Suscripción" })).toBeVisible();
-    await expect(page.getByText("Básico", { exact: true })).toBeVisible();
+    await expect(page.getByText("Básico", { exact: true }).first()).toBeVisible();
     await expect(page.getByText("Al día")).toBeVisible();
   });
 

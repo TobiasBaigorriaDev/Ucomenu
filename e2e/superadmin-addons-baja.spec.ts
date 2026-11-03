@@ -220,8 +220,8 @@ test.describe("baja de la organización", () => {
       expect((await dueno.goto(`/panel/${t.slug}`))?.status()).toBe(404);
       expect((await dueno.goto(`/panel/${t.slug}/carta`))?.status()).toBe(404);
       await dueno.goto("/panel");
-      await expect(dueno.getByRole("heading", { name: "Tu cuenta no tiene ningún local" })).toBeVisible();
-      await expect(dueno.getByText("puede haber sido dado de baja")).toBeVisible();
+      await expect(dueno.getByRole("heading", { name: "Tu local fue dado de baja" })).toBeVisible();
+      await expect(dueno.getByRole("link", { name: /escribinos por WhatsApp/ })).toBeVisible();
 
       const personal = await browser.newPage();
       await login(personal, t.staff.email, t.staff.password, "/panel");

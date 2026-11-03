@@ -156,6 +156,32 @@ test.describe("el Dueño paga con Mercado Pago", () => {
     await expect(page.getByRole("button", { name: "Pagar con Mercado Pago" })).toHaveCount(0);
   });
 
+  test("en prueba elige Básico anual: el plan cambia recién cuando se registra el pago", async ({ page, request }) => {
+    const t = await local("mp-elige");
+    const fin = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString();
+    await service().from("subscriptions").update({ plan_code: "pro", trial_ends_at: fin, current_period_end: null }).eq("organization_id", t.orgId);
+    await login(page, t.owner.email, t.owner.password);
+    await page.goto(suscripcion(t.slug));
+
+    await expect(page.getByTestId("elegir-plan")).toContainText("Recomendado");
+    await expectNoHorizontalOverflow(page);
+    await page.getByTestId("elegir-ciclo").getByText("Por año").click();
+    await page.getByRole("radio", { name: "Básico anual" }).check();
+    await page.getByRole("button", { name: "Pagar con Mercado Pago" }).click();
+    await page.waitForURL(/127\.0\.0\.1:\d+\/checkout\/pref-stub-/);
+    const pref = await stubPreference(new URL(page.url()).pathname.split("/").pop()!);
+    const amountCents = Math.round((pref.body.items as { unit_price: number }[])[0].unit_price * 100);
+    expect(amountCents).toBe(14304000);
+
+    const plan = async () => (await service().from("subscriptions").select("plan_code, billing_cycle").eq("organization_id", t.orgId).single()).data;
+    expect(await plan()).toEqual({ plan_code: "pro", billing_cycle: "monthly" });
+
+    const paymentId = String(Date.now());
+    await stubPayment({ id: paymentId, externalReference: String(pref.body.external_reference), amountCents });
+    expect((await aviso(request, paymentId)).status()).toBe(200);
+    expect(await plan()).toEqual({ plan_code: "basic", billing_cycle: "yearly" });
+  });
+
   test("«Lo que pagás» va al final de la pantalla, después de los pagos y del historial", async ({ page }) => {
     const t = await local("mp-orden");
     await login(page, t.owner.email, t.owner.password);

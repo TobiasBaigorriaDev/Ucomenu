@@ -1,5 +1,5 @@
 # Cambio: Registro autoservicio de dueños
-Estado: **en staging (Fly v100) y aprobado por la revisión independiente**; rama `feat/registro-autoservicio`, sin integrar a `main`. Correo real y Google probados por el usuario; falta el recupero con correo real, pagar eligiendo plan y la aprobación del usuario para integrar.
+Estado: **integrado a `main` y en staging, aprobado por el usuario (2026-11-02)**. Producción sigue bloqueada (`docs/produccion.md`).
 Nivel: **C** — abre el registro público (autorización), cambia planes y cobro (dinero), trata datos personales de terceros nuevos y purga cuentas (eliminación irreversible). Motivos en [ADR 0053](../../docs/decisiones/0053-registro-autoservicio.md).
 
 ## Objetivo
@@ -33,7 +33,7 @@ Recupero: `/recuperar` → correo → `/auth/confirmar` → `/cuenta/nueva-contr
 - [x] H. Portada, FAQ y `/login`: botones a `/registro`; WhatsApp queda para consultas.
 - [x] I. `/terminos`, `/privacidad` (Resend, Google, Turnstile, hash del email), `.env.example`, `prod:check`, `docs/producto.md`, `docs/arquitectura.md`, `docs/operacion.md`, `docs/produccion.md`, enmienda al ADR 0007.
 - [x] J. Pruebas: RLS, unitarias y E2E con el buzón local (Mailpit).
-- [x] K. Revisión independiente (Codex, 3 rondas). Falta la aprobación del usuario.
+- [x] K. Revisión independiente (Codex, 3 rondas). Aprobado por el usuario el 2026-11-02, con la integración a `main`.
 - [ ] L. Staging y producción, con aprobación aparte (ver «Lo que necesita al usuario»).
 
 ## Invariantes
@@ -79,8 +79,8 @@ Recupero: `/recuperar` → correo → `/auth/confirmar` → `/cuenta/nueva-contr
 4. Aprobación para cambiar Auth y desplegar en staging, y más tarde en producción.
 5. Abogado: revisión de los textos legales con los terceros nuevos.
 
-## Decisión pendiente del usuario
-Quien supera los límites de Básico no puede elegirlo al pagar. `docs/producto.md` decía que lo que supera el límite «se conserva»; aplicado al autoservicio, daría capacidad de Pro a precio de Básico sin que nadie lo revise. Se implementó la opción que no pierde dinero y se pide confirmación.
+## Decisión del usuario sobre los límites (2026-11-02)
+Quien supera los límites de Básico no puede elegirlo al pagar: primero reduce sucursales, mesas o platos. `docs/producto.md` la registra como excepción a «lo que supera el límite se conserva».
 
 ## Evidencia
 Sobre el diff de la rama, antes del commit de revisión (2026-11-02):
@@ -117,11 +117,18 @@ Migración `20261218100000` aplicada. App desplegada desde `git archive` de la r
 
 **Prueba del usuario con cuentas reales (2026-11-02):** informó «todo ok». En la base quedaron dos altas propias con Pro hasta el 17/11 y sucursal `principal`: `marcelo-polleria` (identidad `email`) y `tobi-prueba` (identidad `google`). Con eso quedan vistos el correo real, sus plantillas y *Site URL*, y Google de una cuenta nueva. Turnstile real se deduce de la primera: `/registro` rechaza sin token, pero no hay un registro propio de cada verificación.
 
-**Sin comprobar:**
-- Recupero con un correo real: ninguna de las dos cuentas lo pidió (la prueba del recupero se hizo con un enlace generado).
-- Pagar eligiendo plan en Mercado Pago de prueba: no hay pagos nuevos desde el 2026-11-01. El cambio de plan al pagar solo está probado en la base local.
+**Segunda prueba del usuario (2026-11-02):** informó que el recupero con correo real y el pago eligiendo plan funcionan. Quedó registrado un pago de `marcelo-polleria` por Pro mensual, ARS 29.000, con vigencia hasta el 17/12. Ese pago no cambió de plan: el cambio de plan al pagar está probado en la base y en E2E contra el doble de Mercado Pago, no con un pago real.
+
+**Después de esa prueba:** logo de Google en el botón, aviso propio para el Dueño de un local dado de baja y selector de planes con Pro destacado.
 
 **Observaciones:** la pantalla de Google muestra `oasixhsdyigimwvcxtkx.supabase.co`, no la marca; se corrige con un dominio propio de Auth (de pago en Supabase). No hay registro DMARC en `ucomenu.com`. Una prueba mandó un enlace a una casilla de `fldubai.com` que no llegó a crearse; la cuenta se borró.
+
+## Verificación de la integración (2026-11-02)
+Antes de integrar, sobre los ajustes de pantalla: `pnpm typecheck` y `pnpm lint` limpios; `pnpm test` 1449/1449; `pnpm test:rls` 1645/1645 en la repetición. E2E completo: 592 pasaron, 1 omitida y 4 fallaron.
+- `acceso.spec.ts:85`: propio del cambio («Básico» aparece más de una vez en Suscripción). Corregido y repetido en verde.
+- `alta-guiada.spec.ts:183` (2 casos) y `:196`: los mismos fallos previos, que también ocurren en `main` limpio. Sin tocar.
+- `owner-lectura`: la falla intermitente ya conocida. Causa: la prueba cambiaba la restricción de auditoría por una lista a mano a la que le faltaban 13 acciones. Ahora parte de la lista real.
+- Prueba nueva: en prueba elige Básico anual, el plan cambia recién con el aviso de pago (contra el doble de Mercado Pago).
 
 ## Revisión y aprobación
 - **Ronda 1 (Codex, sobre `4a36227`): RECHAZAR**, informe `output/revisiones/2026-11-02T17-41-36-commit-HEAD.md`. Tres hallazgos, los tres reales:
@@ -130,4 +137,4 @@ Migración `20261218100000` aplicada. App desplegada desde `git archive` de la r
   3. El tope de altas se podía superar con pedidos simultáneos. Corregido serializando las altas propias.
 - **Ronda 2 (Codex, sobre `711cc17`): RECHAZAR**, informe `output/revisiones/2026-11-02T19-08-10-commit-HEAD.md`. Límites y tope, corregidos. Bloqueante, parcial: al recuperar, Auth escribe la fila antes de confirmarla en la misma transacción, y `old.xmin` la confundía con una cuenta recién creada. Corregido con un trigger de INSERT que marca qué cuenta nació en la transacción; sin la marca, la contraseña se borra.
 - **Ronda 3 (Codex, sobre `d94d06b`): APROBAR**, sin hallazgos ni regresiones, informe `output/revisiones/2026-11-02T19-42-11-commit-HEAD.md`. Codex revisó el código sin ejecutar pruebas.
-- **Aprobación del usuario:** pendiente, y también la decisión sobre los límites de Básico.
+- **Aprobación del usuario (2026-11-02):** integrar a `main` y desplegar en staging; límites de Básico como están. Los ajustes de pantalla posteriores a la ronda 3 no pasaron por Codex: no tocan permisos, base ni importes.
