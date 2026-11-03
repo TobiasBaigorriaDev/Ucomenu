@@ -1,5 +1,5 @@
 # Cambio: Registro autoservicio de dueños
-Estado: **implementado y aprobado por la revisión independiente** (rama `feat/registro-autoservicio`, solo local); falta la aprobación del usuario y configurar staging.
+Estado: **en staging (Fly v100) y aprobado por la revisión independiente**; rama `feat/registro-autoservicio`, sin integrar a `main`. Falta la prueba con correo, Turnstile y Google reales, y la aprobación del usuario.
 Nivel: **C** — abre el registro público (autorización), cambia planes y cobro (dinero), trata datos personales de terceros nuevos y purga cuentas (eliminación irreversible). Motivos en [ADR 0053](../../docs/decisiones/0053-registro-autoservicio.md).
 
 ## Objetivo
@@ -102,6 +102,26 @@ Mutaciones contra la base local, restaurada después con `pnpm db:reset`: sin el
 **Tras la ronda 2 de revisión (2026-11-02):** `pnpm test:rls` 1645/1645; `pnpm test` 1449/1449; `pnpm typecheck` y `pnpm lint` limpios. E2E de registro, acceso, cobro y cuentas sin local: 54 pasaron y 1 falló (`registro.spec.ts:142`, el recupero sobre una cuenta precargada). No se pudo reproducir: pasó sola y en 3 repeticiones bajo carga, y el registro de Auth muestra `invalid_credentials` para la contraseña ajena; la causa de ese fallo aislado queda sin determinar. En `registro` + `acceso` × 3: 125 pasaron y 1 caída de worker (`0xC0000409`) ajena al cambio. Mutaciones: con la condición anterior (`xmin`) falla «también la borra si la transacción escribió la fila antes»; sin la marca de creación falla «conserva su contraseña».
 
 **A probar en staging:** el trigger depende de que Auth cree las cuentas del servidor en una sola transacción (insertar y confirmar). Si la versión de Auth en la nube usara otra transacción, esas cuentas perderían la contraseña y entrarían por `/recuperar`: crear un mozo y entrar con su contraseña antes de abrir el registro. Hay que correrlo también después de cada actualización de Auth.
+
+## Staging (2026-11-02, autorizado por el usuario)
+Migración `20261218100000` aplicada. App desplegada desde `git archive` de la rama, sin integrar a `main`: Fly **v100**, imagen `registro-cd80cb4-git`. Marcha atrás de la app: `--image registry.fly.io/ucomenu-staging:cobro-3b9c6d2-git` (v95). Los secretos `TURNSTILE_SECRET_KE` y `GOOGLE_LOGIN_ENABLE` tenían el nombre incompleto y se corrigieron.
+
+**Comprobado en staging:**
+- Una cuenta del servidor nace confirmada y entra con su contraseña; una precargada deja de valer al confirmar (`invalid_credentials`), contra el Auth de la nube.
+- Con enlaces generados por la API de administración (sin correo): confirmar → `/crear-local` → panel, con origen `self_service`, Pro y 14 días; carta pública 200.
+- Suscripción ofrece Básico y Pro por mes y por año con los precios de lista; elegir Básico lleva a Mercado Pago y el plan sigue en Pro antes de pagar.
+- Recupero con enlace generado: la contraseña vieja deja de entrar y la nueva entra.
+- `/registro` sin token de Turnstile: el servidor lo rechaza.
+- El botón de Google lleva a la pantalla de Google, sin error de configuración.
+- Los datos de prueba se borraron. Queda el hash en `trial_claims` y la auditoría de esa alta.
+
+**Sin comprobar, necesita al usuario:**
+- Turnstile aprobando a una persona real (no se resuelve de forma automática, a propósito).
+- Un correo real: llegada, remitente, spam, plantillas y *Site URL*. Auth aceptó un envío (200), pero no se vio un correo recibido.
+- Completar el ingreso con Google y su vuelta a `/auth/callback`.
+- Pagar Básico en Mercado Pago de prueba: el cambio de plan al pagar solo está probado en la base local.
+
+**Observaciones:** la pantalla de Google muestra `oasixhsdyigimwvcxtkx.supabase.co`, no la marca; se corrige con un dominio propio de Auth (de pago en Supabase). No hay registro DMARC en `ucomenu.com`. Una prueba mandó un enlace a una casilla de `fldubai.com` que no llegó a crearse; la cuenta se borró.
 
 ## Revisión y aprobación
 - **Ronda 1 (Codex, sobre `4a36227`): RECHAZAR**, informe `output/revisiones/2026-11-02T17-41-36-commit-HEAD.md`. Tres hallazgos, los tres reales:

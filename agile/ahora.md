@@ -4,15 +4,15 @@ Actualizado: 2026-11-02 · agente saliente: Claude Code.
 
 ## Punto de retomada
 
-Rama `feat/registro-autoservicio` (3 commits sobre `main`, solo local, sin subir): **registro autoservicio de dueños**, nivel C. Revisión de Codex aprobada en la ronda 3. Alcance, evidencia y límites en [la ficha](cambios/registro-autoservicio.md); decisiones en [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md).
+Rama `feat/registro-autoservicio`, sin subir ni integrar a `main`: **registro autoservicio de dueños**, nivel C, en staging (Fly v100, imagen `registro-cd80cb4-git`). Revisión de Codex aprobada en la ronda 3. Alcance, evidencia y límites en [la ficha](cambios/registro-autoservicio.md); decisiones en [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md).
 
-Migración `20261218100000` solo en local: todavía se puede editar. La siguiente libre es `20261219100000`. `pnpm db:start` ahora levanta Mailpit: `registro.spec.ts` lo necesita.
+Migración `20261218100000` aplicada en local y staging: si cambia el esquema, migración nueva, `20261219100000`. Marcha atrás: `--image registry.fly.io/ucomenu-staging:cobro-3b9c6d2-git` (v95). `pnpm db:start` ahora levanta Mailpit: `registro.spec.ts` lo necesita.
 
 ## Bloqueos y próximo paso
 
 1. **El usuario decide:** ¿quien supera los límites de Básico puede elegirlo al pagar? Hoy no (ver «Decisión pendiente» en la ficha). Además falta su aprobación para integrar a `main`.
-2. **El usuario crea:** cuenta de Resend con DNS en Cloudflare, cliente OAuth de Google y widget de Turnstile. Pasos en `docs/produccion.md`, sección 1c.
-3. **Staging, con aprobación:** aplicar la migración, configurar Auth y desplegar. Antes de abrir el registro, crear un mozo y entrar con su contraseña: el trigger de `auth.users` depende de cómo crea cuentas Auth. Google, Turnstile y Resend reales están sin probar.
+2. **El usuario prueba en su teléfono:** registrarse con un correo real pasando Turnstile, y entrar con Google. Sin eso, correo, plantillas, *Site URL* y Turnstile real siguen sin comprobar (detalle en la ficha).
+3. **Después, con aprobación:** integrar a `main`. El trigger de `auth.users` ya se comprobó contra el Auth de staging; repetirlo tras cada actualización de Auth.
 4. **Producción** sigue bloqueada por lo de siempre (`docs/produccion.md`): datos legales, abogado (ahora también con Resend, Google y Turnstile), contador, Supabase y Fly de producción y cuenta de cobro de Mercado Pago.
 
 Pendiente del cobro en staging: probar «Ya pagué, verificar», un pago rechazado y un reembolso, ahora también con la elección de plan. Staging sigue en Fly v95.
