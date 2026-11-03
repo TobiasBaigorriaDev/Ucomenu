@@ -11,7 +11,7 @@ Migración `20261218100000` aplicada en local y staging: si cambia el esquema, m
 ## Bloqueos y próximo paso
 
 1. **El usuario decide:** ¿quien supera los límites de Básico puede elegirlo al pagar? Hoy no (ver «Decisión pendiente» en la ficha). Además falta su aprobación para integrar a `main`.
-2. **El usuario prueba en su teléfono:** registrarse con un correo real pasando Turnstile, y entrar con Google. Sin eso, correo, plantillas, *Site URL* y Turnstile real siguen sin comprobar (detalle en la ficha).
+2. **Falta probar en staging:** el recupero con correo real y pagar eligiendo plan. El registro con correo real y con Google ya los probó el usuario (detalle en la ficha). Propuesto y sin aprobar: corregir el aviso «Tu cuenta no tiene ningún local» para el Dueño de un local dado de baja.
 3. **Después, con aprobación:** integrar a `main`. El trigger de `auth.users` ya se comprobó contra el Auth de staging; repetirlo tras cada actualización de Auth.
 4. **Producción** sigue bloqueada por lo de siempre (`docs/produccion.md`): datos legales, abogado (ahora también con Resend, Google y Turnstile), contador, Supabase y Fly de producción y cuenta de cobro de Mercado Pago.
 

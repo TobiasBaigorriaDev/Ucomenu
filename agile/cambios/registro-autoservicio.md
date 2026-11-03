@@ -1,5 +1,5 @@
 # Cambio: Registro autoservicio de dueños
-Estado: **en staging (Fly v100) y aprobado por la revisión independiente**; rama `feat/registro-autoservicio`, sin integrar a `main`. Falta la prueba con correo, Turnstile y Google reales, y la aprobación del usuario.
+Estado: **en staging (Fly v100) y aprobado por la revisión independiente**; rama `feat/registro-autoservicio`, sin integrar a `main`. Correo real y Google probados por el usuario; falta el recupero con correo real, pagar eligiendo plan y la aprobación del usuario para integrar.
 Nivel: **C** — abre el registro público (autorización), cambia planes y cobro (dinero), trata datos personales de terceros nuevos y purga cuentas (eliminación irreversible). Motivos en [ADR 0053](../../docs/decisiones/0053-registro-autoservicio.md).
 
 ## Objetivo
@@ -70,7 +70,7 @@ Recupero: `/recuperar` → correo → `/auth/confirmar` → `/cuenta/nueva-contr
 - [x] Elegir Básico al pagar deja el plan Básico solo al registrarse el pago; con más sucursales de las permitidas no se ofrece.
 - [x] Con un período pago vigente no se puede cambiar de plan.
 - [x] Pantallas a 390 px sin desborde.
-- [ ] Google y Turnstile reales probados en staging (no se pueden probar en local).
+- [x] Google y Turnstile reales probados en staging (prueba del usuario; ver «Staging»).
 
 ## Lo que necesita al usuario
 1. Cuenta de Resend y sus registros DNS en Cloudflare para `ucomenu.com`.
@@ -115,11 +115,11 @@ Migración `20261218100000` aplicada. App desplegada desde `git archive` de la r
 - El botón de Google lleva a la pantalla de Google, sin error de configuración.
 - Los datos de prueba se borraron. Queda el hash en `trial_claims` y la auditoría de esa alta.
 
-**Sin comprobar, necesita al usuario:**
-- Turnstile aprobando a una persona real (no se resuelve de forma automática, a propósito).
-- Un correo real: llegada, remitente, spam, plantillas y *Site URL*. Auth aceptó un envío (200), pero no se vio un correo recibido.
-- Ingreso con Google de una cuenta **nueva** hasta `/crear-local`. La vuelta por `/auth/callback` ya se vio funcionar con una cuenta existente (2026-11-02): entró a la cuenta ya creada, Dueño de un local dado de baja, y vio el aviso de «sin local», que es lo previsto para ese caso.
-- Pagar Básico en Mercado Pago de prueba: el cambio de plan al pagar solo está probado en la base local.
+**Prueba del usuario con cuentas reales (2026-11-02):** informó «todo ok». En la base quedaron dos altas propias con Pro hasta el 17/11 y sucursal `principal`: `marcelo-polleria` (identidad `email`) y `tobi-prueba` (identidad `google`). Con eso quedan vistos el correo real, sus plantillas y *Site URL*, y Google de una cuenta nueva. Turnstile real se deduce de la primera: `/registro` rechaza sin token, pero no hay un registro propio de cada verificación.
+
+**Sin comprobar:**
+- Recupero con un correo real: ninguna de las dos cuentas lo pidió (la prueba del recupero se hizo con un enlace generado).
+- Pagar eligiendo plan en Mercado Pago de prueba: no hay pagos nuevos desde el 2026-11-01. El cambio de plan al pagar solo está probado en la base local.
 
 **Observaciones:** la pantalla de Google muestra `oasixhsdyigimwvcxtkx.supabase.co`, no la marca; se corrige con un dominio propio de Auth (de pago en Supabase). No hay registro DMARC en `ucomenu.com`. Una prueba mandó un enlace a una casilla de `fldubai.com` que no llegó a crearse; la cuenta se borró.
 
