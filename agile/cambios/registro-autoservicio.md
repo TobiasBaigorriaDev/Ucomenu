@@ -127,7 +127,10 @@ Migración `20261218100000` aplicada. App desplegada desde `git archive` de la r
 - **Cambio de plan real:** `tobi-prueba` pagó Básico mensual (ARS 14.900, pago `186415679165`) y pasó de Pro a Básico en la misma operación, con `subscription.plan_changed` y `payment.registered` en la auditoría.
 - **Reembolso real (total, hecho por el usuario desde la actividad del vendedor de prueba):** el aviso llegó en 1 s y se procesó como `reversal_flagged`. Mercado Pago mandó tres avisos y quedó una sola fila «a revisar» (`payment_reversed`). La vigencia y el plan no cambiaron, como manda el ADR 0052.
 - **Dato:** con usuarios de prueba, `live_mode` da `true`: el token es `APP_USR-`. Para saber si un pago es de prueba hay que mirar la etiqueta `test_user` de la cuenta y el correo del comprador.
-- **Falta:** anular ese pago desde `/admin` y resolver la revisión.
+- **Anulación por el SuperAdmin (usuario, 2026-11-03):** el pago quedó anulado con auditoría y la vigencia volvió al fin de la prueba (17/11).
+- **Revisión resuelta** por el usuario: no quedan pagos a revisar en staging.
+- **Pago rechazado:** el usuario informó que hizo todo, pero en los registros de la app no aparece ningún pago rechazado; se considera sin comprobar.
+- **Decisión del usuario (2026-11-03):** anular un pago devuelve la fecha, no el plan. Quien eligió Básico, pagó y pidió la devolución queda en Básico y elige de nuevo al vencer; el SuperAdmin puede devolverle Pro a mano.
 
 ## Verificación de la integración (2026-11-02)
 Antes de integrar, sobre los ajustes de pantalla: `pnpm typecheck` y `pnpm lint` limpios; `pnpm test` 1449/1449; `pnpm test:rls` 1645/1645 en la repetición. E2E completo: 592 pasaron, 1 omitida y 4 fallaron.
