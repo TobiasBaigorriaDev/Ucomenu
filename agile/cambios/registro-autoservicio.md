@@ -118,7 +118,7 @@ Migración `20261218100000` aplicada. App desplegada desde `git archive` de la r
 **Sin comprobar, necesita al usuario:**
 - Turnstile aprobando a una persona real (no se resuelve de forma automática, a propósito).
 - Un correo real: llegada, remitente, spam, plantillas y *Site URL*. Auth aceptó un envío (200), pero no se vio un correo recibido.
-- Completar el ingreso con Google y su vuelta a `/auth/callback`.
+- Ingreso con Google de una cuenta **nueva** hasta `/crear-local`. La vuelta por `/auth/callback` ya se vio funcionar con una cuenta existente (2026-11-02): entró a la cuenta ya creada, Dueño de un local dado de baja, y vio el aviso de «sin local», que es lo previsto para ese caso.
 - Pagar Básico en Mercado Pago de prueba: el cambio de plan al pagar solo está probado en la base local.
 
 **Observaciones:** la pantalla de Google muestra `oasixhsdyigimwvcxtkx.supabase.co`, no la marca; se corrige con un dominio propio de Auth (de pago en Supabase). No hay registro DMARC en `ucomenu.com`. Una prueba mandó un enlace a una casilla de `fldubai.com` que no llegó a crearse; la cuenta se borró.
