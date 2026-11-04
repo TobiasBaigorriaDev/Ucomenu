@@ -77,7 +77,11 @@ export function validarDestino(destino, raiz = ROOT) {
   const absoluto = path.resolve(destino);
   const resolver = (p) => {
     const faltantes = [];
-    while (!existsSync(p)) { faltantes.unshift(path.basename(p)); p = path.dirname(p); }
+    while (!existsSync(p)) {
+      const parent = path.dirname(p);
+      if (parent === p) throw new Fallo("La unidad o raíz del destino no está disponible.");
+      faltantes.unshift(path.basename(p)); p = parent;
+    }
     return path.join(realpathSync(p), ...faltantes);
   };
   const dentro = (base, p) => {
