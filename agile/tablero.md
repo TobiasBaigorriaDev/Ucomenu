@@ -18,6 +18,9 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 ## Para verificar
 
+- [C] Auditoría, cifrado y transferencias: retención y copias implementadas y probadas en local; mecanismo internacional y anexos preparados; pendiente revisión independiente y formalización contractual antes de producción → [ficha](cambios/retencion-cifrado-transferencias.md)
+- [M] Revisión legal/contable: aprobación profesional confirmada, responsable/contacto completados y discrepancias corregidas; continuación en la ficha C anterior → [ficha](cambios/revision-legal-contable.md)
+
 - [C] Registro autoservicio de dueños: correo o Google, local creado solo con Pro por 14 días, plan elegido al pagar y recupero por correo — en `main` y en staging, probado por el usuario con cuentas reales (2026-11-02); cambio de plan y reembolso vistos con Mercado Pago de prueba (2026-11-03) → [ficha](cambios/registro-autoservicio.md) · [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md)
 - [M] Ventas ficticias de La Bestia: cargadas en staging para probar Analítica → [ficha](cambios/ventas-demo-bestia.md)
 
@@ -52,9 +55,9 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 > Veredicto de la revisión: **no listo** hasta crear producción y resolver lo legal. Procedimiento en [`docs/produccion.md`](../docs/produccion.md); cada paso remoto necesita aprobación del usuario. Orden sugerido: legales y abogado primero (es lo que más tarda), en paralelo las cuentas de Mux y Gemini y la decisión de Supabase; después producción, purgas, respaldos y dominio.
 
-- [S] Datos del responsable en los textos legales: razón social, CUIT y domicilio (`LEGAL_ENTITY` en `src/lib/legal.ts`) y correo de contacto real (`NEXT_PUBLIC_CONTACT_EMAIL`; staging usa uno de prueba) (bloqueado por: usuario)
-- [S] Confirmar con un contador los plazos de conservación de pedidos (2 años) y de pagos (10 años), y completar el del registro de auditoría (bloqueado por: contador)
-- [S] Revisión de un abogado de `/terminos`, `/privacidad` y `/alergenos`: transferencias internacionales, cifrado de las copias, la baja «sin reembolso» frente a los derechos de consumidores y la sección de reservas (bloqueado por: abogado)
+- [S] Datos del responsable y contacto: completados en local con autorización del titular el 2026-11-04; pendiente publicar → [revisión](cambios/revision-legal-contable.md)
+- [S] Contador: visto bueno confirmado para pedidos y pagos; auditoría definida en [ADR 0054](../docs/decisiones/0054-auditoria-copias-y-transferencias.md).
+- [S] Abogado: visto bueno confirmado; mecanismo internacional definido y pendiente formalización por proveedor → [expediente](../docs/transferencias-internacionales.md).
 - [S] Decidir Supabase Free o Pro para producción (recomendación: Pro desde el primer cliente que paga) (bloqueado por: usuario)
 - [M] Crear el proyecto de Supabase de producción, aplicar las migraciones con `db push` (nunca `db reset` ni el seed) y la configuración de Auth; primer SuperAdmin → [procedimiento](../docs/produccion.md) (bloqueado por: aprobación del usuario)
 - [M] Crear la app de producción en Fly (`fly.toml`), cargar secretos y variables (`pnpm prod:check` sin errores), desplegar y apuntar `ucomenu.com` en Cloudflare con HTTPS; recién entonces imprimir QR (bloqueado por: Supabase de producción)

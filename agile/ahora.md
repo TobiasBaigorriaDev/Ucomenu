@@ -1,19 +1,19 @@
 # Ahora (handoff)
 
-Actualizado: 2026-11-03 · agente saliente: Claude Code.
+Actualizado: 2026-11-04 · agente saliente: Codex.
 
 ## Punto de retomada
 
-En `main`. El **registro autoservicio de dueños** (nivel C) está integrado, subido a `origin/main` y en staging: correo o Google, local creado solo con Pro por 14 días, recupero por correo y plan elegido al pagar. Revisión de Codex aprobada en la ronda 3 y aprobación del usuario del 2026-11-02. Alcance, evidencia y límites en [la ficha](cambios/registro-autoservicio.md); decisiones en [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md).
+En `main`, con commits locales sobre `e0ca2f4`, sin push ni despliegue. La [revisión legal y contable](cambios/revision-legal-contable.md) continúa con [auditoría, cifrado y transferencias](cambios/retencion-cifrado-transferencias.md), nivel C. El usuario pidió recomendar y aplicar las soluciones y confirmó aprobación previa de abogado y contador. Responsable y contacto están completos; la fecha pública y la aceptación del alta comparten `LEGAL_VERSION`. La ficha C contiene decisiones, resultados y límites, sin copiarlos aquí.
 
-Migración `20261218100000` aplicada en local y staging; la siguiente libre es `20261219100000`. Marcha atrás de la app: `--image registry.fly.io/ucomenu-staging:registro-cd80cb4-git` (v100), o `cobro-3b9c6d2-git` (v95) para quitar el registro. `pnpm db:start` ahora levanta Mailpit: `registro.spec.ts` lo necesita.
+Auditoría: mínimo 10 años y mientras exista el local, con purga interna diaria; preserva las evidencias de baja que necesita el borrado seguro. Copias: `pnpm respaldo` exige clave y produce `.tar.gz.aes`; apertura con `pnpm respaldo:abrir`. Uso y límites en [la guía](../docs/respaldo-cifrado.md). Los temporales en claro requieren volumen cifrado. No se creó una clave permanente ni se programó una copia real. El ensayo temporal está en `output/ensayo-respaldo-cifrado.mjs`.
+
+Migración `20261219100000` aplicada solo localmente; staging continúa en `20261218100000`. Siguiente libre `20261220100000`. Registro autoservicio en staging según [su ficha](cambios/registro-autoservicio.md). Imagen de recuperación: `registry.fly.io/ucomenu-staging:registro-cd80cb4-git` (v100); `cobro-3b9c6d2-git` (v95) retira el registro. Skill legal de usuario: `C:/Users/tobib/.codex/skills/revision-legal-contable-ar/SKILL.md`.
 
 ## Bloqueos y próximo paso
 
-1. **Mercado Pago de prueba:** cambio de plan, reembolso, anulación y revisión comprobados (ficha). No hay rastro en los registros de un pago rechazado: conviene probarlo con el titular `OTHE` antes de producción.
-2. **Sugerido antes de producción:** registro DMARC en `ucomenu.com` y decidir el dominio propio de Auth, porque la pantalla de Google muestra la dirección de Supabase.
-3. **Producción** sigue bloqueada (`docs/produccion.md`, secciones 1c y 3c): datos legales, abogado (ahora también con Resend, Google y Turnstile), contador, Supabase y Fly de producción y cuenta de cobro. Repetir la configuración de Auth de la sección 1c y programar la purga de la 4.f. Tras cada actualización de Auth, comprobar que una cuenta creada por el servidor entra con su contraseña.
+Revisión independiente de Claude pendiente de registrar en la ficha C; suspender ediciones durante la ronda. Las transferencias tienen mecanismo y anexos preparados, pero falta acreditar aceptación de las contrapartes conforme al [expediente](../docs/transferencias-internacionales.md). No reemplazar esta evidencia con una afirmación en privacidad. Antes de producción: formalizar instrumentos, configurar clave/volumen, programar copias y ensayar restauración integral. Seguir [producción](../docs/produccion.md) para cuentas y despliegue.
 
-Fallas previas ajenas: `alta-guiada.spec.ts:183` y `:196` (cuentan un enlace del tutorial) y `resumen-panel.spec.ts:57` (sin investigar; falló y pasó según la corrida). Intermitentes: `portada.spec.ts:92`, `videos-mux.spec.ts:145`, `revision-claude.test.ts` (tiempos agotados) y caídas de worker `0xC0000409`.
+Mercado Pago: rechazo todavía sin evidencia. Siguen recomendados DMARC y dominio propio de Auth. Tras actualizar Auth, comprobar acceso de cuentas creadas por servidor.
 
-Entorno: Docker Desktop se apaga solo y hay que reiniciarlo; OneDrive provoca bloqueos de E2E (usar `--workers=4`). Preservar los archivos locales sin seguimiento (`video/`, `.codegraph/`, capturas, skills, `skills-lock.json`, `.claude/launch.json`).
+Docker se reinició para verificar localmente. OneDrive afecta E2E. Preservar videos, `.codegraph/`, capturas, skills y configuraciones preexistentes sin seguimiento.
