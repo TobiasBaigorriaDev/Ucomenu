@@ -18,7 +18,7 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 ## Para verificar
 
-- [C] Auditoría, cifrado y transferencias: retención y copias implementadas y probadas en local; mecanismo internacional y anexos preparados; pendiente revisión independiente y formalización contractual antes de producción → [ficha](cambios/retencion-cifrado-transferencias.md)
+- [C] Auditoría, cifrado y transferencias: implementadas y verificadas en local, revisión independiente aprobada; mecanismo y anexos preparados, pendiente formalización contractual y configuración operativa antes de producción → [ficha](cambios/retencion-cifrado-transferencias.md)
 - [M] Revisión legal/contable: aprobación profesional confirmada, responsable/contacto completados y discrepancias corregidas; continuación en la ficha C anterior → [ficha](cambios/revision-legal-contable.md)
 
 - [C] Registro autoservicio de dueños: correo o Google, local creado solo con Pro por 14 días, plan elegido al pagar y recupero por correo — en `main` y en staging, probado por el usuario con cuentas reales (2026-11-02); cambio de plan y reembolso vistos con Mercado Pago de prueba (2026-11-03) → [ficha](cambios/registro-autoservicio.md) · [ADR 0053](../docs/decisiones/0053-registro-autoservicio.md)

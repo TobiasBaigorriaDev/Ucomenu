@@ -12,7 +12,7 @@ Migración `20261219100000` aplicada solo localmente; staging continúa en `2026
 
 ## Bloqueos y próximo paso
 
-Claude pidió cambios en la primera ronda; se corrigieron los hallazgos y se verificaron. Segunda ronda pendiente: suspender ediciones durante la revisión. Las transferencias tienen mecanismo y anexos preparados, pero falta acreditar aceptación de contrapartes conforme al [expediente](../docs/transferencias-internacionales.md). Antes de producción: formalizar instrumentos, configurar clave/volumen, programar copias y ensayar restauración integral. Seguir [producción](../docs/produccion.md) para cuentas y despliegue.
+Revisión independiente aprobada sobre `3f786ff`: Claude pidió cambios y agotó su cuota al verificar; una sesión limpia de Codex comprobó las correcciones en solo lectura. Evidencia y límites en la ficha C. Las transferencias tienen mecanismo y anexos preparados, pero falta acreditar aceptación de contrapartes conforme al [expediente](../docs/transferencias-internacionales.md). Antes de producción: formalizar instrumentos, configurar clave/volumen, programar copias y ensayar restauración integral. Seguir [producción](../docs/produccion.md) para cuentas y despliegue.
 
 Mercado Pago: rechazo todavía sin evidencia. Siguen recomendados DMARC y dominio propio de Auth. Tras actualizar Auth, comprobar acceso de cuentas creadas por servidor.
 

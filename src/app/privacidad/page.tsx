@@ -172,8 +172,8 @@ export default function PrivacyPage() {
             Registro de auditoría: no se modifica durante su conservación. Se conserva mientras exista el local o queden pagos
             o anulaciones asociados y, como mínimo,
             {" "}{AUDIT_RETENTION_YEARS} años desde cada evento, para reconstruir los cambios de cuenta y cobros. Cumplidos ambos
-            requisitos, se elimina por lotes mediante una tarea diaria de mantenimiento. Los eventos sin local asociado se
-            eliminan después de {AUDIT_RETENTION_YEARS} años.
+            requisitos, se elimina por lotes mediante una tarea diaria de mantenimiento. Los eventos sin local, pagos ni
+            anulaciones asociados se eliminan después de {AUDIT_RETENTION_YEARS} años.
           </li>
           <li>
             Copias de seguridad: hacemos copias propias que incluyen las cuentas del personal y los datos de los locales (también

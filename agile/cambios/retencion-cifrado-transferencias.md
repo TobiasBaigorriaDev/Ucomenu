@@ -1,5 +1,5 @@
 # Retención de auditoría, cifrado y transferencias
-Estado: en curso local
+Estado: implementado y verificado en local, revisión independiente aprobada; sin push ni despliegue
 Nivel: C (borrado de auditoría y protección/recuperación de copias)
 
 ## Objetivo y decisiones
@@ -37,4 +37,5 @@ El usuario pidió el 2026-11-04 recomendar y aplicar una solución para los tres
 - Sugerencias atendidas: apertura completa antes de publicar una copia; diagnóstico diferenciado de errores de disco; prueba de `main` que impide volcar SQL sin clave; raíz inexistente y truncamiento intermedio; contrato de contacto vacío explícito y mensaje coherente de `prod:check`; índice ADR y documentación actualizados.
 - Corregido además un riesgo previo: el volcado por URL pasaba la contraseña de PostgreSQL por argv. Ahora se quita de la URL y se entrega al hijo por entorno (`SUPABASE_DB_PASSWORD`/`PGPASSWORD`); se omiten diagnósticos del hijo que pudieran contener parámetros sensibles. Unitarias comprueban argv y el ensayo con URL de la misma base local comprueba la CLI instalada, sin conexiones remotas.
 - Verificación posterior: **76/76** unitarias afectadas; auditoría+ACL **33/33** RLS; build, tipos y lint correctos; E2E legal+borrado **25/25**. Ensayo repetible incorporado en `tests/integration/respaldo-cifrado.mjs` y ejecutado: exportación, cifrado/apertura real y conexión PostgreSQL por URL con contraseña solo en entorno. No importa el dump en otra base; sigue pendiente el ensayo integral de restauración de producción.
-- Ronda 2 acotada a estas correcciones: pendiente.
+- Intentos de ronda 2 de Claude: sin veredicto por cuota semanal agotada (restablecimiento informado: 13:00 de Argentina); primer intento código 3 de la herramienta y repetición una vez con el mismo resultado. No se interpretó como aprobación ni se cambiaron credenciales.
+- Verificación alternativa permitida por AGENTS.md («otro agente o una sesión limpia»): agente `/root/verificar_legal_c`, sin historial, solo lectura, sobre `839dd98..3f786ff`, **APROBAR**, sin bloqueantes ni regresiones. Los ocho hallazgos previos se consideraron corregidos; no ejecutó pruebas ni validó fuentes legales. Informe: `output/revisiones/codex-limpio-3f786ff.md`. Única sugerencia de redacción, atendida: explicitar en privacidad que la dependencia incluye pagos/anulaciones, sin cambio de comportamiento.
