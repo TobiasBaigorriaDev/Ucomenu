@@ -49,7 +49,8 @@ async function descifrarArchivo(source, target, key) {
   try {
     await pipeline(createReadStream(source, { start: HEADER_SIZE, end: size - TAG_SIZE - 1 }),
       decipher, createWriteStream(target, { flags: "wx", mode: 0o600 }));
-  } catch {
+  } catch (error) {
+    if (error.code) throw new Error(`No se pudo leer o escribir el respaldo (${error.code}).`);
     throw new Error("No se pudo autenticar el respaldo: clave incorrecta o archivo alterado.");
   }
 }
@@ -78,6 +79,8 @@ export async function cifrarRespaldo(source, target, keyHex) {
       return hash.digest("hex");
     };
     if (await digest(packed) !== await digest(checked)) throw new Error("La verificación de descifrado no coincide.");
+    // Prueba el mismo flujo de recuperación que usará el operador, incluidas rutas y hashes.
+    await abrirRespaldo(encrypted, path.join(work, "recuperada"), keyHex);
     // Publicación atómica sin sobrescritura, mismo volumen que el directorio temporal.
     linkSync(encrypted, target);
   } finally {

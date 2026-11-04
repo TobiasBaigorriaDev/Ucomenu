@@ -63,3 +63,4 @@ Registrá acá decisiones que seguirán vigentes y cuyo «por qué» se perderí
 | 0050 | [Personalización ampliada de la carta: opciones curadas, nunca selectores libres](0050-personalizacion-ampliada-de-la-carta.md) | aceptada (sin desplegar) | 2026-10-30 |
 | 0052 | [Cobro por link de Mercado Pago: el Dueño paga y el servidor registra el pago solo](0052-cobro-por-link-de-mercado-pago.md) | aceptada (implementada en local, sin desplegar) | 2026-11-01 |
 | 0053 | [Los dueños se registran solos: correo o Google, prueba de Pro y plan elegido al pagar](0053-registro-autoservicio.md) | aceptada (implementada en local, sin desplegar) | 2026-11-01 |
+| 0054 | [Auditoría, copias cifradas y transferencias internacionales](0054-auditoria-copias-y-transferencias.md) | aceptada (implementación local; contratos pendientes) | 2026-11-04 |

@@ -186,7 +186,7 @@ export function evaluarEntorno(env) {
 
   // Contacto de la política de privacidad.
   const contacto = env.NEXT_PUBLIC_CONTACT_EMAIL;
-  if (vacio(contacto)) error("NEXT_PUBLIC_CONTACT_EMAIL: falta; la política de privacidad no tendría a quién escribirle para ejercer derechos.");
+  if (vacio(contacto)) error("NEXT_PUBLIC_CONTACT_EMAIL: falta; declarar explícitamente el contacto definitivo del entorno, aunque la app tenga un predeterminado.");
   else if (!EMAIL.test(contacto.trim())) error("NEXT_PUBLIC_CONTACT_EMAIL: no parece un email.");
   else bien("NEXT_PUBLIC_CONTACT_EMAIL: presente.");
 

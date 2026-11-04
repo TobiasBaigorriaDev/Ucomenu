@@ -1,5 +1,5 @@
 # Revisión legal y contable previa a producción
-Estado: verificado en local, sin commit ni despliegue
+Estado: verificado e integrado en commits locales, sin despliegue; continuación en la ficha C
 Nivel: M (textos, contacto público y trazabilidad de aceptación; no cambia cobros, permisos, esquema ni purgas)
 
 ## Objetivo y autorización

@@ -46,7 +46,7 @@ describe("cifrado de respaldos", () => {
     expect(readFileSync(a)).toEqual(original);
   });
 
-  it.each(["key", "ciphertext", "tag", "header", "truncated"])("falla cerrado ante %s y no publica ni deja temporales", async (kind) => {
+  it.each(["key", "ciphertext", "tag", "header", "truncated", "half"])("falla cerrado ante %s y no publica ni deja temporales", async (kind) => {
     const encrypted = path.join(root, `${kind}.aes`), opened = path.join(root, `opened-${kind}`);
     await cifrarRespaldo(source, encrypted, key);
     let bytes = readFileSync(encrypted);
@@ -54,6 +54,7 @@ describe("cifrado de respaldos", () => {
     if (kind === "tag") bytes[bytes.length - 1] ^= 1;
     if (kind === "header") bytes[10] ^= 1;
     if (kind === "truncated") bytes = bytes.subarray(0, 15);
+    if (kind === "half") bytes = bytes.subarray(0, Math.floor(bytes.length / 2));
     writeFileSync(encrypted, bytes);
     await expect(abrirRespaldo(encrypted, opened, kind === "key" ? randomBytes(32).toString("hex") : key)).rejects.toThrow();
     expect(existsSync(opened)).toBe(false);
@@ -68,7 +69,7 @@ describe("cifrado de respaldos", () => {
     expect(readFileSync(path.join(opened, "conservar"), "utf8")).toBe("original");
     const broken = path.join(root, "broken"); mkdirSync(broken);
     writeFileSync(path.join(broken, "manifiesto.json"), JSON.stringify({ archivos: [{ ruta: "../escape" }] }));
-    await cifrarRespaldo(broken, path.join(root, "broken.aes"), key);
-    await expect(abrirRespaldo(path.join(root, "broken.aes"), path.join(root, "bad-open"), key)).rejects.toThrow(/Rutas inválidas/);
+    await expect(cifrarRespaldo(broken, path.join(root, "broken.aes"), key)).rejects.toThrow(/Rutas inválidas/);
+    expect(existsSync(path.join(root, "broken.aes"))).toBe(false);
   });
 });

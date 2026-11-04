@@ -1,14 +1,16 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import {
   AUTH_EXCLUIDAS,
   BUCKETS,
   TABLAS_EXCLUIDAS,
   armarManifiesto,
   copiarStorage,
+  conexionDeVolcado,
   leerArgumentos,
+  main,
   marcaDeTiempo,
   objetosPorBucket,
   sha256,
@@ -20,6 +22,25 @@ import {
 /** Respaldo propio (tools/respaldar.mjs): lo que no necesita Docker ni red. Todos los datos son sintéticos. */
 
 describe("leerArgumentos", () => {
+  it("la contraseña de PostgreSQL va en el entorno del hijo, nunca en argv", () => {
+    const password = "synthetic:@/secret";
+    const result = conexionDeVolcado(`postgresql://postgres:${encodeURIComponent(password)}@db.example.test:5432/postgres?sslmode=require`);
+    expect(result.args.join(" ")).not.toContain(encodeURIComponent(password));
+    expect(new URL(result.args[1]).password).toBe("");
+    expect(result.env.SUPABASE_DB_PASSWORD).toBe(password);
+    expect(() => conexionDeVolcado("postgres://host/db?password=synthetic")).toThrow(/no es una conexión/);
+  });
+  it("el comando falla antes de volcar SQL o crear el destino cuando falta la clave", async () => {
+    const work = mkdtempSync(path.join(tmpdir(), "backup-main-test-"));
+    const file = path.join(work, "synthetic.env"), target = path.join(work, "copias");
+    writeFileSync(file, "NEXT_PUBLIC_SUPABASE_URL=http://127.0.0.1:54321\nSUPABASE_SERVICE_ROLE_KEY=synthetic\n");
+    const volcar = vi.fn(() => { throw new Error("No debe llegar al volcado."); });
+    try {
+      expect(await main(["--local", "--env", file, "--destino", target], { volcar })).toBe(1);
+      expect(volcar).not.toHaveBeenCalled();
+      expect(existsSync(target)).toBe(false);
+    } finally { rmSync(work, { recursive: true, force: true }); }
+  });
   it("exige uno solo de --local o --remoto y un destino", () => {
     expect(() => leerArgumentos(["--destino", "x"])).toThrow(/exactamente uno/);
     expect(() => leerArgumentos(["--local", "--remoto", "--destino", "x"])).toThrow(/exactamente uno/);
@@ -56,6 +77,11 @@ describe("validarDestino", () => {
       expect(() => validarDestino(path.join(alias, "copias"), repo)).toThrow(/dentro del repositorio/);
       expect(() => validarDestino(path.join(repo, "..oculto"), repo)).toThrow(/dentro del repositorio/);
     } finally { rmSync(temporal, { recursive: true, force: true }); }
+  });
+
+  it.skipIf(process.platform !== "win32")("una unidad inexistente falla sin recorrer indefinidamente su raíz", () => {
+    const drive = "ZYXWVUTSRQPONMLKJIHGFED".split("").find((letter) => !existsSync(`${letter}:\\`));
+    if (drive) expect(() => validarDestino(`${drive}:\\copias`)).toThrow(/no está disponible/);
   });
 });
 

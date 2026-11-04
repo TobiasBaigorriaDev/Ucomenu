@@ -40,6 +40,35 @@ describe("retención de auditoría", () => {
     expect(result.at(-2)).toEqual(["1"]);
   });
 
+  it("con lote amplio aplica realmente el plazo estricto y reactiva la barrera tras el éxito", () => {
+    const old = randomUUID(), recent = randomUUID(), boundary = randomUUID();
+    const result = sql(`begin; ${row(old, "11 years")} ${row(recent, "1 day")} ${row(boundary, "10 years")}
+      select private.purge_expired_audit_log(5000);
+      select id from public.audit_log where id in ('${old}', '${recent}', '${boundary}') order by id;
+      select tgenabled from pg_trigger where tgname = 'audit_log_no_update_delete'; rollback;`);
+    expect(result.flat()).not.toContain(old);
+    expect(result.flat()).toEqual(expect.arrayContaining([recent, boundary]));
+    expect(result.at(-2)).toEqual(["O"]);
+  });
+
+  it("conserva la identidad del local borrado mientras tenga pagos; solo purga cuando desaparece la evidencia contable", () => {
+    const org = randomUUID(), id = randomUUID(), payment = randomUUID(), sub = randomUUID();
+    const result = sql(`begin; ${row(id, "11 years", org)}
+      insert into public.payments (id, created_at, organization_id, subscription_id, plan_code, billing_cycle,
+        amount_cents, currency, method, paid_on, previous_period_end, covers_until, registered_by)
+      values ('${payment}', now() - interval '12 years', '${org}', '${sub}', 'pro', 'monthly',
+        1000, 'ARS', 'cash', current_date, now(), now() + interval '30 days', '${randomUUID()}');
+      select private.purge_expired_audit_log(5000);
+      select 'kept=' || count(*) from public.audit_log where id = '${id}';
+      alter table public.payments disable trigger payments_no_update_delete;
+      delete from public.payments where id = '${payment}';
+      alter table public.payments enable trigger payments_no_update_delete;
+      select private.purge_expired_audit_log(5000);
+      select 'removed=' || count(*) from public.audit_log where id = '${id}'; rollback;`);
+    expect(result.flat()).toContain("kept=1");
+    expect(result.flat()).toContain("removed=0");
+  });
+
   it("rechaza lotes inválidos y mantiene ambas barreras de solo agregado", () => {
     for (const limit of ["0", "5001", "null"]) {
       expect(() => sql(`select private.purge_expired_audit_log(${limit})`)).toThrow(/invalid_limit/);

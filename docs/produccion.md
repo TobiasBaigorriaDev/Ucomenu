@@ -237,7 +237,7 @@ Después de la primera ejecución, mirar `cron.job_run_details`.
 
 ### 4.g Auditoría: tarea creada por la migración
 
-La migración `20261219100000` programa `purge-expired-audit-log` a las 07:30 UTC. Conserva eventos mientras exista el local y por un mínimo de 10 años; borra hasta 1000 vencidos por día. No la ejecutes desde la API: es una función interna sin permisos para `anon`, `authenticated` ni `service_role`. Al aplicar en un entorno aprobado, comprobar tarea activa y primera ejecución `succeeded` en `cron.job_run_details`. Para detenerla: `select cron.unschedule('purge-expired-audit-log');`. La migración no borra filas al aplicarse. No se aplicó a entornos remotos en este cambio.
+La migración `20261219100000` programa `purge-expired-audit-log` a las 07:30 UTC. Conserva eventos mientras exista el local o queden pagos/anulaciones asociados, y por un mínimo de 10 años; borra hasta 1000 vencidos por día. No la ejecutes desde la API: es una función interna sin permisos para `anon`, `authenticated` ni `service_role`. Al aplicar en un entorno aprobado, comprobar tarea activa y primera ejecución `succeeded` en `cron.job_run_details`. Para detenerla: `select cron.unschedule('purge-expired-audit-log');`. La migración no borra filas al aplicarse. No se aplicó a entornos remotos en este cambio.
 
 ## 5. Dominio (aprobación: DNS y app de producción)
 `ucomenu.com` ya es del usuario (DNS en Cloudflare). Este paso se hace cuando exista la app de producción en Fly (`fly.toml`, hoy plantilla):

@@ -1,6 +1,6 @@
 # Copias cifradas: generar y recuperar
 
-El formato propio v1 usa AES-256-GCM de Node/OpenSSL y `tar` del sistema (ya disponible en Windows). `pnpm respaldo` produce un archivo `AAAA-MM-DDTHH-MM-SSZ.tar.gz.aes`; incluye esquema, datos, archivos y manifiesto. Comprueba los hashes antes de cifrar y descifra el archivo para comprobar que recupera exactamente el archivo comprimido original. Una copia fallida no se informa como lista.
+El formato propio v1 usa AES-256-GCM de Node/OpenSSL y `tar` del sistema (ya disponible en Windows). `pnpm respaldo` produce un archivo `AAAA-MM-DDTHH-MM-SSZ.tar.gz.aes`; incluye esquema, datos, archivos y manifiesto. Comprueba los hashes, descifra y ejecuta la apertura completa antes de publicar. La publicación atómica usa enlaces duros: el destino debe admitirlos (NTFS en Windows; no FAT/exFAT). Una copia fallida no se informa como lista.
 
 ## Preparar la clave y el destino
 

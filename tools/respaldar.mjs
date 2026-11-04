@@ -219,19 +219,27 @@ function scriptSupabase() {
   return script;
 }
 
-function supabaseCli(args) {
-  const r = spawnSync(process.execPath, [scriptSupabase(), ...args], { cwd: ROOT, encoding: "utf8" });
-  if (r.status !== 0) throw new Fallo(`supabase ${args[0]} ${args[1] ?? ""} falló:
-${(r.stderr || r.stdout || "").trim().slice(-800)}`);
+function supabaseCli(args, env = {}) {
+  const r = spawnSync(process.execPath, [scriptSupabase(), ...args], { cwd: ROOT, encoding: "utf8", env: { ...process.env, ...env } });
+  // El hijo puede incluir parámetros de conexión en su diagnóstico: no reproducirlo con secretos.
+  if (r.status !== 0) throw new Fallo(`supabase ${args[0]} ${args[1] ?? ""} falló; revisá la conexión, permisos y disponibilidad de Docker.`);
+}
+
+export function conexionDeVolcado(dbUrl) {
+  const u = new URL(dbUrl);
+  if (!["postgres:", "postgresql:"].includes(u.protocol) || u.searchParams.has("password")) throw new Fallo("RESPALDO_DB_URL no es una conexión PostgreSQL admitida.");
+  const password = decodeURIComponent(u.password);
+  u.password = "";
+  return { args: ["--db-url", u.toString()], env: { SUPABASE_DB_PASSWORD: password, PGPASSWORD: password } };
 }
 
 function volcarBase({ carpeta, local, dbUrl }) {
-  const destino = local ? ["--local"] : ["--db-url", dbUrl];
-  supabaseCli(["db", "dump", ...destino, "-f", path.join(carpeta, "esquema.sql")]);
+  const { args: destino, env } = local ? { args: ["--local"], env: {} } : conexionDeVolcado(dbUrl);
+  supabaseCli(["db", "dump", ...destino, "-f", path.join(carpeta, "esquema.sql")], env);
   supabaseCli([
     "db", "dump", ...destino, "--data-only", "--use-copy", "-s", "public,auth", "-x", TABLAS_EXCLUIDAS.join(","),
     "-f", path.join(carpeta, "datos.sql"),
-  ]);
+  ], env);
 }
 
 /**
@@ -269,7 +277,7 @@ export async function copiarStorage({ carpeta, cliente }) {
   return archivos;
 }
 
-export async function main(argv) {
+export async function main(argv, { volcar = volcarBase } = {}) {
   let args;
   let temporal;
   try {
@@ -287,7 +295,7 @@ export async function main(argv) {
     const carpeta = temporal = mkdtempSync(path.join(raizDestino, ".respaldo-"));
 
     console.log(`Respaldo ${args.local ? "local" : "remoto"} cifrado en ${cifrado}`);
-    volcarBase({ carpeta, local: args.local, dbUrl: entorno.RESPALDO_DB_URL });
+    volcar({ carpeta, local: args.local, dbUrl: entorno.RESPALDO_DB_URL });
     console.log("  base de datos: esquema y datos listos");
     const cliente = createClient(url, clave, { auth: { persistSession: false, autoRefreshToken: false } });
     const fotos = await copiarStorage({ carpeta, cliente });

@@ -13,6 +13,8 @@ describe("contacto legal", () => {
   it("respeta el contacto del entorno y rechaza un valor inválido", () => {
     expect(contactEmail({ NEXT_PUBLIC_CONTACT_EMAIL: "  contacto@example.com  " })).toBe("contacto@example.com");
     expect(contactEmail({ NEXT_PUBLIC_CONTACT_EMAIL: "sin-arroba" })).toBeNull();
+    // Vacío explícito es configuración inválida; no se oculta con el predeterminado.
+    expect(contactEmail({ NEXT_PUBLIC_CONTACT_EMAIL: "" })).toBeNull();
   });
 });
 
