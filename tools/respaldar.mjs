@@ -7,13 +7,13 @@
  *   pnpm respaldo --local --destino C:\respaldos\ucomenu            (Supabase local, Docker encendido)
  *   pnpm respaldo --remoto --env C:\secretos\produccion.env --destino C:\respaldos\ucomenu   (proyecto en la nube)
  *
- * Qué hace: crea `<destino>/<AAAA-MM-DDTHH-MM-SSZ>/` con
+ * Qué hace: crea `<destino>/<AAAA-MM-DDTHH-MM-SSZ>.tar.gz.aes` (AES-256-GCM) que contiene
  *   esquema.sql   estructura (`supabase db dump`)
  *   datos.sql     datos de `public` (menos `waiter_calls`) y las cuentas (`auth.users` y `auth.identities`), sin sesiones ni tokens
  *   storage/<bucket>/…   cada archivo de los buckets `product-images` y `organization-logos`, con la misma ruta de objeto
  *   manifiesto.json   fecha, entorno, buckets, tamaños y SHA-256 de cada archivo (los de Storage indican su bucket y objeto);
  *                     sirve para comprobar el respaldo
- * y al final lo vuelve a leer y lo verifica.
+ * y al final verifica el manifiesto y el descifrado. Requiere RESPALDO_ENCRYPTION_KEY (64 hex) fuera de Git.
  *
  * Seguridad:
  *  - El respaldo contiene correos y hashes de contraseña: es un dato personal. El destino TIENE que estar fuera del
@@ -25,12 +25,13 @@
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs, parseEnv } from "node:util";
 import { createClient } from "@supabase/supabase-js";
+import { cifrarRespaldo, claveDeRespaldo } from "./respaldo-cifrado.mjs";
 
 /** Buckets de Storage que se respaldan. Un bucket nuevo con archivos de clientes se agrega acá (y a la guía de restauración). */
 export const BUCKETS = ["product-images", "organization-logos"];
@@ -74,10 +75,20 @@ export function leerArgumentos(argv) {
 /** El destino no puede estar dentro del repositorio (ni ser el repositorio): el respaldo trae datos personales. */
 export function validarDestino(destino, raiz = ROOT) {
   const absoluto = path.resolve(destino);
-  const relativo = path.relative(raiz, absoluto);
-  const dentro = relativo === "" || (!relativo.startsWith("..") && !path.isAbsolute(relativo));
-  if (dentro) throw new Fallo(`El destino (${absoluto}) está dentro del repositorio: elegí una carpeta fuera de él.`);
-  return absoluto;
+  const resolver = (p) => {
+    const faltantes = [];
+    while (!existsSync(p)) { faltantes.unshift(path.basename(p)); p = path.dirname(p); }
+    return path.join(realpathSync(p), ...faltantes);
+  };
+  const dentro = (base, p) => {
+    const rel = path.relative(base, p);
+    return rel === "" || (rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel));
+  };
+  const canonico = resolver(absoluto);
+  if (dentro(path.resolve(raiz), absoluto) || dentro(resolver(path.resolve(raiz)), canonico)) {
+    throw new Fallo(`El destino (${absoluto}) está dentro del repositorio: elegí una carpeta fuera de él.`);
+  }
+  return canonico;
 }
 
 /** `AAAA-MM-DDTHH-MM-SSZ`: sirve de nombre de carpeta en cualquier sistema de archivos. */
@@ -256,18 +267,22 @@ export async function copiarStorage({ carpeta, cliente }) {
 
 export async function main(argv) {
   let args;
+  let temporal;
   try {
     args = leerArgumentos(argv);
     const raizDestino = validarDestino(args.destino);
     const entorno = cargarEntorno(args);
+    // Fallar antes de volcar datos; la clave nunca viaja como argumento ni aparece en registros.
+    claveDeRespaldo(entorno.RESPALDO_ENCRYPTION_KEY).fill(0);
     const { url, clave } = validarEntorno(entorno, { local: args.local });
 
     const fecha = new Date();
-    const carpeta = path.join(raizDestino, marcaDeTiempo(fecha));
-    if (existsSync(carpeta)) throw new Fallo(`Ya existe ${carpeta}.`);
-    mkdirSync(carpeta, { recursive: true });
+    const cifrado = path.join(raizDestino, `${marcaDeTiempo(fecha)}.tar.gz.aes`);
+    if (existsSync(cifrado)) throw new Fallo("Ya existe una copia con esa fecha.");
+    mkdirSync(raizDestino, { recursive: true });
+    const carpeta = temporal = mkdtempSync(path.join(raizDestino, ".respaldo-"));
 
-    console.log(`Respaldo ${args.local ? "local" : "remoto"} en ${carpeta}`);
+    console.log(`Respaldo ${args.local ? "local" : "remoto"} cifrado en ${cifrado}`);
     volcarBase({ carpeta, local: args.local, dbUrl: entorno.RESPALDO_DB_URL });
     console.log("  base de datos: esquema y datos listos");
     const cliente = createClient(url, clave, { auth: { persistSession: false, autoRefreshToken: false } });
@@ -287,11 +302,15 @@ export async function main(argv) {
     const problemas = verificarRespaldo(carpeta);
     if (problemas.length > 0) throw new Fallo(`El respaldo NO pasó la verificación:\n- ${problemas.join("\n- ")}`);
     const total = archivos.reduce((suma, a) => suma + a.bytes, 0);
-    console.log(`Verificado: ${archivos.length} archivo(s), ${(total / 1024 / 1024).toFixed(2)} MB. Guardalo fuera del repositorio.`);
+    await cifrarRespaldo(carpeta, cifrado, entorno.RESPALDO_ENCRYPTION_KEY);
+    console.log(`Cifrado y descifrado verificados: ${archivos.length} archivo(s), ${(total / 1024 / 1024).toFixed(2)} MB antes de comprimir.`);
     return 0;
   } catch (e) {
     console.error(e instanceof Fallo ? e.message : `Error inesperado: ${e instanceof Error ? e.message : String(e)}`);
     return 1;
+  } finally {
+    // Únicamente el temporal recién creado por esta ejecución, nunca copias existentes.
+    if (temporal) rmSync(temporal, { recursive: true, force: true });
   }
 }
 

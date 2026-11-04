@@ -20,6 +20,7 @@
     "revision:claude": "node tools/revision-claude.mjs",
     "prod:check": "node tools/verificar-produccion.mjs",
     "respaldo": "node tools/respaldar.mjs",
+    "respaldo:abrir": "node tools/respaldo-cifrado.mjs",
     "push:claves": "node tools/generar-claves-vapid.mjs",
     "db:types": "supabase gen types typescript --local > src/lib/supabase/database.types.ts",
     "test:e2e:full": "next build && playwright test"

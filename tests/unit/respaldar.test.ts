@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -45,6 +45,17 @@ describe("validarDestino", () => {
   it("acepta una carpeta fuera, incluso una con el mismo prefijo de nombre", () => {
     expect(validarDestino(path.resolve(tmpdir(), "otro"), raiz)).toBe(path.resolve(tmpdir(), "otro"));
     expect(validarDestino(`${raiz}-hermano`, raiz)).toBe(`${raiz}-hermano`);
+  });
+
+  it("rechaza un destino que entra al repo por una junction o un nombre que empieza con dos puntos", () => {
+    const temporal = mkdtempSync(path.join(tmpdir(), "backup-path-test-"));
+    try {
+      const repo = path.join(temporal, "repo"), alias = path.join(temporal, "alias");
+      mkdirSync(repo);
+      symlinkSync(repo, alias, process.platform === "win32" ? "junction" : "dir");
+      expect(() => validarDestino(path.join(alias, "copias"), repo)).toThrow(/dentro del repositorio/);
+      expect(() => validarDestino(path.join(repo, "..oculto"), repo)).toThrow(/dentro del repositorio/);
+    } finally { rmSync(temporal, { recursive: true, force: true }); }
   });
 });
 
