@@ -8,7 +8,7 @@ El hosting es **un contenedor en Fly.io, región São Paulo** (ADR 0015, `docs/o
 - **Hosting:** decidido (Fly.io, contenedor en São Paulo). La cuenta y `flyctl` ya existen (staging).
 - **Un proyecto de Supabase por entorno, no por cliente:** UcoMenú es multi-inquilino (organizaciones y sucursales en las mismas tablas, aisladas por RLS). Cada negocio nuevo se da de alta desde `/admin`; no se crea ningún proyecto. En total: staging y producción.
 - **Dominio:** **`ucomenu.com`, confirmado como definitivo por el usuario (2026-10-26)**; ya es suyo y su DNS está en Cloudflare. Staging no lo necesita: usa la dirección provisoria de Fly (`<app>.fly.dev`). Producción lo usa como `NEXT_PUBLIC_SITE_URL=https://ucomenu.com`; hay que apuntarlo (sección 5) **antes de imprimir los QR definitivos** (cada QR codifica el dominio; no se cambia después sin reimprimir).
-- **Legal** (fichas `agile/cambios/textos-legales.md` e `informacion-alimentaria-y-textos-legales.md`): revisión de un abogado argentino de `/terminos`, `/privacidad` y `/alergenos`, y las decisiones del usuario que hoy aparecen como `[Pendiente de definir antes del lanzamiento: …]` en esas páginas. Razón social, CUIT y domicilio se completan en `LEGAL_ENTITY` (`src/lib/legal.ts`). **No publicar mientras alguna página muestre un pendiente.** Estado al 2026-10-31: `/terminos` ya no tiene marcadores propios; en `/privacidad` quedan 5 (plazo de pedidos y de pagos con un contador, registro de auditoría, cifrado de las copias y transferencias internacionales) más el responsable y el correo de contacto. Hay un test E2E que exige que ya no figuren los resueltos.
+- **Legal:** el usuario confirmó el visto bueno de abogado y contador el 2026-11-04. Responsable y contacto están completos. Auditoría, cifrado y mecanismo internacional están definidos en [ADR 0054](decisiones/0054-auditoria-copias-y-transferencias.md); la implementación local y sus límites están en [la ficha](../agile/cambios/retencion-cifrado-transferencias.md). **No publicar con datos reales hasta formalizar los instrumentos de transferencia de cada proveedor y acreditar el expediente de [transferencias](transferencias-internacionales.md).** La aprobación profesional no sustituye contratos ni configuración operativa.
 - **Cobro con Mercado Pago** ([ADR 0052](decisiones/0052-cobro-por-link-de-mercado-pago.md), ficha `cobro-con-link-de-mercado-pago`): ya funciona de punta a punta en staging con credenciales de **prueba** (primer pago registrado el 2026-11-01). Para producción falta que el usuario decida **quién es el titular de la cuenta de cobro** (hoy solo hay una cuenta personal) y cree la aplicación con las credenciales de producción: sección **3c**. Sin eso el botón «Pagar» no aparece y se sigue cobrando a mano, que es seguro.
 - **Staging primero:** ensayar todo lo siguiente con datos ficticios en un proyecto de Supabase gratuito en **otra organización**, y recién después repetirlo en producción.
 
@@ -235,16 +235,20 @@ select cron.schedule('purge-unconfirmed-accounts', '30 6 * * *', $$select public
 
 Después de la primera ejecución, mirar `cron.job_run_details`.
 
+### 4.g Auditoría: tarea creada por la migración
+
+La migración `20261219100000` programa `purge-expired-audit-log` a las 07:30 UTC. Conserva eventos mientras exista el local y por un mínimo de 10 años; borra hasta 1000 vencidos por día. No la ejecutes desde la API: es una función interna sin permisos para `anon`, `authenticated` ni `service_role`. Al aplicar en un entorno aprobado, comprobar tarea activa y primera ejecución `succeeded` en `cron.job_run_details`. Para detenerla: `select cron.unschedule('purge-expired-audit-log');`. La migración no borra filas al aplicarse. No se aplicó a entornos remotos en este cambio.
+
 ## 5. Dominio (aprobación: DNS y app de producción)
 `ucomenu.com` ya es del usuario (DNS en Cloudflare). Este paso se hace cuando exista la app de producción en Fly (`fly.toml`, hoy plantilla):
 1. Agregar el dominio a Fly: `fly certs add ucomenu.com -c fly.toml` (y `www.ucomenu.com` si se quiere; redirigirlo al raíz). `fly certs show ucomenu.com -c fly.toml` indica los registros exactos.
 2. En Cloudflare (DNS), crear lo que indique Fly: para el raíz, los registros `A` y `AAAA` con las IP de la app (`fly ips list`), o un `CNAME` al `<app>.fly.dev` (Cloudflare lo aplana en el raíz). Dejar los registros en **«Solo DNS»** (nube gris) hasta que Fly emita el certificado; si después se activa el proxy de Cloudflare, usar cifrado **Full (strict)**.
 3. Esperar el certificado HTTPS (`fly certs show`) y confirmar que `NEXT_PUBLIC_SITE_URL=https://ucomenu.com` coincide con lo usado al construir la imagen (se incrusta al construir: si se cambió, volver a desplegar).
 4. Imprimir los QR **después** de este paso: cada QR codifica `{NEXT_PUBLIC_SITE_URL}/t/{token}`.
-5. Correo de contacto: `NEXT_PUBLIC_CONTACT_EMAIL` tiene que ser una casilla real del dominio (p. ej. con *Email Routing* de Cloudflare reenviando a un correo del usuario); decidir cuál antes de publicar `/privacidad`.
+5. Correo de contacto: comprobar el enlace visible de `/privacidad` y `/terminos`. El predeterminado aprobado está en `LEGAL_CONTACT_EMAIL` (`src/lib/legal.ts`); `NEXT_PUBLIC_CONTACT_EMAIL` puede reemplazarlo por entorno y se incrusta al construir. No conservar un correo de prueba en la imagen definitiva.
 
 ## 6. Respaldos (antes de cargar datos reales)
-Correr `pnpm respaldo` contra el proyecto y **ensayar la restauración en staging** (`docs/operacion.md`, sección 2). Definir quién lo corre y con qué frecuencia. El plan Free no hace respaldos.
+Correr `pnpm respaldo` con clave separada y destino protegido según [cifrado](respaldo-cifrado.md), abrir con `pnpm respaldo:abrir` y **ensayar la restauración en un destino aislado** (`docs/operacion.md`, sección 2). Definir quién lo corre y con qué frecuencia. El plan Free no hace respaldos. No copiar la clave con el archivo cifrado.
 
 ## 7. Monitoreo de errores
 Inicialmente solo los registros de Fly (`fly logs`) y de Supabase, más la revisión semanal del consumo (`docs/operacion.md`, secciones 3 y 6). Sentry está postergado (ADR 0015).

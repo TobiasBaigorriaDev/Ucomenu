@@ -1,7 +1,7 @@
 /** Reglas puras del registro autoservicio (ficha registro-autoservicio, ADR 0053): se prueban en `registro.test.ts`. */
 
 /** Versión de `/terminos` y `/privacidad` que se acepta al crear un local. Se actualiza cuando cambia el contenido de esos textos. */
-export const TERMS_VERSION = "2026-11-01";
+export { LEGAL_VERSION as TERMS_VERSION } from "@/lib/legal";
 
 /** Sucursal inicial: el Dueño la renombra después desde Sucursales. */
 export const FIRST_BRANCH = { slug: "principal", name: "Principal" } as const;

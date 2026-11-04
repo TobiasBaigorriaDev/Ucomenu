@@ -125,6 +125,10 @@ export default function TermsPage() {
           acuerdan al contratar.
         </p>
         <p>
+          El historial de pagos de Suscripción registra los cobros y sus anulaciones; no es una factura fiscal ni reemplaza el
+          comprobante fiscal que corresponda. La facturación fiscal se gestiona por fuera de esta plataforma.
+        </p>
+        <p>
           Si la suscripción vence, el servicio no se corta de golpe: durante los primeros 7 días después del vencimiento seguís
           usando todo con normalidad (período de gracia); del día 8 al 15 la cuenta pasa a solo lectura (podés ver tus datos pero
           no modificarlos) y, desde el día 16 sin regularizar, se suspende la carta pública. En todo ese tiempo el panel muestra un

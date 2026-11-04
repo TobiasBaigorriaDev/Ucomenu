@@ -75,8 +75,36 @@ test("la privacidad nombra al responsable, el canal y los plazos de la ley, y ma
   await expect(body).toContainText("5 días hábiles");
   await expect(body).toContainText("Supabase");
   await expect(body).toContainText("Fly.io");
-  // Mientras el usuario no decida razón social, CUIT, domicilio y correo, el texto lo muestra como pendiente (no los inventa).
+  await expect(body).toContainText("Tobias Ezequiel Baigorria Bruna");
+  await expect(body).toContainText("CUIT 20465498545");
+  await expect(body).toContainText("9 de Julio, casa 263");
+  // El mecanismo internacional está elegido; falta acreditar su instrumentación contractual.
   expect(await page.getByTestId("pendiente-legal").count()).toBeGreaterThan(0);
+});
+
+test("la privacidad informa el cobro externo y la retención real de pagos", async ({ page }) => {
+  await page.goto("/privacidad");
+  const body = page.locator("main");
+  await expect(body).toContainText("Mercado Pago recibe los datos que ingresás en su sitio");
+  await expect(body).toContainText("UcoMenú no almacena los datos de tu tarjeta");
+  await expect(body).toContainText("no se borran automáticamente al cumplir 10 años");
+  await expect(body).not.toContainText("confirmar este plazo con un contador");
+});
+
+test("los términos distinguen los pagos de la facturación fiscal", async ({ page }) => {
+  await page.goto("/terminos");
+  await expect(page.locator("main")).toContainText("no es una factura fiscal");
+});
+
+test("la privacidad define la auditoría y el cifrado sin afirmar contratos ya firmados", async ({ page }) => {
+  await page.goto("/privacidad");
+  const body = page.locator("main");
+  await expect(body).toContainText("10 años desde cada evento");
+  await expect(body).toContainText("AES-256-GCM");
+  await expect(body).toContainText("La clave se guarda por separado");
+  await expect(body).toContainText("Cláusulas Contractuales Modelo aprobadas por la AAIP");
+  await expect(page.getByTestId("pendiente-legal")).toHaveCount(1);
+  await expect(page.getByTestId("pendiente-legal")).toContainText("formalizar y acreditar");
 });
 
 test("la privacidad cubre las reservas: qué datos, quién los ve y cuándo se borran", async ({ page }) => {

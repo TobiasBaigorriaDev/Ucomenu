@@ -11,6 +11,7 @@ import { sql } from "./helpers";
 // Matriz cerrada de funciones: cualquier función nueva hace fallar la prueba hasta que se la declare acá,
 // con sus permisos a propósito. Columnas: [definer, anon, public, authenticated].
 const PRIVATE_FUNCTIONS: Record<string, [definer: boolean, anon: boolean, authenticated: boolean]> = {
+  purge_expired_audit_log: [true, false, false], // mantenimiento interno, sin EXECUTE para roles de API (ADR 0054)
   valid_qr_reset_times: [false, false, true],
   qr_schedule_changed: [false, false, false],
   run_scheduled_table_resets: [true, false, false],

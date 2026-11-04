@@ -1,6 +1,7 @@
 -- Datos semilla FICTICIOS para desarrollo y pruebas. Nunca datos reales de clientes.
 -- Las pruebas de RLS y E2E dependen de estos datos: si los cambiás, actualizá las pruebas.
 -- Precios en centavos de ARS.
+-- Auditoría vencida: se genera en transacciones revertidas de retencion-auditoria.rls.test.ts; no se siembra aquí.
 
 -- Organización 1: carta completa, con filas inactivas para probar que no se publican.
 -- slug_aliases inicia vacío; los escenarios de corrección generan sus propios históricos.

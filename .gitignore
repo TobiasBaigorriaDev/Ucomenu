@@ -57,3 +57,6 @@ next-env.d.ts
 /.impeccable/live/
 /.impeccable/build/
 /.impeccable/mocks/
+
+# Índice local de skills (las instrucciones originales son la fuente de verdad)
+/.atl/

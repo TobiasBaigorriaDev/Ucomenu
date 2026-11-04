@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { LegalContactText, LegalEntityText, LegalPending } from "@/components/legal/legal-contact";
 import { LegalDocument, LegalSection } from "@/components/legal/legal-document";
-import { BACKUP_RETENTION_MONTHS, RESERVATION_RETENTION_DAYS, WAITER_CALL_RETENTION_DAYS } from "@/lib/legal";
+import { AUDIT_RETENTION_YEARS, BACKUP_RETENTION_MONTHS, RESERVATION_RETENTION_DAYS, WAITER_CALL_RETENTION_DAYS } from "@/lib/legal";
 import { PENDING_RETENTION_DAYS, REJECTED_RETENTION_DAYS } from "@/lib/videos/retencion";
 
 export const metadata: Metadata = {
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
       <LegalSection title="4. Si sos dueño o parte del personal de un local">
         <p>Para ingresar al panel, a la sala o a la cocina tratamos:</p>
         <ul>
-          <li>tu email y tu contraseña (la contraseña se guarda cifrada, no en texto legible);</li>
+          <li>tu email y, si ingresás con contraseña, un hash de esa contraseña (un resultado de un solo sentido, no la contraseña en texto legible);</li>
           <li>tu rol (dueño, personal o cocina) y el local al que pertenecés;</li>
           <li>una cookie de sesión, necesaria para mantener tu ingreso y que se usa solo con ese fin;</li>
           <li>
@@ -147,18 +147,19 @@ export default function PrivacyPage() {
           </li>
           <li>
             «Me gusta» de los videos: el resultado derivado del código de tu dispositivo, mientras exista el video; el valor
-            derivado de la IP, una hora.
+            derivado de la IP, una hora, con limpieza al procesar el siguiente «me gusta» o comentario: si no hay actividad puede permanecer más tiempo.
           </li>
           <li>
             Reservas (nombre, teléfono, email y nota): {RESERVATION_RETENTION_DAYS} días después de terminada la reserva, con borrado
             automático.
           </li>
           <li>
-            Pedidos cerrados o anulados: 2 años desde el cierre. <LegalPending>confirmar este plazo con un contador</LegalPending>
+            Pedidos cerrados o anulados: 2 años desde el cierre.
           </li>
           <li>
-            Pagos registrados de cada local: 10 años desde el registro, aunque el local ya no exista, como registro contable.{" "}
-            <LegalPending>confirmar este plazo con un contador</LegalPending>
+            Pagos registrados de cada local y sus anulaciones: se conservan como registro contable mientras exista el local y,
+            como mínimo, 10 años desde el registro del pago. Después de ese plazo, si el local ya fue eliminado, el equipo de
+            UcoMenú puede purgarlos mediante una operación administrativa auditada; no se borran automáticamente al cumplir 10 años.
           </li>
           <li>
             Cuenta, carta y datos de un local: mientras el local use el servicio. Si el local se da de baja, sus datos se conservan
@@ -168,13 +169,17 @@ export default function PrivacyPage() {
             al menos una vez al año.
           </li>
           <li>
-            Registro de auditoría: no se modifica; <LegalPending>plazo de conservación del registro de auditoría</LegalPending>
+            Registro de auditoría: no se modifica durante su conservación. Se conserva mientras exista el local y, como mínimo,
+            {" "}{AUDIT_RETENTION_YEARS} años desde cada evento, para reconstruir los cambios de cuenta y cobros. Cumplidos ambos
+            requisitos, se elimina por lotes mediante una tarea diaria de mantenimiento. Los eventos sin local asociado se
+            eliminan después de {AUDIT_RETENTION_YEARS} años.
           </li>
           <li>
             Copias de seguridad: hacemos copias propias que incluyen las cuentas del personal y los datos de los locales (también
             las reservas, mientras no se hayan borrado; no los llamados), con acceso restringido. Se conservan hasta{" "}
             {BACKUP_RETENTION_MONTHS} meses (7 diarias, 4 semanales y 3 mensuales): un dato que se borra de la aplicación puede seguir
-            en una copia hasta ese plazo y después desaparece. <LegalPending>cómo se cifran las copias</LegalPending>
+            en una copia hasta ese plazo y después desaparece. Las copias propias se cifran con AES-256-GCM, que también permite
+            detectar alteraciones. La clave se guarda por separado y el acceso a las copias queda restringido al responsable.
           </li>
         </ul>
       </LegalSection>
@@ -207,9 +212,18 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
+          Si pagás la suscripción con Mercado Pago, te dirigimos a su sitio para completar el pago. Le enviamos el importe,
+          la moneda, la descripción de la suscripción y una referencia del pedido de pago; no le enviamos tu email ni datos de
+          tarjeta desde UcoMenú. Mercado Pago recibe los datos que ingresás en su sitio y los trata conforme a su propia política
+          de privacidad. Consultamos el identificador, el estado, el importe, la moneda, la referencia y la fecha de aprobación del
+          pago para registrar el cobro y gestionar sus reversiones. UcoMenú no almacena los datos de tu tarjeta.
+        </p>
+        <p>
           La base de datos y la aplicación están previstas en la región de São Paulo (Brasil), es decir, fuera de la Argentina; otros
           proveedores pueden tratar datos en otros países.{" "}
-          <LegalPending>verificar con un abogado el marco para las transferencias internacionales (art. 12 de la Ley 25.326) y, si hace falta, los contratos con cada proveedor</LegalPending>
+          Para destinos sin un nivel de protección reconocido por la autoridad argentina, el mecanismo elegido son las
+          Cláusulas Contractuales Modelo aprobadas por la AAIP, junto con los acuerdos de tratamiento y el control de
+          subencargados. <LegalPending>formalizar y acreditar los instrumentos de transferencia aplicables a cada proveedor antes de operar con datos reales</LegalPending>
         </p>
         <p>
           Lo que un local publica en su carta, incluidos los comentarios que aprobó, lo puede ver cualquiera que abra esa carta.
