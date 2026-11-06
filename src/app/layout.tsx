@@ -16,6 +16,13 @@ const hanken = Hanken_Grotesk({
 export const metadata: Metadata = {
   title: { default: "UcoMenú", template: "%s | UcoMenú" },
   description: "Menú digital para restaurantes, bares y cafeterías.",
+  // Marca verde de UcoMenú (tools/generar-iconos.mjs) para la pestaña y los accesos directos del teléfono, también en la portada y
+  // la carta pública. No son una app instalable (eso solo lo ofrece el área del personal, con su manifiesto). `favicon.ico` lo sirve
+  // Next desde `src/app`.
+  icons: {
+    icon: [{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }],
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {

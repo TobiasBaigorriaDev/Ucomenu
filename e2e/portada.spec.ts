@@ -124,6 +124,17 @@ test("la celda de videos muestra el feed en un teléfono: video mudo y en bucle 
   await expect(video).toHaveJSProperty("paused", false);
 });
 
+test("los íconos del sitio son la marca verde de UcoMenú y no el favicon por defecto de Next.js", async ({ page, request }) => {
+  await page.goto("/");
+  await expect(page.locator('link[rel="apple-touch-icon"]')).toHaveAttribute("href", "/icons/apple-touch-icon.png");
+  await expect(page.locator('link[rel="icon"][sizes="192x192"]')).toHaveAttribute("href", "/icons/icon-192.png");
+  const ico = await request.get("/favicon.ico");
+  expect(ico.ok()).toBe(true);
+  const bytes = await ico.body();
+  expect(bytes.readUInt16LE(4)).toBe(3); // 16, 32 y 48 px (tools/generar-iconos.mjs); el de Next.js era uno solo y pesaba 15 KB
+  expect(bytes.length).toBeLessThan(5000);
+});
+
 test("el feed de videos figura en Pro, con su cupo de 10", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator("article.mk-plan-pro")).toContainText("Videos cortos en tu carta");
