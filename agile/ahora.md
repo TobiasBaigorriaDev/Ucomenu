@@ -15,7 +15,7 @@ Unitarias, RLS (1654/1654) y build correctos. Desde Git Bash el test de respaldo
 ## Próximo paso
 
 1. Mirar `cron.job_run_details` en producción tras la primera ejecución de las purgas.
-2. Primer SuperAdmin a mano ([procedimiento](../docs/produccion.md), paso 2); app de Fly, secretos, dominio y purgas en ese orden.
+2. Primer SuperAdmin registrado el 2026-11-06 (única cuenta de producción; Auth con registro apagado y contraseña mínima de 10). Siguen: app de Fly (`ucomenu-prod` aún no existe; la sesión de Fly está en el volumen `ucomenu-fly-config`), secretos, `pnpm prod:check`, despliegue y dominio.
 3. Pendiente del usuario: aceptar los DPA de cada proveedor y archivar la evidencia ([expediente](../docs/transferencias-internacionales.md)); claves de Mux, Resend, Turnstile y Gemini.
 
 Migración `20261219100000` solo local y en producción cuando se haga el push; staging sigue en `20261218100000`. Siguiente libre `20261220100000`. Preservar videos, `.codegraph/`, capturas y skills sin seguimiento.
