@@ -67,7 +67,7 @@ test("el aviso de alérgenos no promete información que la carta no tiene", asy
   await expect(body).toContainText("consultale por el plato");
 });
 
-test("la privacidad nombra al responsable, el canal y los plazos de la ley, y marca a la vista lo que falta decidir", async ({ page }) => {
+test("la privacidad nombra al responsable, el canal y los plazos de la ley, y no deja marcadores pendientes", async ({ page }) => {
   await page.goto("/privacidad");
   const body = page.locator("main");
   await expect(body.getByRole("heading", { name: "1. Quién es el responsable y cómo contactarlo" })).toBeVisible();
@@ -78,8 +78,8 @@ test("la privacidad nombra al responsable, el canal y los plazos de la ley, y ma
   await expect(body).toContainText("Tobias Ezequiel Baigorria Bruna");
   await expect(body).toContainText("CUIT 20465498545");
   await expect(body).toContainText("9 de Julio, casa 263");
-  // El mecanismo internacional está elegido; falta acreditar su instrumentación contractual.
-  expect(await page.getByTestId("pendiente-legal").count()).toBeGreaterThan(0);
+  // El usuario decidió el 2026-11-06 retirar el aviso de transferencias; la acreditación contractual sigue en el expediente.
+  await expect(page.getByTestId("pendiente-legal")).toHaveCount(0);
 });
 
 test("la privacidad informa el cobro externo y la retención real de pagos", async ({ page }) => {
@@ -103,8 +103,7 @@ test("la privacidad define la auditoría y el cifrado sin afirmar contratos ya f
   await expect(body).toContainText("AES-256-GCM");
   await expect(body).toContainText("La clave se guarda por separado");
   await expect(body).toContainText("Cláusulas Contractuales Modelo aprobadas por la AAIP");
-  await expect(page.getByTestId("pendiente-legal")).toHaveCount(1);
-  await expect(page.getByTestId("pendiente-legal")).toContainText("formalizar y acreditar");
+  await expect(page.getByTestId("pendiente-legal")).toHaveCount(0);
 });
 
 test("la privacidad cubre las reservas: qué datos, quién los ve y cuándo se borran", async ({ page }) => {

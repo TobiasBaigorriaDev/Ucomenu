@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LegalContactText, LegalEntityText, LegalPending } from "@/components/legal/legal-contact";
+import { LegalContactText, LegalEntityText } from "@/components/legal/legal-contact";
 import { LegalDocument, LegalSection } from "@/components/legal/legal-document";
 import { AUDIT_RETENTION_YEARS, BACKUP_RETENTION_MONTHS, RESERVATION_RETENTION_DAYS, WAITER_CALL_RETENTION_DAYS } from "@/lib/legal";
 import { PENDING_RETENTION_DAYS, REJECTED_RETENTION_DAYS } from "@/lib/videos/retencion";
@@ -224,7 +224,7 @@ export default function PrivacyPage() {
           proveedores pueden tratar datos en otros países.{" "}
           Para destinos sin un nivel de protección reconocido por la autoridad argentina, el mecanismo elegido son las
           Cláusulas Contractuales Modelo aprobadas por la AAIP, junto con los acuerdos de tratamiento y el control de
-          subencargados. <LegalPending>formalizar y acreditar los instrumentos de transferencia aplicables a cada proveedor antes de operar con datos reales</LegalPending>
+          subencargados.
         </p>
         <p>
           Lo que un local publica en su carta, incluidos los comentarios que aprobó, lo puede ver cualquiera que abra esa carta.

@@ -110,7 +110,7 @@ fly deploy -c fly.staging.toml `
   --build-arg NEXT_PUBLIC_SUPABASE_URL=<...> --build-arg NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<...> `
   --build-arg NEXT_PUBLIC_SITE_URL=<...> --build-arg NEXT_PUBLIC_CONTACT_EMAIL=<...>
 ```
-Producción es igual con `fly.toml`. Revisar con `fly config validate` y `fly status`. Con una sola máquina, cada despliegue tiene unos segundos de corte: hacerlo fuera del horario de servicio.
+Producción es igual con `fly.toml`, agregando `--ha=false` en cada despliegue: sin máquinas previas Fly crea dos por defecto (el primer despliegue del 2026-11-06 lo hizo y se redujo con `fly scale count 1`). Revisar con `fly config validate` y `fly status`. Con una sola máquina, cada despliegue tiene unos segundos de corte: hacerlo fuera del horario de servicio.
 
 **Windows con Smart App Control (`flyctl.exe` bloqueado):** `flyctl.exe` no está firmado y Smart App Control lo bloquea («Una directiva de Control de aplicaciones bloqueó este archivo»). No hace falta apagarlo (es irreversible sin reinstalar Windows): se usa la imagen oficial en Docker, con la sesión guardada en un volumen (nunca en el repositorio). Una sola vez:
 ```bash
