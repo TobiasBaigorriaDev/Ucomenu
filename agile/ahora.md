@@ -6,7 +6,7 @@ Actualizado: 2026-11-06 · agente saliente: Claude.
 
 En `main`, con commits locales sobre `e0ca2f4` y sin push. La [revisión legal y contable](cambios/revision-legal-contable.md) quedó cerrada en lo que depende del código; falta lo contractual (ver abajo). Decisiones del usuario del 2026-11-06: Supabase de producción en **Free**; cobro con su **cuenta personal** de Mercado Pago (consultarlo con el contador); **Gemini gratis** también en producción (visto bueno de su abogado; ADR 0046 enmendado).
 
-Proyecto de Supabase de producción creado en una organización aparte (`UcoMenu`, Free, São Paulo), referencia `inkeontiwyxlyhohompf`, con Data API y RLS automático activos y sin integración con GitHub. **`supabase/.temp` está vinculado a producción**: cualquier `--linked` apunta ahí; al terminar, revincular staging. `db push --dry-run` mostró que se aplicarían todas las migraciones (base vacía). **El `db push` real aún no se ejecutó: falta la autorización del usuario.**
+Proyecto de Supabase de producción creado en una organización aparte (`UcoMenu`, Free, São Paulo), referencia `inkeontiwyxlyhohompf`, con Data API y RLS automático activos y sin integración con GitHub. **`supabase/.temp` está vinculado a producción**: cualquier `--linked` apunta ahí; al terminar, revincular staging. **El 2026-11-06 el usuario autorizó el `db push` y se aplicaron las 84 migraciones**, sin errores. Comprobado en solo lectura: bucket `product-images` público (2 MB), todas las tablas de `public` con RLS, 0 usuarios y 0 organizaciones, y `pg_cron` con `reset-scheduled-table-turns` y `purge-expired-audit-log` activas. Ese mismo día se programaron las otras seis purgas (4 a 4.f de `docs/produccion.md`): 8 tareas activas; falta revisar `cron.job_run_details` tras su primera ejecución real.
 
 ## Verificación local (2026-11-06)
 
@@ -14,7 +14,7 @@ Unitarias, RLS (1654/1654) y build correctos. Desde Git Bash el test de respaldo
 
 ## Próximo paso
 
-1. Con autorización: `pnpm exec supabase db push`, y comprobar bucket `product-images` público y las tareas de `pg_cron` (si falla la migración `20261204100000`, activar `pg_cron` en el panel).
+1. Mirar `cron.job_run_details` en producción tras la primera ejecución de las purgas.
 2. Primer SuperAdmin a mano ([procedimiento](../docs/produccion.md), paso 2); app de Fly, secretos, dominio y purgas en ese orden.
 3. Pendiente del usuario: aceptar los DPA de cada proveedor y archivar la evidencia ([expediente](../docs/transferencias-internacionales.md)); claves de Mux, Resend, Turnstile y Gemini.
 
