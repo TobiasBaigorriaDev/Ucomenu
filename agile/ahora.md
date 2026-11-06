@@ -22,7 +22,7 @@ Respaldos: tarea de Windows diaria a las 07:00 (`C:\UcoMenuPrivado\respaldo-prog
 
 1. Mañana, tras las 06:00 UTC: `cron.job_run_details` en producción y staging debe decir `succeeded`.
 2. Del usuario: monitoreo externo, DPA de cada proveedor, segunda copia fuera del PC, restauración completa de PostgreSQL.
-3. Gemini (clave gratuita) cargada en Fly; falta la prueba del usuario. Siguen apagadas: Google login, VAPID, registro autoservicio.
+3. Gemini (clave gratuita; el usuario probó que la IA funciona) y VAPID (par propio de producción, subject `mailto:uconext.digital@gmail.com`) cargados en Fly el 2026-11-06; falta probar el aviso con la pestaña cerrada en un teléfono real. Siguen apagadas: Google login y registro autoservicio.
 4. `portada.spec.ts:92` falla en esta máquina (el código es correcto).
 
 Siguiente migración libre `20261220100000`. Preservar videos, `.codegraph/`, capturas y skills sin seguimiento.
