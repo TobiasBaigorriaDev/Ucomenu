@@ -31,7 +31,8 @@ import { createRequire } from "node:module";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { parseArgs, parseEnv } from "node:util";
 import { createClient } from "@supabase/supabase-js";
-import { cifrarRespaldo, claveDeRespaldo } from "./respaldo-cifrado.mjs";
+// `respaldo-cifrado.mjs` se importa dentro de `main`, no acá: ambos son programas principales posibles y se importan entre sí.
+// Con un `import` estático, ejecutar `pnpm respaldo:abrir` dejaba a los dos esperándose («unsettled top-level await»).
 
 /** Buckets de Storage que se respaldan. Un bucket nuevo con archivos de clientes se agrega acá (y a la guía de restauración). */
 export const BUCKETS = ["product-images", "organization-logos"];
@@ -281,6 +282,7 @@ export async function main(argv, { volcar = volcarBase } = {}) {
   let args;
   let temporal;
   try {
+    const { cifrarRespaldo, claveDeRespaldo } = await import("./respaldo-cifrado.mjs");
     args = leerArgumentos(argv);
     const raizDestino = validarDestino(args.destino);
     const entorno = cargarEntorno(args);
@@ -314,7 +316,7 @@ export async function main(argv, { volcar = volcarBase } = {}) {
     const problemas = verificarRespaldo(carpeta);
     if (problemas.length > 0) throw new Fallo(`El respaldo NO pasó la verificación:\n- ${problemas.join("\n- ")}`);
     const total = archivos.reduce((suma, a) => suma + a.bytes, 0);
-    await cifrarRespaldo(carpeta, cifrado, entorno.RESPALDO_ENCRYPTION_KEY);
+    await cifrarRespaldo(carpeta, cifrado, entorno.RESPALDO_ENCRYPTION_KEY, { verificar: verificarRespaldo });
     console.log(`Cifrado y descifrado verificados: ${archivos.length} archivo(s), ${(total / 1024 / 1024).toFixed(2)} MB antes de comprimir.`);
     return 0;
   } catch (e) {

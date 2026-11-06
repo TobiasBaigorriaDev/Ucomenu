@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -35,6 +36,29 @@ describe("cifrado de respaldos", () => {
     expect(existsSync(source)).toBe(true);
     expect(existsSync(encrypted)).toBe(true);
     expect(readdirSync(root).filter((p) => p.startsWith(".descifrado-") || p.startsWith(".cifrado-"))).toEqual([]);
+  });
+
+  it("usa la verificación recibida y no importa respaldar.mjs: como programa principal ese módulo espera este cifrado", async () => {
+    const llamadas: string[] = [];
+    const ok = path.join(root, "inyectada.aes");
+    await cifrarRespaldo(source, ok, key, { verificar: (carpeta: string) => { llamadas.push(carpeta); return []; } });
+    expect(llamadas).toHaveLength(1);
+    expect(existsSync(ok)).toBe(true);
+    const malo = path.join(root, "inyectada-mala.aes");
+    await expect(cifrarRespaldo(source, malo, key, { verificar: () => ["falta algo"] })).rejects.toThrow(/no pasa la verificación/);
+    expect(existsSync(malo)).toBe(false);
+  });
+
+  it("`pnpm respaldo:abrir` funciona como programa principal (los dos módulos no se esperan entre sí)", async () => {
+    const encrypted = path.join(root, "cli.aes"), envFile = path.join(root, "cli.env"), destino = path.join(root, "cli-abierta");
+    await cifrarRespaldo(source, encrypted, key);
+    writeFileSync(envFile, `RESPALDO_ENCRYPTION_KEY=${key}\n`);
+    const r = spawnSync(process.execPath, ["tools/respaldo-cifrado.mjs", "--archivo", encrypted, "--destino", destino, "--env", envFile],
+      { encoding: "utf8", timeout: 30_000 });
+    expect(r.stderr).not.toContain("unsettled top-level await");
+    expect(r.status).toBe(0);
+    expect(r.stdout).toContain("manifiesto verificado");
+    expect(verificarRespaldo(destino)).toEqual([]);
   });
 
   it("copia repetida usa un IV diferente y no sobrescribe la anterior", async () => {

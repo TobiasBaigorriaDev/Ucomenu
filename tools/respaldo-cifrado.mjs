@@ -55,7 +55,9 @@ async function descifrarArchivo(source, target, key) {
   }
 }
 
-export async function cifrarRespaldo(source, target, keyHex) {
+// `verificar` evita importar `respaldar.mjs` desde acá: cuando ese archivo es el programa principal sigue evaluándose (espera a
+// este cifrado) y el `import()` quedaba esperándolo para siempre («unsettled top-level await»).
+export async function cifrarRespaldo(source, target, keyHex, opciones = {}) {
   const key = claveDeRespaldo(keyHex);
   archivosRegulares(source);
   const work = mkdtempSync(path.join(path.dirname(target), ".cifrado-"));
@@ -80,7 +82,7 @@ export async function cifrarRespaldo(source, target, keyHex) {
     };
     if (await digest(packed) !== await digest(checked)) throw new Error("La verificación de descifrado no coincide.");
     // Prueba el mismo flujo de recuperación que usará el operador, incluidas rutas y hashes.
-    await abrirRespaldo(encrypted, path.join(work, "recuperada"), keyHex);
+    await abrirRespaldo(encrypted, path.join(work, "recuperada"), keyHex, opciones);
     // Publicación atómica sin sobrescritura, mismo volumen que el directorio temporal.
     linkSync(encrypted, target);
   } finally {
@@ -106,7 +108,7 @@ async function extraerArchivo(archive, entry, target) {
   } catch (error) { child.kill(); throw error; }
 }
 
-export async function abrirRespaldo(source, target, keyHex) {
+export async function abrirRespaldo(source, target, keyHex, { verificar } = {}) {
   const key = claveDeRespaldo(keyHex);
   const parent = path.dirname(path.resolve(target));
   const work = mkdtempSync(path.join(parent, ".descifrado-"));
@@ -131,7 +133,7 @@ export async function abrirRespaldo(source, target, keyHex) {
       mkdirSync(path.dirname(destination), { recursive: true, mode: 0o700 });
       await extraerArchivo(archive, entry, destination);
     }
-    const { verificarRespaldo } = await import("./respaldar.mjs");
+    const verificarRespaldo = verificar ?? (await import("./respaldar.mjs")).verificarRespaldo;
     if (verificarRespaldo(restored).length) throw new Error("El respaldo recuperado no pasa la verificación del manifiesto.");
     // El padre está en el mismo volumen; el destino se publica solo después de autenticar y verificar.
     renameSync(restored, target);
