@@ -1,19 +1,21 @@
 # Ahora (handoff)
 
-Actualizado: 2026-11-04 · agente saliente: Codex.
+Actualizado: 2026-11-06 · agente saliente: Claude.
 
 ## Punto de retomada
 
-En `main`, con commits locales sobre `e0ca2f4`, sin push ni despliegue. La [revisión legal y contable](cambios/revision-legal-contable.md) continúa con [auditoría, cifrado y transferencias](cambios/retencion-cifrado-transferencias.md), nivel C. El usuario pidió recomendar y aplicar las soluciones y confirmó aprobación previa de abogado y contador. Responsable y contacto están completos; la fecha pública y la aceptación del alta comparten `LEGAL_VERSION`. La ficha C contiene decisiones, resultados y límites, sin copiarlos aquí.
+En `main`, con commits locales sobre `e0ca2f4` y sin push. La [revisión legal y contable](cambios/revision-legal-contable.md) quedó cerrada en lo que depende del código; falta lo contractual (ver abajo). Decisiones del usuario del 2026-11-06: Supabase de producción en **Free**; cobro con su **cuenta personal** de Mercado Pago (consultarlo con el contador); **Gemini gratis** también en producción (visto bueno de su abogado; ADR 0046 enmendado).
 
-Auditoría: mínimo 10 años y mientras exista el local o queden pagos/anulaciones asociados; preserva la baja y la identidad contable de locales borrados. Copias: `pnpm respaldo` exige clave y produce `.tar.gz.aes`; apertura con `pnpm respaldo:abrir`. Uso y límites en [la guía](../docs/respaldo-cifrado.md). Los temporales en claro requieren volumen cifrado. No se creó una clave permanente ni se programó una copia real. Ensayo repetible: `tests/integration/respaldo-cifrado.mjs`.
+Proyecto de Supabase de producción creado en una organización aparte (`UcoMenu`, Free, São Paulo), referencia `inkeontiwyxlyhohompf`, con Data API y RLS automático activos y sin integración con GitHub. **`supabase/.temp` está vinculado a producción**: cualquier `--linked` apunta ahí; al terminar, revincular staging. `db push --dry-run` mostró que se aplicarían todas las migraciones (base vacía). **El `db push` real aún no se ejecutó: falta la autorización del usuario.**
 
-Migración `20261219100000` aplicada solo localmente; staging continúa en `20261218100000`. Siguiente libre `20261220100000`. Registro autoservicio en staging según [su ficha](cambios/registro-autoservicio.md). Imagen de recuperación: `registry.fly.io/ucomenu-staging:registro-cd80cb4-git` (v100); `cobro-3b9c6d2-git` (v95) retira el registro. Skill legal de usuario: `C:/Users/tobib/.codex/skills/revision-legal-contable-ar/SKILL.md`.
+## Verificación local (2026-11-06)
 
-## Bloqueos y próximo paso
+Unitarias, RLS (1654/1654) y build correctos. Desde Git Bash el test de respaldos falla por el `tar` de GNU; en PowerShell pasa. E2E: se corrigieron dos pruebas desactualizadas (`alta-guiada`, `sala`); `videos-mux`, `panel-push` y `superadmin-cuentas-sin-local` fueron intermitentes. Sigue fallando `portada.spec.ts:92` (el Chromium de esta máquina ahora reproduce el video y la prueba no lo prevé); el código del botón es correcto. Revisar con un navegador real.
 
-Revisión independiente aprobada sobre `3f786ff`: Claude pidió cambios y agotó su cuota al verificar; una sesión limpia de Codex comprobó las correcciones en solo lectura. Evidencia y límites en la ficha C. Las transferencias tienen mecanismo y anexos preparados, pero falta acreditar aceptación de contrapartes conforme al [expediente](../docs/transferencias-internacionales.md). Antes de producción: formalizar instrumentos, configurar clave/volumen, programar copias y ensayar restauración integral. Seguir [producción](../docs/produccion.md) para cuentas y despliegue.
+## Próximo paso
 
-Mercado Pago: rechazo todavía sin evidencia. Siguen recomendados DMARC y dominio propio de Auth. Tras actualizar Auth, comprobar acceso de cuentas creadas por servidor.
+1. Con autorización: `pnpm exec supabase db push`, y comprobar bucket `product-images` público y las tareas de `pg_cron` (si falla la migración `20261204100000`, activar `pg_cron` en el panel).
+2. Primer SuperAdmin a mano ([procedimiento](../docs/produccion.md), paso 2); app de Fly, secretos, dominio y purgas en ese orden.
+3. Pendiente del usuario: aceptar los DPA de cada proveedor y archivar la evidencia ([expediente](../docs/transferencias-internacionales.md)); claves de Mux, Resend, Turnstile y Gemini.
 
-Docker se reinició para verificar localmente. OneDrive afecta E2E. Preservar videos, `.codegraph/`, capturas, skills y configuraciones preexistentes sin seguimiento.
+Migración `20261219100000` solo local y en producción cuando se haga el push; staging sigue en `20261218100000`. Siguiente libre `20261220100000`. Preservar videos, `.codegraph/`, capturas y skills sin seguimiento.

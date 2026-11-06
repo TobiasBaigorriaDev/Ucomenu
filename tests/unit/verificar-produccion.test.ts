@@ -63,9 +63,9 @@ describe("evaluarEntorno", () => {
     expect(r.errores.join(" ")).toContain("NEXT_PUBLIC_ALGO");
   });
 
-  it("Gemini: sin clave avisa que la IA queda apagada; con clave recuerda que tiene que ser de pago", () => {
+  it("Gemini: sin clave avisa que la IA queda apagada; con clave recuerda lo que implica la gratuita", () => {
     expect(evaluarEntorno(con({ GEMINI_API_KEY: undefined })).avisos.join(" ")).toContain("quedan apagados");
-    expect(evaluarEntorno(BUENO).avisos.join(" ")).toContain("NO la gratuita");
+    expect(evaluarEntorno(BUENO).avisos.join(" ")).toContain("gratuita de AI Studio");
   });
 
   it("la demo de la portada: sin definir o apuntando a staging avisa", () => {

@@ -186,7 +186,7 @@ test.describe("rol y estado de la cuenta", () => {
 
       expect(await estados(page)).toEqual(["carta:paused", "mesas:paused", "qr:waiting"]);
       await expect(paso(page, "carta")).toContainText("En pausa");
-      await expect(page.getByTestId("guia-pasos").getByRole("link")).toHaveCount(0);
+      await expect(page.getByTestId("guia-paso").getByRole("link")).toHaveCount(0);
       await expect(page.getByTestId("guia-bloqueada")).toContainText(texto);
       await expect(page.getByTestId("guia-bloqueada")).toContainText("Suscripción");
       await expectNoHorizontalOverflow(page);
@@ -199,7 +199,7 @@ test.describe("rol y estado de la cuenta", () => {
     const aviso = page.getByTestId("guia-bloqueada");
     await expect(aviso).toContainText("Avisale al dueño");
     await expect(aviso).not.toContainText("Suscripción");
-    await expect(page.getByTestId("guia-pasos").getByRole("link")).toHaveCount(0);
+    await expect(page.getByTestId("guia-paso").getByRole("link")).toHaveCount(0);
   });
 
   test("en solo lectura con mesas activas se puede igualmente imprimir los QR", async ({ page }) => {

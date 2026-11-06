@@ -160,7 +160,7 @@ export function evaluarEntorno(env) {
   if (vacio(env.GEMINI_API_KEY)) {
     aviso("GEMINI_API_KEY: no está; «Sugerir con IA» y el resumen de la analítica quedan apagados (la portada anuncia el resumen en Pro).");
   } else {
-    aviso("GEMINI_API_KEY: está definida; confirmá que es la clave de un proyecto de Google con facturación (servicio de pago) y NO la gratuita de AI Studio: el resumen envía cifras de ventas reales.");
+    aviso("GEMINI_API_KEY: está definida; si es la gratuita de AI Studio (sin facturación), Google puede usar lo enviado para mejorar sus productos y el resumen envía cifras de ventas reales; el usuario lo aceptó el 2026-11-06.");
   }
 
   // Carta de demostración de la portada: si no se define al construir, apunta a staging.

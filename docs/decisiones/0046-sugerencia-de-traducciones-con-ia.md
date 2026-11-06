@@ -1,5 +1,6 @@
 # 0046 — Sugerencia de traducciones con IA: el servicio propone, el local revisa y publica
 
+- **Enmienda 2026-11-06:** el usuario decidió, con el visto bueno de su abogado, usar también la clave gratuita en producción; deja de regir la frase «no se usa esa clave en producción» de la decisión 3. La privacidad ya nombra a Google (Gemini) sin prometer que no use los datos.
 - Estado: aceptada (el usuario eligió el 2026-10-25 empezar con Gemini por su clave gratuita y pasar a Claude en producción si funciona bien)
 - Fecha: 2026-10-25
 

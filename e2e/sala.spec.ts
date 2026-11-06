@@ -331,7 +331,8 @@ test.describe("vista por sucursal", () => {
     // El sondeo tarda: entre guardar la primera elección y que el servidor la devuelva, la pantalla todavía trae la vista vieja.
     await page.route("**/sala/*/mesas/estado", async (route) => {
       await new Promise((resolve) => setTimeout(resolve, 2_500));
-      await route.continue();
+      // Al quitar la ruta con una petición en espera, Playwright ya la resolvió: continuar de nuevo lanza «Route is already handled!».
+      await route.continue().catch(() => {});
     });
 
     await chip(page, "Centro").click();
