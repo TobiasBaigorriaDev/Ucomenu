@@ -2,22 +2,28 @@
 
 Actualizado: 2026-11-06 · agente saliente: Claude.
 
+## ⚠ Cambio temporal en producción
+
+Para el ensayo de Mercado Pago, el precio **mensual de Pro** en producción está en 100 pesos (`plans.monthly_price_cents = 10000`). **Devolverlo al terminar** (29.000 pesos):
+`pnpm exec supabase db query --linked "update public.plans set monthly_price_cents = 2900000 where code = 'pro' and monthly_price_cents = 10000 returning code, monthly_price_cents"`
+Después comprobar Básico 1490000 y Pro 2900000. `supabase/.temp` está vinculado a **producción**: al terminar, revincular staging.
+
 ## Punto de retomada
 
-En `main`, con commits locales sobre `e0ca2f4` y sin push. La [revisión legal y contable](cambios/revision-legal-contable.md) quedó cerrada en lo que depende del código; falta lo contractual (ver abajo). Decisiones del usuario del 2026-11-06: Supabase de producción en **Free**; cobro con su **cuenta personal** de Mercado Pago (consultarlo con el contador); **Gemini gratis** también en producción (visto bueno de su abogado; ADR 0046 enmendado).
+En `main`, 20 commits locales sin push. Producción en marcha desde el 2026-11-06: Supabase `inkeontiwyxlyhohompf` (Free, 84 migraciones, 8 tareas `pg_cron`), Fly `ucomenu-prod` (una máquina; desplegar siempre con `--ha=false`; sesión en el volumen Docker `ucomenu-fly-config`) y `https://ucomenu.com` con certificado. Probados: login, recuperación de contraseña, alta de organización, carta, QR, llamado, subida de video a Mux. El registro autoservicio sigue apagado en Auth a propósito. Un único SuperAdmin.
 
-Proyecto de Supabase de producción creado en una organización aparte (`UcoMenu`, Free, São Paulo), referencia `inkeontiwyxlyhohompf`, con Data API y RLS automático activos y sin integración con GitHub. **`supabase/.temp` está vinculado a producción**: cualquier `--linked` apunta ahí; al terminar, revincular staging. **El 2026-11-06 el usuario autorizó el `db push` y se aplicaron las 84 migraciones**, sin errores. Comprobado en solo lectura: bucket `product-images` público (2 MB), todas las tablas de `public` con RLS, 0 usuarios y 0 organizaciones, y `pg_cron` con `reset-scheduled-table-turns` y `purge-expired-audit-log` activas. Ese mismo día se programaron las otras seis purgas (4 a 4.f de `docs/produccion.md`): 8 tareas activas; falta revisar `cron.job_run_details` tras su primera ejecución real.
+Decisiones del usuario: Supabase Free (pasar a Pro con el primer cliente que paga), cobro con su cuenta personal de Mercado Pago (contador de acuerdo, plazo de 2 años de pedidos confirmado), Gemini gratuito, aviso de privacidad sobre transferencias retirado.
 
-## Verificación local (2026-11-06)
+Respaldos: tarea de Windows diaria a las 07:00 (`C:\UcoMenuPrivado\respaldo-programado.ps1`, copias en `C:\UcoMenuCopias`, clave en `produccion.env`). Contratos con proveedores preparados en `C:\UcoMenuPrivado\contratos`, nada enviado ni aceptado.
 
-Unitarias, RLS (1654/1654) y build correctos. Desde Git Bash el test de respaldos falla por el `tar` de GNU; en PowerShell pasa. E2E: se corrigieron dos pruebas desactualizadas (`alta-guiada`, `sala`); `videos-mux`, `panel-push` y `superadmin-cuentas-sin-local` fueron intermitentes. Sigue fallando `portada.spec.ts:92` (el Chromium de esta máquina ahora reproduce el video y la prueba no lo prevé); el código del botón es correcto. Revisar con un navegador real.
+Mercado Pago: aplicación «UcoMenu» (ID 8903312194420057) con webhook de pagos y secretos cargados en Fly. Falta el pago real de ensayo y el reembolso (ver [producción](../docs/produccion.md), 3c).
 
 ## Próximo paso
 
-1. Mirar `cron.job_run_details` en producción tras la primera ejecución de las purgas.
-2. Primer SuperAdmin registrado el 2026-11-06 (única cuenta de producción; Auth con registro apagado y contraseña mínima de 10). `ucomenu-prod` desplegada en Fly el 2026-11-06 (`https://ucomenu-prod.fly.dev`, una sola máquina en `gru` (desplegar siempre con `--ha=false`); la sesión de Fly está en el volumen `ucomenu-fly-config`), con `prod:check` en 0 errores; Mux, Gemini, VAPID, Google y Mercado Pago sin cargar (sus webhooks responden 503). Comprobado: cabeceras, robots, sin cookies, `/admin` redirige a login. El usuario pidió retirar el único marcador de `/privacidad` (transferencias) y quedó desplegado (versión 2); la acreditación de los DPA sigue pendiente en el [expediente](../docs/transferencias-internacionales.md). `ucomenu.com` apunta a Fly desde el 2026-11-06 (A/AAAA en Cloudflare «DNS only», certificado emitido). *Site URL* de Auth, SMTP de Resend (dominio verificado) y plantillas cargados; la recuperación de contraseña se probó de punta a punta el 2026-11-06 (el correo llega y el enlace abre la pantalla de contraseña nueva). Las claves de Turnstile se habían cargado con `<>` literales: se corrigieron. La clave de servicio y `WAITER_CALL_CLIENT_SECRET` también tenían `<>` literales; corregidas y el alta de una organización de ensayo en `/admin` funciona. El registro autoservicio sigue apagado en Auth a propósito. Siguen: probar la carta, el QR y el llamado del local de ensayo, Mux, Mercado Pago, Google, respaldos, monitoreo, QR.
-3. Pendiente del usuario: aceptar los DPA de cada proveedor y archivar la evidencia ([expediente](../docs/transferencias-internacionales.md)); claves de Mux, Resend, Turnstile y Gemini.
+1. Terminar el ensayo de Mercado Pago, reembolsar, anular el pago y **restaurar el precio**.
+2. Mirar `cron.job_run_details` tras la primera ejecución de las purgas (06:00 UTC).
+3. Del usuario: monitoreo externo, DPA de cada proveedor, segunda copia fuera del PC, restauración completa de PostgreSQL.
+4. Funciones apagadas: Gemini, Google login, VAPID, registro autoservicio.
+5. Limpieza: revincular staging, migrar staging a `20261219100000`, push a `origin`. `portada.spec.ts:92` falla en esta máquina (el código es correcto).
 
-**Copias (2026-11-06):** primera copia cifrada de producción en `C:\UcoMenuCopias` (clave en `C:\UcoMenuPrivado\produccion.env`, de la que el usuario guarda copia en su gestor). Se corrigió un bloqueo circular entre `respaldar.mjs` y `respaldo-cifrado.mjs` que impedía terminar tanto `pnpm respaldo` como `pnpm respaldo:abrir` (prueba de regresión agregada); la copia se abrió y verificó, y se borró la copia en claro. El usuario confirmó el cifrado del disco. Tarea programada de Windows «UcoMenu respaldo produccion» (script fuera del repositorio en `C:\UcoMenuPrivado\respaldo-programado.ps1`, log en `C:\UcoMenuCopias\respaldo.log`): diaria a las 07:00 (el usuario la cambió de cada 3 días a diaria el mismo 2026-11-06), corre al encender el PC si se omitió, y conserva 90 días; probada a mano. Expediente de contratos con proveedores en `C:\UcoMenuPrivado\contratos` (registro y borradores de pedido; nada enviado ni aceptado todavía). El usuario confirmó lo hablado con su contador (cuenta personal de Mercado Pago y plazo de 2 años de pedidos). Faltan: segunda copia fuera del PC y ensayar una restauración completa de PostgreSQL.
-
-Migración `20261219100000` aplicada en local y en producción; staging sigue en `20261218100000`. Siguiente libre `20261220100000`. Preservar videos, `.codegraph/`, capturas y skills sin seguimiento.
+Siguiente migración libre `20261220100000`. Preservar videos, `.codegraph/`, capturas y skills sin seguimiento.
