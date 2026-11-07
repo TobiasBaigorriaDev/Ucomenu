@@ -9,6 +9,7 @@ import { siteBaseUrl } from "@/lib/cobro/mercadopago";
 import type { FormState } from "@/lib/form-state";
 import { createPublicClient } from "@/lib/supabase/public-client";
 import { createSessionClient } from "@/lib/supabase/server";
+import { claimProvisionedMailbox } from "./buzon-sesion";
 import { authMethods, cameFromEmailLink, parseLinkType, parseTokenHash } from "./registro";
 
 /**
@@ -79,7 +80,11 @@ export async function confirmLinkAction(_previous: FormState, formData: FormData
   const { data, error } = await session.auth.verifyOtp({ token_hash: tokenHash, type });
   if (error || !data.user) return { error: expired };
 
-  redirect(type === "recovery" ? "/cuenta/nueva-contrasena" : await postLoginPath(data.user.id, null, session));
+  // Una cuenta que creó un Dueño tiene la contraseña del Dueño: al probar el correo se reemplaza y la persona elige la suya.
+  const claimed = await claimProvisionedMailbox(session, data.user);
+  if (claimed === "failed") return { error: "No pudimos terminar de confirmar tu correo. Probá de nuevo en unos minutos." };
+
+  redirect(type === "recovery" || claimed === "claimed" ? "/cuenta/nueva-contrasena" : await postLoginPath(data.user.id, null, session));
 }
 
 /** Empieza el ingreso con Google. El verificador PKCE queda en una cookie: un retorno ajeno no inicia sesión. */

@@ -235,6 +235,26 @@ describe("self_register_organization", () => {
     expect(inexistente.error?.code).toBe("42501");
   });
 
+  it("rechaza una cuenta que creó un Dueño (email confirmado sin probar el buzón) y la acepta cuando la persona lo prueba", async () => {
+    const creada = await service.auth.admin.createUser({
+      email: `reg-creada-${sufijo}@example.test`,
+      password: "contrasena-larga-123",
+      email_confirm: true,
+      app_metadata: { mailbox: "unverified" },
+    });
+    const id = creada.data.user!.id;
+    authIds.push(id);
+
+    const rechazada = await alta(id, `tt-reg-${sufijo}-cd1`);
+    expect(rechazada.error?.code).toBe("42501");
+    expect(rechazada.error?.message).toContain("email_not_confirmed");
+    expect((await service.from("memberships").select("id").eq("user_id", id)).data).toEqual([]);
+
+    // La persona prueba su correo: la app reemplaza la contraseña y cambia la marca.
+    await service.auth.admin.updateUserById(id, { app_metadata: { mailbox: "verified" } });
+    await altaOk(id, `tt-reg-${sufijo}-cd2`);
+  });
+
   it("no da una segunda prueba a quien ya es Dueño", async () => {
     const user = await cuentaConfirmada();
     await altaOk(user, `tt-reg-${sufijo}-d1`);

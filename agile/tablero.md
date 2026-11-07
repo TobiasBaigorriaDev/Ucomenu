@@ -18,6 +18,8 @@ Actualizado: 2026-11-01. «Hecho» indica alcance implementado e integrado. De �
 
 ## Para verificar
 
+- [C] Cuentas creadas por un Dueño no prueban un buzón: marca `mailbox`, contraseña ajena reemplazada al probar el correo, tope de 60 personas; implementado y probado en local, revisión independiente hecha; falta commit remoto, aprobación del usuario, migración `20261220100000` y despliegue (origen: auditoría run-2, 2026-11-07) → [ficha](cambios/cuentas-creadas-por-duenos.md)
+
 - [C] Auditoría, cifrado y transferencias: implementadas y verificadas en local, revisión independiente aprobada; mecanismo y anexos preparados, pendiente formalización contractual y configuración operativa antes de producción → [ficha](cambios/retencion-cifrado-transferencias.md)
 - [M] Revisión legal/contable: aprobación profesional confirmada, responsable/contacto completados y discrepancias corregidas; continuación en la ficha C anterior → [ficha](cambios/revision-legal-contable.md)
 

@@ -3,6 +3,7 @@ import { changeOwnPassword } from "@/lib/auth/account";
 import {
   createMember,
   listMembers,
+  MAX_MEMBERS_PER_ORG,
   removeMember,
   resetMemberPassword,
   setMemberBranches,
@@ -89,6 +90,78 @@ afterAll(async () => {
   for (const id of orgs) await deleteOrg(service, id);
   for (const id of creadosPorElModulo) await service.auth.admin.deleteUser(id);
   for (const u of users) await deleteUser(service, u);
+});
+
+describe("cuentas creadas por el Dueño (ficha cuentas-creadas-por-duenos)", () => {
+  const marca = async (userId: string) => ((await service.auth.admin.getUserById(userId)).data.user?.app_metadata as { mailbox?: string } | undefined)?.mailbox;
+
+  it("la cuenta que crea el Dueño lleva la marca de buzón sin verificar", async () => {
+    const org = await nuevaOrg("marca");
+    const dueno = await miembro(org, "marca-d", "owner");
+
+    const r = await alta(org, dueno, "marca-s");
+
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(await marca(r.data.userId)).toBe("unverified");
+  });
+
+  it("mientras el correo no se probó, el Dueño sigue pudiendo restablecer la contraseña", async () => {
+    const org = await nuevaOrg("marca-reset");
+    const dueno = await miembro(org, "marca-reset-d", "owner");
+    const alta1 = await alta(org, dueno, "marca-reset-s");
+    if (!alta1.ok) throw new Error("alta");
+
+    const r = await resetMemberPassword(ctx(dueno), org, (await membresia(org, alta1.data.userId))!.id, NUEVA);
+
+    expect(r.ok).toBe(true);
+    expect(await puedeEntrar(correo("marca-reset-s"), NUEVA)).toBe(true);
+  });
+
+  it("cuando la persona probó su correo, el Dueño ya no le restablece la contraseña", async () => {
+    const org = await nuevaOrg("marca-verif");
+    const dueno = await miembro(org, "marca-verif-d", "owner");
+    const alta1 = await alta(org, dueno, "marca-verif-s");
+    if (!alta1.ok) throw new Error("alta");
+    await service.auth.admin.updateUserById(alta1.data.userId, { password: NUEVA, app_metadata: { mailbox: "verified" } });
+    // Cambiar la marca no pisa el resto de app_metadata (proveedor de ingreso).
+    expect(((await service.auth.admin.getUserById(alta1.data.userId)).data.user?.app_metadata as { provider?: string }).provider).toBe("email");
+
+    const r = await resetMemberPassword(ctx(dueno), org, (await membresia(org, alta1.data.userId))!.id, "clave-del-duenio-999");
+
+    expect(r).toEqual({ ok: false, error: "mailbox_verified" });
+    expect(await puedeEntrar(correo("marca-verif-s"), "clave-del-duenio-999")).toBe(false);
+    expect(await puedeEntrar(correo("marca-verif-s"), NUEVA)).toBe(true);
+  });
+
+  it("las cuentas anteriores, sin marca, siguen pudiéndose restablecer", async () => {
+    const org = await nuevaOrg("marca-vieja");
+    const dueno = await miembro(org, "marca-vieja-d", "owner");
+    const staff = await miembro(org, "marca-vieja-s", "staff"); // creada sin marca, como las de antes
+
+    const r = await resetMemberPassword(ctx(dueno), org, (await membresia(org, staff.id))!.id, NUEVA);
+
+    expect(r.ok).toBe(true);
+  });
+
+  it("un local no puede pasar del tope de personas", async () => {
+    const org = await nuevaOrg("tope");
+    const dueno = await miembro(org, "tope-d", "owner");
+    const relleno = await Promise.all(
+      Array.from({ length: MAX_MEMBERS_PER_ORG - 1 }, (_, i) =>
+        service.auth.admin.createUser({ email: `rls-per-tope-${i}-${sufijo}@example.test`, password: TEST_PASSWORD, email_confirm: true }),
+      ),
+    );
+    const ids = relleno.map((c) => c.data.user!.id);
+    creadosPorElModulo.push(...ids);
+    const insertadas = await service.from("memberships").insert(ids.map((user_id) => ({ user_id, organization_id: org, role: "staff" as const })));
+    expect(insertadas.error).toBeNull();
+
+    const r = await alta(org, dueno, "tope-extra");
+
+    expect(r).toEqual({ ok: false, error: "member_limit" });
+    expect(await puedeEntrar(correo("tope-extra"), TEST_PASSWORD)).toBe(false);
+  });
 });
 
 describe("alta de personal", () => {
@@ -217,7 +290,11 @@ describe("alta de personal", () => {
         if (prop === "from") {
           return (tabla: string) =>
             tabla === "memberships"
-              ? { insert: async () => ({ error: { message: "falla simulada", code: "XX000" } }) }
+              ? {
+                  insert: async () => ({ error: { message: "falla simulada", code: "XX000" } }),
+                  // La cuenta del tope de personas sí lee la tabla real.
+                  select: (columnas: string, opciones?: { count?: "exact"; head?: boolean }) => target.from("memberships").select(columnas, opciones),
+                }
               : target.from(tabla as "memberships");
         }
         const valor = Reflect.get(target, prop);

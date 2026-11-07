@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { normalizeEmail, validatePassword, type PasswordProblem } from "@/lib/auth/validation";
 import { parseEntitlements, type Role } from "@/lib/entitlements";
+import { MAILBOX_UNVERIFIED, MAILBOX_VERIFIED, mailboxState, throwawayPassword } from "@/lib/registro/buzon";
 import type { Database } from "@/lib/supabase/database.types";
 import { parseBranchIds } from "@/lib/sucursales/vista";
 
@@ -43,6 +44,8 @@ export type PersonnelError =
   | "shared_account" // la persona pertenece a otra organización o es de la plataforma (no se distingue)
   | "busy" // otra operación global sobre esa cuenta está en curso
   | "owner_target" // restablecer la contraseña de un Dueño
+  | "mailbox_verified" // la persona ya probó su correo: elige su propia contraseña, el Dueño no la restablece
+  | "member_limit" // tope de personas por local
   | "self" // sobre uno mismo
   | "not_found"
   | "unexpected";
@@ -67,10 +70,15 @@ export const PERSONNEL_ERROR_MESSAGE: Record<PersonnelError, string> = {
   shared_account: "Esta cuenta se usa también fuera de este local: su contraseña y su cuenta no se pueden cambiar desde acá. Podés quitarla de este local.",
   busy: "Hay otra operación en curso sobre esta cuenta. Probá de nuevo en unos segundos.",
   owner_target: "La contraseña de un Dueño la cambia cada uno desde Mi cuenta.",
+  mailbox_verified: "Esta persona ya confirmó su correo y elige su propia contraseña: que use «Olvidé mi contraseña» en la pantalla de ingreso.",
+  member_limit: "Llegaste al máximo de personas por local. Quitá a quien ya no trabaja ahí o escribinos si necesitás más.",
   self: "No podés hacer esto con tu propia cuenta. Pedile a otro Dueño o usá Mi cuenta.",
   not_found: "No encontramos a esa persona en este local.",
   unexpected: "No se pudo completar la acción. Probá de nuevo en unos minutos.",
 };
+
+/** Tope de personas (todos los roles) por local. Un local real no se acerca; limita las cuentas que un Dueño puede crear. */
+export const MAX_MEMBERS_PER_ORG = 60;
 
 const isRole = (value: unknown): value is Role => value === "owner" || value === "staff" || value === "cook";
 
@@ -229,7 +237,21 @@ export async function createMember(
   if (!(await canWrite(ctx, orgId))) return fail("read_only");
   if (input.role === "cook" && !(await hasOrders(ctx, orgId))) return fail("plan_without_orders");
 
-  const created = await ctx.admin.auth.admin.createUser({ email, password: input.password, email_confirm: true });
+  const { count: memberCount, error: countError } = await ctx.admin
+    .from("memberships")
+    .select("id", { count: "exact", head: true })
+    .eq("organization_id", orgId);
+  if (countError) return fail("unexpected");
+  if ((memberCount ?? 0) >= MAX_MEMBERS_PER_ORG) return fail("member_limit");
+
+  // El email figura confirmado, pero nadie probó el buzón: la marca impide que la cuenta abra locales con prueba gratis y hace que la
+  // contraseña del Dueño se reemplace cuando la persona pruebe su correo (src/lib/registro/buzon.ts).
+  const created = await ctx.admin.auth.admin.createUser({
+    email,
+    password: input.password,
+    email_confirm: true,
+    app_metadata: { mailbox: MAILBOX_UNVERIFIED },
+  });
   if (created.error || !created.data.user) {
     const code = created.error?.code;
     if (code === "email_exists" || code === "user_already_exists") return fail("email_unavailable");
@@ -382,8 +404,21 @@ export async function resetMemberPassword(
   if (typeof data.user_id !== "string" || typeof data.token !== "string") return fail("unexpected");
 
   try {
+    // Con el correo probado la cuenta es de la persona: el Dueño ya no le pone una contraseña que él conoce. Se lee con la cuenta reservada.
+    const current = await ctx.admin.auth.admin.getUserById(data.user_id);
+    if (current.error || !current.data.user) return fail("unexpected");
+    if (mailboxState(current.data.user.app_metadata) === MAILBOX_VERIFIED) return fail("mailbox_verified");
+
     const { error: authError } = await ctx.admin.auth.admin.updateUserById(data.user_id, { password: newPassword });
     if (authError) return fail(authError.code === "weak_password" ? "too_short" : "unexpected");
+
+    // Si la persona probó su correo justo entre la lectura de arriba y esta escritura, la contraseña del Dueño pisó la que puso el
+    // servidor: se vuelve a poner una al azar (ficha cuentas-creadas-por-duenos).
+    const after = await ctx.admin.auth.admin.getUserById(data.user_id);
+    if (!after.error && mailboxState(after.data.user?.app_metadata) === MAILBOX_VERIFIED) {
+      await ctx.admin.auth.admin.updateUserById(data.user_id, { password: throwawayPassword() });
+      return fail("mailbox_verified");
+    }
     return ok(undefined);
   } finally {
     await endOperation(ctx, data.user_id, data.token);
