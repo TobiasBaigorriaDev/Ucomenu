@@ -23,7 +23,7 @@ Respaldos: tarea de Windows diaria a las 07:00 (`C:\UcoMenuPrivado\respaldo-prog
 ## Próximo paso
 
 1. Tras las 06:00 UTC: `cron.job_run_details` en producción y staging debe decir `succeeded`, incluida la purga de cuentas sin confirmar.
-2. Del usuario: monitoreo externo, DPA de cada proveedor, segunda copia fuera del PC, restauración completa de PostgreSQL, probar el aviso push en un teléfono real.
+2. Del usuario: segunda copia fuera del PC, restauración completa de PostgreSQL, probar el aviso push en un teléfono real.
 3. `portada.spec.ts:92` falla en esta máquina (el código es correcto).
 
 Siguiente migración libre `20261220100000`. Preservar videos, `.codegraph/`, capturas y skills sin seguimiento.
