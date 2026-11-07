@@ -1,5 +1,5 @@
 # Cambio: Cuentas creadas por un Dueño no son prueba de un buzón
-Estado: **implementado y probado en local; sin commit remoto ni despliegue** (producción y staging necesitan aprobación aparte).
+Estado: **desplegado en staging y en producción (2026-11-07), probado por el usuario en staging con dos correos**. Commits locales `5717d67` y `427504e`, sin push.
 Nivel: **C** — toca identidad y autorización (cuentas, contraseñas), la prueba gratis (dinero) y el registro público. Origen: auditoría de seguridad run-2 (2026-11-07), hallazgos `auth/owner-provisioned-confirmed-account-for-unproven-email` (media) y `registro/trial-gate-trusts-owner-minted-confirmed-accounts` (baja), y la pista `auth/owner-minted-account-keeps-known-password-after-google-link`.
 
 ## Problema
@@ -32,8 +32,8 @@ Nivel: **C** — toca identidad y autorización (cuentas, contraseñas), la prue
 - [x] De punta a punta contra el build y el buzón local: entrar con la contraseña del Dueño no cambia nada; entrar por el enlace del correo reemplaza esa contraseña, deja a la persona elegir la suya y la del Dueño deja de servir (`e2e/cuentas-creadas-por-duenos.spec.ts`).
 - [x] El Dueño restablece la contraseña mientras `unverified` o sin marca, y no cuando está `verified` (`personnel.rls.test.ts`).
 - [x] El Dueño no pasa de 60 personas por local (`personnel.rls.test.ts`).
-- [ ] Prueba manual en staging con dos buzones: crear una cuenta como Dueño, entrar con el enlace del correo y comprobar que la contraseña del Dueño ya no sirve; repetir con Google (también valida la pista de enlace de identidades).
-- [ ] Revisión independiente (nivel C) y aprobación del usuario antes de aplicar la migración y desplegar.
+- [x] Prueba manual en staging con dos correos: la contraseña del Dueño dejó de servir tras entrar con el enlace (2026-11-07). Pendiente la variante con Google (valida la pista de enlace de identidades).
+- [x] Revisión independiente (nivel C) y aprobación del usuario; migración aplicada y app desplegada en staging y producción.
 
 ## Evidencia
 Typecheck y lint sin errores. Unitarias: 1473 casos, los 11 fallos de `respaldo-cifrado` son el problema conocido de `tar` en Git Bash y pasan (12/12) en PowerShell. RLS (base local): `personnel`, `cuentas-globales`, `cuentas-sin-local`, `acl` y `registro-autoservicio`, 133 casos verdes. Commit: pendiente.
