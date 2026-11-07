@@ -82,7 +82,7 @@ export async function confirmLinkAction(_previous: FormState, formData: FormData
 
   // Una cuenta que creó un Dueño tiene la contraseña del Dueño: al probar el correo se reemplaza y la persona elige la suya.
   const claimed = await claimProvisionedMailbox(session, data.user);
-  if (claimed === "failed") return { error: "No pudimos terminar de confirmar tu correo. Probá de nuevo en unos minutos." };
+  if (claimed === "failed") return { error: "No pudimos terminar de confirmar tu correo. Pedí otro enlace e intentá de nuevo." };
 
   redirect(type === "recovery" || claimed === "claimed" ? "/cuenta/nueva-contrasena" : await postLoginPath(data.user.id, null, session));
 }

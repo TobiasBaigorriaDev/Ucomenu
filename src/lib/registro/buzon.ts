@@ -31,21 +31,16 @@ export function throwawayPassword(): string {
 }
 
 /**
- * Reemplaza la contraseña ajena de una cuenta que nació de un Dueño, en este orden: (1) contraseña al azar, (2) `revokeOthers` cierra las
- * demás sesiones (tiene que lanzar si falla) y (3) recién entonces la marca pasa a `verified`. Si algo falla en el medio la cuenta sigue
- * `unverified` y el próximo enlace lo reintenta; nunca queda marcada como verificada con sesiones del Dueño vivas. Devuelve `true` si
- * hubo que reemplazarla, `false` si la cuenta no lo necesitaba. Lanza si falla: quien llama tiene que cortar la sesión (falla cerrado).
+ * Reemplaza la contraseña ajena de una cuenta que nació de un Dueño: (1) contraseña al azar, (2) marca `verified`. Cambiar la contraseña
+ * desde el servidor hace que Auth cierre TODAS las sesiones de la cuenta (la del Dueño y también la que acaba de abrir la persona): quien
+ * llama tiene que abrir una sesión nueva después. Si falla entre los dos pasos la cuenta sigue `unverified` y el próximo enlace lo
+ * reintenta. Devuelve `true` si hubo que reemplazarla, `false` si la cuenta no lo necesitaba; lanza si falla.
  */
-export async function claimMailboxIfProvisioned(
-  admin: Db,
-  user: { id: string; app_metadata?: unknown },
-  revokeOthers: () => Promise<void>,
-): Promise<boolean> {
+export async function claimMailboxIfProvisioned(admin: Db, user: { id: string; app_metadata?: unknown }): Promise<boolean> {
   if (!isUnverifiedMailbox(user.app_metadata)) return false;
 
   const replaced = await admin.auth.admin.updateUserById(user.id, { password: throwawayPassword() });
   if (replaced.error) throw new Error("mailbox_claim_failed");
-  await revokeOthers();
   const marked = await admin.auth.admin.updateUserById(user.id, { app_metadata: { mailbox: MAILBOX_VERIFIED } });
   if (marked.error) throw new Error("mailbox_claim_failed");
   return true;
