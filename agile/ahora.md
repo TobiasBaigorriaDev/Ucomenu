@@ -18,7 +18,7 @@ Demo en producción: «Aurelia» (`/m/aurelia/centro`) y «La Bestia» (`/m/la-b
 
 Decisiones del usuario: Supabase Free hasta el primer cliente que paga; cobro con su cuenta personal de Mercado Pago; Gemini gratuito; aviso de transferencias retirado de privacidad.
 
-Respaldos: tarea de Windows diaria a las 07:00 (`C:\UcoMenuPrivado\respaldo-programado.ps1`, copias en `C:\UcoMenuCopias`). Contratos con proveedores en `C:\UcoMenuPrivado\contratos`, nada enviado ni aceptado.
+Respaldos: tarea de Windows diaria a las 07:00 (`C:\UcoMenuPrivado\respaldo-programado.ps1`, copias en `C:\UcoMenuCopias`). Contratos con proveedores en `C:\UcoMenuPrivado\contratos`, nada enviado ni aceptado (aplazado hasta tener clientes que pagan). Monitoreo externo con UptimeRobot listo.
 
 ## Próximo paso
 
